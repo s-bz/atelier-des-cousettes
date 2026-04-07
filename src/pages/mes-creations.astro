@@ -5,6 +5,9 @@ import { reader } from '../utils/reader';
 
 const creations = await reader.collections.creations.all();
 const sorted = creations.sort((a, b) => (a.entry.order ?? 0) - (b.entry.order ?? 0));
+
+const imagePath = (img: string | null) =>
+  img ? (img.startsWith('/') ? img : `/images/creations/${img}`) : '';
 ---
 
 <BaseLayout title="Mes créations" description="Galerie de créations couture : robes, chapeaux et accessoires faits main par L'Atelier des Cousettes.">
@@ -15,9 +18,9 @@ const sorted = creations.sort((a, b) => (a.entry.order ?? 0) - (b.entry.order ??
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="gallery">
         {sorted.map((creation) => (
           <div>
-            <button class="gallery-item w-full" data-src={creation.entry.image}>
+            <button class="gallery-item w-full" data-src={imagePath(creation.entry.image)}>
               <img
-                src={creation.entry.image}
+                src={imagePath(creation.entry.image)}
                 alt={creation.entry.imageAlt || creation.entry.title}
                 class="rounded-2xl w-full h-72 object-cover hover:opacity-90 transition-opacity cursor-pointer"
                 loading="lazy"
