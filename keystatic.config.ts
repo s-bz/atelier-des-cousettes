@@ -7,6 +7,19 @@ const coverImageField = (slug: string) =>
     publicPath: `/src/assets/images/covers/${slug}/`,
   });
 
+const schemaOffersField = () =>
+  fields.array(
+    fields.object({
+      name: fields.text({ label: 'Nom' }),
+      price: fields.text({ label: 'Prix (en €)' }),
+    }),
+    {
+      label: 'Offres (schema SEO)',
+      itemLabel: (props) =>
+        `${props.fields.name.value || 'Offre'} — ${props.fields.price.value || '?'}€`,
+    },
+  );
+
 export default config({
   storage: import.meta.env.DEV
     ? { kind: 'local' }
@@ -25,6 +38,10 @@ export default config({
         facebookUrl: fields.url({ label: 'Facebook URL' }),
         contactFormUrl: fields.url({ label: 'URL formulaire de contact' }),
         address: fields.text({ label: 'Adresse', multiline: true }),
+        streetAddress: fields.text({ label: 'Rue (schema)' }),
+        addressLocality: fields.text({ label: 'Ville (schema)' }),
+        postalCode: fields.text({ label: 'Code postal (schema)' }),
+        addressRegion: fields.text({ label: 'Région (schema)' }),
       },
     }),
     homepage: singleton({
@@ -37,8 +54,31 @@ export default config({
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         coverImage: coverImageField('homepage'),
         coverImageAlt: fields.text({ label: 'Texte alternatif image de couverture' }),
+        heroImage: fields.image({
+          label: 'Image principale (corps de page)',
+          directory: 'src/assets/images/homepage',
+          publicPath: '/src/assets/images/homepage/',
+        }),
+        heroImageAlt: fields.text({ label: 'Texte alternatif image principale' }),
         youtubeVideoId: fields.text({ label: 'ID vidéo YouTube' }),
         youtubeCredit: fields.text({ label: 'Crédit vidéo' }),
+        ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
+        serviceCards: fields.array(
+          fields.object({
+            label: fields.text({ label: 'Libellé' }),
+            href: fields.text({ label: 'Lien (ex: /ateliers-reguliers)' }),
+            image: fields.image({
+              label: 'Image',
+              directory: 'src/assets/images/homepage',
+              publicPath: '/src/assets/images/homepage/',
+            }),
+            imageAlt: fields.text({ label: 'Texte alternatif image' }),
+          }),
+          {
+            label: 'Cartes services',
+            itemLabel: (props) => props.fields.label.value || 'Carte',
+          },
+        ),
         content: fields.markdoc({ label: 'Contenu de la page' }),
       },
     }),
@@ -52,6 +92,7 @@ export default config({
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         coverImage: coverImageField('stages-thematiques'),
         coverImageAlt: fields.text({ label: 'Texte alternatif image de couverture' }),
+        schemaOffers: schemaOffersField(),
         content: fields.markdoc({ label: 'Contenu de la page' }),
       },
     }),
@@ -65,6 +106,7 @@ export default config({
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         coverImage: coverImageField('ateliers-reguliers'),
         coverImageAlt: fields.text({ label: 'Texte alternatif image de couverture' }),
+        schemaOffers: schemaOffersField(),
         content: fields.markdoc({ label: 'Contenu de la page' }),
       },
     }),
@@ -78,6 +120,7 @@ export default config({
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         coverImage: coverImageField('un-apres-midi-couture'),
         coverImageAlt: fields.text({ label: 'Texte alternatif image de couverture' }),
+        schemaOffers: schemaOffersField(),
         content: fields.markdoc({ label: 'Contenu de la page' }),
       },
     }),

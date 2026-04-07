@@ -5,7 +5,14 @@ import { reader } from '../utils/reader';
 const page = await reader.singletons.apresMidiCouture.read();
 if (!page) throw new Error('Un après-midi couture content not found');
 const contentNode = page.content ? await page.content() : null;
-const siteUrl = Astro.site?.toString();
+const siteUrl = Astro.site?.origin;
+
+const offers = (page.schemaOffers ?? []).map((o) => ({
+  "@type": "Offer",
+  "name": o.name,
+  "price": Number(o.price),
+  "priceCurrency": "EUR",
+}));
 ---
 
 <ContentPage
@@ -19,14 +26,12 @@ const siteUrl = Astro.site?.toString();
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Service",
-      "name": "Après-midi couture",
-      "description": "Après-midi couture ouverts à tous à Revel et Verdalle dans le Tarn. 3 heures d'accompagnement personnalisé.",
-      "provider": { "@id": `${siteUrl}#organization` },
+      "name": page.title,
+      "description": page.seoDescription,
+      "provider": { "@id": `${siteUrl}/#organization` },
       "areaServed": { "@type": "AdministrativeArea", "name": "Tarn" },
       "serviceType": "Cours de couture",
-      "offers": [
-        { "@type": "Offer", "name": "Après-midi couture (3h)", "price": "40", "priceCurrency": "EUR" }
-      ]
+      "offers": offers
     }).replace(/<\//g, '<\\/')} />
   </Fragment>
 </ContentPage>

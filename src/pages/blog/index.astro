@@ -3,34 +3,28 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Hero from '../../components/Hero.astro';
 import BlogCard from '../../components/BlogCard.astro';
 import { reader } from '../../utils/reader';
+import { resolveImageUrl } from '../../utils/images';
 
 const page = await reader.singletons.blogIndex.read();
+if (!page) throw new Error('Blog index content not found');
+
 const posts = await reader.collections.blog.all();
 
 const sortedPosts = posts
-  .filter((post) => post.entry.publishDate)
-  .sort((a, b) => new Date(b.entry.publishDate!).getTime() - new Date(a.entry.publishDate!).getTime());
+  .filter((post): post is typeof post & { entry: { publishDate: string } } =>
+    Boolean(post.entry.publishDate),
+  )
+  .sort((a, b) => new Date(b.entry.publishDate).getTime() - new Date(a.entry.publishDate).getTime());
 
 const siteUrl = Astro.site?.origin;
 
-// Resolve cover image to absolute URL for OG image
-const coverImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
-const coverImagePath = page?.coverImage
-  ? coverImages[page.coverImage]
-    ? page.coverImage
-    : Object.keys(coverImages).find(path => path.endsWith(`/${page.coverImage}`))
-  : undefined;
-const resolvedCover = coverImagePath ? await coverImages[coverImagePath]?.() : null;
-const ogImage = resolvedCover ? new URL(resolvedCover.default.src, Astro.site).toString() : undefined;
-
-const title = page?.title || 'Blog couture';
-const subtitle = page?.subtitle || 'Conseils, tutoriels et astuces pour progresser en couture';
-const seoDescription = page?.seoDescription || 'Conseils couture, tutoriels et astuces pour débutants et confirmés. L\'Atelier des Cousettes partage son savoir-faire à Revel et Verdalle, Tarn.';
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
 ---
 
 <BaseLayout
-  title={title}
-  description={seoDescription}
+  title={page.title}
+  description={page.seoDescription}
   ogImage={ogImage}
 >
   <Fragment slot="head">
@@ -40,14 +34,14 @@ const seoDescription = page?.seoDescription || 'Conseils couture, tutoriels et a
         "@type": "BreadcrumbList",
         "itemListElement": [
           { "@type": "ListItem", "position": 1, "name": "Accueil", "item": siteUrl },
-          { "@type": "ListItem", "position": 2, "name": title }
+          { "@type": "ListItem", "position": 2, "name": page.title }
         ]
       },
       {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
-        "name": `${title} — L'Atelier des Cousettes`,
-        "description": seoDescription,
+        "name": `${page.title} — L'Atelier des Cousettes`,
+        "description": page.seoDescription,
         "url": new URL('/blog', Astro.site).toString(),
         "isPartOf": { "@id": `${siteUrl}/#website` },
         "author": {
@@ -60,10 +54,10 @@ const seoDescription = page?.seoDescription || 'Conseils couture, tutoriels et a
   </Fragment>
 
   <Hero
-    title={title}
-    subtitle={subtitle}
-    coverImage={page?.coverImage || undefined}
-    altText={page?.coverImageAlt}
+    title={page.title}
+    subtitle={page.subtitle}
+    coverImage={page.coverImage || undefined}
+    altText={page.coverImageAlt}
   />
 
   <div class="max-w-3xl mx-auto px-4 pb-16">
@@ -73,7 +67,7 @@ const seoDescription = page?.seoDescription || 'Conseils couture, tutoriels et a
           <BlogCard
             title={post.entry.title}
             slug={post.slug}
-            publishDate={post.entry.publishDate!}
+            publishDate={post.entry.publishDate}
             description={post.entry.seoDescription}
           />
         ))}

@@ -5,7 +5,14 @@ import { reader } from '../utils/reader';
 const page = await reader.singletons.ateliersReguliers.read();
 if (!page) throw new Error('Ateliers réguliers content not found');
 const contentNode = page.content ? await page.content() : null;
-const siteUrl = Astro.site?.toString();
+const siteUrl = Astro.site?.origin;
+
+const offers = (page.schemaOffers ?? []).map((o) => ({
+  "@type": "Offer",
+  "name": o.name,
+  "price": Number(o.price),
+  "priceCurrency": "EUR",
+}));
 ---
 
 <ContentPage
@@ -19,17 +26,12 @@ const siteUrl = Astro.site?.toString();
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Service",
-      "name": "Ateliers de couture réguliers",
-      "description": "Ateliers de couture réguliers à Revel et Verdalle dans le Tarn, tous niveaux, petits groupes, de septembre à juin.",
-      "provider": { "@id": `${siteUrl}#organization` },
+      "name": page.title,
+      "description": page.seoDescription,
+      "provider": { "@id": `${siteUrl}/#organization` },
       "areaServed": { "@type": "AdministrativeArea", "name": "Tarn" },
       "serviceType": "Cours de couture",
-      "offers": [
-        { "@type": "Offer", "name": "Atelier 2h (une séance)", "price": "25", "priceCurrency": "EUR" },
-        { "@type": "Offer", "name": "Forfait mensuel 1 atelier/mois", "price": "33", "priceCurrency": "EUR" },
-        { "@type": "Offer", "name": "Forfait mensuel 2 ateliers/mois", "price": "55", "priceCurrency": "EUR" },
-        { "@type": "Offer", "name": "Ateliers enfants (mensuel)", "price": "30", "priceCurrency": "EUR" }
-      ]
+      "offers": offers
     }).replace(/<\//g, '<\\/')} />
   </Fragment>
 </ContentPage>

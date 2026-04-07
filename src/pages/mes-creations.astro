@@ -3,6 +3,7 @@ import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
 import { reader } from '../utils/reader';
+import { resolveImage, resolveImageUrl } from '../utils/images';
 import Markdoc from '@markdoc/markdoc';
 
 const page = await reader.singletons.mesCreations.read();
@@ -12,30 +13,13 @@ const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
 const creations = await reader.collections.creations.all();
 const sorted = creations.sort((a, b) => (a.entry.order ?? 0) - (b.entry.order ?? 0));
 
-// Dynamically import all creation images
-const creationImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/creations/*.{jpg,jpeg,png,webp}');
-
-async function resolveImage(img: string | null) {
-  if (!img) return null;
-  const filename = img.startsWith('/') ? img.split('/').pop()! : img;
-  const key = `/src/assets/images/creations/${filename}`;
-  const mod = await creationImages[key]?.();
-  return mod?.default ?? null;
-}
-
-// Resolve cover image for OG
-const coverImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
-const coverImagePath = page?.coverImage
-  ? coverImages[page.coverImage]
-    ? page.coverImage
-    : Object.keys(coverImages).find(path => path.endsWith(`/${page.coverImage}`))
-  : undefined;
-const resolvedCover = coverImagePath ? await coverImages[coverImagePath]?.() : null;
-const ogImage = resolvedCover ? new URL(resolvedCover.default.src, Astro.site).toString() : undefined;
+const creationGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/creations/*.{jpg,jpeg,png,webp}');
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const ogImage = await resolveImageUrl(page?.coverImage, coverGlob, Astro.site);
 
 // Resolve gallery images for schema
 const galleryItems = await Promise.all(sorted.map(async (creation) => {
-  const imgSrc = await resolveImage(creation.entry.image);
+  const imgSrc = await resolveImage(creation.entry.image, creationGlob);
   return {
     src: imgSrc,
     alt: creation.entry.imageAlt || creation.entry.title,
@@ -61,7 +45,7 @@ const siteUrl = Astro.site?.toString();
       "name": page?.title || "Mes créations",
       "description": page?.seoDescription,
       "url": `${siteUrl}mes-creations/`,
-      "creator": { "@id": `${siteUrl}#organization` },
+      "creator": { "@id": `${siteUrl}/#organization` },
       "image": galleryItems
         .filter(item => item.src)
         .map(item => ({
@@ -84,7 +68,7 @@ const siteUrl = Astro.site?.toString();
     {sorted.length > 0 ? (
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="gallery">
         {await Promise.all(sorted.map(async (creation) => {
-          const imgSrc = await resolveImage(creation.entry.image);
+          const imgSrc = await resolveImage(creation.entry.image, creationGlob);
           return (
             <div>
               {imgSrc ? (

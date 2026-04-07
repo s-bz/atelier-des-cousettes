@@ -5,12 +5,8 @@ import Hero from '../components/Hero.astro';
 import YouTubeEmbed from '../components/YouTubeEmbed.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import { reader } from '../utils/reader';
+import { resolveImage, resolveImageUrl } from '../utils/images';
 import Markdoc from '@markdoc/markdoc';
-
-import heroImg from '../assets/images/homepage/aaaaa.jpg';
-import img011 from '../assets/images/homepage/011.jpg';
-import imgSac from '../assets/images/homepage/sac.jpg';
-import img002 from '../assets/images/homepage/002.jpg';
 
 const homepage = await reader.singletons.homepage.read();
 const settings = await reader.singletons.siteSettings.read();
@@ -21,18 +17,23 @@ const contentNode = homepage.content ? await homepage.content() : null;
 const transformed = contentNode ? Markdoc.transform(contentNode.node) : null;
 const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
 
-// Resolve cover image for OG
-const coverImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
-const coverImagePath = homepage.coverImage
-  ? coverImages[homepage.coverImage]
-    ? homepage.coverImage
-    : Object.keys(coverImages).find(path => path.endsWith(`/${homepage.coverImage}`))
-  : undefined;
-const resolvedCover = coverImagePath ? await coverImages[coverImagePath]?.() : null;
-const ogImage = resolvedCover ? new URL(resolvedCover.default.src, Astro.site).toString() : undefined;
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const ogImage = await resolveImageUrl(homepage.coverImage, coverGlob, Astro.site);
 
 const phone = settings?.phones?.[0]?.replace(/[.\s]/g, '');
 const phoneIntl = phone ? `+33${phone.slice(1)}` : undefined;
+
+const siteUrl = Astro.site?.origin;
+
+const homepageGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/homepage/**/*.{jpg,jpeg,png,webp}');
+const resolvedHeroImg = await resolveImage(homepage.heroImage, homepageGlob);
+
+const resolvedCards = await Promise.all(
+  (homepage.serviceCards ?? []).map(async (card) => ({
+    ...card,
+    resolvedImage: await resolveImage(card.image, homepageGlob),
+  })),
+);
 ---
 
 <BaseLayout title={homepage.title} description={homepage.seoDescription} ogImage={ogImage}>
@@ -41,19 +42,19 @@ const phoneIntl = phone ? `+33${phone.slice(1)}` : undefined;
       {
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
-        "@id": `${Astro.site}#organization`,
+        "@id": `${siteUrl}/#organization`,
         "name": homepage.title,
         "description": homepage.seoDescription,
-        "url": Astro.site?.toString(),
+        "url": siteUrl,
         "email": settings?.email,
         "telephone": phoneIntl,
         "image": ogImage,
         "address": {
           "@type": "PostalAddress",
-          "streetAddress": "118 lieu dit En Rivals",
-          "addressLocality": "Verdalle",
-          "postalCode": "81110",
-          "addressRegion": "Tarn",
+          "streetAddress": settings?.streetAddress,
+          "addressLocality": settings?.addressLocality,
+          "postalCode": settings?.postalCode,
+          "addressRegion": settings?.addressRegion,
           "addressCountry": "FR"
         },
         "geo": {
@@ -72,7 +73,7 @@ const phoneIntl = phone ? `+33${phone.slice(1)}` : undefined;
           "@type": "Person",
           "name": "Isabelle Bultez",
           "jobTitle": "Couturière diplômée CAP",
-          "url": `${Astro.site}la-couturiere/`,
+          "url": `${siteUrl}/la-couturiere/`,
           "knowsAbout": ["couture", "patronage", "surjeteuse", "machine à coudre"],
           "sameAs": settings?.facebookUrl ? [settings.facebookUrl] : []
         },
@@ -85,19 +86,19 @@ const phoneIntl = phone ? `+33${phone.slice(1)}` : undefined;
           "@type": "OfferCatalog",
           "name": "Cours et stages de couture",
           "itemListElement": [
-            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Ateliers réguliers", "url": `${Astro.site}ateliers-reguliers/` } },
-            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Stages thématiques", "url": `${Astro.site}stages-thematiques/` } },
-            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Après-midi couture", "url": `${Astro.site}un-apres-midi-couture/` } }
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Ateliers réguliers", "url": `${siteUrl}/ateliers-reguliers/` } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Stages thématiques", "url": `${siteUrl}/stages-thematiques/` } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Après-midi couture", "url": `${siteUrl}/un-apres-midi-couture/` } }
           ]
         }
       },
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "@id": `${Astro.site}#website`,
+        "@id": `${siteUrl}/#website`,
         "name": homepage.title,
-        "url": Astro.site?.toString(),
-        "publisher": { "@id": `${Astro.site}#organization` },
+        "url": siteUrl,
+        "publisher": { "@id": `${siteUrl}/#organization` },
         "inLanguage": "fr"
       }
     ]).replace(/<\//g, '<\\/')} />
@@ -106,9 +107,11 @@ const phoneIntl = phone ? `+33${phone.slice(1)}` : undefined;
 
   <div class="max-w-3xl mx-auto px-4">
     <!-- Image hero -->
-    <section class="mb-12">
-      <Image src={heroImg} alt={homepage.title} class="rounded-2xl w-full h-auto object-cover" format="webp" quality={80} />
-    </section>
+    {resolvedHeroImg && (
+      <section class="mb-12">
+        <Image src={resolvedHeroImg} alt={homepage.heroImageAlt || homepage.title} class="rounded-2xl w-full h-auto object-cover" format="webp" quality={80} />
+      </section>
+    )}
 
     <!-- Content from Keystatic -->
     <section class="mb-12 prose max-w-none">
@@ -127,24 +130,22 @@ const phoneIntl = phone ? `+33${phone.slice(1)}` : undefined;
       </section>
     )}
 
-    <!-- Images avec liens -->
-    <section class="mb-12">
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <a href="/ateliers-reguliers" class="group">
-          <Image src={img011} alt="Ateliers réguliers" class="rounded-2xl w-full h-64 object-cover group-hover:opacity-90 transition-opacity" format="webp" quality={80} widths={[320, 480]} sizes="(max-width: 640px) 100vw, 33vw" />
-          <p class="mt-2 text-center text-sm font-medium text-[var(--color-heading)]">Ateliers réguliers</p>
-        </a>
-        <a href="/stages-thematiques" class="group">
-          <Image src={imgSac} alt="Stages thématiques" class="rounded-2xl w-full h-64 object-cover group-hover:opacity-90 transition-opacity" format="webp" quality={80} widths={[320, 480]} sizes="(max-width: 640px) 100vw, 33vw" />
-          <p class="mt-2 text-center text-sm font-medium text-[var(--color-heading)]">Stages thématiques</p>
-        </a>
-        <a href="/un-apres-midi-couture" class="group">
-          <Image src={img002} alt="Un après-midi couture" class="rounded-2xl w-full h-64 object-cover group-hover:opacity-90 transition-opacity" format="webp" quality={80} widths={[320, 480]} sizes="(max-width: 640px) 100vw, 33vw" />
-          <p class="mt-2 text-center text-sm font-medium text-[var(--color-heading)]">Un après-midi couture</p>
-        </a>
-      </div>
-    </section>
+    <!-- Cartes services (depuis Keystatic) -->
+    {resolvedCards.length > 0 && (
+      <section class="mb-12">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {resolvedCards.map((card) => (
+            <a href={card.href} class="group">
+              {card.resolvedImage && (
+                <Image src={card.resolvedImage} alt={card.imageAlt || card.label} class="rounded-2xl w-full h-64 object-cover group-hover:opacity-90 transition-opacity" format="webp" quality={80} widths={[320, 480]} sizes="(max-width: 640px) 100vw, 33vw" />
+              )}
+              <p class="mt-2 text-center text-sm font-medium text-[var(--color-heading)]">{card.label}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
 
-    <ContactCTA />
+    <ContactCTA label={homepage.ctaLabel || undefined} />
   </div>
 </BaseLayout>

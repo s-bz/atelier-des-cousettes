@@ -1,5 +1,6 @@
 ---
 import { Image } from 'astro:assets';
+import { resolveImage } from '../utils/images';
 
 interface Props {
   title: string;
@@ -10,21 +11,14 @@ interface Props {
 
 const { title, subtitle, coverImage: coverImageRaw, altText } = Astro.props;
 
-// Dynamically import the cover image from src/assets
-const coverImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
-// Resolve the cover image: use full path if provided, otherwise search by filename
-const coverImagePath = coverImageRaw
-  ? coverImages[coverImageRaw]
-    ? coverImageRaw
-    : Object.keys(coverImages).find(path => path.endsWith(`/${coverImageRaw}`))
-  : undefined;
-const resolvedCover = coverImagePath ? await coverImages[coverImagePath]?.() : null;
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const resolvedCover = await resolveImage(coverImageRaw, coverGlob);
 ---
 
 {resolvedCover ? (
   <section class="relative h-64 md:h-80 overflow-hidden mb-8 md:mb-12">
     <Image
-      src={resolvedCover.default}
+      src={resolvedCover}
       alt={altText || `Image de couverture — ${title}`}
       class="absolute inset-0 w-full h-full object-cover object-center"
       widths={[640, 1024, 1440]}

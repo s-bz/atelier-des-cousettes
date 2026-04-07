@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import Markdoc from '@markdoc/markdoc';
+import { resolveImageUrl } from '../utils/images';
 
 interface Props {
   title: string;
@@ -21,15 +22,8 @@ const transformed = contentNode ? Markdoc.transform(contentNode.node) : null;
 const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
 const siteUrl = Astro.site?.origin;
 
-// Resolve cover image to absolute URL for OG image
-const coverImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
-const coverImagePath = coverImage
-  ? coverImages[coverImage]
-    ? coverImage
-    : Object.keys(coverImages).find(path => path.endsWith(`/${coverImage}`))
-  : undefined;
-const resolvedCover = coverImagePath ? await coverImages[coverImagePath]?.() : null;
-const ogImage = resolvedCover ? new URL(resolvedCover.default.src, Astro.site).toString() : undefined;
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const ogImage = await resolveImageUrl(coverImage, coverGlob, Astro.site);
 ---
 
 <BaseLayout title={title} description={seoDescription} ogImage={ogImage} noIndex={noIndex}>

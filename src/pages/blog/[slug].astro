@@ -4,6 +4,7 @@ import Hero from '../../components/Hero.astro';
 import ContactCTA from '../../components/ContactCTA.astro';
 import Markdoc from '@markdoc/markdoc';
 import { reader } from '../../utils/reader';
+import { resolveImageUrl } from '../../utils/images';
 
 export async function getStaticPaths() {
   const posts = await reader.collections.blog.all();
@@ -28,14 +29,8 @@ const formattedDate = post.publishDate
     })
   : '';
 
-const coverImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/blog/**/*.{jpg,jpeg,png,webp}');
-const coverImagePath = post.coverImage
-  ? coverImages[post.coverImage]
-    ? post.coverImage
-    : Object.keys(coverImages).find(path => path.endsWith(`/${post.coverImage}`))
-  : undefined;
-const resolvedCover = coverImagePath ? await coverImages[coverImagePath]?.() : null;
-const ogImage = resolvedCover ? new URL(resolvedCover.default.src, Astro.site).toString() : undefined;
+const blogGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/blog/**/*.{jpg,jpeg,png,webp}');
+const ogImage = await resolveImageUrl(post.coverImage, blogGlob, Astro.site);
 ---
 
 <BaseLayout title={post.title} description={post.seoDescription} ogImage={ogImage}>
@@ -80,7 +75,7 @@ const ogImage = resolvedCover ? new URL(resolvedCover.default.src, Astro.site).t
   <div class="max-w-3xl mx-auto px-4 prose overflow-visible">
     {formattedDate && (
       <div class="flex items-center gap-2 text-sm text-[var(--color-text-light)] mb-8 not-prose">
-        <time datetime={post.publishDate!}>{formattedDate}</time>
+        <time datetime={post.publishDate ?? ''}>{formattedDate}</time>
         <span>&middot;</span>
         <span>Par Isabelle Bultez</span>
       </div>

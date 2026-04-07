@@ -5,7 +5,14 @@ import { reader } from '../utils/reader';
 const page = await reader.singletons.stagesThematiques.read();
 if (!page) throw new Error('Stages thématiques content not found');
 const contentNode = page.content ? await page.content() : null;
-const siteUrl = Astro.site?.toString();
+const siteUrl = Astro.site?.origin;
+
+const offers = (page.schemaOffers ?? []).map((o) => ({
+  "@type": "Offer",
+  "name": o.name,
+  "price": Number(o.price),
+  "priceCurrency": "EUR",
+}));
 ---
 
 <ContentPage
@@ -19,19 +26,12 @@ const siteUrl = Astro.site?.toString();
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Service",
-      "name": "Stages thématiques de couture",
-      "description": "Stages de couture dans le Tarn : machine à coudre, surjeteuse, patronage, sacs et accessoires.",
-      "provider": { "@id": `${siteUrl}#organization` },
+      "name": page.title,
+      "description": page.seoDescription,
+      "provider": { "@id": `${siteUrl}/#organization` },
       "areaServed": { "@type": "AdministrativeArea", "name": "Tarn" },
       "serviceType": "Cours de couture",
-      "offers": [
-        { "@type": "Offer", "name": "Initiation machine à coudre", "price": "40", "priceCurrency": "EUR" },
-        { "@type": "Offer", "name": "Stage découverte de la couture", "price": "90", "priceCurrency": "EUR" },
-        { "@type": "Offer", "name": "Stage surjeteuse", "price": "65", "priceCurrency": "EUR" },
-        { "@type": "Offer", "name": "Stage patronage", "price": "40", "priceCurrency": "EUR" },
-        { "@type": "Offer", "name": "Stage banane", "price": "50", "priceCurrency": "EUR" },
-        { "@type": "Offer", "name": "Stage sac et tote bag", "price": "40", "priceCurrency": "EUR" }
-      ]
+      "offers": offers
     }).replace(/<\//g, '<\\/')} />
   </Fragment>
 </ContentPage>
