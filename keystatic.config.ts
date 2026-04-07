@@ -64,6 +64,7 @@ export default config({
         }),
         heroImageAlt: fields.text({ label: 'Texte alternatif image principale' }),
         youtubeVideoId: fields.text({ label: 'ID vidéo YouTube' }),
+        youtubeDescription: fields.text({ label: 'Texte d\'accompagnement vidéo', multiline: true }),
         youtubeCredit: fields.text({ label: 'Crédit vidéo' }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
         serviceCards: fields.array(

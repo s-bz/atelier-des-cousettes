@@ -61,7 +61,6 @@ Ce qui est en place et fonctionne bien.
 **Problèmes restants :**
 
 - Actualités mises à jour en "Saison 2025-2026" mais le contenu reste générique — pourrait inclure des dates précises ou des nouveautés concrètes.
-- Vidéo YouTube présente mais aucune transcription ni texte d'accompagnement.
 
 ---
 

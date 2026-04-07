@@ -126,6 +126,11 @@ const resolvedCards = await Promise.all(
     <!-- Vidéo -->
     {homepage.youtubeVideoId && (
       <section class="mb-8">
+        {homepage.youtubeDescription && (
+          <p class="mb-4 text-[var(--color-text)]">
+            {homepage.youtubeDescription}
+          </p>
+        )}
         <YouTubeEmbed videoId={homepage.youtubeVideoId} title={homepage.title} />
         {homepage.youtubeCredit && (
           <p class="mt-2 text-sm text-center text-[var(--color-text-light)] italic">
