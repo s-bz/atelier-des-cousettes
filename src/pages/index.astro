@@ -71,7 +71,10 @@ const phoneIntl = phone ? `+33${phone.slice(1)}` : undefined;
         "founder": {
           "@type": "Person",
           "name": "Isabelle Bultez",
-          "jobTitle": "Couturière diplômée CAP"
+          "jobTitle": "Couturière diplômée CAP",
+          "url": `${Astro.site}la-couturiere/`,
+          "knowsAbout": ["couture", "patronage", "surjeteuse", "machine à coudre"],
+          "sameAs": settings?.facebookUrl ? [settings.facebookUrl] : []
         },
         "openingHoursSpecification": [
           { "@type": "OpeningHoursSpecification", "dayOfWeek": "Tuesday", "opens": "14:00", "closes": "17:00" },
@@ -136,8 +139,8 @@ const phoneIntl = phone ? `+33${phone.slice(1)}` : undefined;
           <p class="mt-2 text-center text-sm font-medium text-[var(--color-heading)]">Stages thématiques</p>
         </a>
         <a href="/un-apres-midi-couture" class="group">
-          <Image src={img002} alt="Un après midi couture" class="rounded-2xl w-full h-64 object-cover group-hover:opacity-90 transition-opacity" format="webp" quality={80} widths={[320, 480]} sizes="(max-width: 640px) 100vw, 33vw" />
-          <p class="mt-2 text-center text-sm font-medium text-[var(--color-heading)]">Un après midi couture</p>
+          <Image src={img002} alt="Un après-midi couture" class="rounded-2xl w-full h-64 object-cover group-hover:opacity-90 transition-opacity" format="webp" quality={80} widths={[320, 480]} sizes="(max-width: 640px) 100vw, 33vw" />
+          <p class="mt-2 text-center text-sm font-medium text-[var(--color-heading)]">Un après-midi couture</p>
         </a>
       </div>
     </section>

@@ -34,14 +34,32 @@ const ogImage = resolvedCover ? new URL(resolvedCover.default.src, Astro.site).t
 
 <BaseLayout title={title} description={seoDescription} ogImage={ogImage} noIndex={noIndex}>
   <Fragment slot="head">
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Accueil", "item": siteUrl },
-        { "@type": "ListItem", "position": 2, "name": title }
-      ]
-    }).replace(/<\//g, '<\\/')} />
+    <script type="application/ld+json" set:html={JSON.stringify([
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Accueil", "item": siteUrl },
+          { "@type": "ListItem", "position": 2, "name": title }
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": title,
+        "description": seoDescription,
+        "url": new URL(Astro.url.pathname, Astro.site).toString(),
+        "dateModified": new Date().toISOString().split('T')[0],
+        "author": {
+          "@type": "Person",
+          "name": "Isabelle Bultez",
+          "jobTitle": "Couturière diplômée CAP",
+          "url": `${siteUrl}/la-couturiere/`,
+          "sameAs": ["https://www.facebook.com/atelierdescousettes"]
+        },
+        "isPartOf": { "@id": `${siteUrl}/#website` }
+      }
+    ]).replace(/<\//g, '<\\/')} />
     <slot name="page-head" />
   </Fragment>
   <Hero title={title} subtitle={subtitle} coverImage={coverImage} altText={coverImageAlt} />
