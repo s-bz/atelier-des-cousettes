@@ -37,7 +37,7 @@ const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
       "sameAs": [settings?.facebookUrl]
     })} />
   </Fragment>
-  <Hero title={homepage.title} subtitle={homepage.subtitle} coverImage="/images/covers/homepage.jpg" />
+  <Hero title={homepage.title} subtitle={homepage.subtitle} coverImage={homepage.coverImage ? `/images/covers/${homepage.coverImage}` : undefined} />
 
   <div class="max-w-3xl mx-auto px-4">
     <!-- Image hero -->

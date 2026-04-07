@@ -1,5 +1,12 @@
 import { config, fields, singleton, collection } from '@keystatic/core';
 
+const coverImageField = () =>
+  fields.image({
+    label: 'Image de couverture',
+    directory: 'public/images/covers',
+    publicPath: '/images/covers/',
+  });
+
 export default config({
   storage: { kind: 'local' },
   singletons: {
@@ -26,6 +33,7 @@ export default config({
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
+        coverImage: coverImageField(),
         youtubeVideoId: fields.text({ label: 'ID vidéo YouTube' }),
         youtubeCredit: fields.text({ label: 'Crédit vidéo' }),
         content: fields.markdoc({ label: 'Contenu de la page' }),
@@ -38,6 +46,7 @@ export default config({
       schema: {
         title: fields.text({ label: 'Titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
+        coverImage: coverImageField(),
         content: fields.markdoc({ label: 'Contenu de la page' }),
       },
     }),
@@ -48,6 +57,7 @@ export default config({
       schema: {
         title: fields.text({ label: 'Titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
+        coverImage: coverImageField(),
         content: fields.markdoc({ label: 'Contenu de la page' }),
       },
     }),
@@ -58,6 +68,7 @@ export default config({
       schema: {
         title: fields.text({ label: 'Titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
+        coverImage: coverImageField(),
         content: fields.markdoc({ label: 'Contenu de la page' }),
       },
     }),
@@ -68,6 +79,7 @@ export default config({
       schema: {
         title: fields.text({ label: 'Titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
+        coverImage: coverImageField(),
         content: fields.markdoc({ label: 'Contenu de la page' }),
       },
     }),
@@ -78,6 +90,7 @@ export default config({
       schema: {
         title: fields.text({ label: 'Titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
+        coverImage: coverImageField(),
         content: fields.markdoc({ label: 'Contenu' }),
       },
     }),

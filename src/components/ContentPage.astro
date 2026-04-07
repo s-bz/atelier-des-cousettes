@@ -12,7 +12,8 @@ interface Props {
   coverImage?: string;
 }
 
-const { title, seoDescription, contentNode, showContactCTA = true, coverImage } = Astro.props;
+const { title, seoDescription, contentNode, showContactCTA = true, coverImage: coverImageRaw } = Astro.props;
+const coverImage = coverImageRaw ? (coverImageRaw.startsWith('/') ? coverImageRaw : `/images/covers/${coverImageRaw}`) : undefined;
 const transformed = contentNode ? Markdoc.transform(contentNode.node) : null;
 const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
 ---
