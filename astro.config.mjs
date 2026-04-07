@@ -11,7 +11,13 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   site: 'https://couture-tarn.fr',
   adapter: vercel(),
-  integrations: [react(), markdoc(), keystatic(), sitemap()],
+  integrations: [react(), markdoc(), keystatic(), sitemap({
+    serialize(item) {
+      // Set lastmod to today for all pages (content was recently redesigned)
+      item.lastmod = new Date().toISOString();
+      return item;
+    },
+  })],
   vite: {
     build: {
       chunkSizeWarningLimit: 5000,

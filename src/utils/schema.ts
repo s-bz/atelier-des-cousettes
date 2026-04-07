@@ -107,6 +107,10 @@ export function buildServicePageSchemas({
     ...(faqItems.length > 0 ? [{
       "@context": "https://schema.org",
       "@type": "FAQPage",
+      "speakable": {
+        "@type": "SpeakableSpecification",
+        "cssSelector": [".faq-question", ".faq-answer"],
+      },
       "mainEntity": faqItems.map((item) => ({
         "@type": "Question",
         "name": item.question,

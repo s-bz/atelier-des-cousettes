@@ -46,6 +46,7 @@ const actualitesTransformed = actualitesNode ? Markdoc.transform(actualitesNode.
 const actualitesHtml = actualitesTransformed ? Markdoc.renderers.html(actualitesTransformed) : '';
 
 // Latest blog posts
+const blogIndex = await reader.singletons.blogIndex.read();
 const posts = await reader.collections.blog.all();
 const now = new Date();
 const latestPosts = posts
@@ -163,7 +164,7 @@ const siteUrl = Astro.site?.origin;
           ))}
         </div>
       )}
-      <ContactCTA label={homepage.ctaLabel || undefined} />
+      <ContactCTA label={homepage.ctaLabel} />
     </div>
   </section>
 
@@ -189,7 +190,7 @@ const siteUrl = Astro.site?.origin;
         linkLabel={homepage.animatriceLinkLabel || ''}
         linkHref="/la-couturiere/"
       />
-      <ContactCTA label={homepage.ctaLabel || undefined} />
+      <ContactCTA label={homepage.ctaLabel} />
     </section>
   )}
 
@@ -244,6 +245,7 @@ const siteUrl = Astro.site?.origin;
                 slug={post.slug}
                 publishDate={post.entry.publishDate}
                 description={post.entry.seoDescription}
+                readMoreLabel={blogIndex?.readMoreLabel ?? ''}
               />
             ))}
             {homepage.actualitesBlogLabel && (
@@ -255,7 +257,7 @@ const siteUrl = Astro.site?.origin;
             )}
           </div>
         )}
-        <ContactCTA label={homepage.ctaLabel || undefined} />
+        <ContactCTA label={homepage.ctaLabel} />
       </div>
     </section>
   )}

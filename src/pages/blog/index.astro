@@ -6,6 +6,7 @@ import ContactCTA from '../../components/ContactCTA.astro';
 import { reader } from '../../utils/reader';
 import { resolveImageUrl } from '../../utils/images';
 import { filterPublishedPosts } from '../../utils/blog';
+import { buildPageSchemas } from '../../utils/schema';
 
 const page = await reader.singletons.blogIndex.read();
 if (!page) throw new Error('Blog index content not found');
@@ -19,31 +20,34 @@ const settings = await reader.singletons.siteSettings.read();
 
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
+const pageUrl = new URL('/blog', Astro.site).toString();
+
+const schemas = buildPageSchemas({
+  title: page.title,
+  seoDescription: page.seoDescription,
+  pageUrl,
+  siteUrl,
+  settings,
+});
 ---
 
 <BaseLayout title={page.title} description={page.seoDescription} ogImage={ogImage}>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify([
-      {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Accueil", "item": siteUrl },
-          { "@type": "ListItem", "position": 2, "name": page.title }
-        ]
-      },
+      ...schemas,
       {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": `${page.title} — ${settings?.siteName}`,
         "description": page.seoDescription,
-        "url": new URL('/blog', Astro.site).toString(),
+        "url": pageUrl,
         "isPartOf": { "@id": `${siteUrl}/#website` },
-        "author": {
-          "@type": "Person",
-          "name": settings?.authorName,
-          "jobTitle": settings?.authorJobTitle
-        }
+        "mainEntity": sortedPosts.map((post) => ({
+          "@type": "BlogPosting",
+          "headline": post.entry.title,
+          "url": `${siteUrl}/blog/${post.slug}/`,
+          "datePublished": post.entry.publishDate,
+        })),
       }
     ]).replace(/<\//g, '<\\/')} />
   </Fragment>
@@ -56,7 +60,7 @@ const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
     <section class="py-16 md:py-20">
       <div class="max-w-3xl mx-auto px-4 text-center">
         <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.introduction}</p>
-        <ContactCTA label={page.ctaLabel || undefined} />
+        <ContactCTA label={page.ctaLabel} />
       </div>
     </section>
   )}
@@ -72,11 +76,12 @@ const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
               slug={post.slug}
               publishDate={post.entry.publishDate}
               description={post.entry.seoDescription}
+              readMoreLabel={page.readMoreLabel ?? ''}
             />
           ))}
         </div>
       ) : (
-        <p class="text-center text-[var(--color-text-light)]">Aucun article pour le moment.</p>
+        <p class="text-center text-[var(--color-text-light)]">{page.emptyStateText}</p>
       )}
     </div>
   </section>
@@ -87,7 +92,7 @@ const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
       {page.ctaText && (
         <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)] mb-2">{page.ctaText}</p>
       )}
-      <ContactCTA label={page.ctaLabel || undefined} />
+      <ContactCTA label={page.ctaLabel} />
     </div>
   </section>
 </BaseLayout>

@@ -68,7 +68,7 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/un-apres-midi-coutur
             )}
           </div>
         )}
-        <ContactCTA label={page.ctaLabel || undefined} />
+        <ContactCTA label={page.ctaLabel} />
       </div>
     </section>
   )}
@@ -131,13 +131,13 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/un-apres-midi-coutur
             <p class="mt-4 text-sm text-[var(--color-text-light)] italic text-center">{page.datesNote}</p>
           )}
         </div>
-        <ContactCTA label={page.ctaLabel || undefined} />
+        <ContactCTA label={page.ctaLabel} />
       </div>
     </section>
   )}
 
   <!-- 5. FAQ -->
-  <FaqSection title={page.faqSectionTitle || 'Questions fréquentes'} items={faqItems} ctaLabel={page.ctaLabel || undefined} />
+  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} />
 
   <!-- 6. Cross-links -->
   {page.crossLinksText && (

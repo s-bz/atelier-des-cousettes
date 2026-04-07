@@ -41,14 +41,14 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/stages-thematiques')
   </Fragment>
 
   <!-- 1. Hero -->
-  <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage ?? undefined} />
+  <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage ?? undefined} altText={page.coverImageAlt ?? undefined} />
 
   <!-- 2. Introduction -->
   {page.introduction && (
     <section class="py-16 md:py-20">
       <div class="max-w-3xl mx-auto px-4 text-center">
         <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.introduction}</p>
-        <ContactCTA label={page.ctaLabel || undefined} />
+        <ContactCTA label={page.ctaLabel} />
       </div>
     </section>
   )}
@@ -59,7 +59,7 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/stages-thematiques')
       <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
         <div class="max-w-4xl mx-auto px-4">
           <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10" style="font-family: var(--font-heading);">
-            {page.stagesSectionTitle || 'Nos stages'}
+            {page.stagesSectionTitle}
           </h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {stages.map((stage) => (
@@ -95,7 +95,7 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/stages-thematiques')
               )}
               {stage.dates && (
                 <div class="mt-4 p-4 rounded-xl bg-[var(--color-bg-accent)]">
-                  <p class="text-sm font-semibold text-[var(--color-heading)] mb-2">Prochaines dates :</p>
+                  <p class="text-sm font-semibold text-[var(--color-heading)] mb-2">{page.datesLabel}</p>
                   <div class="text-sm text-[var(--color-text)] space-y-1">
                     {stage.dates.split('\n').map((line) => (
                       <p>{line}</p>
@@ -105,14 +105,14 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/stages-thematiques')
               )}
             </div>
           ))}
-          <ContactCTA label={page.ctaLabel || undefined} />
+          <ContactCTA label={page.ctaLabel} />
         </div>
       </section>
     </Fragment>
   )}
 
   <!-- 5. FAQ -->
-  <FaqSection title={page.faqSectionTitle || 'Questions fréquentes'} items={faqItems} ctaLabel={page.ctaLabel || undefined} />
+  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} />
 
   <!-- 6. Cross-links -->
   {page.crossLinksText && (

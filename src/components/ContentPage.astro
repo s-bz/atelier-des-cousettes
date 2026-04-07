@@ -45,7 +45,6 @@ const ogImage = await resolveImageUrl(coverImage, coverGlob, Astro.site);
         "name": title,
         "description": seoDescription,
         "url": new URL(Astro.url.pathname, Astro.site).toString(),
-        "dateModified": new Date().toISOString().split('T')[0],
         "author": {
           "@type": "Person",
           "name": settings?.authorName,

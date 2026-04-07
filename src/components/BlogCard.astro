@@ -6,9 +6,10 @@ interface Props {
   slug: string;
   publishDate: string;
   description: string;
+  readMoreLabel: string;
 }
 
-const { title, slug, publishDate, description } = Astro.props;
+const { title, slug, publishDate, description, readMoreLabel } = Astro.props;
 
 const formattedDate = formatFrenchDate(publishDate);
 ---
@@ -22,7 +23,7 @@ const formattedDate = formatFrenchDate(publishDate);
     <p class="mt-2 text-sm text-[var(--color-text)] line-clamp-2 md:line-clamp-3">{description}</p>
   )}
   <span class="mt-4 inline-block text-sm font-semibold text-[var(--color-link)] group-hover:text-[var(--color-button)] transition-colors">
-    Lire l'article &rarr;
+    {readMoreLabel} &rarr;
   </span>
 </a>
 

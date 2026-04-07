@@ -120,6 +120,7 @@ export default config({
         ...coverImageFields('stages-thematiques'),
         introduction: fields.text({ label: 'Introduction', multiline: true }),
         stagesSectionTitle: fields.text({ label: 'Titre section stages' }),
+        datesLabel: fields.text({ label: 'Libellé « Prochaines dates : »' }),
         faqSectionTitle: fields.text({ label: 'Titre section FAQ' }),
         stages: fields.array(
           fields.object({
@@ -162,6 +163,7 @@ export default config({
         ...coverImageFields('ateliers-reguliers'),
         introduction: fields.text({ label: 'Introduction', multiline: true }),
         creneauxSectionTitle: fields.text({ label: 'Titre section créneaux' }),
+        calendarLabel: fields.text({ label: 'Libellé « Calendrier : »' }),
         faqSectionTitle: fields.text({ label: 'Titre section FAQ' }),
         creneaux: fields.array(
           fields.object({
@@ -282,6 +284,7 @@ export default config({
         introduction: fields.text({ label: 'Introduction', multiline: true }),
         gallerySectionTitle: fields.text({ label: 'Titre section galerie' }),
         emptyGalleryText: fields.text({ label: 'Texte galerie vide' }),
+        missingImageText: fields.text({ label: 'Texte image manquante' }),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
@@ -297,6 +300,9 @@ export default config({
         introduction: fields.text({ label: 'Introduction', multiline: true }),
         ctaText: fields.text({ label: 'Texte d\'accroche CTA', multiline: true }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
+        readMoreLabel: fields.text({ label: 'Libellé « Lire l\'article »' }),
+        backToListLabel: fields.text({ label: 'Libellé « Retour à la liste »' }),
+        emptyStateText: fields.text({ label: 'Texte aucun article' }),
       },
     }),
     mentionsLegales: singleton({
@@ -321,6 +327,7 @@ export default config({
       schema: {
         title: fields.slug({ name: { label: 'Titre' } }),
         publishDate: fields.date({ label: 'Date de publication' }),
+        lastModified: fields.date({ label: 'Date de dernière modification (optionnel)' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         coverImage: fields.image({
           label: 'Image de couverture',

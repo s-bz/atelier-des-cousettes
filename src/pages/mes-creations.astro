@@ -33,12 +33,16 @@ const allGalleryItems = await Promise.all(sorted.map(async (creation) => {
 // Only items with resolved images for schema
 const schemaImages = allGalleryItems
   .filter((item): item is typeof item & { src: ImageMetadata } => item.src !== null)
-  .map(item => ({
-    "@type": "ImageObject" as const,
-    "name": item.title,
-    "contentUrl": new URL(item.src.src, Astro.site).toString(),
-    "description": item.alt,
-  }));
+  .map(item => {
+    const url = new URL(item.src.src, Astro.site).toString();
+    return {
+      "@type": "ImageObject" as const,
+      "name": item.title,
+      "contentUrl": url,
+      "thumbnailUrl": url,
+      "description": item.alt,
+    };
+  });
 
 const schemas = buildPageSchemas({
   title: page.title,
@@ -73,7 +77,7 @@ const schemas = buildPageSchemas({
     <section class="py-16 md:py-20">
       <div class="max-w-3xl mx-auto px-4 text-center">
         <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.introduction}</p>
-        <ContactCTA label={page.ctaLabel || undefined} />
+        <ContactCTA label={page.ctaLabel} />
       </div>
     </section>
   )}
@@ -104,7 +108,7 @@ const schemas = buildPageSchemas({
                 </button>
               ) : (
                 <div class="rounded-2xl w-full h-72 bg-white flex items-center justify-center">
-                  <span class="text-[var(--color-text-light)]">Image manquante</span>
+                  <span class="text-[var(--color-text-light)]">{page.missingImageText}</span>
                 </div>
               )}
               <p class="mt-3 text-center text-sm font-medium text-[var(--color-text-light)]">{item.alt}</p>
@@ -112,7 +116,7 @@ const schemas = buildPageSchemas({
           ))}
         </div>
       ) : (
-        <p class="text-center text-[var(--color-text-light)]">{page.emptyGalleryText || 'Galerie en cours de construction.'}</p>
+        <p class="text-center text-[var(--color-text-light)]">{page.emptyGalleryText}</p>
       )}
     </div>
   </section>

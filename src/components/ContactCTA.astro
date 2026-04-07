@@ -7,8 +7,7 @@ interface Props {
 }
 
 const settings = await reader.singletons.siteSettings.read();
-const defaultLabel = settings?.defaultCtaLabel || "Demande d'information";
-const { label = defaultLabel, url = settings?.contactFormUrl || '#' } = Astro.props;
+const { label = settings?.defaultCtaLabel, url = settings?.contactFormUrl || '#' } = Astro.props;
 const isExternal = url.startsWith('http');
 ---
 
