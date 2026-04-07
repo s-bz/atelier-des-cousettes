@@ -10,11 +10,11 @@ interface Props {
 const { name, price, duration, shortDescription, anchorId } = Astro.props;
 ---
 
-<a href={`#${anchorId}`} class="stage-card group block rounded-xl bg-white dark:bg-[var(--color-card-bg)] overflow-hidden transition-all p-5">
+<a href={`#${anchorId}`} class="stage-card group flex flex-col rounded-xl bg-white dark:bg-[var(--color-card-bg)] overflow-hidden transition-all p-5 h-full">
   <h3 class="text-lg font-semibold text-[var(--color-heading)]" style="font-family: var(--font-heading);">
     {name}
   </h3>
-  <p class="mt-1 text-sm text-[var(--color-text)]">{shortDescription}</p>
+  <p class="mt-1 text-sm text-[var(--color-text)] flex-1">{shortDescription}</p>
   <div class="mt-3 flex items-center gap-3 text-sm font-medium">
     <span class="text-[var(--color-button)]">{price}</span>
     <span class="text-[var(--color-text-light)]">{duration}</span>
