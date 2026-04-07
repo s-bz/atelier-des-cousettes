@@ -1,8 +1,11 @@
 ---
-import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
+import ServiceCard from '../components/ServiceCard.astro';
+import ValueProposition from '../components/ValueProposition.astro';
+import AnimatriceSection from '../components/AnimatriceSection.astro';
 import YouTubeEmbed from '../components/YouTubeEmbed.astro';
+import BlogCard from '../components/BlogCard.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import { reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
@@ -17,28 +20,45 @@ const [ateliers, stages, apresMidi] = await Promise.all([
 ]);
 
 if (!homepage) throw new Error('Homepage content not found');
+if (!settings) throw new Error('Site settings not found');
 
-const contentNode = homepage.content ? await homepage.content() : null;
-const transformed = contentNode ? Markdoc.transform(contentNode.node) : null;
-const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
-
+// OG image
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
 const ogImage = await resolveImageUrl(homepage.coverImage, coverGlob, Astro.site);
 
-const phone = settings?.phones?.[0]?.replace(/[.\s]/g, '');
-const phoneIntl = phone ? `+33${phone.slice(1)}` : undefined;
-
-const siteUrl = Astro.site?.origin;
-
+// Homepage images
 const homepageGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/homepage/**/*.{jpg,jpeg,png,webp}');
-const resolvedHeroImg = await resolveImage(homepage.heroImage, homepageGlob);
 
+// Service cards
 const resolvedCards = await Promise.all(
   (homepage.serviceCards ?? []).map(async (card) => ({
     ...card,
     resolvedImage: await resolveImage(card.image, homepageGlob),
   })),
 );
+
+// Animatrice image
+const resolvedAnimatriceImg = await resolveImage(homepage.animatriceImage, homepageGlob);
+
+// Actualités markdoc
+const actualitesNode = homepage.actualitesContent ? await homepage.actualitesContent() : null;
+const actualitesTransformed = actualitesNode ? Markdoc.transform(actualitesNode.node) : null;
+const actualitesHtml = actualitesTransformed ? Markdoc.renderers.html(actualitesTransformed) : '';
+
+// Latest blog posts
+const posts = await reader.collections.blog.all();
+const now = new Date();
+const latestPosts = posts
+  .filter((post): post is typeof post & { entry: { publishDate: string } } =>
+    Boolean(post.entry.publishDate) && new Date(post.entry.publishDate!) <= now,
+  )
+  .sort((a, b) => new Date(b.entry.publishDate).getTime() - new Date(a.entry.publishDate).getTime())
+  .slice(0, 2);
+
+// Schema data
+const phone = settings?.phones?.[0]?.replace(/[.\s]/g, '');
+const phoneIntl = phone ? `+33${phone.slice(1)}` : undefined;
+const siteUrl = Astro.site?.origin;
 ---
 
 <BaseLayout title={homepage.title} description={homepage.seoDescription} ogImage={ogImage}>
@@ -106,37 +126,90 @@ const resolvedCards = await Promise.all(
         "publisher": { "@id": `${siteUrl}/#organization` },
         "inLanguage": "fr"
       }
+    // Escape </script> sequences to prevent early tag termination in inline JSON-LD
     ]).replace(/<\//g, '<\\/')} />
   </Fragment>
+
+  <!-- 1. Hero -->
   <Hero title={homepage.title} subtitle={homepage.subtitle} coverImage={homepage.coverImage ?? undefined} />
 
-  <!-- Hero image + Content — Parchment (default) -->
-  <section class="py-12 md:py-16">
-    <div class="max-w-3xl mx-auto px-4">
-      {resolvedHeroImg && (
-        <div class="mb-12">
-          <Image src={resolvedHeroImg} alt={homepage.heroImageAlt || homepage.title} class="rounded-xl w-full h-auto object-cover" format="webp" quality={80} />
+  <!-- 2. Introduction + Service Cards -->
+  <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+    <div class="max-w-4xl mx-auto px-4">
+      {homepage.introductionTitle && (
+        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-4" style="font-family: var(--font-heading);">
+          {homepage.introductionTitle}
+        </h2>
+      )}
+      <div class="max-w-2xl mx-auto text-center mb-12">
+        {homepage.introduction && (
+          <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{homepage.introduction}</p>
+        )}
+        {homepage.introduction2 && (
+          <p class="mt-4 text-base md:text-lg leading-relaxed text-[var(--color-text)]">{homepage.introduction2}</p>
+        )}
+      </div>
+      {resolvedCards.length > 0 && (
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
+          {resolvedCards.map((card) => (
+            <ServiceCard
+              label={card.label}
+              href={card.href}
+              resolvedImage={card.resolvedImage ?? undefined}
+              imageAlt={card.imageAlt}
+              priceRange={card.priceRange}
+              shortDescription={card.shortDescription}
+            />
+          ))}
         </div>
       )}
-
-      <div class="prose max-w-none">
-        <Fragment set:html={renderedContent} />
-      </div>
+      <ContactCTA label={homepage.ctaLabel || undefined} />
     </div>
   </section>
 
-  <!-- Vidéo — Ivory -->
-  {homepage.youtubeVideoId && (
+  <!-- 3. Pourquoi nous choisir -->
+
+  {homepage.valuePropositions && homepage.valuePropositions.length > 0 && (
+    <section class="py-16 md:py-20">
+      <ValueProposition
+        title={homepage.valuePropositionsTitle || ''}
+        items={homepage.valuePropositions}
+      />
+    </section>
+  )}
+
+  <!-- 4. Votre animatrice -->
+  {homepage.animatriceText && (
     <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+      <AnimatriceSection
+        title={homepage.animatriceTitle || ''}
+        text={homepage.animatriceText}
+        image={resolvedAnimatriceImg ?? undefined}
+        imageAlt={homepage.animatriceImageAlt || ''}
+        linkLabel={homepage.animatriceLinkLabel || ''}
+        linkHref="/la-couturiere/"
+      />
+      <ContactCTA label={homepage.ctaLabel || undefined} />
+    </section>
+  )}
+
+  <!-- 5. YouTube Video -->
+  {homepage.youtubeVideoId && (
+    <section class="py-16 md:py-20">
       <div class="max-w-3xl mx-auto px-4">
+        {homepage.youtubeTitle && (
+          <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-6" style="font-family: var(--font-heading);">
+            {homepage.youtubeTitle}
+          </h2>
+        )}
         {homepage.youtubeDescription && (
-          <p class="mb-4 text-[var(--color-text)]">
+          <p class="mb-6 text-[var(--color-text)] text-center">
             {homepage.youtubeDescription}
           </p>
         )}
         <YouTubeEmbed videoId={homepage.youtubeVideoId} title={homepage.title} />
         {homepage.youtubeCredit && (
-          <p class="mt-2 text-sm text-center text-[var(--color-text-light)] italic">
+          <p class="mt-3 text-sm text-center text-[var(--color-text-light)] italic">
             {homepage.youtubeCredit}
           </p>
         )}
@@ -144,25 +217,45 @@ const resolvedCards = await Promise.all(
     </section>
   )}
 
-  <!-- Cartes services -->
-  {resolvedCards.length > 0 && (
-    <section class="py-16 md:py-20">
-      <div class="max-w-4xl mx-auto px-4">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
-          {resolvedCards.map((card) => {
-            const safeHref = card.href?.startsWith('/') ? card.href : '#';
-            return (
-            <a href={safeHref} class="group">
-              {card.resolvedImage && (
-                <Image src={card.resolvedImage} alt={card.imageAlt || card.label} class="rounded-xl w-full h-64 object-cover group-hover:opacity-90 transition-opacity" format="webp" quality={80} widths={[320, 480]} sizes="(max-width: 640px) 100vw, 33vw" />
-              )}
-              <p class="mt-2 text-center text-sm font-medium text-[var(--color-heading)]">{card.label}</p>
-            </a>
-          );})}
-        </div>
-        <div class="mt-12">
-          <ContactCTA label={homepage.ctaLabel || undefined} />
-        </div>
+  <!-- 6. Actualités + Latest Blog Posts -->
+  {(actualitesHtml || latestPosts.length > 0) && (
+    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+      <div class="max-w-3xl mx-auto px-4">
+        {homepage.actualitesTitle && (
+          <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10" style="font-family: var(--font-heading);">
+            {homepage.actualitesTitle}
+          </h2>
+        )}
+        {actualitesHtml && (
+          <div class="prose max-w-none mb-12">
+            <Fragment set:html={actualitesHtml} />
+          </div>
+        )}
+        {latestPosts.length > 0 && (
+          <div class="space-y-4">
+            {homepage.blogSectionTitle && (
+              <h3 class="text-xl md:text-2xl font-bold text-[var(--color-heading)] text-center mb-6" style="font-family: var(--font-heading);">
+                {homepage.blogSectionTitle}
+              </h3>
+            )}
+            {latestPosts.map((post) => (
+              <BlogCard
+                title={post.entry.title}
+                slug={post.slug}
+                publishDate={post.entry.publishDate}
+                description={post.entry.seoDescription}
+              />
+            ))}
+            {homepage.actualitesBlogLabel && (
+              <div class="mt-8 text-center">
+                <a href="/blog" class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+                  {homepage.actualitesBlogLabel} &rarr;
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+        <ContactCTA label={homepage.ctaLabel || undefined} />
       </div>
     </section>
   )}

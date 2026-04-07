@@ -1,0 +1,85 @@
+title: L'Atelier des Cousettes
+subtitle: Cours de couture, ateliers et stages
+seoDescription: >-
+  Cours de couture, ateliers et stages à Revel et Verdalle (Tarn). Tous
+  niveaux, petits groupes, de 25€ à 90€. Avec Isabelle, couturière diplômée
+  CAP.
+coverImage: /src/assets/images/covers/homepage/coverImage.jpeg
+coverImageAlt: null
+introductionTitle: Apprenez à coudre dans le Tarn
+introduction: >-
+  Envie de créer vos propres vêtements, de maîtriser votre machine à coudre
+  ou simplement de passer un moment créatif ? Isabelle vous accueille en
+  petits groupes à Verdalle et Revel.
+introduction2: >-
+  Débutants ou confirmés, choisissez la formule qui vous correspond.
+serviceCards:
+  - label: Ateliers réguliers
+    href: /ateliers-reguliers
+    image: /src/assets/images/homepage/011.jpg
+    imageAlt: Ateliers réguliers
+    priceRange: Dès 25 €/mois
+    shortDescription: >-
+      Progressez chaque semaine en petits groupes, de septembre à juin.
+  - label: Stages thématiques
+    href: /stages-thematiques
+    image: /src/assets/images/homepage/sac.jpg
+    imageAlt: Stages thématiques
+    priceRange: De 40 € à 90 €
+    shortDescription: >-
+      Apprenez une technique précise : machine à coudre, surjeteuse, patronage.
+  - label: Un après-midi couture
+    href: /un-apres-midi-couture
+    image: /src/assets/images/homepage/002.jpg
+    imageAlt: Un après-midi couture
+    priceRange: 40 € les 3 h
+    shortDescription: >-
+      Sans engagement, avancez sur votre projet personnel avec l'aide d'Isabelle.
+valuePropositionsTitle: Pourquoi choisir L'Atelier des Cousettes ?
+valuePropositions:
+  - title: Petits groupes
+    description: >-
+      Un accompagnement individualisé pour progresser à votre rythme, quel que
+      soit votre niveau. Les groupes sont volontairement limités pour garantir un
+      suivi de qualité.
+  - title: Tous niveaux bienvenus
+    description: >-
+      Des grands débutants qui n'ont jamais touché une machine à coudre aux
+      couturiers confirmés souhaitant se perfectionner, chacun trouve sa place.
+  - title: Des formules pour tous
+    description: >-
+      Ateliers réguliers hebdomadaires, stages thématiques ponctuels ou
+      après-midi couture sans engagement. Il y a forcément une formule qui vous
+      correspond.
+  - title: Tarifs accessibles
+    description: >-
+      De 25 € à 90 € selon la formule choisie, tissu et fournitures non
+      compris.
+  - title: Deux lieux de cours
+    description: >-
+      À la maison des associations de Revel et à l'atelier privé de Verdalle,
+      dans le Tarn.
+animatriceTitle: Votre animatrice
+animatriceText: >-
+  Isabelle Bultez enseigne la couture depuis plus de dix ans. Diplômée du CAP
+  couture flou, elle a fondé L'Atelier des Cousettes pour partager sa passion
+  avec des élèves de tous âges et de tous niveaux. Son parcours mêle héritage
+  familial — son arrière grand-père était tailleur — passion pour le patronage
+  et engagement artisanal. Son approche est bienveillante et personnalisée :
+  chaque participant progresse à son rythme sur le projet de son choix.
+animatriceImage: null
+animatriceImageAlt: Isabelle Bultez, couturière diplômée CAP
+animatriceLinkLabel: Découvrir le parcours d'Isabelle
+youtubeTitle: Découvrez l'atelier en vidéo
+youtubeVideoId: VmuGxe5MIK4
+youtubeDescription: >-
+  Découvrez L'Atelier des Cousettes en vidéo : l'ambiance des cours, les
+  projets des élèves et le plaisir de coudre ensemble à Revel et Verdalle dans
+  le Tarn. Isabelle Bultez, couturière diplômée CAP couture flou, vous accueille
+  en petits groupes pour des ateliers réguliers, des stages thématiques et des
+  après-midi couture ouverts à tous.
+youtubeCredit: Un grand merci à Yan Kwai Maurel pour sa vidéo !
+actualitesTitle: Actualités de l'atelier
+blogSectionTitle: Derniers articles du blog
+actualitesBlogLabel: Voir tous les articles
+ctaLabel: Demande d'information

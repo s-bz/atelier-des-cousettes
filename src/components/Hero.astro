@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 import { resolveImage } from '../utils/images';
 
 interface Props {
@@ -13,10 +13,19 @@ const { title, subtitle, coverImage: coverImageRaw, altText } = Astro.props;
 
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
 const resolvedCover = await resolveImage(coverImageRaw, coverGlob);
+
+// Generate optimized image URL for preloading
+const preloadImage = resolvedCover
+  ? await getImage({ src: resolvedCover, width: 640, format: 'webp', quality: 60 })
+  : null;
 ---
 
+{preloadImage && (
+  <link rel="preload" as="image" type="image/webp" href={preloadImage.src} />
+)}
+
 {resolvedCover ? (
-  <section class="relative h-64 md:h-80 overflow-hidden mb-8 md:mb-12">
+  <section class="relative h-64 md:h-80 overflow-hidden bg-[#2c2420]">
     <Image
       src={resolvedCover}
       alt={altText || `Image de couverture — ${title}`}
@@ -26,6 +35,8 @@ const resolvedCover = await resolveImage(coverImageRaw, coverGlob);
       format="webp"
       quality={60}
       height={480}
+      loading="eager"
+      decoding="async"
     />
     <div class="absolute inset-0 bg-black/50" />
     <div class="relative h-full flex flex-col items-center justify-center px-4 text-center">
