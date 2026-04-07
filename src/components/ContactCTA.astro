@@ -1,10 +1,13 @@
 ---
+import { reader } from '../utils/reader';
+
 interface Props {
   label?: string;
   url?: string;
 }
 
-const { label = "Demande d'information", url = 'https://tally.so/r/wvGxVA' } = Astro.props;
+const settings = await reader.singletons.siteSettings.read();
+const { label = "Demande d'information", url = settings?.contactFormUrl || '#' } = Astro.props;
 ---
 
 <div class="mt-8 text-center">

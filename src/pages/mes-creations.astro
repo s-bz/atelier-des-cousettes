@@ -25,6 +25,16 @@ async function resolveImage(img: string | null) {
 ---
 
 <BaseLayout title={page?.title || 'Mes créations'} description={page?.seoDescription || ''}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Accueil", "item": Astro.site?.origin },
+        { "@type": "ListItem", "position": 2, "name": page?.title || 'Mes créations' }
+      ]
+    }).replace(/<\//g, '<\\/')} />
+  </Fragment>
   <Hero title={page?.title || 'Mes créations'} subtitle={page?.subtitle} coverImage={page?.coverImage} />
 
   {renderedContent && (
@@ -41,7 +51,7 @@ async function resolveImage(img: string | null) {
           return (
             <div>
               {imgSrc ? (
-                <button class="gallery-item w-full" data-src={imgSrc.src}>
+                <button class="gallery-item w-full" data-src={imgSrc.src} data-alt={creation.entry.imageAlt || creation.entry.title}>
                   <Image
                     src={imgSrc}
                     alt={creation.entry.imageAlt || creation.entry.title}
@@ -79,9 +89,10 @@ async function resolveImage(img: string | null) {
 
     document.querySelectorAll('.gallery-item').forEach((item) => {
       item.addEventListener('click', () => {
-        const src = (item as HTMLElement).dataset.src;
-        if (src && lightboxImg && dialog) {
-          lightboxImg.src = src;
+        const el = item as HTMLElement;
+        if (el.dataset.src && lightboxImg && dialog) {
+          lightboxImg.src = el.dataset.src;
+          lightboxImg.alt = el.dataset.alt || '';
           dialog.showModal();
         }
       });

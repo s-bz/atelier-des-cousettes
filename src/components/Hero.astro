@@ -24,7 +24,7 @@ const resolvedCover = coverImagePath ? await coverImages[coverImagePath]?.() : n
   <section class="relative h-64 md:h-80 overflow-hidden mb-8 md:mb-12">
     <Image
       src={resolvedCover.default}
-      alt=""
+      alt={`Image de couverture — ${title}`}
       class="absolute inset-0 w-full h-full object-cover object-center"
       widths={[640, 1024, 1440]}
       sizes="100vw"

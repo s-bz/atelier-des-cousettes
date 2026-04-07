@@ -24,24 +24,47 @@ const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
 
 <BaseLayout title={homepage.title} description={homepage.seoDescription}>
   <Fragment slot="head">
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
-      "name": homepage.title,
-      "description": homepage.seoDescription,
-      "url": "https://couture-tarn.fr",
-      "email": settings?.email,
-      "telephone": "+33695783634",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "118 lieu dit En Rivals",
-        "addressLocality": "Verdalle",
-        "postalCode": "81110",
-        "addressRegion": "Tarn",
-        "addressCountry": "FR"
+    <script type="application/ld+json" set:html={JSON.stringify([
+      {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "@id": `${Astro.site}#organization`,
+        "name": homepage.title,
+        "description": homepage.seoDescription,
+        "url": Astro.site?.toString(),
+        "email": settings?.email,
+        "telephone": settings?.phones?.[0]?.replace(/[.\s]/g, '') ? `+33${settings.phones[0].replace(/[.\s]/g, '').slice(1)}` : undefined,
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "118 lieu dit En Rivals",
+          "addressLocality": "Verdalle",
+          "postalCode": "81110",
+          "addressRegion": "Tarn",
+          "addressCountry": "FR"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 43.4833,
+          "longitude": 2.3667
+        },
+        "areaServed": [
+          { "@type": "City", "name": "Verdalle" },
+          { "@type": "City", "name": "Revel" },
+          { "@type": "AdministrativeArea", "name": "Tarn" }
+        ],
+        "priceRange": "25€–90€",
+        "sameAs": settings?.facebookUrl ? [settings.facebookUrl] : []
       },
-      "sameAs": [settings?.facebookUrl]
-    })} />
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": `${Astro.site}#website`,
+        "name": homepage.title,
+        "url": Astro.site?.toString(),
+        "publisher": { "@id": `${Astro.site}#organization` },
+        "inLanguage": "fr"
+      }
+    ]).replace(/<\//g, '<\\/')} />
   </Fragment>
   <Hero title={homepage.title} subtitle={homepage.subtitle} coverImage={homepage.coverImage} />
 
