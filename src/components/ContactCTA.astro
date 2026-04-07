@@ -10,7 +10,7 @@ const settings = await reader.singletons.siteSettings.read();
 const { label = "Demande d'information", url = settings?.contactFormUrl || '#' } = Astro.props;
 ---
 
-<div class="mt-8 text-center">
+<div class="mt-8 mb-8 text-center">
   <a
     href={url}
     target="_blank"
