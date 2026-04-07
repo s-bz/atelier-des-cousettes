@@ -15,7 +15,14 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     optimizeDeps: {
-      include: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime'],
+      include: [
+        'react',
+        'react-dom',
+        'react-dom/client',
+        'react/jsx-runtime',
+        '@keystatic/core',
+        '@keystatic/core/ui',
+      ],
     },
     resolve: {
       dedupe: ['react', 'react-dom'],
