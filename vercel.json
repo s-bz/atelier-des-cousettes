@@ -5,7 +5,8 @@
     { "source": "/ateliers-rguliers", "destination": "/ateliers-reguliers", "permanent": true },
     { "source": "/cours-particuliers", "destination": "/un-apres-midi-couture", "permanent": true },
     { "source": "/la-couturire", "destination": "/la-couturiere", "permanent": true },
-    { "source": "/mes-crations", "destination": "/mes-creations", "permanent": true }
+    { "source": "/mes-crations", "destination": "/mes-creations", "permanent": true },
+    { "source": "/sitemap.xml", "destination": "/sitemap-index.xml", "permanent": true }
   ],
   "headers": [
     {
