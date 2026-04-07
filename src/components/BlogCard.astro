@@ -15,13 +15,19 @@ const formattedDate = new Date(publishDate).toLocaleDateString('fr-FR', {
 });
 ---
 
-<a href={`/blog/${slug}`} class="group block rounded-2xl bg-[var(--color-card-bg)] p-6 transition-shadow hover:shadow-lg">
+<a href={`/blog/${slug}`} class="group block rounded-lg bg-[var(--color-card-bg)] p-6 transition-all" style="box-shadow: var(--shadow-ring);">
   <time datetime={publishDate} class="text-sm text-[var(--color-text-light)]">{formattedDate}</time>
-  <h2 class="mt-2 text-xl font-black leading-tight group-hover:opacity-70 transition-opacity" style="font-family: var(--font-heading);">
+  <h2 class="mt-2 text-xl font-medium leading-tight group-hover:text-[var(--color-link)] transition-colors" style="font-family: var(--font-heading);">
     {title}
   </h2>
   <p class="mt-2 text-sm text-[var(--color-text)] line-clamp-3">{description}</p>
-  <span class="mt-4 inline-block text-sm font-semibold text-[var(--color-heading)] group-hover:opacity-70 transition-opacity">
+  <span class="mt-4 inline-block text-sm font-semibold text-[var(--color-link)] group-hover:text-[var(--color-button)] transition-colors">
     Lire l'article &rarr;
   </span>
 </a>
+
+<style>
+  a.group:hover {
+    box-shadow: var(--shadow-ring), var(--shadow-whisper);
+  }
+</style>

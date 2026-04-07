@@ -6,7 +6,7 @@ const currentPath = Astro.url.pathname;
 
 <header class="sticky top-0 z-50 bg-[var(--color-bg)] border-b border-[var(--color-border)]">
   <nav class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-    <a href="/" class="font-[var(--font-heading)] text-xl font-black text-[var(--color-heading)] hover:opacity-80 transition-opacity" style="font-family: var(--font-heading);">
+    <a href="/" class="font-[var(--font-heading)] text-xl font-medium text-[var(--color-heading)] hover:opacity-80 transition-opacity" style="font-family: var(--font-heading);">
       L'Atelier des Cousettes
     </a>
 
@@ -17,10 +17,10 @@ const currentPath = Astro.url.pathname;
           <a
             href={link.href}
             class:list={[
-              'transition-colors hover:opacity-70',
+              'transition-colors hover:text-[var(--color-heading)]',
               currentPath === link.href || currentPath === link.href + '/'
                 ? 'text-[var(--color-heading)] font-semibold'
-                : 'text-[var(--color-heading)]',
+                : 'text-[var(--color-text)]',
             ]}
           >
             {link.label}
@@ -50,7 +50,7 @@ const currentPath = Astro.url.pathname;
           <a
             href={link.href}
             class:list={[
-              'block py-2.5 text-sm font-medium transition-colors',
+              'block py-2.5 text-sm font-medium transition-colors hover:text-[var(--color-heading)]',
               currentPath === link.href || currentPath === link.href + '/'
                 ? 'text-[var(--color-heading)] font-semibold'
                 : 'text-[var(--color-text)]',

@@ -3,68 +3,65 @@ import { reader } from '../utils/reader';
 import { navLinks } from '../utils/navLinks';
 
 const settings = await reader.singletons.siteSettings.read();
+const navLeft = navLinks.slice(0, 3);
+const navRight = navLinks.slice(3);
 ---
 
-<footer style="background-color: var(--color-bg-accent);" class="border-t border-[var(--color-border)] mt-16">
-  <div class="max-w-5xl mx-auto px-4 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 text-sm">
-    <!-- Contact -->
+<footer class="bg-[var(--color-bg-dark)]">
+  <div class="max-w-5xl mx-auto px-4 py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 text-sm">
+    <!-- Contact + Social -->
     <div>
-      <h3 class="font-black mb-3" style="font-family: var(--font-heading); color: var(--color-heading);">Contact</h3>
-      <ul class="space-y-2 text-[var(--color-text)]">
+      <h3 class="font-medium mb-3" style="font-family: var(--font-heading); color: #faf9f5;">Contact</h3>
+      <ul class="space-y-2 text-[var(--color-dark-text)]">
         {settings?.email && (
           <li>
-            <a href={`mailto:${settings.email}`} class="hover:opacity-70 transition-opacity">
+            <a href={`mailto:${settings.email}`} class="hover:text-white transition-colors">
               📧 {settings.email}
             </a>
           </li>
         )}
         {settings?.phones?.map((phone) => (
           <li>
-            <a href={`tel:${phone.replace(/[.\s]/g, '')}`} class="hover:opacity-70 transition-opacity">
+            <a href={`tel:${phone.replace(/[.\s]/g, '')}`} class="hover:text-white transition-colors">
               📱 {phone}
             </a>
           </li>
         ))}
-      </ul>
-    </div>
-
-    <!-- Navigation -->
-    <div>
-      <h3 class="font-black mb-3" style="font-family: var(--font-heading); color: var(--color-heading);">Navigation</h3>
-      <ul class="space-y-2 text-[var(--color-text)]">
-        {navLinks.map((link) => (
-          <li><a href={link.href} class="hover:opacity-70 transition-opacity">{link.label}</a></li>
-        ))}
-      </ul>
-    </div>
-
-    <!-- Liens -->
-    <div>
-      <h3 class="font-black mb-3" style="font-family: var(--font-heading); color: var(--color-heading);">Suivez-nous</h3>
-      <ul class="space-y-2 text-[var(--color-text)]">
         {settings?.facebookUrl && (
           <li>
             <a
               href={settings.facebookUrl}
               target="_blank"
               rel="noopener noreferrer"
-              class="hover:opacity-70 transition-opacity inline-flex items-center gap-1.5"
+              class="hover:text-white transition-colors inline-flex items-center gap-1.5"
             >
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
               Facebook
             </a>
           </li>
         )}
-        <li>
-          <a href="/mentions-legales" class="hover:opacity-70 transition-opacity">
-            Mentions légales
-          </a>
-        </li>
       </ul>
+    </div>
+
+    <!-- Navigation — split into 2 sub-columns -->
+    <div class="lg:col-span-2">
+      <h3 class="font-medium mb-3" style="font-family: var(--font-heading); color: #faf9f5;">Navigation</h3>
+      <div class="grid grid-cols-2 gap-x-8 gap-y-2 text-[var(--color-dark-text)]">
+        {navLeft.map((link) => (
+          <a href={link.href} class="hover:text-white transition-colors">{link.label}</a>
+        ))}
+        {navRight.map((link) => (
+          <a href={link.href} class="hover:text-white transition-colors">{link.label}</a>
+        ))}
+      </div>
     </div>
   </div>
 
-  <div class="border-t border-[var(--color-border)] py-4 text-center text-xs text-[var(--color-text-light)]">
-    &copy; {new Date().getFullYear()} {settings?.siteName || "L'Atelier des Cousettes"}
+  <div class="border-t border-[rgba(255,255,255,0.1)] py-4 text-center text-xs text-[var(--color-dark-text)]">
+    &copy; <span id="footer-year"></span> {settings?.siteName || "L'Atelier des Cousettes"} · <a href="/mentions-legales" class="hover:text-white transition-colors">Mentions légales</a>
   </div>
+
+  <script>
+    document.getElementById('footer-year')!.textContent = String(new Date().getFullYear());
+  </script>
 </footer>

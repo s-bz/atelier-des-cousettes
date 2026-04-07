@@ -110,22 +110,25 @@ const resolvedCards = await Promise.all(
   </Fragment>
   <Hero title={homepage.title} subtitle={homepage.subtitle} coverImage={homepage.coverImage ?? undefined} />
 
-  <div class="max-w-3xl mx-auto px-4">
-    <!-- Image hero -->
-    {resolvedHeroImg && (
-      <section class="mb-12">
-        <Image src={resolvedHeroImg} alt={homepage.heroImageAlt || homepage.title} class="rounded-2xl w-full h-auto object-cover" format="webp" quality={80} />
-      </section>
-    )}
+  <!-- Hero image + Content — Parchment (default) -->
+  <section class="py-12 md:py-16">
+    <div class="max-w-3xl mx-auto px-4">
+      {resolvedHeroImg && (
+        <div class="mb-12">
+          <Image src={resolvedHeroImg} alt={homepage.heroImageAlt || homepage.title} class="rounded-xl w-full h-auto object-cover" format="webp" quality={80} />
+        </div>
+      )}
 
-    <!-- Content from Keystatic -->
-    <section class="mb-12 prose max-w-none">
-      <Fragment set:html={renderedContent} />
-    </section>
+      <div class="prose max-w-none">
+        <Fragment set:html={renderedContent} />
+      </div>
+    </div>
+  </section>
 
-    <!-- Vidéo -->
-    {homepage.youtubeVideoId && (
-      <section class="mb-8">
+  <!-- Vidéo — Ivory -->
+  {homepage.youtubeVideoId && (
+    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+      <div class="max-w-3xl mx-auto px-4">
         {homepage.youtubeDescription && (
           <p class="mb-4 text-[var(--color-text)]">
             {homepage.youtubeDescription}
@@ -137,27 +140,30 @@ const resolvedCards = await Promise.all(
             {homepage.youtubeCredit}
           </p>
         )}
-      </section>
-    )}
+      </div>
+    </section>
+  )}
 
-    <!-- Cartes services (depuis Keystatic) -->
-    {resolvedCards.length > 0 && (
-      <section class="mb-12">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+  <!-- Cartes services -->
+  {resolvedCards.length > 0 && (
+    <section class="py-16 md:py-20">
+      <div class="max-w-4xl mx-auto px-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
           {resolvedCards.map((card) => {
             const safeHref = card.href?.startsWith('/') ? card.href : '#';
             return (
             <a href={safeHref} class="group">
               {card.resolvedImage && (
-                <Image src={card.resolvedImage} alt={card.imageAlt || card.label} class="rounded-2xl w-full h-64 object-cover group-hover:opacity-90 transition-opacity" format="webp" quality={80} widths={[320, 480]} sizes="(max-width: 640px) 100vw, 33vw" />
+                <Image src={card.resolvedImage} alt={card.imageAlt || card.label} class="rounded-xl w-full h-64 object-cover group-hover:opacity-90 transition-opacity" format="webp" quality={80} widths={[320, 480]} sizes="(max-width: 640px) 100vw, 33vw" />
               )}
               <p class="mt-2 text-center text-sm font-medium text-[var(--color-heading)]">{card.label}</p>
             </a>
           );})}
         </div>
-      </section>
-    )}
-
-    <ContactCTA label={homepage.ctaLabel || undefined} />
-  </div>
+        <div class="mt-12">
+          <ContactCTA label={homepage.ctaLabel || undefined} />
+        </div>
+      </div>
+    </section>
+  )}
 </BaseLayout>

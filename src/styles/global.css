@@ -3,28 +3,37 @@
 @import '@fontsource-variable/manrope/wght.css';
 
 @theme {
-  /* Original Popsy theme colors */
-  --color-text: rgb(63, 63, 70);
-  --color-text-light: rgba(0, 0, 0, 0.55);
-  --color-heading: rgb(24, 24, 27);
-  --color-bg: #FFFFFF;
-  --color-bg-accent: rgb(249, 245, 244);
-  --color-bg-pink: rgb(255, 203, 194);
-  --color-bg-peach: rgb(255, 237, 224);
-  --color-bg-dark: rgb(73, 67, 62);
-  --color-border: rgb(229, 229, 229);
-  --color-button: rgb(255, 191, 181);
-  --color-button-hover: rgb(255, 170, 157);
-  --color-button-orange: rgb(255, 182, 130);
-  --color-card-bg: rgb(244, 244, 245);
+  /* Claude/Anthropic-inspired warm palette */
+  --color-text: #5e5d59;
+  --color-text-light: #87867f;
+  --color-heading: #141413;
+  --color-bg: #f5f4ed;
+  --color-bg-accent: #faf9f5;
+  --color-bg-pink: #d97757;
+  --color-bg-peach: #f5f4ed;
+  --color-bg-dark: #30302e;
+  --color-border: #f0eee6;
+  --color-border-prominent: #e8e6dc;
+  --color-button: #c96442;
+  --color-button-hover: #b8593a;
+  --color-button-orange: #d97757;
+  --color-card-bg: #faf9f5;
+  --color-link: #d97757;
+  --color-dark-text: #b0aea5;
 
   /* Fonts: Playfair Display for headings, Manrope for body */
   --font-heading: 'Playfair Display Variable', Georgia, 'Times New Roman', serif;
   --font-sans: 'Manrope Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 
-  /* Border radius - XL style */
+  /* Border radius — Claude system */
+  --radius-sm: 8px;
   --radius-xl: 16px;
-  --radius-button: 999px;
+  --radius-button: 10px;
+  --radius-container: 32px;
+
+  /* Shadows — Claude ring system */
+  --shadow-ring: 0px 0px 0px 1px rgba(0, 0, 0, 0.06);
+  --shadow-whisper: 0px 4px 24px rgba(0, 0, 0, 0.05);
 }
 
 html {
@@ -36,15 +45,16 @@ body {
   color: var(--color-text);
   background-color: var(--color-bg);
   font-weight: 400;
-  line-height: 1.7;
+  line-height: 1.60;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Headings */
 h1, h2, h3, h4 {
   font-family: var(--font-heading);
   color: var(--color-heading);
-  font-weight: 900;
-  line-height: 1.2;
+  font-weight: 500;
+  line-height: 1.15;
 }
 
 /* Prose styles for content pages */
@@ -58,7 +68,7 @@ h1, h2, h3, h4 {
   margin-top: 3rem;
   margin-bottom: 0.75rem;
   padding-top: 1.5rem;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border-prominent);
 }
 
 .prose h2:first-child {
@@ -109,27 +119,28 @@ h1, h2, h3, h4 {
 }
 
 .prose a {
-  color: var(--color-heading);
+  color: var(--color-link);
   text-decoration: underline;
   text-underline-offset: 2px;
+  transition: color 0.2s;
 }
 
 .prose a:hover {
-  opacity: 0.7;
+  color: var(--color-button);
 }
 
 .prose hr {
-  border-color: var(--color-border);
+  border-color: var(--color-border-prominent);
   margin: 2rem 0;
 }
 
 /* Prose images: rounded, shadowed, centered */
 .prose img {
-  border-radius: var(--radius-xl);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-ring), var(--shadow-whisper);
   margin: 2rem auto;
   display: block;
-  max-width: 100%;
+  max-width: min(100%, 36rem);
   height: auto;
 }
 
@@ -142,5 +153,29 @@ h1, h2, h3, h4 {
 
   .prose img {
     margin: 2.5rem auto;
+  }
+}
+
+/* Dark mode — Claude dark theme adaptation */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: #b0aea5;
+    --color-text-light: #87867f;
+    --color-heading: #faf9f5;
+    --color-bg: #141413;
+    --color-bg-accent: #1e1e1c;
+    --color-bg-pink: #d97757;
+    --color-bg-peach: #141413;
+    --color-bg-dark: #0e0e0d;
+    --color-border: #30302e;
+    --color-border-prominent: #3d3d3a;
+    --color-card-bg: #1e1e1c;
+    --color-link: #e08a6d;
+    --color-dark-text: #87867f;
+    --color-button: #c96442;
+    --color-button-hover: #d97757;
+    --color-shadow: rgba(255, 255, 255, 0.04);
+    --shadow-ring: 0px 0px 0px 1px rgba(255, 255, 255, 0.08);
+    --shadow-whisper: 0px 4px 24px rgba(0, 0, 0, 0.3);
   }
 }
