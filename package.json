@@ -13,6 +13,9 @@
     "postinstall": "node scripts/patch-keystatic.mjs",
     "check": "astro check"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": ["sharp", "esbuild"]
+  },
   "dependencies": {
     "@astrojs/check": "^0.9.8",
     "@astrojs/markdoc": "^1.0.3",
@@ -31,6 +34,7 @@
     "astro": "^6.1.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2"
   }
