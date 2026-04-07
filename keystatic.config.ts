@@ -111,14 +111,41 @@ export default config({
     stagesThematiques: singleton({
       label: 'Stages thématiques',
       path: 'src/content/pages/stages-thematiques/',
-      format: { contentField: 'content' },
       schema: {
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         ...coverImageFields('stages-thematiques'),
+        introduction: fields.text({ label: 'Introduction', multiline: true }),
+        stages: fields.array(
+          fields.object({
+            name: fields.text({ label: 'Nom du stage' }),
+            price: fields.text({ label: 'Prix (ex: 40 € ou 40 €–90 €)' }),
+            duration: fields.text({ label: 'Durée (ex: 3h)' }),
+            shortDescription: fields.text({ label: 'Description courte (carte)', multiline: true }),
+            fullDescription: fields.text({ label: 'Description complète', multiline: true }),
+            dates: fields.text({ label: 'Prochaines dates', multiline: true }),
+            prerequisite: fields.text({ label: 'Pré-requis (optionnel)', multiline: true }),
+          }),
+          {
+            label: 'Stages',
+            itemLabel: (props) =>
+              `${props.fields.name.value || 'Stage'} — ${props.fields.price.value || '?'}`,
+          },
+        ),
+        faqItems: fields.array(
+          fields.object({
+            question: fields.text({ label: 'Question' }),
+            answer: fields.text({ label: 'Réponse', multiline: true }),
+          }),
+          {
+            label: 'Questions fréquentes',
+            itemLabel: (props) => props.fields.question.value || 'Question',
+          },
+        ),
+        crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
         schemaOffers: schemaOffersField(),
-        content: fields.markdoc({ label: 'Contenu de la page' }),
+        ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
     }),
     ateliersReguliers: singleton({

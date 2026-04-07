@@ -1,0 +1,153 @@
+title: Stages thématiques
+subtitle: Apprenez de nouvelles techniques de couture
+seoDescription: >-
+  Stages de couture à Revel et Verdalle (Tarn) : machine à coudre,
+  surjeteuse, patronage, sac. De 40€ à 90€ la séance, avec une couturière
+  professionnelle.
+coverImage: /src/assets/images/covers/stages-thematiques/coverImage.webp
+coverImageAlt: null
+introduction: >-
+  Envie de maîtriser une technique précise ? Isabelle vous guide en petits
+  groupes à Revel et Verdalle, du premier coup de pédale à la réalisation
+  finale. Débutants et confirmés bienvenus.
+stages:
+  - name: Initiation machine à coudre
+    price: 40 €
+    duration: 3h
+    shortDescription: >-
+      Découvrez les possibilités de votre machine grâce à des exercices
+      pratiques : boutonnières, fermeture éclair, points décoratifs.
+    fullDescription: |
+      Nous pratiquerons les différentes possibilités qu'offre votre machine grâce à de petits exercices : boutonnières, fermeture éclair, points décoratifs et nous finirons avec une petite réalisation, pochette ou étui. Vous pouvez venir avec des coupons de tissus, bouton et fermeture éclair mais je peux également proposer quelques fournitures.
+
+      Chaque machine étant différente, il est préférable d'apprendre sur sa propre machine et de venir avec tous les accessoires et sa notice. Je peux cependant prêter une machine (merci de me le demander au préalable). Prenez également un petit cahier pour prendre des notes afin de gagner en autonomie.
+    dates: |-
+      Samedi 10 janvier de 14h à 17h [40 € pour 3h de cours]
+      Jeudi 8 de 17h15 à 19h45 [33 € pour 2h30 de cours]
+      Jeudi 22 de 17h15 à 19h45
+      Samedi 24 de 17h15 à 19h45
+    prerequisite: ''
+  - name: Stage découverte de la couture
+    price: 40 €–90 €
+    duration: 3h–7h
+    shortDescription: >-
+      Initiation complète à la machine à coudre avec mise en pratique directe
+      et plusieurs petites réalisations à emporter.
+    fullDescription: |
+      Ce stage permet une bonne initiation à la machine à coudre grâce à de petits exercices et à la mise en pratique directe à travers plusieurs petites réalisations. Vous aurez aussi la satisfaction de repartir avec quelques créations. Deux formules sont proposées selon les périodes.
+
+      Formule complète — 90 € pour 7h d'atelier (vacances de la Toussaint) : trois demi-journées pour une découverte en profondeur.
+
+      Formule courte — 40 € pour 3h ou 65 € pour 5h d'atelier.
+    dates: |-
+      Formule complète :
+      Mercredi 22 octobre de 10h à 12h — prise en main de la machine à coudre
+      Jeudi 23 octobre de 10h à 12h — réaliser un tote-bag ou un sac à vrac
+      Vendredi 24 octobre de 10h à 13h — réaliser une petite trousse
+
+      Formule courte :
+      Jeudi 23 avril de 14h30 à 17h
+      Vendredi 24 avril de 14h30 à 17h
+    prerequisite: ''
+  - name: Stage surjeteuse
+    price: 65 €
+    duration: 5h
+    shortDescription: >-
+      Apprivoisez la surjeteuse : enfilage, réglages, points de base, puis
+      réalisation d'un t-shirt simple.
+    fullDescription: |
+      Ce stage propose une approche de cette étrange machine. Au programme : surmonter la première difficulté c'est-à-dire l'enfilage et le réglage, puis pratiquer quelques points de base et effectuer les corrections nécessaires et passer enfin à une réalisation simple pour apprivoiser la machine !
+    dates: |-
+      Jeudi 30 octobre de 14h à 16h30 — prise en main de la machine, enfilage et réglages
+      Vendredi 31 octobre de 14h à 16h30 — réalisation d'un t-shirt simple
+    prerequisite: Connaissance de base de la machine à coudre recommandée.
+  - name: Stage patronage
+    price: 40 €
+    duration: 3h
+    shortDescription: >-
+      Apprenez à tracer votre patron pour réaliser un buste de base à vos
+      propres mesures et créer votre modèle unique.
+    fullDescription: |
+      Vous rêvez de faire vos vêtements, vous avez des idées mais il vous manque la méthode… Si vous acceptez de passer par un peu de géométrie, vous apprendrez à tracer votre patron pour réaliser un buste de base à vos propres mesures.
+
+      À partir de là, vous pourrez apprendre à faire vous-même les transformations pour créer votre modèle unique !
+    dates: |-
+      25 octobre de 14h à 17h
+      29 novembre de 14h à 17h
+      10 janvier de 14h à 17h
+      14 février de 14h à 17h
+      21 mars de 14h à 17h
+      16 mai de 14h à 17h
+      20 juin de 14h à 17h
+    prerequisite: Connaissance de base de la machine à coudre recommandée.
+  - name: Stage banane
+    price: 50 €
+    duration: 4h
+    shortDescription: >-
+      Choisissez vos matières, vos tissus, votre style pour créer un accessoire
+      qui vous accompagne au quotidien !
+    fullDescription: |
+      Choisissez vos matières, vos tissus, votre style pour créer un accessoire qui vous accompagne au quotidien !
+    dates: |-
+      Mardi 28 avril de 14h à 18h
+    prerequisite: ''
+  - name: Stage sac et tote bag
+    price: 40 €
+    duration: 3h
+    shortDescription: >-
+      Réalisez un sac simple à vos mesures et dans le tissu de votre choix.
+      Accessible aux débutants sachant utiliser une machine à coudre.
+    fullDescription: |
+      C'est un stage accessible aux débutants sachant utiliser une machine à coudre. Il offre la possibilité de réaliser un sac simple à vos mesures et dans le tissu de votre choix.
+    dates: |-
+      Samedi 16 mai de 9h30 à 12h30
+      Samedi 20 juin de 9h30 à 12h30
+    prerequisite: Savoir utiliser une machine à coudre.
+faqItems:
+  - question: Quels sont les tarifs des stages de couture ?
+    answer: >-
+      Les tarifs varient en fonction du contenu du stage, de 40 € à 90 €. Le
+      tissu et les autres fournitures ne sont pas compris dans le prix. Pour
+      les stages thématiques, merci de régler une adhésion ponctuelle de 5 €.
+  - question: Faut-il avoir de l'expérience pour participer à un stage ?
+    answer: >-
+      Non, la plupart des stages sont ouverts aux débutants. L'initiation à la
+      machine à coudre et le stage découverte sont spécialement conçus pour les
+      personnes qui n'ont jamais cousu. Pour les stages surjeteuse et
+      patronage, une connaissance de base de la machine à coudre est
+      recommandée.
+  - question: Quel matériel faut-il apporter ?
+    answer: >-
+      Chaque participant vient avec sa propre machine à coudre, ses accessoires
+      et sa notice. Si vous n'avez pas de machine, Isabelle peut en prêter une
+      sur demande préalable. Apportez également un petit cahier pour prendre
+      des notes. Le tissu et les fournitures sont à votre charge, mais quelques
+      coupons peuvent être mis à disposition.
+  - question: Quelle est la taille des groupes ?
+    answer: >-
+      Les groupes sont volontairement limités à quelques participants pour
+      garantir un accompagnement personnalisé. Chacun progresse à son rythme
+      avec l'aide d'Isabelle.
+  - question: Comment s'inscrire à un stage ?
+    answer: >-
+      L'inscription se fait directement auprès d'Isabelle via le formulaire de
+      contact ou par téléphone. Les places étant limitées, il est conseillé de
+      réserver à l'avance.
+crossLinksText: >-
+  Vous souhaitez un suivi régulier ? Découvrez nos ateliers réguliers. Envie
+  d'une séance ponctuelle sans thème imposé ? Essayez nos après-midi couture
+  ouverts à tous.
+schemaOffers:
+  - name: Initiation machine à coudre
+    price: '40'
+  - name: Stage découverte de la couture
+    price: '90'
+  - name: Stage surjeteuse
+    price: '65'
+  - name: Stage patronage
+    price: '40'
+  - name: Stage banane
+    price: '50'
+  - name: Stage sac et tote bag
+    price: '40'
+ctaLabel: Demande d'information

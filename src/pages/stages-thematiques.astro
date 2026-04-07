@@ -1,37 +1,198 @@
 ---
-import ContentPage from '../components/ContentPage.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import StageCard from '../components/StageCard.astro';
+import ContactCTA from '../components/ContactCTA.astro';
 import { reader } from '../utils/reader';
+import { resolveImageUrl } from '../utils/images';
 
 const page = await reader.singletons.stagesThematiques.read();
 if (!page) throw new Error('Stages thématiques content not found');
-const contentNode = page.content ? await page.content() : null;
+
+const settings = await reader.singletons.siteSettings.read();
 const siteUrl = Astro.site?.origin;
 
+// OG image
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
+
+// Schema offers
 const offers = (page.schemaOffers ?? []).map((o) => ({
-  "@type": "Offer",
+  "@type": "Offer" as const,
   "name": o.name,
   "price": Number(o.price),
   "priceCurrency": "EUR",
 }));
+
+// FAQ schema
+const faqItems = page.faqItems ?? [];
+const faqSchema = faqItems.length > 0 ? {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": faqItems.map((item) => ({
+    "@type": "Question",
+    "name": item.question,
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": item.answer,
+    },
+  })),
+} : null;
+
+// Slug helper for anchor IDs
+const toSlug = (name: string) =>
+  name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+const stages = page.stages ?? [];
 ---
 
-<ContentPage
-  title={page.title}
-  subtitle={page.subtitle}
-  seoDescription={page.seoDescription}
-  contentNode={contentNode}
-  coverImage={page.coverImage ?? undefined}
->
-  <Fragment slot="page-head">
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Service",
-      "name": page.title,
-      "description": page.seoDescription,
-      "provider": { "@id": `${siteUrl}/#organization` },
-      "areaServed": { "@type": "AdministrativeArea", "name": "Tarn" },
-      "serviceType": "Cours de couture",
-      "offers": offers
-    }).replace(/<\//g, '<\\/')} />
+<BaseLayout title={page.title} description={page.seoDescription} ogImage={ogImage}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify([
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Accueil", "item": siteUrl },
+          { "@type": "ListItem", "position": 2, "name": page.title }
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": page.title,
+        "description": page.seoDescription,
+        "url": new URL(Astro.url.pathname, Astro.site).toString(),
+        "dateModified": new Date().toISOString().split('T')[0],
+        "author": {
+          "@type": "Person",
+          "name": settings?.authorName,
+          "jobTitle": settings?.authorJobTitle,
+          "url": `${siteUrl}/la-couturiere/`,
+          "sameAs": settings?.facebookUrl ? [settings.facebookUrl] : []
+        },
+        "isPartOf": { "@id": `${siteUrl}/#website` }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": page.title,
+        "description": page.seoDescription,
+        "provider": { "@id": `${siteUrl}/#organization` },
+        "areaServed": { "@type": "AdministrativeArea", "name": "Tarn" },
+        "serviceType": "Cours de couture",
+        "offers": offers
+      },
+      ...(faqSchema ? [faqSchema] : [])
+    ]).replace(/<\//g, '<\\/')} />
   </Fragment>
-</ContentPage>
+
+  <!-- 1. Hero -->
+  <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage ?? undefined} />
+
+  <!-- 2. Introduction -->
+  {page.introduction && (
+    <section class="py-16 md:py-20">
+      <div class="max-w-3xl mx-auto px-4 text-center">
+        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.introduction}</p>
+        <ContactCTA label={page.ctaLabel || undefined} />
+      </div>
+    </section>
+  )}
+
+  <!-- 3. Stage Cards -->
+  {stages.length > 0 && (
+    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+      <div class="max-w-4xl mx-auto px-4">
+        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10" style="font-family: var(--font-heading);">
+          Nos stages
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {stages.map((stage) => (
+            <StageCard
+              name={stage.name}
+              price={stage.price}
+              duration={stage.duration}
+              shortDescription={stage.shortDescription}
+              anchorId={toSlug(stage.name)}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- 4. Stage Details -->
+  {stages.length > 0 && (
+    <section class="py-16 md:py-20">
+      <div class="max-w-3xl mx-auto px-4 space-y-16">
+        {stages.map((stage) => (
+          <div id={toSlug(stage.name)} class="scroll-mt-24">
+            <h2 class="text-xl md:text-2xl font-bold text-[var(--color-heading)] mb-2" style="font-family: var(--font-heading);">
+              {stage.name}
+              <span class="ml-2 text-base font-medium text-[var(--color-button)]">{stage.price} — {stage.duration}</span>
+            </h2>
+            {stage.prerequisite && (
+              <p class="text-sm text-[var(--color-text-light)] italic mb-4">{stage.prerequisite}</p>
+            )}
+            <div class="prose">
+              {stage.fullDescription.split('\n\n').map((para) => (
+                <p>{para}</p>
+              ))}
+            </div>
+            {stage.dates && (
+              <div class="mt-4 p-4 rounded-xl bg-[var(--color-bg-accent)]">
+                <p class="text-sm font-semibold text-[var(--color-heading)] mb-2">Prochaines dates :</p>
+                <div class="text-sm text-[var(--color-text)] space-y-1">
+                  {stage.dates.split('\n').map((line) => (
+                    <p>{line}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+        <ContactCTA label={page.ctaLabel || undefined} />
+      </div>
+    </section>
+  )}
+
+  <!-- 5. FAQ -->
+  {faqItems.length > 0 && (
+    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+      <div class="max-w-3xl mx-auto px-4">
+        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10" style="font-family: var(--font-heading);">
+          Questions fréquentes
+        </h2>
+        <div class="space-y-6">
+          {faqItems.map((item) => (
+            <div>
+              <h3 class="text-lg font-semibold text-[var(--color-heading)]" style="font-family: var(--font-heading);">
+                {item.question}
+              </h3>
+              <p class="mt-2 text-[var(--color-text)] leading-relaxed">{item.answer}</p>
+            </div>
+          ))}
+        </div>
+        <ContactCTA label={page.ctaLabel || undefined} />
+      </div>
+    </section>
+  )}
+
+  <!-- 6. Cross-links -->
+  {page.crossLinksText && (
+    <section class="py-16 md:py-20">
+      <div class="max-w-3xl mx-auto px-4 text-center">
+        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.crossLinksText}</p>
+        <div class="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/ateliers-reguliers" class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+            Ateliers réguliers &rarr;
+          </a>
+          <a href="/un-apres-midi-couture" class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+            Un après-midi couture &rarr;
+          </a>
+        </div>
+      </div>
+    </section>
+  )}
+</BaseLayout>
