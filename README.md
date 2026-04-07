@@ -1,21 +1,21 @@
 # L'Atelier des Cousettes
 
-Website for L'Atelier des Cousettes, a sewing workshop located in Tarn, France. Built with Astro and deployed on Vercel.
+Site web de L'Atelier des Cousettes, un atelier de couture situé dans le Tarn, France. Construit avec Astro et déployé sur Vercel.
 
-**Live site:** [couture-tarn.fr](https://couture-tarn.fr)
+**Site en ligne :** [couture-tarn.fr](https://couture-tarn.fr)
 
-## Tech Stack
+## Stack technique
 
-- **Framework:** [Astro](https://astro.build/) 6
-- **CMS:** [Keystatic](https://keystatic.com/) (file-based headless CMS)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/) 4
-- **Testing:** [Vitest](https://vitest.dev/) 4
-- **Hosting:** [Vercel](https://vercel.com/)
-- **CI:** GitHub Actions (test → type check → build)
+- **Framework :** [Astro](https://astro.build/) 6
+- **CMS :** [Keystatic](https://keystatic.com/) (CMS headless basé sur fichiers)
+- **Styles :** [Tailwind CSS](https://tailwindcss.com/) 4
+- **Tests :** [Vitest](https://vitest.dev/) 4
+- **Hébergement :** [Vercel](https://vercel.com/)
+- **CI :** GitHub Actions (tests → vérification des types → build)
 
-## Getting Started
+## Démarrage
 
-### Prerequisites
+### Prérequis
 
 - Node.js 24.x
 - pnpm
@@ -26,13 +26,13 @@ Website for L'Atelier des Cousettes, a sewing workshop located in Tarn, France. 
 pnpm install
 ```
 
-### Development
+### Développement
 
 ```bash
 pnpm dev
 ```
 
-The site runs at `http://localhost:4321`. The Keystatic admin UI is available at `/keystatic`.
+Le site tourne sur `http://localhost:4321`. L'interface d'administration Keystatic est accessible sur `/keystatic`.
 
 ### Build
 
@@ -41,146 +41,146 @@ pnpm build
 pnpm preview
 ```
 
-### Testing
+### Tests
 
 ```bash
-pnpm test          # run once
-pnpm test:watch    # watch mode
+pnpm test          # exécution unique
+pnpm test:watch    # mode watch
 ```
 
-### Type Checking
+### Vérification des types
 
 ```bash
 pnpm check
 ```
 
-## Project Structure
+## Structure du projet
 
 ```text
 src/
-├── assets/images/       # Optimized images (covers, blog, creations, homepage, couturiere)
-├── components/          # Astro components
+├── assets/images/       # Images optimisées (covers, blog, créations, accueil, couturière)
+├── components/          # Composants Astro
 │   ├── BaseLayout       # → layouts/BaseLayout.astro (meta, header, footer, analytics)
-│   ├── Hero             # Cover image with overlay + title/subtitle
-│   ├── IntroSection     # Centered intro text + CTA
-│   ├── CrossLinksSection # Links to related service pages
-│   ├── FaqSection       # FAQ accordion (question/answer pairs)
-│   ├── ContactCTA       # Link to Tally.so contact form
-│   ├── ServiceCard      # Homepage service card with image + price
-│   ├── DetailCard       # Anchor-linked detail card (stages, ateliers)
-│   ├── BlogCard         # Blog listing card
-│   ├── AnimatriceSection # Instructor bio with photo
-│   ├── ValueProposition # Value proposition items
-│   ├── YouTubeEmbed     # Lazy-loaded YouTube embed
-│   ├── ContentPage      # Legacy Markdoc prose wrapper
-│   ├── Header           # Sticky nav + mobile hamburger + skip-to-content
+│   ├── Hero             # Image de couverture avec overlay + titre/sous-titre
+│   ├── IntroSection     # Texte d'introduction centré + CTA
+│   ├── CrossLinksSection # Liens vers les pages de services connexes
+│   ├── FaqSection       # Accordéon FAQ (questions/réponses)
+│   ├── ContactCTA       # Lien vers le formulaire de contact Tally.so
+│   ├── ServiceCard      # Carte service sur l'accueil avec image + tarif
+│   ├── DetailCard       # Carte détail avec ancre (stages, ateliers)
+│   ├── BlogCard         # Carte pour la liste du blog
+│   ├── AnimatriceSection # Bio de l'animatrice avec photo
+│   ├── ValueProposition # Éléments de proposition de valeur
+│   ├── YouTubeEmbed     # Intégration YouTube en chargement différé
+│   ├── ContentPage      # Wrapper Markdoc legacy pour pages prose
+│   ├── Header           # Navigation sticky + menu hamburger + aller au contenu
 │   └── Footer           # Contact, navigation, copyright
-├── content/             # Keystatic-managed content
-│   ├── blog/            # Blog articles (Markdoc .mdoc)
-│   ├── creations/       # Gallery items (YAML)
-│   ├── pages/           # Page singletons (YAML + Markdoc)
+├── content/             # Contenu géré par Keystatic
+│   ├── blog/            # Articles de blog (Markdoc .mdoc)
+│   ├── creations/       # Éléments de galerie (YAML)
+│   ├── pages/           # Singletons de pages (YAML + Markdoc)
 │   └── site-settings.yaml
 ├── layouts/
-│   └── BaseLayout.astro # HTML shell, meta tags, OG, analytics
-├── pages/               # File-based routing
+│   └── BaseLayout.astro # Shell HTML, balises meta, OG, analytics
+├── pages/               # Routage basé sur les fichiers
 ├── styles/
-│   └── global.css       # Theme tokens, fonts, prose styles
+│   └── global.css       # Tokens du thème, polices, styles prose
 └── utils/
-    ├── ateliers.ts      # Atelier group definitions (single source of truth)
-    ├── blog.ts          # filterPublishedPosts (date-based filtering)
-    ├── images.ts        # resolveImage, resolveImageUrl (glob-based resolution)
-    ├── nav.ts           # SERVICE_LINKS, getCrossLinks (cross-linking)
-    ├── navLinks.ts      # Main navigation menu links
-    ├── reader.ts        # Keystatic reader + getPageContext helper
-    ├── schema.ts        # JSON-LD builders (breadcrumb, page, service, FAQ)
+    ├── ateliers.ts      # Définitions des groupes d'ateliers (source unique de vérité)
+    ├── blog.ts          # filterPublishedPosts (filtrage par date)
+    ├── images.ts        # resolveImage, resolveImageUrl (résolution par glob)
+    ├── nav.ts           # SERVICE_LINKS, getCrossLinks (liens croisés)
+    ├── navLinks.ts      # Liens du menu de navigation principal
+    ├── reader.ts        # Lecteur Keystatic + helper getPageContext
+    ├── schema.ts        # Constructeurs JSON-LD (breadcrumb, page, service, FAQ)
     ├── strings.ts       # toSlug, formatFrenchDate, splitParagraphs, splitLines
-    └── __tests__/       # Unit tests (58 tests across 6 files)
+    └── __tests__/       # Tests unitaires (58 tests répartis sur 6 fichiers)
 ```
 
-## Content Pages
+## Pages du site
 
 | Page | Route | Description |
 | ---- | ----- | ----------- |
-| Accueil | `/` | Homepage with services, value props, blog, YouTube |
-| Ateliers réguliers | `/ateliers-reguliers` | Weekly/bi-weekly sewing workshops |
-| Stages thématiques | `/stages-thematiques` | Themed discovery workshops |
-| Un après-midi couture | `/un-apres-midi-couture` | Monthly afternoon sewing sessions |
-| La couturière | `/la-couturiere` | About the instructor (biography sections) |
-| Mes créations | `/mes-creations` | Portfolio / gallery with lightbox |
-| Blog | `/blog` | Blog listing + `/blog/[slug]` articles |
-| Mentions légales | `/mentions-legales` | Legal notices (noIndex) |
+| Accueil | `/` | Page d'accueil avec services, valeurs, blog, YouTube |
+| Ateliers réguliers | `/ateliers-reguliers` | Ateliers couture hebdomadaires/bimensuels |
+| Stages thématiques | `/stages-thematiques` | Stages de découverte à thème |
+| Un après-midi couture | `/un-apres-midi-couture` | Sessions couture mensuelles l'après-midi |
+| La couturière | `/la-couturiere` | À propos de l'animatrice (sections biographiques) |
+| Mes créations | `/mes-creations` | Portfolio / galerie avec lightbox |
+| Blog | `/blog` | Liste des articles + `/blog/[slug]` pour chaque article |
+| Mentions légales | `/mentions-legales` | Mentions légales (noIndex) |
 
-## Content Management (Keystatic)
+## Gestion de contenu (Keystatic)
 
-Content is managed through [Keystatic](https://keystatic.com/), a file-based headless CMS that stores content directly in the repository.
+Le contenu est géré via [Keystatic](https://keystatic.com/), un CMS headless basé sur fichiers qui stocke le contenu directement dans le dépôt.
 
-### Accessing the Admin UI
+### Accès à l'interface d'administration
 
-- **Local:** Run `pnpm dev` and navigate to `http://localhost:4321/keystatic`
-- **Production:** Go to `https://couture-tarn.fr/keystatic` (authenticates via GitHub)
+- **En local :** Lancer `pnpm dev` et naviguer vers `http://localhost:4321/keystatic`
+- **En production :** Aller sur `https://couture-tarn.fr/keystatic` (authentification via GitHub)
 
-### Storage Modes
+### Modes de stockage
 
-- **Local development:** Content is read/written directly to disk (`storage: local`)
-- **Production:** Content is committed to the GitHub repository (`storage: github`)
+- **Développement local :** Le contenu est lu/écrit directement sur le disque (`storage: local`)
+- **Production :** Le contenu est commité dans le dépôt GitHub (`storage: github`)
 
-### Content Types
+### Types de contenu
 
-**Singletons** (one-off pages):
+**Singletons** (pages uniques) :
 
-| Singleton | Path | Description |
-| --------- | ---- | ----------- |
-| Paramètres du site | `src/content/site-settings.yaml` | Site name, email, phones, social links, address |
-| Accueil | `src/content/pages/homepage/` | Homepage with YouTube video embed |
-| Ateliers réguliers | `src/content/pages/ateliers-reguliers/` | Regular workshops with grouped crénaux |
-| Stages thématiques | `src/content/pages/stages-thematiques/` | Themed workshops with detail cards |
-| Un après-midi couture | `src/content/pages/un-apres-midi-couture/` | Monthly afternoon sessions |
-| La couturière | `src/content/pages/la-couturiere/` | Biography sections with images |
-| Mes créations | `src/content/pages/mes-creations/` | Portfolio page settings |
-| Index blog | `src/content/pages/blog-index/` | Blog listing page settings |
-| Mentions légales | `src/content/pages/mentions-legales/` | Legal notices (Markdoc) |
+| Singleton | Chemin | Description |
+| --------- | ------ | ----------- |
+| Paramètres du site | `src/content/site-settings.yaml` | Nom du site, email, téléphones, réseaux sociaux, adresse |
+| Accueil | `src/content/pages/homepage/` | Page d'accueil avec vidéo YouTube |
+| Ateliers réguliers | `src/content/pages/ateliers-reguliers/` | Ateliers réguliers avec créneaux groupés |
+| Stages thématiques | `src/content/pages/stages-thematiques/` | Stages à thème avec cartes détaillées |
+| Un après-midi couture | `src/content/pages/un-apres-midi-couture/` | Sessions couture mensuelles |
+| La couturière | `src/content/pages/la-couturiere/` | Sections biographiques avec images |
+| Mes créations | `src/content/pages/mes-creations/` | Paramètres de la page portfolio |
+| Index blog | `src/content/pages/blog-index/` | Paramètres de la page liste du blog |
+| Mentions légales | `src/content/pages/mentions-legales/` | Mentions légales (Markdoc) |
 
-**Collections:**
+**Collections :**
 
-| Collection | Path | Description |
-| ---------- | ---- | ----------- |
-| Blog | `src/content/blog/*/index.mdoc` | Articles with cover image, publish date, SEO |
-| Créations | `src/content/creations/*` | Gallery items with image, category, display order |
+| Collection | Chemin | Description |
+| ---------- | ------ | ----------- |
+| Blog | `src/content/blog/*/index.mdoc` | Articles avec image de couverture, date de publication, SEO |
+| Créations | `src/content/creations/*` | Éléments de galerie avec image, catégorie, ordre d'affichage |
 
-### Cover Images
+### Images de couverture
 
-Cover images are stored per page in `src/assets/images/covers/<page-slug>/` and referenced in each singleton's schema. They are optimized by Astro's built-in image pipeline at build time.
+Les images de couverture sont stockées par page dans `src/assets/images/covers/<slug-page>/` et référencées dans le schéma de chaque singleton. Elles sont optimisées par le pipeline d'images d'Astro au moment du build.
 
 ## Architecture
 
-### Page Pattern
+### Patron de page
 
-All pages follow a consistent section-based structure:
+Toutes les pages suivent une structure par sections cohérente :
 
-1. **Hero** — cover image with overlay + title/subtitle
-2. **Introduction** — centered text + CTA (via `IntroSection`)
-3. **Content sections** — page-specific structured content
-4. **FAQ** — optional question/answer pairs (via `FaqSection`)
-5. **Cross-links** — links to related services (via `CrossLinksSection`)
+1. **Hero** — image de couverture avec overlay + titre/sous-titre
+2. **Introduction** — texte centré + CTA (via `IntroSection`)
+3. **Sections de contenu** — contenu structuré spécifique à la page
+4. **FAQ** — paires question/réponse optionnelles (via `FaqSection`)
+5. **Liens croisés** — liens vers les services connexes (via `CrossLinksSection`)
 
-Sections alternate between accent background (`bg-[var(--color-bg-accent)]`) and no background.
+Les sections alternent entre fond accent (`bg-[var(--color-bg-accent)]`) et fond neutre.
 
 ### SEO
 
-- JSON-LD schemas on every page (BreadcrumbList, WebPage, Service, FAQPage, Article, Person, LocalBusiness)
-- Schema builders in `src/utils/schema.ts` — `buildPageSchemas()`, `buildServicePageSchemas()`, `buildBreadcrumbSchema()`
-- Open Graph + Twitter Card meta tags via `BaseLayout`
-- Sitemap via `@astrojs/sitemap`, `robots.txt` allows AI crawlers, `llms.txt` for machine-readable summary
+- Schémas JSON-LD sur chaque page (BreadcrumbList, WebPage, Service, FAQPage, Article, Person, LocalBusiness)
+- Constructeurs de schémas dans `src/utils/schema.ts` — `buildPageSchemas()`, `buildServicePageSchemas()`, `buildBreadcrumbSchema()`
+- Balises meta Open Graph + Twitter Card via `BaseLayout`
+- Sitemap via `@astrojs/sitemap`, `robots.txt` autorise les crawlers IA, `llms.txt` pour un résumé lisible par les machines
 
-### Image Pipeline
+### Pipeline d'images
 
-- All images in `src/assets/images/` (never `public/`) for Astro optimization
-- `resolveImage()` / `resolveImageUrl()` resolve Keystatic paths via `import.meta.glob`
-- Components receive pre-resolved `ImageMetadata` (not raw paths)
-- Format: WebP, quality 60 (covers) / 80 (content), responsive widths
+- Toutes les images dans `src/assets/images/` (jamais `public/`) pour l'optimisation Astro
+- `resolveImage()` / `resolveImageUrl()` résolvent les chemins Keystatic via `import.meta.glob`
+- Les composants reçoivent des `ImageMetadata` pré-résolus (pas des chemins bruts)
+- Format : WebP, qualité 60 (couvertures) / 80 (contenu), largeurs responsives
 
-### Styling
+### Styles
 
-- Mobile-first Tailwind CSS with CSS custom properties from `global.css`
-- Fonts: Playfair Display Variable (headings), Manrope Variable (body)
-- `.heading-font` utility class for non-heading elements needing the heading font
+- Tailwind CSS mobile-first avec propriétés CSS personnalisées depuis `global.css`
+- Polices : Playfair Display Variable (titres), Manrope Variable (corps)
+- Classe utilitaire `.heading-font` pour les éléments non-titre nécessitant la police de titre
