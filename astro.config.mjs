@@ -14,7 +14,7 @@ export default defineConfig({
   integrations: [react(), markdoc(), keystatic(), sitemap()],
   vite: {
     build: {
-      chunkSizeWarningLimit: 1500,
+      chunkSizeWarningLimit: 5000,
     },
     plugins: [tailwindcss()],
     optimizeDeps: {
