@@ -2,14 +2,10 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
 import ContactCTA from '../components/ContactCTA.astro';
-import Markdoc from '@markdoc/markdoc';
 import { reader } from '../utils/reader';
 
 const page = await reader.singletons.ateliersReguliers.read();
 if (!page) throw new Error('Ateliers réguliers content not found');
-const contentNode = page.content ? await page.content() : null;
-const transformed = contentNode ? Markdoc.transform(contentNode.node) : null;
-const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
 
 /* ── Workshop data for Options B & C ── */
 const workshops = [
@@ -127,7 +123,7 @@ const days = ['tous', 'Mardi', 'Jeudi', 'Vendredi', 'Samedi'] as const;
     </div>
     <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage ?? undefined} altText={page.coverImageAlt ?? undefined} />
     <div class="max-w-3xl mx-auto px-4 prose overflow-visible">
-      <Fragment set:html={renderedContent} />
+      <p class="italic text-[var(--color-text-light)]">Contenu original migré vers la version structurée.</p>
       <ContactCTA />
     </div>
   </section>

@@ -5,6 +5,7 @@ import StageCard from '../components/StageCard.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import { reader } from '../utils/reader';
 import { resolveImageUrl } from '../utils/images';
+import { toSlug } from '../utils/strings';
 
 const page = await reader.singletons.stagesThematiques.read();
 if (!page) throw new Error('Stages thématiques content not found');
@@ -38,10 +39,6 @@ const faqSchema = faqItems.length > 0 ? {
     },
   })),
 } : null;
-
-// Slug helper for anchor IDs
-const toSlug = (name: string) =>
-  name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 const stages = page.stages ?? [];
 ---
@@ -100,61 +97,60 @@ const stages = page.stages ?? [];
     </section>
   )}
 
-  <!-- 3. Stage Cards -->
+  {/* 3. Stage Cards + 4. Stage Details */}
   {stages.length > 0 && (
-    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
-      <div class="max-w-4xl mx-auto px-4">
-        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10" style="font-family: var(--font-heading);">
-          Nos stages
-        </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {stages.map((stage) => (
-            <StageCard
-              name={stage.name}
-              price={stage.price}
-              duration={stage.duration}
-              shortDescription={stage.shortDescription}
-              anchorId={toSlug(stage.name)}
-            />
-          ))}
-        </div>
-      </div>
-    </section>
-  )}
-
-  <!-- 4. Stage Details -->
-  {stages.length > 0 && (
-    <section class="py-16 md:py-20">
-      <div class="max-w-3xl mx-auto px-4 space-y-16">
-        {stages.map((stage) => (
-          <div id={toSlug(stage.name)} class="scroll-mt-24">
-            <h2 class="text-xl md:text-2xl font-bold text-[var(--color-heading)] mb-2" style="font-family: var(--font-heading);">
-              {stage.name}
-              <span class="ml-2 text-base font-medium text-[var(--color-button)]">{stage.price} — {stage.duration}</span>
-            </h2>
-            {stage.prerequisite && (
-              <p class="text-sm text-[var(--color-text-light)] italic mb-4">{stage.prerequisite}</p>
-            )}
-            <div class="prose">
-              {stage.fullDescription.split('\n\n').map((para) => (
-                <p>{para}</p>
-              ))}
-            </div>
-            {stage.dates && (
-              <div class="mt-4 p-4 rounded-xl bg-[var(--color-bg-accent)]">
-                <p class="text-sm font-semibold text-[var(--color-heading)] mb-2">Prochaines dates :</p>
-                <div class="text-sm text-[var(--color-text)] space-y-1">
-                  {stage.dates.split('\n').map((line) => (
-                    <p>{line}</p>
-                  ))}
-                </div>
-              </div>
-            )}
+    <Fragment>
+      <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+        <div class="max-w-4xl mx-auto px-4">
+          <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10" style="font-family: var(--font-heading);">
+            {page.stagesSectionTitle || 'Nos stages'}
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {stages.map((stage) => (
+              <StageCard
+                name={stage.name}
+                price={stage.price}
+                duration={stage.duration}
+                shortDescription={stage.shortDescription}
+                anchorId={toSlug(stage.name)}
+              />
+            ))}
           </div>
-        ))}
-        <ContactCTA label={page.ctaLabel || undefined} />
-      </div>
-    </section>
+        </div>
+      </section>
+
+      <section class="py-16 md:py-20">
+        <div class="max-w-3xl mx-auto px-4 space-y-16">
+          {stages.map((stage) => (
+            <div id={toSlug(stage.name)} class="scroll-mt-24">
+              <h2 class="text-xl md:text-2xl font-bold text-[var(--color-heading)] mb-2" style="font-family: var(--font-heading);">
+                {stage.name}
+                <span class="ml-2 text-base font-medium text-[var(--color-button)]">{stage.price} — {stage.duration}</span>
+              </h2>
+              {stage.prerequisite && (
+                <p class="text-sm text-[var(--color-text-light)] italic mb-4">{stage.prerequisite}</p>
+              )}
+              <div class="prose">
+                {stage.fullDescription.split('\n\n').map((para) => (
+                  <p>{para}</p>
+                ))}
+              </div>
+              {stage.dates && (
+                <div class="mt-4 p-4 rounded-xl bg-[var(--color-bg-accent)]">
+                  <p class="text-sm font-semibold text-[var(--color-heading)] mb-2">Prochaines dates :</p>
+                  <div class="text-sm text-[var(--color-text)] space-y-1">
+                    {stage.dates.split('\n').map((line) => (
+                      <p>{line}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+          <ContactCTA label={page.ctaLabel || undefined} />
+        </div>
+      </section>
+    </Fragment>
   )}
 
   <!-- 5. FAQ -->
@@ -162,7 +158,7 @@ const stages = page.stages ?? [];
     <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
       <div class="max-w-3xl mx-auto px-4">
         <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10" style="font-family: var(--font-heading);">
-          Questions fréquentes
+          {page.faqSectionTitle || 'Questions fréquentes'}
         </h2>
         <div class="space-y-6">
           {faqItems.map((item) => (

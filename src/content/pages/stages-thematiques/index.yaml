@@ -5,11 +5,13 @@ seoDescription: >-
   surjeteuse, patronage, sac. De 40€ à 90€ la séance, avec une couturière
   professionnelle.
 coverImage: /src/assets/images/covers/stages-thematiques/coverImage.webp
-coverImageAlt: null
+coverImageAlt: Participantes cousant lors d'un stage thématique à l'Atelier des Cousettes
 introduction: >-
   Envie de maîtriser une technique précise ? Isabelle vous guide en petits
   groupes à Revel et Verdalle, du premier coup de pédale à la réalisation
   finale. Débutants et confirmés bienvenus.
+stagesSectionTitle: Nos stages
+faqSectionTitle: Questions fréquentes
 stages:
   - name: Initiation machine à coudre
     price: 40 €

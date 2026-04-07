@@ -1,0 +1,196 @@
+title: Ateliers réguliers
+subtitle: Progressez à votre rythme chaque semaine
+seoDescription: >-
+  Ateliers de couture réguliers à Revel et Verdalle (Tarn), tous niveaux,
+  petits groupes. De 25€ à 55€ par mois de septembre à juin.
+coverImage: /src/assets/images/covers/ateliers-reguliers/coverImage.webp
+coverImageAlt: Atelier de couture régulier en petits groupes à Revel
+introduction: >-
+  Rejoignez un groupe de couture convivial et progressez à votre rythme, de
+  septembre à juin. Isabelle vous accompagne sur le projet de votre choix en
+  petits groupes à Revel et Verdalle.
+creneauxSectionTitle: Nos créneaux
+faqSectionTitle: Questions fréquentes
+creneaux:
+  - name: Atelier de Verdalle
+    location: Verdalle
+    day: 2 fois par mois, le vendredi
+    time: Calendrier à venir
+    group: verdalle
+    price: 50 €/mois
+    priceDetails: >-
+      Paiement mensuel de 50 € pour 2 ateliers de 2h30 par mois.
+    dates: |-
+      Premier atelier vendredi 12 septembre
+      Calendrier en cours de publication.
+    note: Calendrier en cours
+  - name: Atelier du mardi après-midi
+    location: Revel
+    day: 1 à 2 fois par mois, le mardi
+    time: 14h à 17h
+    group: revel-adultes
+    price: 33 € ou 55 €/mois
+    priceDetails: |
+      Paiement mensuel de 55 € pour 2 ateliers de 3h (de septembre à juin).
+
+      Ou paiement mensuel de 33 € pour 1 atelier de 3h (de septembre à juin).
+    dates: |-
+      Premier atelier : mardi 23 septembre
+      14 octobre
+      4 novembre
+      16 décembre
+      13 janvier
+      10 février
+      10 mars
+      14 avril
+      19 mai
+      9 juin
+    note: ''
+  - name: Atelier du jeudi après-midi
+    location: Revel
+    day: 2 fois par mois, le jeudi
+    time: 14h à 17h
+    group: revel-adultes
+    price: 55 €/mois
+    priceDetails: >-
+      Paiement mensuel de 55 € pour 2 ateliers de 3h (d'octobre à juin).
+    dates: |-
+      Septembre : 18
+      Octobre : 2 et 9
+      Novembre : 6 et 20
+      Décembre : 4 et 18
+      Janvier : 8 et 22
+      Février : 5 et 19
+      Mars : 12 et 26
+      Avril : 2 et 16
+      Mai : 7 et 21
+      Juin : 4 et 18
+    note: ''
+  - name: Atelier du jeudi fin de journée
+    location: Revel
+    day: 1 à 2 fois par mois, le jeudi
+    time: 17h30 à 19h30
+    group: revel-adultes
+    price: 25 € la séance
+    priceDetails: >-
+      Paiement de 25 € pour 2h d'atelier. Selon la demande du groupe : une ou
+      deux fois par mois.
+    dates: |-
+      Septembre : 18
+      Octobre : 2 et 9
+      Novembre : 6 et 20
+      Décembre : 4 et 18
+      Janvier : 8 et 22
+      Février : 5 et 19
+      Mars : 12 et 26
+      Avril : 2 et 16
+      Mai : 7 et 21
+      Juin : 4 et 18
+    note: ''
+  - name: Atelier du samedi matin
+    location: Revel
+    day: 1 à 2 fois par mois, le samedi
+    time: 9h30 à 12h30
+    group: revel-adultes
+    price: 37 €/mois
+    priceDetails: >-
+      Paiement mensuel de 37 € d'octobre à juin.
+    dates: |-
+      Octobre : 4 et 25
+      Novembre : 29
+      Décembre : 20
+      Janvier : 31
+      Février : 21
+      Mars : 21
+      Avril : 18
+      Mai : 9
+      Juin : 6
+    note: ''
+  - name: Atelier du samedi après-midi
+    location: Revel
+    day: 2 fois par mois, le samedi
+    time: 14h à 17h
+    group: revel-adultes
+    price: 33 € ou 55 €/mois
+    priceDetails: |
+      Deux forfaits annuels au choix (de septembre à juin), payables mensuellement :
+
+      Forfait 10 séances : 33 €/mois.
+      Forfait 20 séances : 55 €/mois.
+    dates: |-
+      Septembre : 13 et 27
+      Octobre : 4 et 11
+      Novembre : 8 et 22
+      Décembre : 13 et 20
+      Janvier : 24 et 31
+      Février : 7 et 21
+      Mars : 14 et 28
+      Avril : 11 et 18
+      Mai : 9 et 30
+      Juin : 6 et 27
+    note: ''
+  - name: Ateliers enfants samedi
+    location: Revel
+    day: 1 à 2 fois par mois, le samedi
+    time: 10h à 12h
+    group: revel-enfants
+    price: 30 €/mois
+    priceDetails: >-
+      Paiement mensuel de 30 € de septembre à juin.
+    dates: |-
+      Septembre : 13 et 27
+      Octobre : 11
+      Novembre : 8 et 22
+      Décembre : 13
+      Janvier : 10 et 24
+      Février : 7 et 14
+      Mars : 14 et 28
+      Avril : 4 et 11
+      Mai : 30
+      Juin : 27
+    note: ''
+faqItems:
+  - question: Quels sont les tarifs des ateliers réguliers ?
+    answer: >-
+      Les tarifs vont de 25 € à 55 € par mois selon la formule choisie. Le
+      tissu et les fournitures ne sont pas compris. Pour les ateliers
+      réguliers, l'adhésion annuelle à l'association Les P'tits Piafs est de
+      15 €.
+  - question: Faut-il apporter son matériel ?
+    answer: >-
+      Chaque participant vient avec sa propre machine à coudre, ses accessoires
+      et sa notice. Si vous n'avez pas de machine, Isabelle peut en prêter une
+      sur demande préalable. Apportez également vos fournitures (tissu, fils,
+      fermetures éclair) ainsi qu'un petit cahier pour prendre des notes et
+      gagner en autonomie.
+  - question: Quel niveau faut-il pour s'inscrire ?
+    answer: >-
+      Les ateliers sont ouverts à tous les niveaux, y compris les grands
+      débutants. Isabelle adapte son accompagnement au niveau de chaque
+      participant. Que vous n'ayez jamais touché une machine à coudre ou que
+      vous souhaitiez vous perfectionner, vous êtes le bienvenu.
+  - question: Comment fonctionne l'inscription ?
+    answer: >-
+      L'inscription se fait auprès d'Isabelle pour la saison entière (de
+      septembre à juin). Le paiement est mensuel. Les places étant limitées
+      pour garantir la qualité de l'accompagnement, il est conseillé de
+      s'inscrire dès la rentrée.
+  - question: Que peut-on réaliser en atelier ?
+    answer: >-
+      Vous venez avec le projet de votre choix : vêtements, accessoires,
+      décoration, retouches. Vous pouvez aussi vous laisser inspirer par les
+      revues mises à disposition. Isabelle vous guide pas à pas dans la
+      réalisation de votre projet, de la coupe à la finition.
+crossLinksText: >-
+  Envie de découvrir une technique précise ? Consultez nos stages thématiques.
+  Vous pouvez aussi venir ponctuellement lors d'un après-midi couture.
+schemaOffers:
+  - name: Atelier 2h (une séance)
+    price: '25'
+  - name: Forfait mensuel 1 atelier/mois
+    price: '33'
+  - name: Forfait mensuel 2 ateliers/mois
+    price: '55'
+  - name: Ateliers enfants (mensuel)
+    price: '30'
+ctaLabel: Demande d'information

@@ -117,6 +117,8 @@ export default config({
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         ...coverImageFields('stages-thematiques'),
         introduction: fields.text({ label: 'Introduction', multiline: true }),
+        stagesSectionTitle: fields.text({ label: 'Titre section stages' }),
+        faqSectionTitle: fields.text({ label: 'Titre section FAQ' }),
         stages: fields.array(
           fields.object({
             name: fields.text({ label: 'Nom du stage' }),
@@ -151,14 +153,53 @@ export default config({
     ateliersReguliers: singleton({
       label: 'Ateliers réguliers',
       path: 'src/content/pages/ateliers-reguliers/',
-      format: { contentField: 'content' },
       schema: {
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         ...coverImageFields('ateliers-reguliers'),
+        introduction: fields.text({ label: 'Introduction', multiline: true }),
+        creneauxSectionTitle: fields.text({ label: 'Titre section créneaux' }),
+        faqSectionTitle: fields.text({ label: 'Titre section FAQ' }),
+        creneaux: fields.array(
+          fields.object({
+            name: fields.text({ label: 'Nom du créneau' }),
+            location: fields.text({ label: 'Lieu (ex: Revel, Verdalle)' }),
+            day: fields.text({ label: 'Jour (ex: Jeudi)' }),
+            time: fields.text({ label: 'Horaire (ex: 14h à 17h)' }),
+            group: fields.select({
+              label: 'Groupe (navigation)',
+              options: [
+                { label: 'Revel — Adultes', value: 'revel-adultes' },
+                { label: 'Revel — Enfants', value: 'revel-enfants' },
+                { label: 'Verdalle', value: 'verdalle' },
+              ],
+              defaultValue: 'revel-adultes',
+            }),
+            price: fields.text({ label: 'Tarif résumé (ex: 55 €/mois)' }),
+            priceDetails: fields.text({ label: 'Détail tarifaire', multiline: true }),
+            dates: fields.text({ label: 'Calendrier de la saison', multiline: true }),
+            note: fields.text({ label: 'Note (optionnel)', multiline: true }),
+          }),
+          {
+            label: 'Créneaux',
+            itemLabel: (props) =>
+              `${props.fields.name.value || 'Créneau'} — ${props.fields.location.value || '?'}`,
+          },
+        ),
+        faqItems: fields.array(
+          fields.object({
+            question: fields.text({ label: 'Question' }),
+            answer: fields.text({ label: 'Réponse', multiline: true }),
+          }),
+          {
+            label: 'Questions fréquentes',
+            itemLabel: (props) => props.fields.question.value || 'Question',
+          },
+        ),
+        crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
         schemaOffers: schemaOffersField(),
-        content: fields.markdoc({ label: 'Contenu de la page' }),
+        ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
     }),
     apresMidiCouture: singleton({

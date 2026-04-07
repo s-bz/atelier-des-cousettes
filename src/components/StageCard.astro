@@ -24,8 +24,10 @@ const { name, price, duration, shortDescription, anchorId } = Astro.props;
 <style>
   .stage-card {
     box-shadow: var(--shadow-ring), var(--shadow-whisper);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
   .stage-card:hover {
-    box-shadow: var(--shadow-ring), var(--shadow-whisper);
+    box-shadow: var(--shadow-ring), 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
   }
 </style>
