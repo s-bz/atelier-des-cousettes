@@ -1,0 +1,499 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import ContactCTA from '../components/ContactCTA.astro';
+import Markdoc from '@markdoc/markdoc';
+import { reader } from '../utils/reader';
+
+const page = await reader.singletons.ateliersReguliers.read();
+if (!page) throw new Error('Ateliers réguliers content not found');
+const contentNode = page.content ? await page.content() : null;
+const transformed = contentNode ? Markdoc.transform(contentNode.node) : null;
+const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
+
+/* ── Workshop data for Options B & C ── */
+const workshops = [
+  {
+    id: 'verdalle',
+    location: 'Verdalle',
+    day: 'Vendredi',
+    time: '2h30',
+    schedule: 'Horaire à confirmer',
+    price: '50€/mois',
+    priceDetail: '2 ateliers de 2h30 par mois',
+    audience: 'adultes',
+    dates: ['12 septembre (premier atelier)', 'Calendrier en cours'],
+  },
+  {
+    id: 'mardi-aprem',
+    location: 'Revel',
+    day: 'Mardi',
+    time: '14h – 17h',
+    schedule: '3h par séance',
+    price: '33€ ou 55€/mois',
+    priceDetail: '1 atelier : 33€ · 2 ateliers : 55€',
+    audience: 'adultes',
+    dates: ['23 sept.', '14 oct.', '4 nov.', '16 déc.', '13 janv.', '10 fév.', '10 mars', '14 avr.', '19 mai', '9 juin'],
+  },
+  {
+    id: 'jeudi-aprem',
+    location: 'Revel',
+    day: 'Jeudi',
+    time: '14h – 17h',
+    schedule: '3h par séance',
+    price: '55€/mois',
+    priceDetail: '2 ateliers de 3h',
+    audience: 'adultes',
+    dates: ['18 sept.', '2 & 9 oct.', '6 & 20 nov.', '4 & 18 déc.', '8 & 22 janv.', '5 & 19 fév.', '12 & 26 mars', '2 & 16 avr.', '7 & 21 mai', '4 & 18 juin'],
+  },
+  {
+    id: 'jeudi-soir',
+    location: 'Revel',
+    day: 'Jeudi',
+    time: '17h30 – 19h30',
+    schedule: '2h par séance',
+    price: '25€/séance',
+    priceDetail: 'Paiement à la séance',
+    audience: 'adultes',
+    dates: ['18 sept.', '2 & 9 oct.', '6 & 20 nov.', '4 & 18 déc.', '8 & 22 janv.', '5 & 19 fév.', '12 & 26 mars', '2 & 16 avr.', '7 & 21 mai', '4 & 18 juin'],
+  },
+  {
+    id: 'samedi-matin-ados',
+    location: 'Revel',
+    day: 'Samedi',
+    time: '9h30 – 12h30',
+    schedule: '3h par séance',
+    price: '37€/mois',
+    priceDetail: "D'octobre à juin",
+    audience: 'ados-adultes',
+    dates: ['4 & 25 oct.', '29 nov.', '20 déc.', '31 janv.', '21 fév.', '21 mars', '18 avr.', '9 mai', '6 juin'],
+  },
+  {
+    id: 'samedi-aprem',
+    location: 'Revel',
+    day: 'Samedi',
+    time: '14h – 17h',
+    schedule: '3h par séance',
+    price: '33€ ou 55€/mois',
+    priceDetail: '10 ateliers : 33€ · 20 ateliers : 55€',
+    audience: 'adultes',
+    dates: ['13 & 27 sept.', '4 & 11 oct.', '8 & 22 nov.', '13 & 20 déc.', '24 & 31 janv.', '7 & 21 fév.', '14 & 28 mars', '11 & 18 avr.', '9 & 30 mai', '6 & 27 juin'],
+  },
+  {
+    id: 'samedi-enfants',
+    location: 'Revel',
+    day: 'Samedi',
+    time: '10h – 12h',
+    schedule: '2h par séance',
+    price: '30€/mois',
+    priceDetail: 'De septembre à juin',
+    audience: 'enfants',
+    dates: ['13 & 27 sept.', '11 oct.', '8 & 22 nov.', '13 déc.', '10 & 24 janv.', '7 & 14 fév.', '14 & 28 mars', '4 & 11 avr.', '30 mai', '27 juin'],
+  },
+];
+
+const audiences = ['tous', 'adultes', 'ados-adultes', 'enfants'] as const;
+const audienceLabels: Record<string, string> = {
+  'tous': 'Tous',
+  'adultes': 'Adultes',
+  'ados-adultes': 'Ados & adultes',
+  'enfants': 'Enfants',
+};
+const days = ['tous', 'Mardi', 'Jeudi', 'Vendredi', 'Samedi'] as const;
+---
+
+<BaseLayout title="Comparaison — Ateliers réguliers" description="Page de comparaison des mises en page" noIndex={true}>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- Version selector sticky bar                             -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-[var(--color-border)] py-3 px-4">
+    <div class="max-w-5xl mx-auto flex flex-wrap gap-3 justify-center text-sm font-bold">
+      <a href="#current" class="px-4 py-2 rounded-full bg-[var(--color-bg-dark)] text-white">Actuelle</a>
+      <a href="#option-a" class="px-4 py-2 rounded-full bg-[var(--color-button)]">Option A</a>
+      <a href="#option-b" class="px-4 py-2 rounded-full bg-[var(--color-button)]">Option B</a>
+      <a href="#option-c" class="px-4 py-2 rounded-full bg-[var(--color-button)]">Option C</a>
+    </div>
+  </nav>
+
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- CURRENT VERSION                                         -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section id="current" class="scroll-mt-16">
+    <div class="bg-[var(--color-bg-dark)] text-white text-center py-4 px-4">
+      <span class="text-xs uppercase tracking-widest font-bold opacity-70">Version</span>
+      <h2 class="text-2xl md:text-3xl font-black mt-1" style="font-family: var(--font-heading); color: white;">Actuelle</h2>
+    </div>
+    <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage ?? undefined} altText={page.coverImageAlt ?? undefined} />
+    <div class="max-w-3xl mx-auto px-4 prose overflow-visible">
+      <Fragment set:html={renderedContent} />
+      <ContactCTA />
+    </div>
+  </section>
+
+  <div class="h-4 bg-[var(--color-border)]"></div>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- OPTION A — Content restructure                          -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section id="option-a" class="scroll-mt-16">
+    <div class="bg-[var(--color-button-orange)] text-center py-4 px-4">
+      <span class="text-xs uppercase tracking-widest font-bold opacity-70">Version</span>
+      <h2 class="text-2xl md:text-3xl font-black mt-1" style="font-family: var(--font-heading);">Option A — Restructuration du contenu</h2>
+      <p class="text-sm mt-1 opacity-80">Même rendu prose, contenu réorganisé avec un résumé en tête</p>
+    </div>
+    <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage ?? undefined} altText={page.coverImageAlt ?? undefined} />
+
+    <div class="max-w-3xl mx-auto px-4 prose overflow-visible">
+      <p>
+        Les ateliers de couture réguliers de L'Atelier des Cousettes ont lieu à <strong>Revel</strong> et <strong>Verdalle</strong>,
+        dans le Tarn, de septembre à juin. Animés par Isabelle Bultez, couturière diplômée CAP,
+        ces ateliers sont ouverts à tous les niveaux. Groupes réduits, suivi individualisé.
+      </p>
+
+      <!-- Quick-glance summary -->
+      <h2>En un coup d'œil</h2>
+      <table>
+        <thead>
+          <tr><th>Jour</th><th>Horaire</th><th>Lieu</th><th>Tarif</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Mardi</td><td>14h – 17h</td><td>Revel</td><td>33€ ou 55€/mois</td></tr>
+          <tr><td>Jeudi</td><td>14h – 17h</td><td>Revel</td><td>55€/mois</td></tr>
+          <tr><td>Jeudi</td><td>17h30 – 19h30</td><td>Revel</td><td>25€/séance</td></tr>
+          <tr><td>Samedi matin</td><td>9h30 – 12h30</td><td>Revel</td><td>37€/mois</td></tr>
+          <tr><td>Samedi après-midi</td><td>14h – 17h</td><td>Revel</td><td>33€ ou 55€/mois</td></tr>
+          <tr><td>Samedi enfants</td><td>10h – 12h</td><td>Revel</td><td>30€/mois</td></tr>
+          <tr><td>Vendredi</td><td>2h30</td><td>Verdalle</td><td>50€/mois</td></tr>
+        </tbody>
+      </table>
+      <p><em>Adhésion annuelle à l'association Les P'tits Piafs : <strong>15€</strong></em></p>
+
+      <h2>Calendrier détaillé — Revel</h2>
+
+      <h3>Mardi après-midi (14h – 17h)</h3>
+      <p>Premier atelier : mardi 23 septembre</p>
+      <p>14 oct. · 4 nov. · 16 déc. · 13 janv. · 10 fév. · 10 mars · 14 avr. · 19 mai · 9 juin</p>
+      <p><strong>55€/mois (2 ateliers) ou 33€/mois (1 atelier) — de septembre à juin</strong></p>
+
+      <h3>Jeudi après-midi (14h – 17h)</h3>
+      <p>18 sept. · 2 & 9 oct. · 6 & 20 nov. · 4 & 18 déc. · 8 & 22 janv. · 5 & 19 fév. · 12 & 26 mars · 2 & 16 avr. · 7 & 21 mai · 4 & 18 juin</p>
+      <p><strong>55€/mois (2 ateliers de 3h) — d'octobre à juin</strong></p>
+
+      <h3>Jeudi fin de journée (17h30 – 19h30)</h3>
+      <p>Mêmes dates que le jeudi après-midi · une ou deux fois par mois selon la demande</p>
+      <p><strong>25€ par séance de 2h</strong></p>
+
+      <h3>Samedi matin — ados & adultes (9h30 – 12h30)</h3>
+      <p>4 & 25 oct. · 29 nov. · 20 déc. · 31 janv. · 21 fév. · 21 mars · 18 avr. · 9 mai · 6 juin</p>
+      <p><strong>37€/mois d'octobre à juin</strong></p>
+
+      <h3>Samedi après-midi (14h – 17h)</h3>
+      <p>13 & 27 sept. · 4 & 11 oct. · 8 & 22 nov. · 13 & 20 déc. · 24 & 31 janv. · 7 & 21 fév. · 14 & 28 mars · 11 & 18 avr. · 9 & 30 mai · 6 & 27 juin</p>
+      <p><strong>10 ateliers : 33€/mois · 20 ateliers : 55€/mois — de septembre à juin</strong></p>
+
+      <h3>Samedi enfants (10h – 12h)</h3>
+      <p>13 & 27 sept. · 11 oct. · 8 & 22 nov. · 13 déc. · 10 & 24 janv. · 7 & 14 fév. · 14 & 28 mars · 4 & 11 avr. · 30 mai · 27 juin</p>
+      <p><strong>30€/mois de septembre à juin</strong></p>
+
+      <h2>Calendrier détaillé — Verdalle</h2>
+      <p>Premier atelier vendredi 12 septembre · Calendrier en cours</p>
+      <p><strong>50€/mois pour 2 ateliers de 2h30</strong></p>
+
+      <hr />
+      <p>
+        Envie de découvrir une technique précise ? Consultez nos <a href="/stages-thematiques">stages thématiques</a>.
+        Vous pouvez aussi venir ponctuellement lors d'un <a href="/un-apres-midi-couture">après-midi couture</a>.
+      </p>
+
+      <ContactCTA />
+    </div>
+  </section>
+
+  <div class="h-4 bg-[var(--color-border)]"></div>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- OPTION B — Workshop cards                               -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section id="option-b" class="scroll-mt-16">
+    <div class="bg-[var(--color-bg-pink)] text-center py-4 px-4">
+      <span class="text-xs uppercase tracking-widest font-bold opacity-70">Version</span>
+      <h2 class="text-2xl md:text-3xl font-black mt-1" style="font-family: var(--font-heading);">Option B — Fiches ateliers</h2>
+      <p class="text-sm mt-1 opacity-80">Cartes visuelles par atelier + tableau des tarifs</p>
+    </div>
+    <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage ?? undefined} altText={page.coverImageAlt ?? undefined} />
+
+    <div class="max-w-5xl mx-auto px-4 py-8 md:py-12">
+      <!-- Intro -->
+      <p class="max-w-3xl mx-auto text-center text-lg mb-10">
+        Ateliers ouverts à tous les niveaux, petits groupes, suivi individualisé par Isabelle Bultez (CAP couture flou).
+        De septembre à juin, à <strong>Revel</strong> et <strong>Verdalle</strong>.
+      </p>
+
+      <!-- Pricing overview -->
+      <div class="bg-[var(--color-bg-peach)] rounded-[var(--radius-xl)] p-6 md:p-8 mb-10 max-w-3xl mx-auto">
+        <h2 class="text-xl md:text-2xl font-black mb-4 text-center" style="font-family: var(--font-heading);">Tarifs en un coup d'œil</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b-2 border-[var(--color-button)]">
+                <th class="text-left py-2 pr-4">Formule</th>
+                <th class="text-right py-2">Tarif</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-[var(--color-border)]"><td class="py-2 pr-4">1 atelier / mois (3h)</td><td class="text-right font-bold">33€/mois</td></tr>
+              <tr class="border-b border-[var(--color-border)]"><td class="py-2 pr-4">2 ateliers / mois (3h)</td><td class="text-right font-bold">55€/mois</td></tr>
+              <tr class="border-b border-[var(--color-border)]"><td class="py-2 pr-4">Séance unique (2h)</td><td class="text-right font-bold">25€</td></tr>
+              <tr class="border-b border-[var(--color-border)]"><td class="py-2 pr-4">Samedi matin ados & adultes</td><td class="text-right font-bold">37€/mois</td></tr>
+              <tr class="border-b border-[var(--color-border)]"><td class="py-2 pr-4">Ateliers enfants</td><td class="text-right font-bold">30€/mois</td></tr>
+              <tr class="border-b border-[var(--color-border)]"><td class="py-2 pr-4">Verdalle (2×2h30)</td><td class="text-right font-bold">50€/mois</td></tr>
+              <tr><td class="py-2 pr-4 text-[var(--color-text-light)]">Adhésion annuelle (Les P'tits Piafs)</td><td class="text-right font-bold">15€</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Workshop cards -->
+      <h2 class="text-xl md:text-2xl font-black mb-6 text-center" style="font-family: var(--font-heading);">Tous les créneaux</h2>
+      <div class="grid gap-5 md:grid-cols-2">
+        {workshops.map((w) => (
+          <div class="bg-[var(--color-card-bg)] rounded-[var(--radius-xl)] p-5 md:p-6 flex flex-col">
+            {/* Header */}
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <h3 class="text-lg font-black leading-tight" style="font-family: var(--font-heading);">{w.day} · {w.time}</h3>
+                <p class="text-sm text-[var(--color-text-light)] mt-0.5">{w.location} · {w.schedule}</p>
+              </div>
+              <span class={`shrink-0 text-xs font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${w.audience === 'enfants' ? 'bg-[var(--color-bg-peach)]' : w.audience === 'ados-adultes' ? 'bg-[var(--color-bg-pink)]' : 'bg-[var(--color-button)]'}`}>
+                {w.audience === 'enfants' ? 'Enfants' : w.audience === 'ados-adultes' ? 'Ados & adultes' : 'Adultes'}
+              </span>
+            </div>
+            {/* Price */}
+            <div class="mb-3">
+              <span class="text-xl font-black" style="font-family: var(--font-heading);">{w.price}</span>
+              <span class="text-sm text-[var(--color-text-light)] ml-2">{w.priceDetail}</span>
+            </div>
+            {/* Dates — collapsible */}
+            <details class="mt-auto">
+              <summary class="cursor-pointer text-sm font-bold text-[var(--color-heading)] hover:opacity-70 select-none">
+                Voir les dates ▾
+              </summary>
+              <p class="mt-2 text-sm text-[var(--color-text-light)] leading-relaxed">
+                {w.dates.join(' · ')}
+              </p>
+            </details>
+          </div>
+        ))}
+      </div>
+
+      <!-- Cross-links -->
+      <div class="max-w-3xl mx-auto mt-10 text-center text-[var(--color-text-light)]">
+        <p>
+          Envie de découvrir une technique précise ? Consultez nos <a href="/stages-thematiques" class="underline text-[var(--color-heading)] hover:opacity-70">stages thématiques</a>.
+          Vous pouvez aussi venir ponctuellement lors d'un <a href="/un-apres-midi-couture" class="underline text-[var(--color-heading)] hover:opacity-70">après-midi couture</a>.
+        </p>
+      </div>
+
+      <ContactCTA />
+    </div>
+  </section>
+
+  <div class="h-4 bg-[var(--color-border)]"></div>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- OPTION C — Interactive filters                          -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section id="option-c" class="scroll-mt-16">
+    <div class="bg-[var(--color-bg-accent)] text-center py-4 px-4">
+      <span class="text-xs uppercase tracking-widest font-bold opacity-70">Version</span>
+      <h2 class="text-2xl md:text-3xl font-black mt-1" style="font-family: var(--font-heading);">Option C — Filtres interactifs</h2>
+      <p class="text-sm mt-1 opacity-80">Cartes filtrables par jour et public</p>
+    </div>
+    <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage ?? undefined} altText={page.coverImageAlt ?? undefined} />
+
+    <div class="max-w-5xl mx-auto px-4 py-8 md:py-12">
+      <p class="max-w-3xl mx-auto text-center text-lg mb-8">
+        Ateliers ouverts à tous les niveaux, petits groupes, suivi individualisé par Isabelle Bultez (CAP couture flou).
+        De septembre à juin, à <strong>Revel</strong> et <strong>Verdalle</strong>.
+      </p>
+
+      <!-- Filter bar -->
+      <div class="flex flex-wrap gap-3 justify-center mb-8" id="filter-bar">
+        <div class="flex flex-wrap gap-2 items-center">
+          <span class="text-xs font-bold uppercase tracking-wide text-[var(--color-text-light)]">Jour :</span>
+          {days.map((d) => (
+            <button
+              data-filter-day={d}
+              class={`filter-day-btn px-3 py-1.5 text-sm font-bold rounded-full transition-all ${d === 'tous' ? 'bg-[var(--color-bg-dark)] text-white' : 'bg-[var(--color-card-bg)]'}`}
+            >
+              {d === 'tous' ? 'Tous' : d}
+            </button>
+          ))}
+        </div>
+        <div class="flex flex-wrap gap-2 items-center">
+          <span class="text-xs font-bold uppercase tracking-wide text-[var(--color-text-light)]">Public :</span>
+          {audiences.map((a) => (
+            <button
+              data-filter-audience={a}
+              class={`filter-audience-btn px-3 py-1.5 text-sm font-bold rounded-full transition-all ${a === 'tous' ? 'bg-[var(--color-bg-dark)] text-white' : 'bg-[var(--color-card-bg)]'}`}
+            >
+              {audienceLabels[a]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <!-- Filterable cards -->
+      <div class="grid gap-5 md:grid-cols-2" id="filterable-cards">
+        {workshops.map((w) => (
+          <div
+            class="workshop-card bg-[var(--color-card-bg)] rounded-[var(--radius-xl)] p-5 md:p-6 flex flex-col transition-all"
+            data-day={w.day}
+            data-audience={w.audience}
+          >
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <h3 class="text-lg font-black leading-tight" style="font-family: var(--font-heading);">{w.day} · {w.time}</h3>
+                <p class="text-sm text-[var(--color-text-light)] mt-0.5">{w.location} · {w.schedule}</p>
+              </div>
+              <span class={`shrink-0 text-xs font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${w.audience === 'enfants' ? 'bg-[var(--color-bg-peach)]' : w.audience === 'ados-adultes' ? 'bg-[var(--color-bg-pink)]' : 'bg-[var(--color-button)]'}`}>
+                {w.audience === 'enfants' ? 'Enfants' : w.audience === 'ados-adultes' ? 'Ados & adultes' : 'Adultes'}
+              </span>
+            </div>
+            <div class="mb-3">
+              <span class="text-xl font-black" style="font-family: var(--font-heading);">{w.price}</span>
+              <span class="text-sm text-[var(--color-text-light)] ml-2">{w.priceDetail}</span>
+            </div>
+            <details class="mt-auto">
+              <summary class="cursor-pointer text-sm font-bold text-[var(--color-heading)] hover:opacity-70 select-none">
+                Voir les dates ▾
+              </summary>
+              <p class="mt-2 text-sm text-[var(--color-text-light)] leading-relaxed">
+                {w.dates.join(' · ')}
+              </p>
+            </details>
+          </div>
+        ))}
+      </div>
+
+      <!-- No results message -->
+      <p id="no-results" class="hidden text-center py-12 text-[var(--color-text-light)]">Aucun atelier ne correspond à ces filtres.</p>
+
+      <!-- Pricing table (collapsed by default in C) -->
+      <details class="max-w-3xl mx-auto mt-10 bg-[var(--color-bg-peach)] rounded-[var(--radius-xl)] p-6">
+        <summary class="cursor-pointer text-lg font-black text-center select-none" style="font-family: var(--font-heading);">
+          Voir tous les tarifs ▾
+        </summary>
+        <div class="overflow-x-auto mt-4">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b-2 border-[var(--color-button)]">
+                <th class="text-left py-2 pr-4">Formule</th>
+                <th class="text-right py-2">Tarif</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-[var(--color-border)]"><td class="py-2 pr-4">1 atelier / mois (3h)</td><td class="text-right font-bold">33€/mois</td></tr>
+              <tr class="border-b border-[var(--color-border)]"><td class="py-2 pr-4">2 ateliers / mois (3h)</td><td class="text-right font-bold">55€/mois</td></tr>
+              <tr class="border-b border-[var(--color-border)]"><td class="py-2 pr-4">Séance unique (2h)</td><td class="text-right font-bold">25€</td></tr>
+              <tr class="border-b border-[var(--color-border)]"><td class="py-2 pr-4">Samedi matin ados & adultes</td><td class="text-right font-bold">37€/mois</td></tr>
+              <tr class="border-b border-[var(--color-border)]"><td class="py-2 pr-4">Ateliers enfants</td><td class="text-right font-bold">30€/mois</td></tr>
+              <tr class="border-b border-[var(--color-border)]"><td class="py-2 pr-4">Verdalle (2×2h30)</td><td class="text-right font-bold">50€/mois</td></tr>
+              <tr><td class="py-2 pr-4 text-[var(--color-text-light)]">Adhésion annuelle (Les P'tits Piafs)</td><td class="text-right font-bold">15€</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <div class="max-w-3xl mx-auto mt-10 text-center text-[var(--color-text-light)]">
+        <p>
+          Envie de découvrir une technique précise ? Consultez nos <a href="/stages-thematiques" class="underline text-[var(--color-heading)] hover:opacity-70">stages thématiques</a>.
+          Vous pouvez aussi venir ponctuellement lors d'un <a href="/un-apres-midi-couture" class="underline text-[var(--color-heading)] hover:opacity-70">après-midi couture</a>.
+        </p>
+      </div>
+
+      <ContactCTA />
+    </div>
+  </section>
+
+</BaseLayout>
+
+<!-- Option A: table styling -->
+<style>
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  th, td {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+  thead tr {
+    border-bottom: 2px solid var(--color-button);
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--color-border);
+  }
+  th {
+    font-weight: 700;
+    font-size: 0.875rem;
+  }
+</style>
+
+<!-- Option C: filter script -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    let activeDay = 'tous';
+    let activeAudience = 'tous';
+
+    const cards = document.querySelectorAll<HTMLElement>('.workshop-card');
+    const noResults = document.getElementById('no-results');
+    const dayBtns = document.querySelectorAll<HTMLButtonElement>('.filter-day-btn');
+    const audienceBtns = document.querySelectorAll<HTMLButtonElement>('.filter-audience-btn');
+
+    function applyFilters() {
+      let visible = 0;
+      cards.forEach((card) => {
+        const day = card.dataset.day || '';
+        const audience = card.dataset.audience || '';
+        const matchDay = activeDay === 'tous' || day === activeDay;
+        const matchAudience = activeAudience === 'tous' || audience === activeAudience;
+        const show = matchDay && matchAudience;
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      if (noResults) noResults.classList.toggle('hidden', visible > 0);
+    }
+
+    function updateBtnStyles(buttons: NodeListOf<HTMLButtonElement>, activeValue: string, dataAttr: string) {
+      buttons.forEach((btn) => {
+        const val = btn.getAttribute(`data-filter-${dataAttr}`) || '';
+        if (val === activeValue) {
+          btn.classList.add('bg-[var(--color-bg-dark)]', 'text-white');
+          btn.classList.remove('bg-[var(--color-card-bg)]');
+        } else {
+          btn.classList.remove('bg-[var(--color-bg-dark)]', 'text-white');
+          btn.classList.add('bg-[var(--color-card-bg)]');
+        }
+      });
+    }
+
+    dayBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        activeDay = btn.dataset.filterDay || 'tous';
+        updateBtnStyles(dayBtns, activeDay, 'day');
+        applyFilters();
+      });
+    });
+
+    audienceBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        activeAudience = btn.dataset.filterAudience || 'tous';
+        updateBtnStyles(audienceBtns, activeAudience, 'audience');
+        applyFilters();
+      });
+    });
+  });
+</script>
