@@ -1,0 +1,38 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "description": "Group Astro packages",
+      "matchPackageNames": ["astro", "@astrojs/*"],
+      "groupName": "astro"
+    },
+    {
+      "description": "Group Tailwind CSS packages",
+      "matchPackageNames": ["tailwindcss", "@tailwindcss/*"],
+      "groupName": "tailwindcss"
+    },
+    {
+      "description": "Group React packages",
+      "matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"],
+      "groupName": "react"
+    },
+    {
+      "description": "Group Keystatic packages",
+      "matchPackageNames": ["@keystatic/*"],
+      "groupName": "keystatic"
+    },
+    {
+      "description": "Group fontsource packages",
+      "matchPackageNames": ["@fontsource/*", "@fontsource-variable/*"],
+      "groupName": "fontsource"
+    },
+    {
+      "description": "Group Markdoc packages",
+      "matchPackageNames": ["@markdoc/*"],
+      "groupName": "markdoc"
+    }
+  ]
+}
