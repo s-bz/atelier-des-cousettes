@@ -5,6 +5,8 @@ import { reader } from '../utils/reader';
 const page = await reader.singletons.couturiere.read();
 if (!page) throw new Error('La couturière content not found');
 const contentNode = page.content ? await page.content() : null;
+const settings = await reader.singletons.siteSettings.read();
+const siteUrl = Astro.site?.origin;
 ---
 
 <ContentPage
@@ -14,4 +16,22 @@ const contentNode = page.content ? await page.content() : null;
   contentNode={contentNode}
   coverImage={page.coverImage ?? undefined}
   contentClass="max-w-4xl"
-/>
+>
+  <Fragment slot="page-head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": settings?.authorName,
+      "jobTitle": settings?.authorJobTitle,
+      "url": `${siteUrl}/la-couturiere/`,
+      "worksFor": { "@id": `${siteUrl}/#organization` },
+      "knowsAbout": ["couture", "patronage", "surjeteuse", "machine à coudre", "couture flou"],
+      "hasCredential": {
+        "@type": "EducationalOccupationalCredential",
+        "credentialCategory": "CAP",
+        "name": "CAP couture flou"
+      },
+      "sameAs": settings?.facebookUrl ? [settings.facebookUrl] : []
+    }).replace(/<\//g, '<\\/')} />
+  </Fragment>
+</ContentPage>
