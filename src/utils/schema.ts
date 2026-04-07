@@ -6,6 +6,11 @@
  * area served, or schema shape only need to happen once.
  */
 
+/** Filter out FAQ items with empty question or answer. */
+function isValidFaqItem(item: FaqItem): boolean {
+  return item.question.trim().length > 0 && item.answer.trim().length > 0;
+}
+
 interface SiteSettings {
   authorName?: string | null;
   authorJobTitle?: string | null;
@@ -35,6 +40,28 @@ interface ServicePageSchemaOptions extends PageSchemaOptions {
   faqItems: readonly FaqItem[];
 }
 
+interface BreadcrumbItem {
+  name: string;
+  url?: string;
+}
+
+/**
+ * Builds a BreadcrumbList schema from an ordered list of items.
+ * The last item is treated as the current page (no URL).
+ */
+export function buildBreadcrumbSchema(items: BreadcrumbItem[]): object {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": items.map((item, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "name": item.name,
+      ...(item.url ? { "item": item.url } : {}),
+    })),
+  };
+}
+
 /**
  * Builds BreadcrumbList + WebPage schemas shared by all content pages.
  */
@@ -46,14 +73,10 @@ export function buildPageSchemas({
   settings,
 }: PageSchemaOptions): object[] {
   return [
-    {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Accueil", "item": siteUrl },
-        { "@type": "ListItem", "position": 2, "name": title },
-      ],
-    },
+    buildBreadcrumbSchema([
+      { name: 'Accueil', url: siteUrl },
+      { name: title },
+    ]),
     {
       "@context": "https://schema.org",
       "@type": "WebPage",
@@ -104,14 +127,14 @@ export function buildServicePageSchemas({
         };
       }),
     },
-    ...(faqItems.length > 0 ? [{
+    ...(faqItems.filter(isValidFaqItem).length > 0 ? [{
       "@context": "https://schema.org",
       "@type": "FAQPage",
       "speakable": {
         "@type": "SpeakableSpecification",
         "cssSelector": [".faq-question", ".faq-answer"],
       },
-      "mainEntity": faqItems.map((item) => ({
+      "mainEntity": faqItems.filter(isValidFaqItem).map((item) => ({
         "@type": "Question",
         "name": item.question,
         "acceptedAnswer": {

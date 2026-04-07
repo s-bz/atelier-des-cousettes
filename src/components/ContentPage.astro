@@ -3,8 +3,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import Markdoc from '@markdoc/markdoc';
-import { resolveImageUrl } from '../utils/images';
-import { reader } from '../utils/reader';
+import { resolveImage, resolveImageUrl } from '../utils/images';
+import { getPageContext } from '../utils/reader';
+import { buildPageSchemas } from '../utils/schema';
 
 interface Props {
   title: string;
@@ -21,43 +22,27 @@ interface Props {
 const { title, subtitle, seoDescription, contentNode, showContactCTA = true, coverImage, coverImageAlt, contentClass, noIndex = false } = Astro.props;
 const transformed = contentNode ? Markdoc.transform(contentNode.node) : null;
 const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
-const siteUrl = Astro.site?.origin;
-const settings = await reader.singletons.siteSettings.read();
+const { settings, siteUrl } = await getPageContext(Astro.site);
 
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const resolvedCover = await resolveImage(coverImage, coverGlob);
 const ogImage = await resolveImageUrl(coverImage, coverGlob, Astro.site);
+
+const schemas = buildPageSchemas({
+  title,
+  seoDescription,
+  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
+  siteUrl,
+  settings,
+});
 ---
 
 <BaseLayout title={title} description={seoDescription} ogImage={ogImage} noIndex={noIndex}>
   <Fragment slot="head">
-    <script type="application/ld+json" set:html={JSON.stringify([
-      {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Accueil", "item": siteUrl },
-          { "@type": "ListItem", "position": 2, "name": title }
-        ]
-      },
-      {
-        "@context": "https://schema.org",
-        "@type": "WebPage",
-        "name": title,
-        "description": seoDescription,
-        "url": new URL(Astro.url.pathname, Astro.site).toString(),
-        "author": {
-          "@type": "Person",
-          "name": settings?.authorName,
-          "jobTitle": settings?.authorJobTitle,
-          "url": `${siteUrl}/la-couturiere/`,
-          "sameAs": settings?.facebookUrl ? [settings.facebookUrl] : []
-        },
-        "isPartOf": { "@id": `${siteUrl}/#website` }
-      }
-    ]).replace(/<\//g, '<\\/')} />
+    <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
     <slot name="page-head" />
   </Fragment>
-  <Hero title={title} subtitle={subtitle} coverImage={coverImage} altText={coverImageAlt} />
+  <Hero title={title} subtitle={subtitle} coverImage={resolvedCover ?? undefined} altText={coverImageAlt} />
 
   <div class={`${contentClass || 'max-w-3xl'} mx-auto px-4 prose overflow-visible`}>
     <Fragment set:html={renderedContent} />

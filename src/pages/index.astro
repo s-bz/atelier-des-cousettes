@@ -9,6 +9,7 @@ import BlogCard from '../components/BlogCard.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import { reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
+import { filterPublishedPosts } from '../utils/blog';
 import Markdoc from '@markdoc/markdoc';
 
 const homepage = await reader.singletons.homepage.read();
@@ -22,8 +23,8 @@ const [ateliers, stages, apresMidi] = await Promise.all([
 if (!homepage) throw new Error('Homepage content not found');
 if (!settings) throw new Error('Site settings not found');
 
-// OG image
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const resolvedCover = await resolveImage(homepage.coverImage, coverGlob);
 const ogImage = await resolveImageUrl(homepage.coverImage, coverGlob, Astro.site);
 
 // Homepage images
@@ -48,11 +49,7 @@ const actualitesHtml = actualitesTransformed ? Markdoc.renderers.html(actualites
 // Latest blog posts
 const blogIndex = await reader.singletons.blogIndex.read();
 const posts = await reader.collections.blog.all();
-const now = new Date();
-const latestPosts = posts
-  .filter((post): post is typeof post & { entry: { publishDate: string } } =>
-    Boolean(post.entry.publishDate) && new Date(post.entry.publishDate!) <= now,
-  )
+const latestPosts = filterPublishedPosts(posts)
   .sort((a, b) => new Date(b.entry.publishDate).getTime() - new Date(a.entry.publishDate).getTime())
   .slice(0, 2);
 
@@ -132,13 +129,13 @@ const siteUrl = Astro.site?.origin;
   </Fragment>
 
   <!-- 1. Hero -->
-  <Hero title={homepage.title} subtitle={homepage.subtitle} coverImage={homepage.coverImage ?? undefined} flush />
+  <Hero title={homepage.title} subtitle={homepage.subtitle} coverImage={resolvedCover ?? undefined} flush />
 
   <!-- 2. Introduction + Service Cards -->
   <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
     <div class="max-w-4xl mx-auto px-4">
       {homepage.introductionTitle && (
-        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-4" style="font-family: var(--font-heading);">
+        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-4">
           {homepage.introductionTitle}
         </h2>
       )}
@@ -199,7 +196,7 @@ const siteUrl = Astro.site?.origin;
     <section class="py-16 md:py-20">
       <div class="max-w-3xl mx-auto px-4">
         {homepage.youtubeTitle && (
-          <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-6" style="font-family: var(--font-heading);">
+          <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-6">
             {homepage.youtubeTitle}
           </h2>
         )}
@@ -223,7 +220,7 @@ const siteUrl = Astro.site?.origin;
     <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
       <div class="max-w-3xl mx-auto px-4">
         {homepage.actualitesTitle && (
-          <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10" style="font-family: var(--font-heading);">
+          <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10">
             {homepage.actualitesTitle}
           </h2>
         )}
@@ -235,7 +232,7 @@ const siteUrl = Astro.site?.origin;
         {latestPosts.length > 0 && (
           <div class="space-y-4">
             {homepage.blogSectionTitle && (
-              <h3 class="text-xl md:text-2xl font-bold text-[var(--color-heading)] text-center mb-6" style="font-family: var(--font-heading);">
+              <h3 class="text-xl md:text-2xl font-bold text-[var(--color-heading)] text-center mb-6">
                 {homepage.blogSectionTitle}
               </h3>
             )}

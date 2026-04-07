@@ -3,10 +3,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Hero from '../../components/Hero.astro';
 import ContactCTA from '../../components/ContactCTA.astro';
 import Markdoc from '@markdoc/markdoc';
-import { reader } from '../../utils/reader';
-import { resolveImageUrl } from '../../utils/images';
+import { getPageContext, reader } from '../../utils/reader';
+import { resolveImage } from '../../utils/images';
 import { formatFrenchDate } from '../../utils/strings';
 import { filterPublishedPosts } from '../../utils/blog';
+import { buildBreadcrumbSchema } from '../../utils/schema';
 
 export async function getStaticPaths() {
   const posts = await reader.collections.blog.all();
@@ -24,13 +25,13 @@ if (!post) return Astro.redirect('/blog');
 // If adding untrusted editors, add sanitisation (e.g. sanitize-html) here.
 const transformed = post.content.node ? Markdoc.transform(post.content.node) : null;
 const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
-const siteUrl = Astro.site?.origin ?? '';
-const settings = await reader.singletons.siteSettings.read();
+const { settings, siteUrl } = await getPageContext(Astro.site);
 
 const formattedDate = post.publishDate ? formatFrenchDate(post.publishDate) : '';
 
-const blogGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/blog/**/*.{jpg,jpeg,png,webp}');
-const ogImage = await resolveImageUrl(post.coverImage, blogGlob, Astro.site);
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const resolvedCover = await resolveImage(post.coverImage, coverGlob);
+const ogImage = resolvedCover ? new URL(resolvedCover.src, Astro.site).toString() : undefined;
 
 const blogIndex = await reader.singletons.blogIndex.read();
 const authorName = settings?.authorName ?? 'L\'Atelier des Cousettes';
@@ -47,15 +48,11 @@ const relatedPosts = filterPublishedPosts(allPosts)
 <BaseLayout title={post.title} description={post.seoDescription} ogImage={ogImage} ogType="article" articlePublishedTime={post.publishDate ?? undefined} articleAuthor={authorName}>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify([
-      {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Accueil", "item": siteUrl },
-          { "@type": "ListItem", "position": 2, "name": "Blog couture", "item": `${siteUrl}/blog` },
-          { "@type": "ListItem", "position": 3, "name": post.title }
-        ]
-      },
+      buildBreadcrumbSchema([
+        { name: 'Accueil', url: siteUrl },
+        { name: 'Blog couture', url: `${siteUrl}/blog` },
+        { name: post.title },
+      ]),
       {
         "@context": "https://schema.org",
         "@type": "Article",
@@ -82,7 +79,7 @@ const relatedPosts = filterPublishedPosts(allPosts)
   </Fragment>
 
   <!-- 1. Hero -->
-  <Hero title={post.title} coverImage={post.coverImage || undefined} altText={post.coverImageAlt || undefined} />
+  <Hero title={post.title} coverImage={resolvedCover ?? undefined} altText={post.coverImageAlt || undefined} />
 
   <!-- 2. Article content -->
   <section class="py-16 md:py-20">
@@ -105,13 +102,13 @@ const relatedPosts = filterPublishedPosts(allPosts)
   {relatedPosts.length > 0 && (
     <section class="py-16 md:py-20">
       <div class="max-w-4xl mx-auto px-4">
-        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-8" style="font-family: var(--font-heading);">
+        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-8">
           Articles connexes
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           {relatedPosts.map((related) => (
             <a href={`/blog/${related.slug}`} class="block bg-white rounded-[var(--radius-xl)] shadow-md p-5 hover:shadow-lg transition-shadow">
-              <h3 class="text-base font-bold text-[var(--color-heading)] mb-2" style="font-family: var(--font-heading);">
+              <h3 class="text-base font-bold text-[var(--color-heading)] mb-2">
                 {related.entry.title}
               </h3>
               <p class="text-sm text-[var(--color-text-light)] line-clamp-3">{related.entry.seoDescription}</p>

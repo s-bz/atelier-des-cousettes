@@ -2,23 +2,23 @@
 import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
-import ContactCTA from '../components/ContactCTA.astro';
-import { reader } from '../utils/reader';
+import IntroSection from '../components/IntroSection.astro';
+import CrossLinksSection from '../components/CrossLinksSection.astro';
+import { getPageContext, reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { buildPageSchemas } from '../utils/schema';
-import { SERVICE_LINKS } from '../utils/nav';
 
 const page = await reader.singletons.mesCreations.read();
 if (!page) throw new Error('Mes créations content not found');
 
-const settings = await reader.singletons.siteSettings.read();
-const siteUrl = Astro.site?.origin ?? '';
+const { settings, siteUrl } = await getPageContext(Astro.site);
 
 const creations = await reader.collections.creations.all();
 const sorted = creations.sort((a, b) => (a.entry.order ?? 0) - (b.entry.order ?? 0));
 
 const creationGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/creations/*.{jpg,jpeg,png,webp}');
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const resolvedCover = await resolveImage(page.coverImage, coverGlob);
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
 
 // Resolve gallery images once — used for both schema and template
@@ -70,23 +70,18 @@ const schemas = buildPageSchemas({
   </Fragment>
 
   <!-- 1. Hero -->
-  <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage ?? undefined} altText={page.coverImageAlt ?? undefined} />
+  <Hero title={page.title} subtitle={page.subtitle} coverImage={resolvedCover ?? undefined} altText={page.coverImageAlt ?? undefined} />
 
   <!-- 2. Introduction -->
   {page.introduction && (
-    <section class="py-16 md:py-20">
-      <div class="max-w-3xl mx-auto px-4 text-center">
-        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.introduction}</p>
-        <ContactCTA label={page.ctaLabel} />
-      </div>
-    </section>
+    <IntroSection text={page.introduction} ctaLabel={page.ctaLabel} />
   )}
 
   <!-- 3. Gallery -->
   <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
     <div class="max-w-5xl mx-auto px-4">
       {page.gallerySectionTitle && (
-        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10" style="font-family: var(--font-heading);">
+        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10">
           {page.gallerySectionTitle}
         </h2>
       )}
@@ -123,18 +118,7 @@ const schemas = buildPageSchemas({
 
   <!-- 4. Cross-links -->
   {page.crossLinksText && (
-    <section class="py-16 md:py-20">
-      <div class="max-w-3xl mx-auto px-4 text-center">
-        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.crossLinksText}</p>
-        <div class="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
-          {SERVICE_LINKS.map((link) => (
-            <a href={link.href} class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
-              {link.label} &rarr;
-            </a>
-          ))}
-        </div>
-      </div>
-    </section>
+    <CrossLinksSection text={page.crossLinksText} />
   )}
 
   <!-- Lightbox -->

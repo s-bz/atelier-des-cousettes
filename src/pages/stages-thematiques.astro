@@ -2,22 +2,22 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
 import DetailCard from '../components/DetailCard.astro';
+import IntroSection from '../components/IntroSection.astro';
+import CrossLinksSection from '../components/CrossLinksSection.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import FaqSection from '../components/FaqSection.astro';
-import { reader } from '../utils/reader';
-import { resolveImageUrl } from '../utils/images';
-import { toSlug } from '../utils/strings';
+import { getPageContext, reader } from '../utils/reader';
+import { resolveImage, resolveImageUrl } from '../utils/images';
+import { toSlug, splitParagraphs, splitLines } from '../utils/strings';
 import { buildServicePageSchemas } from '../utils/schema';
-import { SERVICE_LINKS } from '../utils/nav';
 
 const page = await reader.singletons.stagesThematiques.read();
 if (!page) throw new Error('Stages thématiques content not found');
 
-const settings = await reader.singletons.siteSettings.read();
-const siteUrl = Astro.site?.origin ?? '';
+const { settings, siteUrl } = await getPageContext(Astro.site);
 
-// OG image
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const resolvedCover = await resolveImage(page.coverImage, coverGlob);
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
 
 const faqItems = page.faqItems ?? [];
@@ -32,7 +32,6 @@ const schemas = buildServicePageSchemas({
 });
 
 const stages = page.stages ?? [];
-const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/stages-thematiques');
 ---
 
 <BaseLayout title={page.title} description={page.seoDescription} ogImage={ogImage}>
@@ -41,16 +40,11 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/stages-thematiques')
   </Fragment>
 
   <!-- 1. Hero -->
-  <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage ?? undefined} altText={page.coverImageAlt ?? undefined} />
+  <Hero title={page.title} subtitle={page.subtitle} coverImage={resolvedCover ?? undefined} altText={page.coverImageAlt ?? undefined} />
 
   <!-- 2. Introduction -->
   {page.introduction && (
-    <section class="py-16 md:py-20">
-      <div class="max-w-3xl mx-auto px-4 text-center">
-        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.introduction}</p>
-        <ContactCTA label={page.ctaLabel} />
-      </div>
-    </section>
+    <IntroSection text={page.introduction} ctaLabel={page.ctaLabel} />
   )}
 
   {/* 3. Stage Cards + 4. Stage Details */}
@@ -58,7 +52,7 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/stages-thematiques')
     <Fragment>
       <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
         <div class="max-w-4xl mx-auto px-4">
-          <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10" style="font-family: var(--font-heading);">
+          <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10">
             {page.stagesSectionTitle}
           </h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -79,7 +73,7 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/stages-thematiques')
         <div class="max-w-3xl mx-auto px-4 space-y-16">
           {stages.map((stage) => (
             <div id={toSlug(stage.name)} class="scroll-mt-24">
-              <h2 class="text-xl md:text-2xl font-bold text-[var(--color-heading)] mb-2" style="font-family: var(--font-heading);">
+              <h2 class="text-xl md:text-2xl font-bold text-[var(--color-heading)] mb-2">
                 {stage.name}
                 <span class="ml-2 text-base font-medium text-[var(--color-button)]">{stage.price} — {stage.duration}</span>
               </h2>
@@ -88,7 +82,7 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/stages-thematiques')
               )}
               {stage.fullDescription && (
                 <div class="prose">
-                  {stage.fullDescription.split('\n\n').map((para) => (
+                  {splitParagraphs(stage.fullDescription).map((para) => (
                     <p>{para}</p>
                   ))}
                 </div>
@@ -97,7 +91,7 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/stages-thematiques')
                 <div class="mt-4 p-4 rounded-xl bg-[var(--color-bg-accent)]">
                   <p class="text-sm font-semibold text-[var(--color-heading)] mb-2">{page.datesLabel}</p>
                   <div class="text-sm text-[var(--color-text)] space-y-1">
-                    {stage.dates.split('\n').map((line) => (
+                    {splitLines(stage.dates).map((line) => (
                       <p>{line}</p>
                     ))}
                   </div>
@@ -116,17 +110,6 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/stages-thematiques')
 
   <!-- 6. Cross-links -->
   {page.crossLinksText && (
-    <section class="py-16 md:py-20">
-      <div class="max-w-3xl mx-auto px-4 text-center">
-        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.crossLinksText}</p>
-        <div class="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
-          {crossLinks.map((link) => (
-            <a href={link.href} class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
-              {link.label} &rarr;
-            </a>
-          ))}
-        </div>
-      </div>
-    </section>
+    <CrossLinksSection text={page.crossLinksText} excludeHref="/stages-thematiques" />
   )}
 </BaseLayout>

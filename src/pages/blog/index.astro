@@ -2,9 +2,10 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Hero from '../../components/Hero.astro';
 import BlogCard from '../../components/BlogCard.astro';
+import IntroSection from '../../components/IntroSection.astro';
 import ContactCTA from '../../components/ContactCTA.astro';
-import { reader } from '../../utils/reader';
-import { resolveImageUrl } from '../../utils/images';
+import { getPageContext, reader } from '../../utils/reader';
+import { resolveImage, resolveImageUrl } from '../../utils/images';
 import { filterPublishedPosts } from '../../utils/blog';
 import { buildPageSchemas } from '../../utils/schema';
 
@@ -15,10 +16,10 @@ const posts = await reader.collections.blog.all();
 const sortedPosts = filterPublishedPosts(posts)
   .sort((a, b) => new Date(b.entry.publishDate).getTime() - new Date(a.entry.publishDate).getTime());
 
-const siteUrl = Astro.site?.origin ?? '';
-const settings = await reader.singletons.siteSettings.read();
+const { settings, siteUrl } = await getPageContext(Astro.site);
 
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const resolvedCover = await resolveImage(page.coverImage, coverGlob);
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
 const pageUrl = new URL('/blog', Astro.site).toString();
 
@@ -53,16 +54,11 @@ const schemas = buildPageSchemas({
   </Fragment>
 
   <!-- 1. Hero -->
-  <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage || undefined} altText={page.coverImageAlt} />
+  <Hero title={page.title} subtitle={page.subtitle} coverImage={resolvedCover ?? undefined} altText={page.coverImageAlt} />
 
   <!-- 2. Introduction -->
   {page.introduction && (
-    <section class="py-16 md:py-20">
-      <div class="max-w-3xl mx-auto px-4 text-center">
-        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.introduction}</p>
-        <ContactCTA label={page.ctaLabel} />
-      </div>
-    </section>
+    <IntroSection text={page.introduction} ctaLabel={page.ctaLabel} />
   )}
 
   <!-- 3. Articles -->

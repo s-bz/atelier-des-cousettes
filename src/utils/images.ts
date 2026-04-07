@@ -13,8 +13,14 @@ export async function resolveImage(
   rawPath: string | null | undefined,
   glob: ImageGlob,
 ): Promise<ImageMetadata | null> {
+  if (!rawPath) return null;
   const resolved = resolveImagePath(rawPath, glob);
-  if (!resolved) return null;
+  if (!resolved) {
+    if (import.meta.env.DEV) {
+      console.warn(`[resolveImage] Image not found: "${rawPath}"`);
+    }
+    return null;
+  }
   const mod = await glob[resolved]?.();
   return mod?.default ?? null;
 }

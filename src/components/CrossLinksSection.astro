@@ -1,0 +1,34 @@
+---
+import { getCrossLinks, SERVICE_LINKS } from '../utils/nav';
+
+interface Props {
+  text: string;
+  /** Title displayed above the text (optional, used on la-couturière). */
+  title?: string;
+  /** Href to exclude from the list. If omitted, all service links are shown. */
+  excludeHref?: string;
+  /** Extra classes on the <section> element. */
+  class?: string;
+}
+
+const { text, title, excludeHref, class: className } = Astro.props;
+const links = excludeHref ? getCrossLinks(excludeHref) : SERVICE_LINKS;
+---
+
+<section class={`py-16 md:py-20 ${className ?? ''}`}>
+  <div class="max-w-3xl mx-auto px-4 text-center">
+    {title && (
+      <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] mb-6">
+        {title}
+      </h2>
+    )}
+    <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{text}</p>
+    <div class="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+      {links.map((link) => (
+        <a href={link.href} class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+          {link.label} &rarr;
+        </a>
+      ))}
+    </div>
+  </div>
+</section>

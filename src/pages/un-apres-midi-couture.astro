@@ -1,21 +1,21 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
+import CrossLinksSection from '../components/CrossLinksSection.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import FaqSection from '../components/FaqSection.astro';
-import { reader } from '../utils/reader';
-import { resolveImageUrl } from '../utils/images';
+import { getPageContext, reader } from '../utils/reader';
+import { resolveImage, resolveImageUrl } from '../utils/images';
+import { splitParagraphs, splitLines } from '../utils/strings';
 import { buildServicePageSchemas } from '../utils/schema';
-import { SERVICE_LINKS } from '../utils/nav';
 
 const page = await reader.singletons.apresMidiCouture.read();
 if (!page) throw new Error('Un après-midi couture content not found');
 
-const settings = await reader.singletons.siteSettings.read();
-const siteUrl = Astro.site?.origin ?? '';
+const { settings, siteUrl } = await getPageContext(Astro.site);
 
-// OG image
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const resolvedCover = await resolveImage(page.coverImage, coverGlob);
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
 
 const faqItems = page.faqItems ?? [];
@@ -30,7 +30,6 @@ const schemas = buildServicePageSchemas({
 });
 
 const audienceItems = page.audienceItems ?? [];
-const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/un-apres-midi-couture');
 ---
 
 <BaseLayout title={page.title} description={page.seoDescription} ogImage={ogImage}>
@@ -39,7 +38,7 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/un-apres-midi-coutur
   </Fragment>
 
   <!-- 1. Hero -->
-  <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage ?? undefined} altText={page.coverImageAlt ?? undefined} />
+  <Hero title={page.title} subtitle={page.subtitle} coverImage={resolvedCover ?? undefined} altText={page.coverImageAlt ?? undefined} />
 
   <!-- 2. Introduction + Key info -->
   {page.introduction && (
@@ -50,19 +49,19 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/un-apres-midi-coutur
           <div class="mt-8 flex flex-wrap justify-center gap-4">
             {page.price && (
               <div class="px-5 py-3 rounded-xl bg-[var(--color-bg-accent)] text-center">
-                <p class="text-2xl font-bold text-[var(--color-button)]" style="font-family: var(--font-heading);">{page.price}</p>
+                <p class="heading-font text-2xl font-bold text-[var(--color-button)]">{page.price}</p>
                 {page.priceLabel && <p class="text-xs text-[var(--color-text-light)]">{page.priceLabel}</p>}
               </div>
             )}
             {page.duration && (
               <div class="px-5 py-3 rounded-xl bg-[var(--color-bg-accent)] text-center">
-                <p class="text-2xl font-bold text-[var(--color-heading)]" style="font-family: var(--font-heading);">{page.duration}</p>
+                <p class="heading-font text-2xl font-bold text-[var(--color-heading)]">{page.duration}</p>
                 {page.durationLabel && <p class="text-xs text-[var(--color-text-light)]">{page.durationLabel}</p>}
               </div>
             )}
             {page.location && (
               <div class="px-5 py-3 rounded-xl bg-[var(--color-bg-accent)] text-center">
-                <p class="text-2xl font-bold text-[var(--color-heading)]" style="font-family: var(--font-heading);">{page.location}</p>
+                <p class="heading-font text-2xl font-bold text-[var(--color-heading)]">{page.location}</p>
                 {page.locationLabel && <p class="text-xs text-[var(--color-text-light)]">{page.locationLabel}</p>}
               </div>
             )}
@@ -80,12 +79,12 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/un-apres-midi-coutur
         {page.description && (
           <div class="mb-12">
             {page.descriptionTitle && (
-              <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-6" style="font-family: var(--font-heading);">
+              <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-6">
                 {page.descriptionTitle}
               </h2>
             )}
             <div class="prose max-w-none">
-              {page.description.split('\n\n').map((para) => (
+              {splitParagraphs(page.description).map((para) => (
                 <p>{para}</p>
               ))}
             </div>
@@ -94,7 +93,7 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/un-apres-midi-coutur
         {audienceItems.length > 0 && (
           <div>
             {page.audienceTitle && (
-              <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-6" style="font-family: var(--font-heading);">
+              <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-6">
                 {page.audienceTitle}
               </h2>
             )}
@@ -117,13 +116,13 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/un-apres-midi-coutur
     <section class="py-16 md:py-20">
       <div class="max-w-3xl mx-auto px-4">
         {page.datesTitle && (
-          <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-8" style="font-family: var(--font-heading);">
+          <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-8">
             {page.datesTitle}
           </h2>
         )}
         <div class="max-w-md mx-auto p-6 rounded-xl bg-[var(--color-bg-accent)]">
           <div class="space-y-2 text-center">
-            {page.dates.split('\n').map((line) => (
+            {splitLines(page.dates).map((line) => (
               <p class="text-[var(--color-text)] font-medium">{line}</p>
             ))}
           </div>
@@ -141,17 +140,6 @@ const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/un-apres-midi-coutur
 
   <!-- 6. Cross-links -->
   {page.crossLinksText && (
-    <section class="py-16 md:py-20">
-      <div class="max-w-3xl mx-auto px-4 text-center">
-        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.crossLinksText}</p>
-        <div class="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
-          {crossLinks.map((link) => (
-            <a href={link.href} class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
-              {link.label} &rarr;
-            </a>
-          ))}
-        </div>
-      </div>
-    </section>
+    <CrossLinksSection text={page.crossLinksText} excludeHref="/un-apres-midi-couture" />
   )}
 </BaseLayout>

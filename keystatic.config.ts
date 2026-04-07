@@ -14,7 +14,10 @@ const schemaOffersField = () =>
   fields.array(
     fields.object({
       name: fields.text({ label: 'Nom' }),
-      price: fields.text({ label: 'Prix (nombre seul, ex: 40)' }),
+      price: fields.text({
+        label: 'Prix (nombre seul, ex: 40)',
+        validation: { pattern: { regex: /^\d+(\.\d{1,2})?$/, message: 'Entrer un nombre (ex: 40 ou 25.50)' } },
+      }),
     }),
     {
       label: 'Offres (schema SEO)',
@@ -361,7 +364,7 @@ export default config({
           ],
           defaultValue: 'autre',
         }),
-        order: fields.integer({ label: "Ordre d'affichage", defaultValue: 0 }),
+        order: fields.integer({ label: "Ordre d'affichage", defaultValue: 0, validation: { min: 0 } }),
       },
     }),
   },

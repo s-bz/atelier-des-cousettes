@@ -14,9 +14,9 @@ const { title, slug, publishDate, description, readMoreLabel } = Astro.props;
 const formattedDate = formatFrenchDate(publishDate);
 ---
 
-<a href={`/blog/${slug}`} class="group block rounded-lg bg-white dark:bg-[var(--color-card-bg)] p-6 transition-all" style="box-shadow: var(--shadow-ring), var(--shadow-whisper);">
+<a href={`/blog/${slug}`} class="group block rounded-lg bg-white dark:bg-[var(--color-card-bg)] p-6 transition-all" style="box-shadow: var(--shadow-ring), var(--shadow-whisper);" aria-label={title}>
   <time datetime={publishDate} class="text-sm text-[var(--color-text-light)]">{formattedDate}</time>
-  <h2 class="mt-2 text-xl font-medium leading-tight group-hover:text-[var(--color-link)] transition-colors" style="font-family: var(--font-heading);">
+  <h2 class="mt-2 text-xl font-medium leading-tight group-hover:text-[var(--color-link)] transition-colors">
     {title}
   </h2>
   {description && (

@@ -14,7 +14,7 @@ const { label, href, resolvedImage, imageAlt, priceRange, shortDescription } = A
 const safeHref = href?.startsWith('/') ? href : '#';
 ---
 
-<a href={safeHref} class="service-card group block rounded-xl bg-white dark:bg-[var(--color-card-bg)] overflow-hidden transition-all">
+<a href={safeHref} class="service-card group block rounded-xl bg-white dark:bg-[var(--color-card-bg)] overflow-hidden transition-all" aria-label={label}>
   {resolvedImage && (
     <Image
       src={resolvedImage}
@@ -27,7 +27,7 @@ const safeHref = href?.startsWith('/') ? href : '#';
     />
   )}
   <div class="p-4">
-    <h3 class="text-lg font-semibold text-[var(--color-heading)]" style="font-family: var(--font-heading);">
+    <h3 class="text-lg font-semibold text-[var(--color-heading)]">
       {label}
     </h3>
     {shortDescription && (
@@ -46,6 +46,7 @@ const safeHref = href?.startsWith('/') ? href : '#';
     box-shadow: var(--shadow-ring), var(--shadow-whisper);
   }
   .service-card:hover {
-    box-shadow: var(--shadow-ring), var(--shadow-whisper);
+    box-shadow: var(--shadow-ring), 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
   }
 </style>

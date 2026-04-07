@@ -2,17 +2,18 @@
 import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
+import IntroSection from '../components/IntroSection.astro';
+import CrossLinksSection from '../components/CrossLinksSection.astro';
 import ContactCTA from '../components/ContactCTA.astro';
-import { reader } from '../utils/reader';
+import { getPageContext, reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
+import { splitParagraphs } from '../utils/strings';
 import { buildPageSchemas } from '../utils/schema';
-import { SERVICE_LINKS } from '../utils/nav';
 
 const page = await reader.singletons.couturiere.read();
 if (!page) throw new Error('La couturière content not found');
 
-const settings = await reader.singletons.siteSettings.read();
-const siteUrl = Astro.site?.origin ?? '';
+const { settings, siteUrl } = await getPageContext(Astro.site);
 
 const schemas = buildPageSchemas({
   title: page.title,
@@ -22,8 +23,8 @@ const schemas = buildPageSchemas({
   settings,
 });
 
-// OG image
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const resolvedCover = await resolveImage(page.coverImage, coverGlob);
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
 
 // Section images
@@ -66,16 +67,11 @@ const lastSectionIsEven = resolvedSections.length > 0 && (resolvedSections.lengt
   </Fragment>
 
   <!-- 1. Hero -->
-  <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage ?? undefined} altText={page.coverImageAlt ?? undefined} />
+  <Hero title={page.title} subtitle={page.subtitle} coverImage={resolvedCover ?? undefined} altText={page.coverImageAlt ?? undefined} />
 
   <!-- 2. Introduction -->
   {page.introduction && (
-    <section class="py-16 md:py-20">
-      <div class="max-w-3xl mx-auto px-4 text-center">
-        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.introduction}</p>
-        <ContactCTA label={page.ctaLabel} />
-      </div>
-    </section>
+    <IntroSection text={page.introduction} ctaLabel={page.ctaLabel} />
   )}
 
   <!-- 3. Biography sections (even index = accent bg) -->
@@ -85,7 +81,7 @@ const lastSectionIsEven = resolvedSections.length > 0 && (resolvedSections.lengt
     return (
       <section class={isEven ? 'bg-[var(--color-bg-accent)] py-16 md:py-20' : 'py-16 md:py-20'}>
         <div class="max-w-4xl mx-auto px-4">
-          <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-8" style="font-family: var(--font-heading);">
+          <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-8">
             {section.title}
           </h2>
           {hasImage ? (
@@ -101,14 +97,14 @@ const lastSectionIsEven = resolvedSections.length > 0 && (resolvedSections.lengt
                 />
               </div>
               <div class="w-full md:w-4/5 prose max-w-none">
-                {section.text && section.text.split('\n\n').map((para) => (
+                {section.text && splitParagraphs(section.text).map((para) => (
                   <p>{para}</p>
                 ))}
               </div>
             </div>
           ) : (
             <div class="prose max-w-3xl mx-auto">
-              {section.text && section.text.split('\n\n').map((para) => (
+              {section.text && splitParagraphs(section.text).map((para) => (
                 <p>{para}</p>
               ))}
               <div class="text-center not-prose">
@@ -123,20 +119,10 @@ const lastSectionIsEven = resolvedSections.length > 0 && (resolvedSections.lengt
 
   <!-- 4. Cross-links -->
   {page.crossLinksText && (
-    <section class={lastSectionIsEven ? 'py-16 md:py-20' : 'bg-[var(--color-bg-accent)] py-16 md:py-20'}>
-      <div class="max-w-3xl mx-auto px-4 text-center">
-        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] mb-6" style="font-family: var(--font-heading);">
-          {page.crossLinksSectionTitle}
-        </h2>
-        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.crossLinksText}</p>
-        <div class="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
-          {SERVICE_LINKS.map((link) => (
-            <a href={link.href} class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
-              {link.label} &rarr;
-            </a>
-          ))}
-        </div>
-      </div>
-    </section>
+    <CrossLinksSection
+      text={page.crossLinksText}
+      title={page.crossLinksSectionTitle}
+      class={lastSectionIsEven ? '' : 'bg-[var(--color-bg-accent)]'}
+    />
   )}
 </BaseLayout>

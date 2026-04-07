@@ -57,6 +57,11 @@ h1, h2, h3, h4 {
   line-height: 1.15;
 }
 
+/* Heading font on non-heading elements (badges, nav brand, etc.) */
+.heading-font {
+  font-family: var(--font-heading);
+}
+
 /* Prose styles for content pages */
 .prose h1 {
   font-size: 2.5rem;

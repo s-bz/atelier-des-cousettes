@@ -15,8 +15,8 @@ interface Props {
 const { name, anchorId, primaryBadge, secondaryBadge, details = [], note } = Astro.props;
 ---
 
-<a href={`#${anchorId}`} class="detail-card group flex flex-col rounded-xl bg-white dark:bg-[var(--color-card-bg)] overflow-hidden transition-all p-5 h-full">
-  <h3 class="text-lg font-semibold text-[var(--color-heading)]" style="font-family: var(--font-heading);">
+<a href={`#${anchorId}`} class="detail-card group flex flex-col rounded-xl bg-white dark:bg-[var(--color-card-bg)] overflow-hidden transition-all p-5 h-full" aria-label={name}>
+  <h3 class="text-lg font-semibold text-[var(--color-heading)]">
     {name}
   </h3>
   {(details.length > 0 || note) && (

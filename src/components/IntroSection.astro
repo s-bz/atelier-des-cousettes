@@ -1,0 +1,18 @@
+---
+import ContactCTA from './ContactCTA.astro';
+
+interface Props {
+  text: string;
+  ctaLabel?: string;
+}
+
+const { text, ctaLabel } = Astro.props;
+---
+
+<section class="py-16 md:py-20">
+  <div class="max-w-3xl mx-auto px-4 text-center">
+    <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{text}</p>
+    <slot />
+    <ContactCTA label={ctaLabel} />
+  </div>
+</section>

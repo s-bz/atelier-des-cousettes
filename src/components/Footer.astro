@@ -11,7 +11,7 @@ const navRight = navLinks.slice(3);
   <div class="max-w-5xl mx-auto px-4 py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 text-sm">
     <!-- Contact + Social -->
     <div>
-      <h3 class="font-medium mb-3" style="font-family: var(--font-heading); color: #faf9f5;">Contact</h3>
+      <h2 class="font-medium mb-3 text-[var(--color-bg-accent)]">Contact</h2>
       <ul class="space-y-2 text-[var(--color-dark-text)]">
         {settings?.email && (
           <li>
@@ -45,15 +45,17 @@ const navRight = navLinks.slice(3);
 
     <!-- Navigation — split into 2 sub-columns -->
     <div class="lg:col-span-2">
-      <h3 class="font-medium mb-3" style="font-family: var(--font-heading); color: #faf9f5;">Navigation</h3>
-      <div class="grid grid-cols-2 gap-x-8 gap-y-2 text-[var(--color-dark-text)]">
-        {navLeft.map((link) => (
-          <a href={link.href} class="hover:text-white transition-colors">{link.label}</a>
-        ))}
-        {navRight.map((link) => (
-          <a href={link.href} class="hover:text-white transition-colors">{link.label}</a>
-        ))}
-      </div>
+      <h2 class="font-medium mb-3 text-[var(--color-bg-accent)]">Navigation</h2>
+      <nav aria-label="Navigation pied de page">
+        <ul class="grid grid-cols-2 gap-x-8 gap-y-2 text-[var(--color-dark-text)]">
+          {navLeft.map((link) => (
+            <li><a href={link.href} class="hover:text-white transition-colors">{link.label}</a></li>
+          ))}
+          {navRight.map((link) => (
+            <li><a href={link.href} class="hover:text-white transition-colors">{link.label}</a></li>
+          ))}
+        </ul>
+      </nav>
     </div>
   </div>
 

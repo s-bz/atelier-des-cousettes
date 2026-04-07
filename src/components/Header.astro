@@ -4,9 +4,12 @@ import { navLinks } from '../utils/navLinks';
 const currentPath = Astro.url.pathname;
 ---
 
+<a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-[var(--color-button)] focus:text-white focus:rounded-[var(--radius-button)] focus:text-sm focus:font-medium">
+  Aller au contenu
+</a>
 <header class="sticky top-0 z-50 bg-[var(--color-bg)] border-b border-[var(--color-border)]">
   <nav class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-    <a href="/" class="font-[var(--font-heading)] text-xl font-medium text-[var(--color-heading)] hover:opacity-80 transition-opacity" style="font-family: var(--font-heading);">
+    <a href="/" class="heading-font text-xl font-medium text-[var(--color-heading)] hover:opacity-80 transition-opacity">
       L'Atelier des Cousettes
     </a>
 
