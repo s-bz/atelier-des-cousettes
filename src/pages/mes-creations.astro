@@ -3,8 +3,12 @@ import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
 import { reader } from '../utils/reader';
+import Markdoc from '@markdoc/markdoc';
 
 const page = await reader.singletons.mesCreations.read();
+const contentNode = page?.content ? await page.content() : null;
+const transformed = contentNode ? Markdoc.transform(contentNode.node) : null;
+const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
 const creations = await reader.collections.creations.all();
 const sorted = creations.sort((a, b) => (a.entry.order ?? 0) - (b.entry.order ?? 0));
 
@@ -22,6 +26,12 @@ async function resolveImage(img: string | null) {
 
 <BaseLayout title={page?.title || 'Mes créations'} description={page?.seoDescription || ''}>
   <Hero title={page?.title || 'Mes créations'} subtitle={page?.subtitle} coverImage={page?.coverImage} />
+
+  {renderedContent && (
+    <div class="max-w-3xl mx-auto px-4 prose mb-12">
+      <Fragment set:html={renderedContent} />
+    </div>
+  )}
 
   <div class="max-w-5xl mx-auto px-4">
     {sorted.length > 0 ? (
