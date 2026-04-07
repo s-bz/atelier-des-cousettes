@@ -8,7 +8,10 @@ const coverImageField = (slug: string) =>
   });
 
 export default config({
-  storage: { kind: 'local' },
+  storage: {
+    kind: 'github',
+    repo: 's-bz/atelier-des-cousettes',
+  },
   singletons: {
     siteSettings: singleton({
       label: 'Paramètres du site',
