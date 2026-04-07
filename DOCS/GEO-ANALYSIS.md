@@ -1,196 +1,183 @@
-# GEO Analysis — L'Atelier des Cousettes
+# Analyse GEO — L'Atelier des Cousettes
 
-**Site:** https://couture-tarn.fr
-**Date:** 2026-04-07
+**Site :** https://couture-tarn.fr
+**Date :** 7 avril 2026 (mis à jour après implémentation)
 
 ---
 
-## GEO Readiness Score: 62/100
+## Score GEO : 78/100 (était 62/100)
 
-| Criteria | Score | Weight | Weighted |
+| Critère | Score | Poids | Pondéré |
 | --- | --- | --- | --- |
-| Citability | 12/25 | 25% | 12 |
-| Structural Readability | 16/20 | 20% | 16 |
-| Multi-Modal Content | 10/15 | 15% | 10 |
-| Authority & Brand Signals | 10/20 | 20% | 10 |
-| Technical Accessibility | 14/20 | 20% | 14 |
-| **Total** | | | **62/100** |
+| Citabilité | 20/25 | 25% | 20 |
+| Lisibilité structurelle | 18/20 | 20% | 18 |
+| Contenu multimodal | 10/15 | 15% | 10 |
+| Signaux d'autorité et de marque | 12/20 | 20% | 12 |
+| Accessibilité technique | 18/20 | 20% | 18 |
+| **Total** | | | **78/100** |
 
 ---
 
-## Platform Breakdown
+## Répartition par plateforme
 
-| Platform | Score | Notes |
+| Plateforme | Score | Notes |
 | --- | --- | --- |
-| Google AI Overviews | 70/100 | Strong local schema, FAQ markup, good SSR. Weak on content depth. |
-| ChatGPT | 50/100 | llms.txt present, GPTBot allowed. No Wikipedia/Reddit presence. |
-| Perplexity | 45/100 | PerplexityBot allowed. No Reddit/community citations to draw from. |
+| Google AI Overviews | 82/100 | Schéma local solide, contenu enrichi avec blocs de définition, FAQ structurées en H2 questions |
+| ChatGPT | 65/100 | llms.txt présent, GPTBot autorisé, 13 articles de blog citables. Pas de présence Wikipedia/Reddit |
+| Perplexity | 55/100 | PerplexityBot autorisé. Pas de citations Reddit/communautaires à exploiter |
 
 ---
 
-## AI Crawler Access Status
+## Accès des robots IA
 
-| Crawler | Status |
+| Robot | Statut |
 | --- | --- |
-| GPTBot (OpenAI) | Allowed |
-| ChatGPT-User (OpenAI) | Allowed |
-| Claude-Web (Anthropic) | Allowed |
-| PerplexityBot (Perplexity) | Allowed |
-| Applebot-Extended (Apple) | Allowed |
-| OAI-SearchBot (OpenAI) | Not listed (default allow) |
-| ClaudeBot (Anthropic) | Not listed (default allow) |
-| CCBot (Common Crawl) | Not listed (default allow) |
+| GPTBot (OpenAI) | Autorisé |
+| ChatGPT-User (OpenAI) | Autorisé |
+| Claude-Web (Anthropic) | Autorisé |
+| PerplexityBot (Perplexity) | Autorisé |
+| Applebot-Extended (Apple) | Autorisé |
+| OAI-SearchBot (OpenAI) | Non listé (autorisé par défaut) |
+| ClaudeBot (Anthropic) | Non listé (autorisé par défaut) |
+| CCBot (Common Crawl) | Non listé (autorisé par défaut) |
 
-**Verdict:** Good. All major AI search crawlers are explicitly allowed.
-
----
-
-## llms.txt Status
-
-**Present:** Yes, at `/llms.txt`
-
-**Quality:** Good. Contains structured summary, services with pricing, addresses, contact info, and page links.
-
-**Improvements needed:**
-- Add `## Key facts` section with specific numbers (years of experience, number of students, etc.)
-- Add Isabelle's credentials explicitly ("CAP couture flou")
-- Consider adding a `llms-full.txt` with detailed content from all pages
+**Verdict :** Tous les robots IA majeurs sont explicitement autorisés.
 
 ---
 
-## Brand Mention Analysis
+## Statut llms.txt
 
-| Platform | Present | Impact |
+**Présent :** Oui, à `/llms.txt`
+
+**Qualité :** Bon. Contient un résumé structuré, les services avec tarifs, adresses, coordonnées et liens vers les pages.
+
+**Améliorations possibles :**
+
+- Ajouter une section `## Faits clés` avec des chiffres spécifiques (années d'expérience, nombre d'élèves, etc.)
+- Ajouter les liens vers le blog pour enrichir le contenu indexable par les LLM
+- Envisager un `llms-full.txt` avec le contenu détaillé de toutes les pages
+
+---
+
+## Analyse des mentions de marque
+
+| Plateforme | Présent | Impact |
 | --- | --- | --- |
-| Wikipedia | No | High negative — Wikipedia is the #1 citation source for ChatGPT (47.9%) |
-| Reddit | No | High negative — Reddit is #1 for Perplexity (46.7%) and #2 for ChatGPT (11.3%) |
-| YouTube | Yes (1 video embed) | Weak — video is by a third party, not owned channel |
-| LinkedIn | Unknown | Moderate — no linked profile found in structured data |
-| Facebook | Yes | Low impact for AI citation (Facebook is not crawled by most AI) |
-| Google Business Profile | Unknown | Critical for local AI answers |
+| Wikipedia | Non | Impact négatif élevé — Wikipedia est la source de citation #1 pour ChatGPT (47,9%) |
+| Reddit | Non | Impact négatif élevé — Reddit est #1 pour Perplexity (46,7%) et #2 pour ChatGPT (11,3%) |
+| YouTube | Oui (1 vidéo intégrée avec description) | Modéré — vidéo par un tiers, pas de chaîne propre |
+| LinkedIn | Inconnu | Modéré — aucun profil lié trouvé dans les données structurées |
+| Facebook | Oui | Impact faible pour la citation IA (Facebook n'est pas exploré par la plupart des IA) |
+| Google Business Profile | Inconnu | Critique pour les réponses IA locales |
 
-**Critical gap:** Brand mentions correlate 3x more with AI visibility than backlinks. The site has near-zero presence on platforms AI engines cite from.
-
----
-
-## Passage-Level Citability Analysis
-
-### Current State
-
-The content is largely **schedule/date-focused** rather than **answer-focused**. AI engines extract self-contained answer blocks of 134-167 words, but most pages are lists of dates and prices without explanatory context.
-
-### Pages with citability issues
-
-**Homepage** — The intro is 1 sentence: "Venez pousser la porte de l'atelier pour nous rencontrer ! Vous etes les bienvenus !" This is not citable. AI needs a factual "what is this" block.
-
-**Stages thematiques** — Good structure (H2 per stage, pricing in headings), but the intro is a single generic sentence. No "What is a stage de couture?" definition block.
-
-**Ateliers reguliers** — Heavy on date lists, light on explanatory content. No answer to "What are the ateliers reguliers?" in the first 60 words.
-
-**Un apres-midi couture** — Same pattern: 1-sentence intro then dates and prices.
-
-**La couturiere** — Best content for citability: personal narrative, credentials, history. But written without accents (missing è, é, ê throughout), which may affect French NLP processing.
-
-### Citable passages found (0 optimal-length blocks)
-
-No page currently contains a self-contained 134-167 word block that answers a specific question with facts and specifics.
+**Lacune critique :** Les mentions de marque corrèlent 3x plus avec la visibilité IA que les backlinks. Le site a une présence quasi nulle sur les plateformes dont les moteurs IA citent le contenu.
 
 ---
 
-## Server-Side Rendering Check
+## Analyse de citabilité au niveau des passages
 
-**Status: Excellent**
+### État actuel (amélioré)
 
-- Astro with static pre-rendering (SSG) — all 7 pages are pre-rendered to HTML at build time
-- Zero client-side JavaScript dependency for content
-- All schema markup rendered server-side in HTML `<head>`
-- AI crawlers will see the full content without JavaScript execution
+Le contenu a été considérablement enrichi depuis l'analyse initiale :
 
----
+- **Page d'accueil** — Bloc de définition de 500+ mots avec « Qu'est-ce que L'Atelier des Cousettes ? », formules, animatrice, tarifs. Parfaitement citable.
+- **Stages thématiques** — Introduction de 150+ mots + 6 FAQ en H2 questions (« Qu'apprend-on lors d'une initiation ? », « Faut-il apporter sa machine ? », etc.). Forte citabilité.
+- **Ateliers réguliers** — Introduction structurée + FAQ (tarifs, matériel, niveau, inscription). Bonne citabilité.
+- **Un après-midi couture** — Introduction complète + 8 FAQ en H2 questions (déroulement, public, projets, matériel, annulation). Excellente citabilité.
+- **La couturière** — Bio structurée avec introduction factuelle (diplôme, années d'expérience, lieu). Accents corrigés. Bonne citabilité.
+- **Blog (13 articles)** — Contenu pratique riche en passages citables : guides, tutoriels, listes, conseils. Forte autorité thématique sur « couture débutant ».
 
-## Top 5 Highest-Impact Changes
+### Passages citables identifiés
 
-### 1. Add "definition blocks" to each page intro (HIGH)
+Chaque page de service contient désormais au moins un bloc de 134-167 mots répondant à une question spécifique avec des faits concrets (lieu, prix, durée, animatrice, niveau requis).
 
-Each page needs a 134-167 word self-contained introductory block answering "Qu'est-ce que [service]?" with:
-- What it is
-- Who it's for
-- Where (Revel, Verdalle, Tarn)
-- Price range
-- Instructor credentials
-
-**Example for stages-thematiques intro:**
-> L'Atelier des Cousettes propose des stages de couture thematiques a Revel et Verdalle, dans le departement du Tarn. Animes par Isabelle Bultez, couturiere diplomee CAP couture flou, ces stages sont ouverts aux debutants comme aux couturiers confirmes. Les stages couvrent l'initiation a la machine a coudre (40EUR, 3h), la decouverte complete de la couture (90EUR, 7h), la surjeteuse (65EUR, 5h), le patronage (40EUR, 3h), et la creation de sacs et accessoires (40-50EUR). Chaque participant travaille sur sa propre machine a coudre dans un groupe de taille reduite. Les stages ont lieu a la maison des associations de Revel et a l'atelier prive de Verdalle. Une adhesion ponctuelle de 5EUR a l'association Les P'tits Piafs est demandee.
-
-### 2. Build Reddit/community presence (HIGH)
-
-- Post in French sewing subreddits (r/couture, r/france) or forums
-- Answer questions about sewing in the Tarn area
-- Mention the atelier naturally in relevant threads
-- This directly impacts Perplexity and ChatGPT citation likelihood
-
-### 3. Fix missing accents in la-couturiere content (MEDIUM)
-
-The entire biography page is written without French accents ("etait" instead of "etait", "herite" instead of "herite"). This affects:
-- French NLP/tokenization by AI models
-- Content quality signals
-- User experience
-
-### 4. Add structured Q&A headings to content (MEDIUM)
-
-Convert implicit information into explicit question-based headings:
-- "## Quel est le prix d'un stage de couture ?" instead of "## Tarifs"
-- "## Ou ont lieu les ateliers ?" as a new section
-- "## Faut-il apporter sa machine a coudre ?"
-
-These match the query patterns AI engines use to extract answers.
-
-### 5. Add publication/update dates (MEDIUM)
-
-Add `datePublished` and `dateModified` to page schema. AI engines prefer content with clear freshness signals. Currently no dates are present in any schema or meta tags.
+Les 13 articles de blog fournissent des dizaines de passages citables sur des sujets pratiques (choix de machine, tissus, mesures, entretien, ourlets, patrons, etc.).
 
 ---
 
-## Schema Recommendations
+## Vérification du rendu côté serveur
 
-### Already implemented (good)
+**Statut : Excellent**
 
-- LocalBusiness with founder, opening hours, offer catalog
-- Service schema on 3 service pages with pricing
-- FAQPage schema on 3 service pages
-- ImageGallery on creations page
-- BreadcrumbList on all content pages
-- WebSite schema on homepage
-
-### Missing / recommended additions
-
-1. **Person schema** for Isabelle with `sameAs` linking to her social profiles
-2. **`datePublished` / `dateModified`** on all pages (via Article or WebPage schema)
-3. **`sameAs`** on LocalBusiness expanded to include: LinkedIn, Google Business Profile URL, YouTube (if channel created)
-4. **`knowsAbout`** on Person schema: "couture", "patronage", "surjeteuse", etc.
+- Astro avec pré-rendu statique (SSG) — toutes les pages sont pré-rendues en HTML au moment du build
+- Zéro dépendance JavaScript côté client pour le contenu
+- Tous les schémas rendus côté serveur dans le `<head>` HTML
+- Les robots IA voient l'intégralité du contenu sans exécution JavaScript
 
 ---
 
-## Content Reformatting Suggestions
+## 5 changements à plus fort impact
 
-### Homepage
+### 1. Construire une présence Reddit/communautaire (ÉLEVÉ)
 
-**Current intro:** "Venez pousser la porte de l'atelier pour nous rencontrer ! Vous etes les bienvenus !"
+- Publier dans les subreddits de couture francophone (r/couture, r/france) ou forums
+- Répondre aux questions sur la couture dans la région du Tarn
+- Mentionner l'atelier naturellement dans des fils de discussion pertinents
+- Impact direct sur la probabilité de citation par Perplexity et ChatGPT
 
-**Suggested rewrite (145 words):** Add a factual definition block before the welcome sentence. Start with "L'Atelier des Cousettes est un atelier de couture situe a Verdalle et Revel dans le Tarn..." followed by what services are offered, who runs it, and price range.
+### 2. Créer/optimiser la fiche Google Business Profile (ÉLEVÉ)
 
-### All service pages
+- Vérifier que la fiche GBP est complète avec photos, horaires, avis
+- Ajouter l'URL GBP dans le `sameAs` du schéma LocalBusiness
+- Les réponses IA locales s'appuient fortement sur les données GBP
 
-Add a structured summary block at the top of each page following this pattern:
-1. First sentence: "X est [definition with location]"
-2. Second sentence: who it's for
-3. Third sentence: price range and duration
-4. Fourth sentence: instructor credentials
+### 3. Enrichir llms.txt avec le blog et les faits clés (MOYEN)
 
-### La couturiere
+- Ajouter les liens vers les 13 articles de blog
+- Ajouter une section « Faits clés » : années d'expérience, nombre d'élèves, spécialités
+- Envisager un `llms-full.txt` détaillé
 
-Add accents throughout. Add a structured "bio card" summary at the top:
-- Name, qualification (CAP couture flou)
-- Years of experience
-- Location
-- What she teaches
+### 4. Ajouter `knowsAbout` au schéma Person (MOYEN)
+
+Le schéma Person d'Isabelle dans le LocalBusiness a déjà `knowsAbout` sur la page d'accueil, mais les autres pages (ContentPage, blog) n'incluent pas cette propriété. Harmoniser.
+
+### 5. Développer une chaîne YouTube (FAIBLE)
+
+- La vidéo existante est par un tiers — créer du contenu vidéo propre
+- Les tutoriels couture en vidéo sont fortement citables par les IA
+- Lier la chaîne dans le `sameAs` du schéma
+
+---
+
+## Recommandations de schéma
+
+### Déjà implémenté
+
+- LocalBusiness avec fondateur, horaires, catalogue d'offres, adresse structurée depuis le CMS
+- Service schema sur 3 pages de services avec tarifs depuis le CMS
+- Article schema sur 13 articles de blog avec auteur et éditeur depuis le CMS
+- ImageGallery sur la page créations
+- BreadcrumbList sur toutes les pages de contenu
+- WebSite schema sur la page d'accueil
+- WebPage schema avec `dateModified` sur toutes les pages ContentPage
+- CollectionPage schema sur la page blog
+- `knowsAbout` sur le Person schema de la page d'accueil
+
+### Ajouts recommandés
+
+1. **`sameAs` étendu** sur LocalBusiness : ajouter LinkedIn, Google Business Profile URL, YouTube (si chaîne créée)
+2. **`knowsAbout`** harmonisé sur le Person schema dans ContentPage et les pages de blog
+3. **`datePublished`** sur les pages de services (via le WebPage schema)
+
+---
+
+## Reformatage du contenu — État actuel
+
+### Page d'accueil — CORRIGÉ
+
+Bloc de définition factuel de 500+ mots avec sections structurées : « Pourquoi choisir L'Atelier des Cousettes ? », « Nos formules », « Votre animatrice », « Actualités ». Liens internes vers toutes les pages de services et le blog.
+
+### Pages de services — CORRIGÉ
+
+Chaque page de service a désormais :
+1. Introduction factuelle de 150+ mots (définition, lieu, public, prix, animatrice)
+2. FAQ en H2 sous forme de questions (5-8 questions par page)
+3. Liens internes vers les autres services et le blog
+
+### La couturière — CORRIGÉ
+
+Bio structurée avec introduction factuelle, accents corrigés, parcours détaillé. Page la plus riche en signaux E-E-A-T du site.
+
+### Blog — NOUVEAU
+
+13 articles de 700-800 mots ciblant le cluster « couture débutant ». Contenu pratique, structuré en H2/H3, avec liens internes vers les pages de services. Publication programmée avec gating par date.
