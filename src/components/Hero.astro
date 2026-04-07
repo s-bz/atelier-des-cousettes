@@ -7,15 +7,21 @@ interface Props {
   coverImage?: string;
 }
 
-const { title, subtitle, coverImage } = Astro.props;
+const { title, subtitle, coverImage: coverImageRaw } = Astro.props;
 
 // Dynamically import the cover image from src/assets
-const coverImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/*.{jpg,jpeg,png,webp}');
-const resolvedCover = coverImage ? await coverImages[`/src/assets/images/covers/${coverImage}`]?.() : null;
+const coverImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+// Resolve the cover image: use full path if provided, otherwise search by filename
+const coverImagePath = coverImageRaw
+  ? coverImages[coverImageRaw]
+    ? coverImageRaw
+    : Object.keys(coverImages).find(path => path.endsWith(`/${coverImageRaw}`))
+  : undefined;
+const resolvedCover = coverImagePath ? await coverImages[coverImagePath]?.() : null;
 ---
 
 {resolvedCover ? (
-  <section class="relative h-64 md:h-80 overflow-hidden">
+  <section class="relative h-64 md:h-80 overflow-hidden mb-8 md:mb-12">
     <Image
       src={resolvedCover.default}
       alt=""
@@ -25,11 +31,11 @@ const resolvedCover = coverImage ? await coverImages[`/src/assets/images/covers/
       format="webp"
       quality={80}
     />
-    <div class="absolute inset-0 bg-black/40" />
+    <div class="absolute inset-0 bg-black/50" />
     <div class="relative h-full flex flex-col items-center justify-center px-4 text-center">
-      <h1 class="text-3xl md:text-5xl font-black leading-tight text-white drop-shadow-lg" style="font-family: var(--font-heading);">{title}</h1>
+      <h1 class="hero-title text-3xl md:text-5xl font-black leading-tight text-white" style="font-family: var(--font-heading);">{title}</h1>
       {subtitle && (
-        <p class="mt-3 text-lg md:text-xl text-white/90 drop-shadow">{subtitle}</p>
+        <p class="hero-subtitle mt-3 text-lg md:text-xl text-white/90">{subtitle}</p>
       )}
     </div>
   </section>
@@ -43,3 +49,13 @@ const resolvedCover = coverImage ? await coverImages[`/src/assets/images/covers/
     </div>
   </section>
 )}
+
+<style>
+  .hero-title {
+    color: white !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 2px rgba(0, 0, 0, 0.5);
+  }
+  .hero-subtitle {
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7), 0 0 2px rgba(0, 0, 0, 0.4);
+  }
+</style>

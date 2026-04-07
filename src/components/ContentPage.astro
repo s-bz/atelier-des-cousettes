@@ -6,20 +6,20 @@ import Markdoc from '@markdoc/markdoc';
 
 interface Props {
   title: string;
+  subtitle?: string;
   seoDescription: string;
   contentNode: any;
   showContactCTA?: boolean;
   coverImage?: string;
 }
 
-const { title, seoDescription, contentNode, showContactCTA = true, coverImage: coverImageRaw } = Astro.props;
-const coverImage = coverImageRaw ? (coverImageRaw.startsWith('/') ? coverImageRaw : `/images/covers/${coverImageRaw}`) : undefined;
+const { title, subtitle, seoDescription, contentNode, showContactCTA = true, coverImage } = Astro.props;
 const transformed = contentNode ? Markdoc.transform(contentNode.node) : null;
 const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
 ---
 
 <BaseLayout title={title} description={seoDescription}>
-  <Hero title={title} coverImage={coverImage} />
+  <Hero title={title} subtitle={subtitle} coverImage={coverImage} />
 
   <div class="max-w-3xl mx-auto px-4 prose">
     <Fragment set:html={renderedContent} />

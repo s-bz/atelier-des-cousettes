@@ -1,10 +1,10 @@
 import { config, fields, singleton, collection } from '@keystatic/core';
 
-const coverImageField = () =>
+const coverImageField = (slug: string) =>
   fields.image({
     label: 'Image de couverture',
-    directory: 'src/assets/images/covers',
-    publicPath: '/src/assets/images/covers/',
+    directory: `src/assets/images/covers/${slug}`,
+    publicPath: `/src/assets/images/covers/${slug}/`,
   });
 
 export default config({
@@ -33,7 +33,7 @@ export default config({
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
-        coverImage: coverImageField(),
+        coverImage: coverImageField('homepage'),
         youtubeVideoId: fields.text({ label: 'ID vidéo YouTube' }),
         youtubeCredit: fields.text({ label: 'Crédit vidéo' }),
         content: fields.markdoc({ label: 'Contenu de la page' }),
@@ -45,8 +45,9 @@ export default config({
       format: { contentField: 'content' },
       schema: {
         title: fields.text({ label: 'Titre' }),
+        subtitle: fields.text({ label: 'Sous-titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
-        coverImage: coverImageField(),
+        coverImage: coverImageField('stages-thematiques'),
         content: fields.markdoc({ label: 'Contenu de la page' }),
       },
     }),
@@ -56,8 +57,9 @@ export default config({
       format: { contentField: 'content' },
       schema: {
         title: fields.text({ label: 'Titre' }),
+        subtitle: fields.text({ label: 'Sous-titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
-        coverImage: coverImageField(),
+        coverImage: coverImageField('ateliers-reguliers'),
         content: fields.markdoc({ label: 'Contenu de la page' }),
       },
     }),
@@ -67,8 +69,9 @@ export default config({
       format: { contentField: 'content' },
       schema: {
         title: fields.text({ label: 'Titre' }),
+        subtitle: fields.text({ label: 'Sous-titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
-        coverImage: coverImageField(),
+        coverImage: coverImageField('un-apres-midi-couture'),
         content: fields.markdoc({ label: 'Contenu de la page' }),
       },
     }),
@@ -78,8 +81,9 @@ export default config({
       format: { contentField: 'content' },
       schema: {
         title: fields.text({ label: 'Titre' }),
+        subtitle: fields.text({ label: 'Sous-titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
-        coverImage: coverImageField(),
+        coverImage: coverImageField('la-couturiere'),
         content: fields.markdoc({ label: 'Contenu de la page' }),
       },
     }),
@@ -91,7 +95,7 @@ export default config({
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
-        coverImage: coverImageField(),
+        coverImage: coverImageField('mes-creations'),
         content: fields.markdoc({ label: 'Contenu' }),
       },
     }),
@@ -101,8 +105,9 @@ export default config({
       format: { contentField: 'content' },
       schema: {
         title: fields.text({ label: 'Titre' }),
+        subtitle: fields.text({ label: 'Sous-titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
-        coverImage: coverImageField(),
+        coverImage: coverImageField('mentions-legales'),
         content: fields.markdoc({ label: 'Contenu' }),
       },
     }),
