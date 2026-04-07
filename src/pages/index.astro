@@ -10,6 +10,11 @@ import Markdoc from '@markdoc/markdoc';
 
 const homepage = await reader.singletons.homepage.read();
 const settings = await reader.singletons.siteSettings.read();
+const [ateliers, stages, apresMidi] = await Promise.all([
+  reader.singletons.ateliersReguliers.read(),
+  reader.singletons.stagesThematiques.read(),
+  reader.singletons.apresMidiCouture.read(),
+]);
 
 if (!homepage) throw new Error('Homepage content not found');
 
@@ -86,9 +91,9 @@ const resolvedCards = await Promise.all(
           "@type": "OfferCatalog",
           "name": "Cours et stages de couture",
           "itemListElement": [
-            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Ateliers réguliers", "url": `${siteUrl}/ateliers-reguliers/` } },
-            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Stages thématiques", "url": `${siteUrl}/stages-thematiques/` } },
-            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Après-midi couture", "url": `${siteUrl}/un-apres-midi-couture/` } }
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": ateliers?.title, "url": `${siteUrl}/ateliers-reguliers/` } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": stages?.title, "url": `${siteUrl}/stages-thematiques/` } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": apresMidi?.title, "url": `${siteUrl}/un-apres-midi-couture/` } }
           ]
         }
       },
@@ -134,14 +139,16 @@ const resolvedCards = await Promise.all(
     {resolvedCards.length > 0 && (
       <section class="mb-12">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {resolvedCards.map((card) => (
-            <a href={card.href} class="group">
+          {resolvedCards.map((card) => {
+            const safeHref = card.href?.startsWith('/') ? card.href : '#';
+            return (
+            <a href={safeHref} class="group">
               {card.resolvedImage && (
                 <Image src={card.resolvedImage} alt={card.imageAlt || card.label} class="rounded-2xl w-full h-64 object-cover group-hover:opacity-90 transition-opacity" format="webp" quality={80} widths={[320, 480]} sizes="(max-width: 640px) 100vw, 33vw" />
               )}
               <p class="mt-2 text-center text-sm font-medium text-[var(--color-heading)]">{card.label}</p>
             </a>
-          ))}
+          );})}
         </div>
       </section>
     )}

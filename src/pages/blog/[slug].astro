@@ -7,10 +7,13 @@ import { reader } from '../../utils/reader';
 import { resolveImageUrl } from '../../utils/images';
 
 export async function getStaticPaths() {
+  const now = new Date();
   const posts = await reader.collections.blog.all();
-  return posts.map((post) => ({
-    params: { slug: post.slug },
-  }));
+  return posts
+    .filter((post) => post.entry.publishDate && new Date(post.entry.publishDate) <= now)
+    .map((post) => ({
+      params: { slug: post.slug },
+    }));
 }
 
 const { slug } = Astro.params;

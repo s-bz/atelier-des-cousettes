@@ -10,9 +10,10 @@ if (!page) throw new Error('Blog index content not found');
 
 const posts = await reader.collections.blog.all();
 
+const now = new Date();
 const sortedPosts = posts
   .filter((post): post is typeof post & { entry: { publishDate: string } } =>
-    Boolean(post.entry.publishDate),
+    Boolean(post.entry.publishDate) && new Date(post.entry.publishDate) <= now,
   )
   .sort((a, b) => new Date(b.entry.publishDate).getTime() - new Date(a.entry.publishDate).getTime());
 
