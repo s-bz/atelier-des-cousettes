@@ -5,7 +5,7 @@
 
 ---
 
-## Score Global de Qualité de Contenu : 68/100
+## Score Global de Qualité de Contenu : 82/100
 
 ---
 
@@ -16,6 +16,7 @@ Ce qui est en place et fonctionne bien.
 ### Infrastructure technique
 
 - **Données structurées** — Excellent balisage schema sur toutes les pages : LocalBusiness + WebSite (accueil), Service avec Offer (services), Article (blog), ImageGallery (créations), BreadcrumbList (toutes).
+- **Schema Person** — Page La couturière inclut un schema `Person` avec `EducationalOccupationalCredential` (CAP couture flou).
 - **Offres schema depuis le CMS** — Les offres (prix, noms) des 3 pages de services sont gérées depuis Keystatic (`schemaOffers`), plus de hardcoding dans les templates.
 - **Descriptions schema dynamiques** — Les descriptions des schemas Service utilisent le champ `seoDescription` du CMS.
 - **Meta tags** — Canonical, Open Graph (`fr_FR`), Twitter card sur chaque page.
@@ -26,17 +27,22 @@ Ce qui est en place et fonctionne bien.
 ### Contenu & E-E-A-T
 
 - **Blog : 13 articles SEO** — Cluster thématique couture solide couvrant : choix de machine à coudre, tote bag, débuter la couture, entretien machine, prendre ses mesures, tissus débutants, trousse de couture, patrons, ourlet invisible, trousse à fermeture éclair, erreurs de débutant, organiser son espace, surjeteuse. Articles structurés en Q/R avec titres interrogatifs (bon pour citations IA).
-- **Qualifications sur toutes les pages de services** — "Isabelle Bultez, couturière diplômée CAP couture flou" mentionnée dans le paragraphe d'introduction de chaque page de service.
-- **Liens internes contextuels** — Ateliers réguliers et un après-midi couture ont des liens croisés vers les services liés dans le corps du texte.
-- **Paragraphes d'introduction** — Chaque page de service a un paragraphe d'introduction riche (qualifications, niveaux, accompagnement, tarifs, lieux).
-- **Page d'accueil CMS** — Images, cartes services, CTA et contenu gérés depuis Keystatic. Schema OfferCatalog avec titres dynamiques des services.
+- **Qualifications sur toutes les pages** — "Isabelle Bultez, couturière diplômée CAP couture flou" mentionnée dans le paragraphe d'introduction de chaque page de service et sur la page d'accueil.
+- **Liens internes contextuels** — Toutes les pages de services ont des liens croisés vers les services liés dans le corps du texte. La page d'accueil lie vers les 3 services, la bio et le blog.
+- **Paragraphes d'introduction** — Chaque page a un paragraphe d'introduction riche (qualifications, niveaux, accompagnement, tarifs, lieux).
+- **Page d'accueil structurée** — Sections "Pourquoi nous choisir", "Nos formules", "Votre animatrice", "Actualités". Images, cartes services, CTA gérés depuis Keystatic.
+- **FAQ enrichies** — 5-6 questions H2 par page de service couvrant matériel, niveau, inscription, déroulement, tarifs, annulation.
+- **La couturière enrichie** — Philosophie d'enseignement, spécialisations, expérience détaillée. Schema Person avec credential CAP.
 
-### Pages en bonne santé
+### Pages au-dessus du seuil
 
 | Page | Mots | Seuil | Statut |
 |------|------|-------|--------|
-| Stages thématiques | ~775 | 800 | ⚠️ Quasi atteint (-25 mots) |
-| Ateliers réguliers | ~695 | 800 | ⚠️ En progression (-105 mots) |
+| Stages thématiques | ~961 | 800 | ✅ OK |
+| Ateliers réguliers | ~887 | 800 | ✅ OK |
+| Un après-midi couture | ~803 | 800 | ✅ OK |
+| Page d'accueil | ~500 | 500 | ✅ OK |
+| La couturière | ~600 | 500 | ✅ OK |
 
 ---
 
@@ -46,85 +52,20 @@ Ce qui est en place et fonctionne bien.
 
 | Critère | Résultat | Statut |
 |---------|----------|--------|
-| Nombre de mots | ~236 mots | ÉCHEC (min 500) |
+| Nombre de mots | ~500 mots | ✅ OK |
 | H1 | "L'Atelier des Cousettes" | OK |
 | Meta description | 148 caractères, riche en mots-clés | OK |
-| Liens internes | 3 cartes services (CMS) + nav | OK |
+| Liens internes | 3 cartes services + liens corps + blog + bio | Excellent |
 | Schema | LocalBusiness + WebSite + OfferCatalog | Excellent |
 
-**Problèmes :**
+**Problèmes restants :**
 
-- **Contenu mince** — 236 mots, en dessous du minimum de 500.
-- La section actualités indique "Octobre 2025" — **contenu obsolète** (6 mois).
-- Pas de structure H2 au-delà de "Actualités" — il manque des sections "Nos cours", "Pourquoi nous choisir", etc.
+- Actualités mises à jour en "Saison 2025-2026" mais le contenu reste générique — pourrait inclure des dates précises ou des nouveautés concrètes.
 - Vidéo YouTube présente mais aucune transcription ni texte d'accompagnement.
 
 ---
 
-### 2. Ateliers réguliers (`/ateliers-reguliers`)
-
-| Critère | Résultat | Statut |
-|---------|----------|--------|
-| Nombre de mots | ~695 mots | ATTENTION (min 800) |
-
-**Problèmes :**
-
-- **105 mots en dessous** du seuil de 800 mots.
-- Aucun témoignage, récit d'élève ou photo d'ateliers en cours.
-- Le contenu reste principalement une grille de dates/tarifs — manque de texte descriptif sur l'expérience et les apprentissages.
-
----
-
-### 3. Stages thématiques (`/stages-thematiques`)
-
-| Critère | Résultat | Statut |
-|---------|----------|--------|
-| Nombre de mots | ~775 mots | ATTENTION (min 800) |
-
-**Problèmes :**
-
-- **25 mots en dessous** du seuil — quasi atteint.
-- Les dates font référence à janvier, octobre, avril — vérifier qu'elles sont à jour pour la saison 2025-2026.
-- Aucun résultat d'élèves, photos avant/après ni témoignages.
-- Pas de liens internes contextuels vers les pages liées.
-
----
-
-### 4. Un après-midi couture (`/un-apres-midi-couture`)
-
-| Critère | Résultat | Statut |
-|---------|----------|--------|
-| Nombre de mots | ~189 mots | ÉCHEC (min 800) |
-
-**Problèmes :**
-
-- **Contenu très mince** — 189 mots, très loin du minimum de 800.
-- Seulement 2 questions H2 — pourrait être considérablement étoffé.
-- Aucune photo de séances passées, aucun témoignage.
-- Manque de détails sur le déroulement, le matériel, ce que l'on crée.
-
----
-
-### 5. La couturière (`/la-couturiere`)
-
-| Critère | Résultat | Statut |
-|---------|----------|--------|
-| Nombre de mots | ~333 mots | ÉCHEC (min 500 pour page "à propos") |
-| H2 | 3 sections biographiques | Bonne structure |
-| Images | 3 photos bio avec alt text | Bon |
-| Signaux E-E-A-T | Diplôme CAP, héritage familial, parcours pro | Bonne base |
-
-**Problèmes :**
-
-- **Page E-E-A-T la plus forte** du site, mais encore trop mince à 333 mots.
-- Mentionne le diplôme CAP mais ne développe pas sur les années d'expérience, le nombre d'élèves formés, les spécialisations.
-- Aucune validation externe (mentions presse, prix, partenariats).
-- Schema `Person` manquant (seulement référencée comme fondatrice dans LocalBusiness).
-- Devrait être la page E-E-A-T pilier du site — nécessite une expansion significative.
-
----
-
-### 6. Mes créations (`/mes-creations`)
+### 2. Mes créations (`/mes-creations`)
 
 | Critère | Résultat | Statut |
 |---------|----------|--------|
@@ -146,22 +87,22 @@ Ce qui est en place et fonctionne bien.
 
 | Facteur | Score | Signaux clés |
 |---------|-------|--------------|
-| **Expérience** | 14/25 | Galerie existante mais maigre. Vidéo YouTube positive. 13 articles de blog démontrent une expertise pratique. |
-| **Expertise** | 18/25 | Diplôme CAP sur la page bio et sur toutes les pages de services. 13 articles de blog renforcent l'autorité thématique. |
+| **Expérience** | 15/25 | Galerie existante mais maigre. Vidéo YouTube positive. 13 articles de blog démontrent une expertise pratique. |
+| **Expertise** | 20/25 | Diplôme CAP sur la page bio (avec schema Person), sur toutes les pages de services et la page d'accueil. Philosophie d'enseignement détaillée. 13 articles de blog. |
 | **Autorité** | 11/25 | Blog avec 13 articles crée un cluster thématique solide. Aucune citation externe, mention presse ou partenariat. |
-| **Fiabilité** | 16/25 | Coordonnées sur chaque page. Adresse physique. Mentions légales. Adhésion associative. Toujours aucun témoignage ou avis. |
-| **Total** | **59/100** | |
+| **Fiabilité** | 17/25 | Coordonnées sur chaque page. Adresse physique. Mentions légales. Adhésion associative. FAQ détaillées. Toujours aucun témoignage ou avis. |
+| **Total** | **63/100** | |
 
 ---
 
-## Score de Prêt pour les Citations IA : 52/100
+## Score de Prêt pour les Citations IA : 58/100
 
 | Signal | Statut | Notes |
 |--------|--------|-------|
-| Déclarations citables | Moyen | Articles de blog contiennent des définitions et conseils extractibles. Pages de services principalement horaires/prix. |
-| Données structurées | Fort | Excellent balisage schema, offres depuis CMS. |
+| Déclarations citables | Bon | Articles de blog + FAQ détaillées sur chaque page de service fournissent des réponses extractibles. |
+| Données structurées | Fort | Excellent balisage schema, offres depuis CMS, Person schema. |
 | Hiérarchie des titres | Bon | Flux H1 → H2 → H3 propre |
-| Format réponse-d'abord | Moyen | Articles de blog en Q/R avec titres interrogatifs. FAQ pages de services limitées. |
+| Format réponse-d'abord | Bon | Articles de blog en Q/R + 5-6 FAQ par page de service avec titres interrogatifs. |
 | Tableaux/listes | Moyen | Tarifs listés mais pas en tableaux HTML |
 | llms.txt | Présent | Résumé lisible par les machines |
 | robots.txt crawlers IA | Autorisés | GPTBot, Claude-Web, PerplexityBot |
@@ -174,7 +115,7 @@ Ce qui est en place et fonctionne bien.
 
 | Page | Signal de fraîcheur | Statut |
 |------|-------------------|--------|
-| Page d'accueil | Actualités "Octobre 2025" | **OBSOLÈTE** — 6 mois |
+| Page d'accueil | Actualités "Saison 2025-2026" | ✅ Mis à jour |
 | Ateliers réguliers | Dates de sessions listées | À vérifier pour la saison en cours |
 | Stages thématiques | Sessions datées multiples | À vérifier pour la saison en cours |
 | Un après-midi couture | Sessions datées | À vérifier pour la saison en cours |
@@ -187,42 +128,35 @@ Ce qui est en place et fonctionne bien.
 
 ### Critique (Lacunes de contenu)
 
-1. **Étoffer la page d'accueil à 500+ mots** — Actuellement 236 mots. Ajouter une section "pourquoi nous choisir", une brève présentation de l'animatrice avec lien vers la bio, et mettre à jour la section actualités.
-
-2. **Étoffer les pages de services à 800+ mots** — Stages thématiques quasi au seuil (775). Ateliers réguliers en progression (695). Un après-midi couture très mince (189). Ajouter du texte descriptif sur l'expérience, les apprentissages, le déroulement.
-
-3. **Étoffer La couturière à 600+ mots** — Actuellement 333 mots. Ajouter les années d'expérience, le nombre d'élèves formés, la philosophie pédagogique, les spécialisations. Ajouter le schema `Person`.
-
-4. **Étoffer la galerie Mes créations** — Actuellement ~68 mots et ~5 images. Ajouter 10 à 15+ créations avec des textes alternatifs descriptifs et un paragraphe par création.
+1. **Étoffer la galerie Mes créations** — Actuellement ~68 mots et ~5 images. Ajouter 10 à 15+ créations avec des textes alternatifs descriptifs et un paragraphe par création.
 
 ### Élevé (E-E-A-T & Confiance)
 
-5. **Ajouter des témoignages/avis** — Collecter des citations d'élèves pour les pages de services. Envisager d'intégrer des avis Google.
+2. **Ajouter des témoignages/avis** — Collecter des citations d'élèves pour les pages de services. Envisager d'intégrer des avis Google.
 
-6. **Mettre à jour le contenu obsolète** — La section actualités "Octobre 2025" est toujours sur la page d'accueil.
-
-7. **Ajouter des liens internes sur stages thématiques** — Seule page de service sans liens croisés dans le corps du texte.
-
-### Moyen (Citations IA & Structure)
-
-8. **Ajouter plus de contenu FAQ** — Les pages de services ont 2-3 questions H2 mais pas encore 5-6 par page (stationnement, matériel, annulation, taille des groupes, conditions d'âge).
+3. **Ajouter des validations externes** — Mentions presse, partenariats, nombre d'élèves formés, années d'activité pour renforcer l'autorité.
 
 ---
 
 ## Synthèse
 
-Le site a **significativement progressé**. Les bases SEO techniques sont excellentes et ont été renforcées : offres schema gérées depuis le CMS, qualifications de l'animatrice sur toutes les pages de services, liens internes contextuels, et un **blog de 13 articles** formant un cluster thématique couture solide.
+Le site a **considérablement progressé** et atteint désormais un bon niveau de qualité de contenu. Toutes les pages principales (hors galerie) dépassent leur seuil minimum de mots. Les FAQ sont enrichies avec 5-6 questions par page de service. Les liens internes sont en place sur toutes les pages. Le schema Person avec credential CAP renforce les signaux E-E-A-T.
 
 **Bilan des recommandations initiales :**
 
-- ✅ #7 — Liens internes entre pages de services (2/3 pages)
-- ✅ #9 — Qualifications de l'animatrice sur les pages de services
+- ✅ #1 — Page d'accueil étoffée à 500 mots
+- ✅ #2 — Pages de services étoffées à 800+ mots
+- ✅ #3 — La couturière étoffée à 600 mots + schema Person
+- ✅ #7 — Liens internes entre toutes les pages de services
+- ✅ #8 — FAQ enrichies (5-6 questions par page)
+- ✅ #9 — Qualifications de l'animatrice sur toutes les pages
 - ✅ #10 — Blog créé avec 13 articles SEO
-- ⚠️ #1, #2, #8 — En cours (contenu enrichi mais seuils non atteints)
-- ❌ #3, #4, #5, #6 — Non traités
+- ❌ #4 — Galerie Mes créations non étoffée
+- ❌ #5 — Témoignages/avis non ajoutés
+- ❌ #6 — Contenu obsolète partiellement traité (saison mise à jour, dates spécifiques à vérifier)
 
 **Priorités immédiates :**
 
-1. **Contenu mince** — Aucune page n'atteint son seuil minimum. Priorité : un après-midi couture (189/800) et page d'accueil (236/500).
-2. **Contenu obsolète** — Actualités "Octobre 2025" à remplacer.
-3. **E-E-A-T** — Témoignages, galerie étoffée et page couturière enrichie restent absents.
+1. **Galerie Mes créations** — Seule page très en dessous de son seuil (68/300 mots).
+2. **Témoignages** — Signal E-E-A-T manquant le plus impactant.
+3. **Validations externes** — Citations, partenariats pour renforcer l'autorité.
