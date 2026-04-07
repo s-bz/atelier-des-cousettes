@@ -5,6 +5,7 @@ import { reader } from '../utils/reader';
 const page = await reader.singletons.apresMidiCouture.read();
 if (!page) throw new Error('Un après midi couture content not found');
 const contentNode = page.content ? await page.content() : null;
+const siteUrl = Astro.site?.toString();
 ---
 
 <ContentPage
@@ -12,5 +13,36 @@ const contentNode = page.content ? await page.content() : null;
   subtitle={page.subtitle}
   seoDescription={page.seoDescription}
   contentNode={contentNode}
-  coverImage={page.coverImage}
-/>
+  coverImage={page.coverImage ?? undefined}
+>
+  <Fragment slot="page-head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Après-midi couture",
+      "description": "Après-midi couture ouverts à tous à Revel et Verdalle dans le Tarn. 3 heures d'accompagnement personnalisé.",
+      "provider": { "@id": `${siteUrl}#organization` },
+      "areaServed": { "@type": "AdministrativeArea", "name": "Tarn" },
+      "serviceType": "Cours de couture",
+      "offers": [
+        { "@type": "Offer", "name": "Après-midi couture (3h)", "price": "40", "priceCurrency": "EUR" }
+      ]
+    }).replace(/<\//g, '<\\/')} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Combien coûte un après-midi couture ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "40\u20AC pour 3 heures d'atelier, plus une adhésion ponctuelle de 5\u20AC à l'association Les P'tits Piafs." }
+        },
+        {
+          "@type": "Question",
+          "name": "Faut-il s'inscrire à l'avance ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Oui, l'inscription est ponctuelle et doit être faite au plus tard une semaine avant la date de l'atelier." }
+        }
+      ]
+    }).replace(/<\//g, '<\\/')} />
+  </Fragment>
+</ContentPage>

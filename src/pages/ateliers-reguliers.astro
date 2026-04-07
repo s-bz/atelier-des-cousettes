@@ -5,6 +5,7 @@ import { reader } from '../utils/reader';
 const page = await reader.singletons.ateliersReguliers.read();
 if (!page) throw new Error('Ateliers réguliers content not found');
 const contentNode = page.content ? await page.content() : null;
+const siteUrl = Astro.site?.toString();
 ---
 
 <ContentPage
@@ -12,5 +13,44 @@ const contentNode = page.content ? await page.content() : null;
   subtitle={page.subtitle}
   seoDescription={page.seoDescription}
   contentNode={contentNode}
-  coverImage={page.coverImage}
-/>
+  coverImage={page.coverImage ?? undefined}
+>
+  <Fragment slot="page-head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Ateliers de couture réguliers",
+      "description": "Ateliers de couture réguliers à Revel et Verdalle dans le Tarn, tous niveaux, petits groupes, de septembre à juin.",
+      "provider": { "@id": `${siteUrl}#organization` },
+      "areaServed": { "@type": "AdministrativeArea", "name": "Tarn" },
+      "serviceType": "Cours de couture",
+      "offers": [
+        { "@type": "Offer", "name": "Atelier 2h (une séance)", "price": "25", "priceCurrency": "EUR" },
+        { "@type": "Offer", "name": "Forfait mensuel 1 atelier/mois", "price": "33", "priceCurrency": "EUR" },
+        { "@type": "Offer", "name": "Forfait mensuel 2 ateliers/mois", "price": "55", "priceCurrency": "EUR" },
+        { "@type": "Offer", "name": "Ateliers enfants (mensuel)", "price": "30", "priceCurrency": "EUR" }
+      ]
+    }).replace(/<\//g, '<\\/')} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Quels sont les tarifs des ateliers réguliers ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "De 25\u20AC à 55\u20AC par mois selon la formule choisie (1 ou 2 ateliers par mois). Les ateliers enfants sont à 30\u20AC/mois." }
+        },
+        {
+          "@type": "Question",
+          "name": "Faut-il une adhésion pour les ateliers réguliers ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Oui, l'adhésion annuelle à l'association Les P'tits Piafs est de 15\u20AC." }
+        },
+        {
+          "@type": "Question",
+          "name": "Les ateliers sont-ils ouverts aux débutants ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Oui, les ateliers sont ouverts à tous niveaux. Vous bénéficiez d'un suivi individualisé en petits groupes." }
+        }
+      ]
+    }).replace(/<\//g, '<\\/')} />
+  </Fragment>
+</ContentPage>

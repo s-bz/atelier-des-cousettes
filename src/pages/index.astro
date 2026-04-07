@@ -20,9 +20,22 @@ if (!homepage) throw new Error('Homepage content not found');
 const contentNode = homepage.content ? await homepage.content() : null;
 const transformed = contentNode ? Markdoc.transform(contentNode.node) : null;
 const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
+
+// Resolve cover image for OG
+const coverImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const coverImagePath = homepage.coverImage
+  ? coverImages[homepage.coverImage]
+    ? homepage.coverImage
+    : Object.keys(coverImages).find(path => path.endsWith(`/${homepage.coverImage}`))
+  : undefined;
+const resolvedCover = coverImagePath ? await coverImages[coverImagePath]?.() : null;
+const ogImage = resolvedCover ? new URL(resolvedCover.default.src, Astro.site).toString() : undefined;
+
+const phone = settings?.phones?.[0]?.replace(/[.\s]/g, '');
+const phoneIntl = phone ? `+33${phone.slice(1)}` : undefined;
 ---
 
-<BaseLayout title={homepage.title} description={homepage.seoDescription}>
+<BaseLayout title={homepage.title} description={homepage.seoDescription} ogImage={ogImage}>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify([
       {
@@ -33,7 +46,8 @@ const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
         "description": homepage.seoDescription,
         "url": Astro.site?.toString(),
         "email": settings?.email,
-        "telephone": settings?.phones?.[0]?.replace(/[.\s]/g, '') ? `+33${settings.phones[0].replace(/[.\s]/g, '').slice(1)}` : undefined,
+        "telephone": phoneIntl,
+        "image": ogImage,
         "address": {
           "@type": "PostalAddress",
           "streetAddress": "118 lieu dit En Rivals",
@@ -53,7 +67,26 @@ const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
           { "@type": "AdministrativeArea", "name": "Tarn" }
         ],
         "priceRange": "25€–90€",
-        "sameAs": settings?.facebookUrl ? [settings.facebookUrl] : []
+        "sameAs": settings?.facebookUrl ? [settings.facebookUrl] : [],
+        "founder": {
+          "@type": "Person",
+          "name": "Isabelle Bultez",
+          "jobTitle": "Couturière diplômée CAP"
+        },
+        "openingHoursSpecification": [
+          { "@type": "OpeningHoursSpecification", "dayOfWeek": "Tuesday", "opens": "14:00", "closes": "17:00" },
+          { "@type": "OpeningHoursSpecification", "dayOfWeek": "Thursday", "opens": "14:00", "closes": "19:30" },
+          { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "09:30", "closes": "17:00" }
+        ],
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Cours et stages de couture",
+          "itemListElement": [
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Ateliers réguliers", "url": `${Astro.site}ateliers-reguliers/` } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Stages thématiques", "url": `${Astro.site}stages-thematiques/` } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Après-midi couture", "url": `${Astro.site}un-apres-midi-couture/` } }
+          ]
+        }
       },
       {
         "@context": "https://schema.org",
@@ -66,7 +99,7 @@ const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
       }
     ]).replace(/<\//g, '<\\/')} />
   </Fragment>
-  <Hero title={homepage.title} subtitle={homepage.subtitle} coverImage={homepage.coverImage} />
+  <Hero title={homepage.title} subtitle={homepage.subtitle} coverImage={homepage.coverImage ?? undefined} />
 
   <div class="max-w-3xl mx-auto px-4">
     <!-- Image hero -->

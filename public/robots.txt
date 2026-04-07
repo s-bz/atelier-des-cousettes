@@ -1,3 +1,19 @@
 User-agent: *
 Allow: /
 Sitemap: https://couture-tarn.fr/sitemap-index.xml
+
+# AI crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /

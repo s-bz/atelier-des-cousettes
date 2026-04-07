@@ -12,5 +12,6 @@ const contentNode = page.content ? await page.content() : null;
   subtitle={page.subtitle}
   seoDescription={page.seoDescription}
   contentNode={contentNode}
-  coverImage={page.coverImage}
+  coverImage={page.coverImage ?? undefined}
+  contentClass="max-w-4xl"
 />
