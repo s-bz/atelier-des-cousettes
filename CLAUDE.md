@@ -7,14 +7,35 @@
 
 ## Content Management (Keystatic CMS)
 
-- All page content **must** be managed through Keystatic — never hardcode text in `.astro` page files.
-- **Singletons** for one-off pages (homepage, service pages, legal). **Collections** for repeatable content (blog articles, gallery creations).
-- Content lives in `src/content/` as Markdoc (`.mdoc`) or YAML files. Keystatic config is in `keystatic.config.ts`.
+- All page content **must** be managed through Keystatic — never hardcode text in `.astro` page files. This includes section titles, CTA labels, cross-link text, and any user-facing string.
+- **Singletons** for one-off pages (homepage, service pages, legal, couturière, creations). **Collections** for repeatable content (blog articles, gallery creations).
+- Content lives in `src/content/` as YAML files (structured pages) or Markdoc `.mdoc` files (prose-heavy pages like blog, mentions légales). Keystatic config is in `keystatic.config.ts`.
+- **Prefer structured YAML over Markdoc** for page singletons — use typed fields (text, array of objects, image) so content is editable field-by-field in the CMS. Reserve Markdoc only for long-form prose (blog articles, legal pages).
+- For multiline text fields that need paragraph breaks, use YAML literal block style (`|`) — not folded style (`>-`), which collapses `\n\n` paragraph separators.
 - Storage: local filesystem in dev, GitHub repo (`s-bz/atelier-des-cousettes`) in production.
 - Every content type must have a `seoDescription` field for meta tags.
-- Cover images use a shared helper: `coverImageField(slug)` pointing to `src/assets/images/covers/{slug}/`.
+- Cover images use a shared helper: `coverImageFields(slug)` pointing to `src/assets/images/covers/{slug}/`.
 - Blog articles use directory-based slugs: `src/content/blog/{slug}/index.mdoc`.
 - Content reader utility: `src/utils/reader.ts` — import `reader` to fetch any singleton or collection.
+
+## Page Architecture
+
+All redesigned pages follow a consistent section-based pattern using `BaseLayout` directly:
+
+1. **Hero** — `<Hero>` component with title, subtitle, cover image
+2. **Introduction** — centered text paragraph + optional CTA
+3. **Content sections** — page-specific structured content (cards, grouped items, biography sections)
+4. **FAQ** — optional `faqItems` array rendered as question/answer pairs
+5. **Cross-links** — links to related service pages with section title from Keystatic
+6. Alternating backgrounds: sections alternate between `bg-[var(--color-bg-accent)]` and no background
+
+**Do NOT use `ContentPage.astro`** for new pages — it is a legacy wrapper for Markdoc prose. Build pages directly with `BaseLayout` + `Hero` + structured sections.
+
+### Service pages shared patterns
+
+- Service pages (`ateliers-reguliers`, `stages-thematiques`, `un-apres-midi-couture`) use `buildServicePageSchemas()` from `src/utils/schema.ts` for JSON-LD (BreadcrumbList + WebPage + Service + FAQPage).
+- Each has: `schemaOffers` (SEO pricing), `faqItems`, `crossLinksText`, `ctaLabel` in Keystatic.
+- Non-service pages (couturière, creations) build schemas inline but should reuse shared helpers where possible.
 
 ## SEO
 
@@ -22,11 +43,13 @@
 
 - **Every page** must have a `BreadcrumbList` schema (Accueil → Page → Sub-page).
 - Homepage: `LocalBusiness` + `WebSite` schemas with geo coordinates, opening hours, price range, founder.
-- Service pages: `Service` schema with `Offer` items + `FAQPage` schema.
+- Service pages: use `buildServicePageSchemas()` from `src/utils/schema.ts` — includes `BreadcrumbList`, `WebPage`, `Service` with `Offer` items, and `FAQPage`.
 - Blog listing: `CollectionPage` schema.
 - Blog articles: `Article` schema with author (Isabelle Bultez), publisher, dates, image.
 - Gallery: `ImageGallery` with `ImageObject` items.
+- Couturière page: `Person` schema with `hasCredential` (CAP couture flou).
 - Author on all content schemas: `"name": "Isabelle Bultez", "jobTitle": "Couturière diplômée CAP"`.
+- Do NOT use `dateModified: new Date()` in schemas — it reports build date, not actual content modification date.
 
 ### Meta Tags
 
@@ -44,7 +67,7 @@
 ### Internal Linking
 
 - Blog articles should link to relevant service pages (`/stages-thematiques`, `/ateliers-reguliers`, `/un-apres-midi-couture`).
-- Service pages should cross-link to related services.
+- Service pages should cross-link to related services via `crossLinksText` section.
 
 ## Styling
 
@@ -54,24 +77,44 @@
 - Fonts: **Playfair Display Variable** for headings (`--font-heading`), **Manrope Variable** for body (`--font-sans`). Self-hosted via `@fontsource-variable`.
 - Border radius: `--radius-xl: 16px` for cards/images, `--radius-button: 999px` for buttons.
 - Prose content: max-width `max-w-3xl`, images break out on desktop with negative margins.
+- Section spacing: `py-16 md:py-20` for all page sections.
+- Section headings: `text-2xl md:text-3xl font-bold text-center` with `font-family: var(--font-heading)`.
+- Cards on accent backgrounds: use `bg-white shadow-md` for contrast.
 
 ## Images
 
 - Use Astro's `<Image>` component — never raw `<img>` tags for content images.
+- **Always place images in `src/assets/images/`** — never in `public/images/`. The `src/assets/` path enables Astro's image optimization (format conversion, responsive widths, quality control).
 - Format: `webp`. Quality: `60` for covers/heroes, `80` for content.
 - Responsive widths: `[640, 1024, 1440]` for full-width, `[320, 480, 640]` for grids.
 - All images must have descriptive `alt` text — never generic ("Image 1").
-- Image directories: `src/assets/images/covers/{page}/`, `src/assets/images/blog/`, `src/assets/images/creations/`.
+- Image directories: `src/assets/images/covers/{page}/`, `src/assets/images/blog/`, `src/assets/images/creations/`, `src/assets/images/couturiere/`, `src/assets/images/homepage/`.
 - Dynamic glob import pattern: `import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/...')`.
+- Image resolution: use `resolveImage()` and `resolveImageUrl()` from `src/utils/images.ts`.
+- After modifying image files (rotation, resize), clear Astro's image cache: `rm -rf node_modules/.astro .astro`.
 
 ## Components
 
 - `BaseLayout.astro`: wraps all pages (meta tags, header, footer, analytics). Has `<slot name="head">` for page-specific head content.
-- `ContentPage.astro`: wraps singleton content pages (hero, breadcrumbs, prose, CTA). Has `<slot name="page-head">` for schemas.
-- `Hero.astro`: cover image with overlay + title/subtitle. Falls back to text-only if no image.
-- `ContactCTA.astro`: links to Tally.so contact form (URL from `siteSettings`).
+- `Hero.astro`: cover image with overlay + title/subtitle. Falls back to text-only if no image. Has `flush` prop to remove bottom margin (used on homepage).
+- `ContactCTA.astro`: links to Tally.so contact form (URL from `siteSettings`). Accepts optional `label` prop.
 - `BlogCard.astro`: card for blog listing (date, title, description, read link).
+- `ServiceCard.astro`: homepage service card with image, price range, description.
+- `StageCard.astro`: stage card with name, price, duration, short description, anchor link.
+- `AtelierCard.astro`: atelier créneau card with day, time, price, location, anchor link.
+- `AnimatriceSection.astro`: instructor bio section with image and text.
+- `ValueProposition.astro`: value proposition items with title and description.
+- `YouTubeEmbed.astro`: lazy-loaded YouTube embed with thumbnail.
+- `ContentPage.astro`: **legacy** — wraps Markdoc prose pages. Do not use for new pages.
 - Reuse existing components — do not duplicate layout/hero/CTA logic.
+
+## Utilities
+
+- `src/utils/reader.ts`: Keystatic content reader.
+- `src/utils/images.ts`: `resolveImage()`, `resolveImageUrl()`, `resolveImagePath()` for glob-based image resolution.
+- `src/utils/schema.ts`: `buildServicePageSchemas()` — shared JSON-LD builder for service pages.
+- `src/utils/strings.ts`: `toSlug()` — URL-safe slug generator (used for anchor IDs).
+- `src/utils/navLinks.ts`: navigation menu links array.
 
 ## Routing & Redirects
 
@@ -82,7 +125,10 @@
 ## Build & Deploy
 
 - `pnpm dev` / `pnpm build` / `pnpm check` for development.
+- Always run `pnpm check` after code changes to validate types.
 - Deployed on Vercel with `@astrojs/vercel` adapter.
 - Post-install script patches Keystatic for Astro 6 compatibility.
 - Node >= 22.12.0 required.
 - Vercel Analytics injected in BaseLayout.
+- Vite chunk size warning limit set to 5000kB (Keystatic bundle is large).
+- CI uses GitHub Actions with Renovate for automated dependency updates.

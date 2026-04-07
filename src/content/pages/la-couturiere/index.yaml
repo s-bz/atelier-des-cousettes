@@ -1,0 +1,56 @@
+title: La couturière
+subtitle: Une passionnée à votre service
+seoDescription: >-
+  Isabelle Bultez, couturière diplômée CAP couture flou, anime L'Atelier des
+  Cousettes à Verdalle et Revel dans le Tarn. Découvrez son parcours.
+coverImage: /src/assets/images/covers/la-couturiere/coverImage.jpg
+coverImageAlt: Isabelle Bultez, couturière diplômée, dans son atelier de couture
+introduction: >-
+  Isabelle Bultez est la fondatrice de L'Atelier des Cousettes, un atelier de
+  couture situé à Verdalle et Revel dans le département du Tarn. Diplômée du
+  CAP couture flou, elle enseigne la couture depuis plus de dix ans à des
+  élèves de tous niveaux, des grands débutants aux couturiers confirmés. Son
+  parcours mêle héritage familial, passion pour le patronage et engagement
+  artisanal. Elle anime des ateliers réguliers, des stages thématiques et des
+  après-midi couture dans une ambiance conviviale et en petits groupes. Mère
+  de trois filles, Isabelle transmet le plaisir de coudre et de créer avec
+  patience et bienveillance.
+sections:
+  - title: Une première petite graine
+    text: |
+      Mon arrière grand-père était tailleur à la SNCF. J'ai hérité d'une belle paire de ciseaux et du goût pour le patronage et la géométrie.
+
+      Ma pratique de la couture a commencé à 13 ans avec la confection de caleçons en tissu liberty en porte-clé pour financer un camp scout.
+
+      Puis, l'idée de faire des vêtements en taille réelle a germé dans mon esprit, commençant avec la trépidante Husqvarna de ma mère. La couture est devenue au fil des années bien plus qu'un loisir : une véritable passion qui ne m'a plus quittée.
+    image: /src/assets/images/couturiere/couturiere-bio-1.jpeg
+    imageAlt: Paire de ciseaux de tailleur héritée de l'arrière grand-père d'Isabelle
+  - title: Une gavroche pour les compagnons
+    text: |
+      Entourée d'artisans compagnons charpentiers désireux de développer des ateliers forestiers dans le respect des traditions, des gestes et de l'habit, j'ai remis au jour la casquette gavroche qu'ils ont aujourd'hui adoptée. Cette expérience m'a confirmé que la couture est un savoir-faire vivant, ancré dans la transmission et le geste artisanal. J'y ai appris l'importance de travailler avec des matières nobles et de respecter les techniques traditionnelles.
+    image: /src/assets/images/couturiere/couturiere-bio-2.png
+    imageAlt: Casquette gavroche cousue pour les compagnons charpentiers
+  - title: Pourquoi ne pas en faire mon métier ?
+    text: |
+      Il n'était pas encore trop tard pour que, mère au foyer, je retrouve le chemin de l'école.
+
+      Mon CAP de couture flou en poche, j'ai monté ma petite collection de vêtements hommes et femmes en coton bio et chanvre, ce qui m'a permis de partager ma passion dans les foires des environs.
+
+      Mère de trois filles, j'ai décidé de partager le plaisir de coudre avec elles et leurs amies, et c'est alors qu'ont commencé mes premiers ateliers de couture.
+    image: /src/assets/images/couturiere/couturiere-bio-3.jpeg
+    imageAlt: Isabelle animant un atelier de couture
+  - title: Ma philosophie d'enseignement
+    text: |
+      Ce qui me tient à cœur, c'est que chacun reparte avec le plaisir d'avoir créé quelque chose de ses mains. Je m'adapte au niveau et au projet de chaque participant : que vous veniez avec une idée précise ou simplement l'envie de découvrir, je vous guide pas à pas. Les groupes sont volontairement petits pour que l'accompagnement soit réellement personnalisé.
+
+      Mes spécialisations sont le patronage — tracer un patron à ses propres mesures pour créer un modèle unique — et la couture de vêtements. J'aime aussi transmettre les bases de la surjeteuse, une machine qui impressionne souvent les débutants mais qui s'apprivoise très bien avec un bon accompagnement.
+
+      Au fil des années, j'ai eu le plaisir d'accompagner des dizaines d'élèves dans leurs premiers pas en couture, et de voir certains progresser jusqu'à réaliser des pièces dont ils sont fiers. Des adultes comme des enfants, des retraités comme des actifs : la couture rassemble tous les profils et c'est ce qui en fait la richesse.
+    image: null
+    imageAlt: ''
+crossLinksSectionTitle: Découvrez mes formules de cours
+crossLinksText: >-
+  Découvrez mes formules de cours : des ateliers réguliers de septembre à juin,
+  des stages thématiques pour apprendre une technique précise, et des
+  après-midi couture ouverts à tous sans engagement.
+ctaLabel: Contactez-moi

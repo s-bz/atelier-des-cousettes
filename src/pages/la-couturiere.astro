@@ -1,37 +1,142 @@
 ---
-import ContentPage from '../components/ContentPage.astro';
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import ContactCTA from '../components/ContactCTA.astro';
 import { reader } from '../utils/reader';
+import { resolveImage, resolveImageUrl } from '../utils/images';
+import { buildPageSchemas } from '../utils/schema';
 
 const page = await reader.singletons.couturiere.read();
 if (!page) throw new Error('La couturière content not found');
-const contentNode = page.content ? await page.content() : null;
+
 const settings = await reader.singletons.siteSettings.read();
-const siteUrl = Astro.site?.origin;
+const siteUrl = Astro.site?.origin ?? '';
+
+const schemas = buildPageSchemas({
+  title: page.title,
+  seoDescription: page.seoDescription,
+  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
+  siteUrl,
+  settings,
+});
+
+// OG image
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
+
+// Section images
+const sectionGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/couturiere/*.{jpg,jpeg,png,webp}');
+const sections = page.sections ?? [];
+const resolvedSections = await Promise.all(
+  sections.map(async (s) => ({
+    ...s,
+    resolvedImage: await resolveImage(s.image, sectionGlob),
+  })),
+);
+
+// Last biography section has accent when its index is even; cross-links alternates from that
+const lastSectionHasAccent = resolvedSections.length > 0 && (resolvedSections.length - 1) % 2 === 0;
 ---
 
-<ContentPage
-  title={page.title}
-  subtitle={page.subtitle}
-  seoDescription={page.seoDescription}
-  contentNode={contentNode}
-  coverImage={page.coverImage ?? undefined}
-  contentClass="max-w-4xl"
->
-  <Fragment slot="page-head">
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Person",
-      "name": settings?.authorName,
-      "jobTitle": settings?.authorJobTitle,
-      "url": `${siteUrl}/la-couturiere/`,
-      "worksFor": { "@id": `${siteUrl}/#organization` },
-      "knowsAbout": ["couture", "patronage", "surjeteuse", "machine à coudre", "couture flou"],
-      "hasCredential": {
-        "@type": "EducationalOccupationalCredential",
-        "credentialCategory": "CAP",
-        "name": "CAP couture flou"
-      },
-      "sameAs": settings?.facebookUrl ? [settings.facebookUrl] : []
-    }).replace(/<\//g, '<\\/')} />
+<BaseLayout title={page.title} description={page.seoDescription} ogImage={ogImage}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify([
+      ...schemas,
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": settings?.authorName,
+        "jobTitle": settings?.authorJobTitle,
+        "url": `${siteUrl}/la-couturiere/`,
+        "worksFor": { "@id": `${siteUrl}/#organization` },
+        "knowsAbout": ["couture", "patronage", "surjeteuse", "machine à coudre", "couture flou"],
+        "hasCredential": {
+          "@type": "EducationalOccupationalCredential",
+          "credentialCategory": "CAP",
+          "name": "CAP couture flou"
+        },
+        "sameAs": settings?.facebookUrl ? [settings.facebookUrl] : []
+      }
+    ]).replace(/<\//g, '<\\/')} />
   </Fragment>
-</ContentPage>
+
+  <!-- 1. Hero -->
+  <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage ?? undefined} altText={page.coverImageAlt ?? undefined} />
+
+  <!-- 2. Introduction -->
+  {page.introduction && (
+    <section class="py-16 md:py-20">
+      <div class="max-w-3xl mx-auto px-4 text-center">
+        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.introduction}</p>
+        <ContactCTA label={page.ctaLabel || undefined} />
+      </div>
+    </section>
+  )}
+
+  <!-- 3. Biography sections -->
+  {resolvedSections.map((section, i) => {
+    const isEven = i % 2 === 0;
+    const hasImage = !!section.resolvedImage;
+    return (
+      <section class={isEven ? 'bg-[var(--color-bg-accent)] py-16 md:py-20' : 'py-16 md:py-20'}>
+        <div class="max-w-4xl mx-auto px-4">
+          <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-8" style="font-family: var(--font-heading);">
+            {section.title}
+          </h2>
+          {hasImage ? (
+            <div class={`flex flex-col ${isEven ? 'md:flex-row-reverse' : 'md:flex-row'} gap-8 items-center`}>
+              <div class="w-1/3 mx-auto md:mx-0 md:w-1/5 flex-shrink-0">
+                <Image
+                  src={section.resolvedImage!}
+                  alt={section.imageAlt || section.title}
+                  widths={[320, 480, 640]}
+                  format="webp"
+                  quality={80}
+                  class="w-full rounded-[var(--radius-xl)]"
+                />
+              </div>
+              <div class="w-full md:w-4/5 prose max-w-none">
+                {section.text.split('\n\n').map((para) => (
+                  <p>{para}</p>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div class="prose max-w-3xl mx-auto">
+              {section.text.split('\n\n').map((para) => (
+                <p>{para}</p>
+              ))}
+              <div class="text-center not-prose">
+                <ContactCTA label={page.ctaLabel || undefined} />
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  })}
+
+  <!-- 4. Cross-links -->
+  {page.crossLinksText && (
+    <section class={lastSectionHasAccent ? 'py-16 md:py-20' : 'bg-[var(--color-bg-accent)] py-16 md:py-20'}>
+      <div class="max-w-3xl mx-auto px-4 text-center">
+        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] mb-6" style="font-family: var(--font-heading);">
+          {page.crossLinksSectionTitle || 'Découvrez mes formules de cours'}
+        </h2>
+        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.crossLinksText}</p>
+        <div class="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/ateliers-reguliers" class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+            Ateliers réguliers &rarr;
+          </a>
+          <a href="/stages-thematiques" class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+            Stages thématiques &rarr;
+          </a>
+          <a href="/un-apres-midi-couture" class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+            Un après-midi couture &rarr;
+          </a>
+        </div>
+      </div>
+    </section>
+  )}
+</BaseLayout>

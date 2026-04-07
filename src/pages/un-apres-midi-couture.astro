@@ -1,37 +1,172 @@
 ---
-import ContentPage from '../components/ContentPage.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import ContactCTA from '../components/ContactCTA.astro';
 import { reader } from '../utils/reader';
+import { resolveImageUrl } from '../utils/images';
+import { buildServicePageSchemas } from '../utils/schema';
 
 const page = await reader.singletons.apresMidiCouture.read();
 if (!page) throw new Error('Un après-midi couture content not found');
-const contentNode = page.content ? await page.content() : null;
-const siteUrl = Astro.site?.origin;
 
-const offers = (page.schemaOffers ?? []).map((o) => ({
-  "@type": "Offer",
-  "name": o.name,
-  "price": Number(o.price),
-  "priceCurrency": "EUR",
-}));
+const settings = await reader.singletons.siteSettings.read();
+const siteUrl = Astro.site?.origin ?? '';
+
+// OG image
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
+
+const faqItems = page.faqItems ?? [];
+const schemas = buildServicePageSchemas({
+  title: page.title,
+  seoDescription: page.seoDescription,
+  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
+  siteUrl,
+  settings,
+  offers: page.schemaOffers ?? [],
+  faqItems,
+});
+
+const audienceItems = page.audienceItems ?? [];
 ---
 
-<ContentPage
-  title={page.title}
-  subtitle={page.subtitle}
-  seoDescription={page.seoDescription}
-  contentNode={contentNode}
-  coverImage={page.coverImage ?? undefined}
->
-  <Fragment slot="page-head">
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Service",
-      "name": page.title,
-      "description": page.seoDescription,
-      "provider": { "@id": `${siteUrl}/#organization` },
-      "areaServed": { "@type": "AdministrativeArea", "name": "Tarn" },
-      "serviceType": "Cours de couture",
-      "offers": offers
-    }).replace(/<\//g, '<\\/')} />
+<BaseLayout title={page.title} description={page.seoDescription} ogImage={ogImage}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
   </Fragment>
-</ContentPage>
+
+  <!-- 1. Hero -->
+  <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage ?? undefined} altText={page.coverImageAlt ?? undefined} />
+
+  <!-- 2. Introduction + Key info -->
+  {page.introduction && (
+    <section class="py-16 md:py-20">
+      <div class="max-w-3xl mx-auto px-4 text-center">
+        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.introduction}</p>
+        <div class="mt-8 flex flex-wrap justify-center gap-4">
+          {page.price && (
+            <div class="px-5 py-3 rounded-xl bg-[var(--color-bg-accent)] text-center">
+              <p class="text-2xl font-bold text-[var(--color-button)]" style="font-family: var(--font-heading);">{page.price}</p>
+              {page.priceLabel && <p class="text-xs text-[var(--color-text-light)]">{page.priceLabel}</p>}
+            </div>
+          )}
+          {page.duration && (
+            <div class="px-5 py-3 rounded-xl bg-[var(--color-bg-accent)] text-center">
+              <p class="text-2xl font-bold text-[var(--color-heading)]" style="font-family: var(--font-heading);">{page.duration}</p>
+              {page.durationLabel && <p class="text-xs text-[var(--color-text-light)]">{page.durationLabel}</p>}
+            </div>
+          )}
+          {page.location && (
+            <div class="px-5 py-3 rounded-xl bg-[var(--color-bg-accent)] text-center">
+              <p class="text-2xl font-bold text-[var(--color-heading)]" style="font-family: var(--font-heading);">{page.location}</p>
+              {page.locationLabel && <p class="text-xs text-[var(--color-text-light)]">{page.locationLabel}</p>}
+            </div>
+          )}
+        </div>
+        <ContactCTA label={page.ctaLabel || undefined} />
+      </div>
+    </section>
+  )}
+
+  <!-- 3. Description + Audience -->
+  {(page.description || audienceItems.length > 0) && (
+    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+      <div class="max-w-3xl mx-auto px-4">
+        {page.description && (
+          <div class="mb-12">
+            {page.descriptionTitle && (
+              <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-6" style="font-family: var(--font-heading);">
+                {page.descriptionTitle}
+              </h2>
+            )}
+            <div class="prose max-w-none">
+              {page.description.split('\n\n').map((para) => (
+                <p>{para}</p>
+              ))}
+            </div>
+          </div>
+        )}
+        {audienceItems.length > 0 && (
+          <div>
+            {page.audienceTitle && (
+              <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-6" style="font-family: var(--font-heading);">
+                {page.audienceTitle}
+              </h2>
+            )}
+            <ul class="space-y-3">
+              {audienceItems.map((item) => (
+                <li class="flex items-start gap-3">
+                  <span class="mt-1 text-[var(--color-button)]">&#10003;</span>
+                  <span class="text-[var(--color-text)]">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </section>
+  )}
+
+  <!-- 4. Dates -->
+  {page.dates && (
+    <section class="py-16 md:py-20">
+      <div class="max-w-3xl mx-auto px-4">
+        {page.datesTitle && (
+          <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-8" style="font-family: var(--font-heading);">
+            {page.datesTitle}
+          </h2>
+        )}
+        <div class="max-w-md mx-auto p-6 rounded-xl bg-[var(--color-bg-accent)]">
+          <div class="space-y-2 text-center">
+            {page.dates.split('\n').map((line) => (
+              <p class="text-[var(--color-text)] font-medium">{line}</p>
+            ))}
+          </div>
+          {page.datesNote && (
+            <p class="mt-4 text-sm text-[var(--color-text-light)] italic text-center">{page.datesNote}</p>
+          )}
+        </div>
+        <ContactCTA label={page.ctaLabel || undefined} />
+      </div>
+    </section>
+  )}
+
+  <!-- 5. FAQ -->
+  {faqItems.length > 0 && (
+    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+      <div class="max-w-3xl mx-auto px-4">
+        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10" style="font-family: var(--font-heading);">
+          {page.faqSectionTitle || 'Questions fréquentes'}
+        </h2>
+        <div class="space-y-6">
+          {faqItems.map((item) => (
+            <div>
+              <h3 class="text-lg font-semibold text-[var(--color-heading)]" style="font-family: var(--font-heading);">
+                {item.question}
+              </h3>
+              <p class="mt-2 text-[var(--color-text)] leading-relaxed">{item.answer}</p>
+            </div>
+          ))}
+        </div>
+        <ContactCTA label={page.ctaLabel || undefined} />
+      </div>
+    </section>
+  )}
+
+  <!-- 6. Cross-links -->
+  {page.crossLinksText && (
+    <section class="py-16 md:py-20">
+      <div class="max-w-3xl mx-auto px-4 text-center">
+        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.crossLinksText}</p>
+        <div class="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/ateliers-reguliers" class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+            Ateliers réguliers &rarr;
+          </a>
+          <a href="/stages-thematiques" class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+            Stages thématiques &rarr;
+          </a>
+        </div>
+      </div>
+    </section>
+  )}
+</BaseLayout>

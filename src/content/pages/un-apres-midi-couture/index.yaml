@@ -1,0 +1,81 @@
+title: Un après-midi couture
+subtitle: Cousez en toute liberté
+seoDescription: >-
+  Après-midi couture à Revel et Verdalle (Tarn) : 3h d'accompagnement
+  personnalisé pour 40€. Ouvert à tous, sur inscription ponctuelle.
+coverImage: /src/assets/images/covers/un-apres-midi-couture/coverImage.jpeg
+coverImageAlt: Séance d'un après-midi couture à l'Atelier des Cousettes
+introduction: >-
+  Une séance ponctuelle de 3 heures pour coudre à votre rythme, avec
+  l'accompagnement d'Isabelle. Sans engagement, ouvert à tous les niveaux.
+price: 40 €
+priceLabel: la séance
+duration: 3h
+durationLabel: d'accompagnement
+location: Revel et Verdalle
+locationLabel: dans le Tarn
+descriptionTitle: Comment se déroule un après-midi couture ?
+description: |
+  Vous venez avec votre projet personnel — un vêtement à coudre, une retouche à faire, un accessoire à créer — et Isabelle vous accompagne pas à pas : choix du patron, coupe du tissu, assemblage, finitions. Si vous n'avez pas encore d'idée, elle peut vous proposer un petit projet adapté à votre niveau.
+
+  Les groupes sont volontairement limités pour que chacun bénéficie d'une attention personnalisée. L'atmosphère est chaleureuse : on coud, on échange, on s'entraide.
+audienceTitle: À qui s'adresse cette formule ?
+audienceItems:
+  - Les débutants qui souhaitent découvrir la couture avant de s'engager.
+  - Les couturiers occasionnels qui ont besoin d'un coup de main ponctuel.
+  - Les couturiers confirmés qui apprécient de coudre en groupe.
+  - Ceux qui n'ont pas la disponibilité pour un engagement hebdomadaire.
+  - Les enfants accompagnés d'un parent souhaitant s'initier à la couture.
+datesTitle: Prochaines dates
+dates: |-
+  25 octobre
+  29 novembre
+  10 janvier
+  14 février
+  21 mars
+  16 mai
+  20 juin
+datesNote: Sous réserve d'un nombre suffisant d'inscriptions.
+faqSectionTitle: Questions fréquentes
+faqItems:
+  - question: Quel est le tarif d'un après-midi couture ?
+    answer: >-
+      40 € pour 3 heures d'atelier. Merci de régler une adhésion ponctuelle
+      de 5 € à l'association Les P'tits Piafs.
+  - question: Faut-il apporter son matériel ?
+    answer: >-
+      Oui, chaque participant vient avec sa propre machine à coudre, ses
+      accessoires et sa notice. Si vous n'avez pas de machine, Isabelle peut
+      en prêter une sur demande préalable. Apportez également vos
+      fournitures : tissu, fils, ciseaux, épingles.
+  - question: Où ont lieu les après-midi couture ?
+    answer: >-
+      À la maison des associations de Revel et à l'atelier privé d'Isabelle
+      à Verdalle, dans le Tarn. Le lieu est précisé lors de l'inscription.
+      Parking gratuit à proximité.
+  - question: Quels projets peut-on réaliser en 3 heures ?
+    answer: >-
+      Selon votre niveau : une pochette, un tote bag, un ourlet, des
+      retouches, ou commencer un projet plus ambitieux que vous poursuivrez
+      chez vous. Isabelle vous aide à estimer le temps nécessaire.
+  - question: Peut-on venir sans savoir coudre ?
+    answer: >-
+      Absolument. Isabelle prend le temps de vous montrer les bases :
+      enfiler la machine, régler la tension, coudre droit, faire un ourlet.
+      C'est une excellente façon de découvrir la couture.
+  - question: Quelle est la politique d'annulation ?
+    answer: >-
+      L'inscription se fait au plus tard une semaine avant la date.
+      En cas d'empêchement, prévenez Isabelle le plus tôt possible.
+      Les ateliers ont lieu sous réserve d'un nombre suffisant d'inscriptions.
+  - question: Comment s'inscrire ?
+    answer: >-
+      Via le formulaire de contact ou par téléphone, au plus tard une semaine
+      avant la date. Les places sont limitées.
+crossLinksText: >-
+  Envie d'un engagement régulier ? Découvrez nos ateliers réguliers. Pour
+  apprendre une technique précise, consultez nos stages thématiques.
+schemaOffers:
+  - name: Après-midi couture (3h)
+    price: '40'
+ctaLabel: Demande d'information
