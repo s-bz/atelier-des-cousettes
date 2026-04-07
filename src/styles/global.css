@@ -167,6 +167,18 @@ h1, h2, h3, h4 {
   }
 }
 
+/* Lightbox dialog — reset UA styles, fixed centering */
+dialog#lightbox {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  border: none;
+  background: transparent;
+  padding: 0;
+  outline: none;
+  box-shadow: none;
+}
+
 /* Dark mode — Claude dark theme adaptation */
 @media (prefers-color-scheme: dark) {
   :root {

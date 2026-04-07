@@ -122,9 +122,9 @@ const schemas = buildPageSchemas({
   )}
 
   <!-- Lightbox -->
-  <dialog id="lightbox" class="relative p-0 bg-transparent backdrop:bg-black/80 max-w-[90vw] max-h-[90vh] m-auto overflow-visible">
+  <dialog id="lightbox" class="relative p-0 border-none bg-transparent backdrop:bg-black/80 max-w-[90vw] max-h-[90vh] m-auto overflow-visible">
     <button class="absolute -top-3 -right-3 w-10 h-10 flex items-center justify-center rounded-full bg-[var(--color-button)] text-white text-2xl leading-none z-10 hover:bg-[var(--color-button-hover)] focus-visible:ring-2 focus-visible:ring-white focus:outline-none transition-colors" aria-label="Fermer">&times;</button>
-    <img id="lightbox-img" src="" alt="" class="max-w-[90vw] max-h-[90vh] rounded-2xl block" />
+    <img id="lightbox-img" src="" alt="" class="w-auto h-auto max-w-[90vw] max-h-[90vh] rounded-2xl block" />
   </dialog>
 
   <script>
@@ -139,7 +139,9 @@ const schemas = buildPageSchemas({
           lastFocused = el;
           lightboxImg.src = el.dataset.src;
           lightboxImg.alt = el.dataset.alt || '';
+          const scrollY = window.scrollY;
           dialog.showModal();
+          window.scrollTo(0, scrollY);
           dialog.querySelector('button')?.focus();
         }
       });
