@@ -70,4 +70,43 @@ src/
 | Mes creations | Portfolio / gallery |
 | Mentions legales | Legal notices |
 
-Content is managed through Keystatic and stored as Markdoc files in `src/content/pages/`.
+## Content Management (Keystatic)
+
+Content is managed through [Keystatic](https://keystatic.com/), a file-based headless CMS that stores content as Markdoc files directly in the repository.
+
+### Accessing the Admin UI
+
+- **Local:** Run `pnpm dev` and navigate to `http://localhost:4321/keystatic`
+- **Production:** Go to `https://couture-tarn.fr/keystatic` (authenticates via GitHub)
+
+### Storage Modes
+
+- **Local development:** Content is read/written directly to disk (`storage: local`)
+- **Production:** Content is committed to the GitHub repository (`storage: github`)
+
+### Content Types
+
+**Singletons** (one-off pages):
+
+| Singleton | Path | Description |
+| --------- | ---- | ----------- |
+| Paramètres du site | `src/content/site-settings` | Site name, email, phones, social links, address |
+| Accueil | `src/content/pages/homepage/` | Homepage with YouTube video embed |
+| Stages thématiques | `src/content/pages/stages-thematiques/` | Themed discovery workshops |
+| Ateliers réguliers | `src/content/pages/ateliers-reguliers/` | Regular workshops |
+| Un après-midi couture | `src/content/pages/un-apres-midi-couture/` | Monthly afternoon sessions |
+| La couturière | `src/content/pages/la-couturiere/` | About the instructor |
+| Mes créations | `src/content/pages/mes-creations/` | Portfolio page |
+| Mentions légales | `src/content/pages/mentions-legales/` | Legal notices |
+
+Each page singleton has: title, subtitle, SEO description, cover image, and Markdoc content.
+
+**Collections:**
+
+| Collection | Path | Description |
+| ---------- | ---- | ----------- |
+| Créations | `src/content/creations/*` | Gallery items with image, category, and display order |
+
+### Cover Images
+
+Cover images are stored per page in `src/assets/images/covers/<page-slug>/` and referenced in each singleton's schema. They are optimized by Astro's built-in image pipeline at build time.
