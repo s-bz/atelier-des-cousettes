@@ -4,6 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
 import { reader } from '../utils/reader';
 
+const page = await reader.singletons.mesCreations.read();
 const creations = await reader.collections.creations.all();
 const sorted = creations.sort((a, b) => (a.entry.order ?? 0) - (b.entry.order ?? 0));
 
@@ -19,8 +20,8 @@ async function resolveImage(img: string | null) {
 }
 ---
 
-<BaseLayout title="Mes créations" description="Galerie de créations couture : robes, chapeaux et accessoires faits main par L'Atelier des Cousettes.">
-  <Hero title="Mes créations" subtitle="Robes et chapeaux" coverImage="mes-creations.jpg" />
+<BaseLayout title={page?.title || 'Mes créations'} description={page?.seoDescription || ''}>
+  <Hero title={page?.title || 'Mes créations'} subtitle={page?.subtitle} coverImage={page?.coverImage} />
 
   <div class="max-w-5xl mx-auto px-4">
     {sorted.length > 0 ? (

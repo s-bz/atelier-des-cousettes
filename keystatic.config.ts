@@ -83,6 +83,18 @@ export default config({
         content: fields.markdoc({ label: 'Contenu de la page' }),
       },
     }),
+    mesCreations: singleton({
+      label: 'Mes créations',
+      path: 'src/content/pages/mes-creations/',
+      format: { contentField: 'content' },
+      schema: {
+        title: fields.text({ label: 'Titre' }),
+        subtitle: fields.text({ label: 'Sous-titre' }),
+        seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
+        coverImage: coverImageField(),
+        content: fields.markdoc({ label: 'Contenu' }),
+      },
+    }),
     mentionsLegales: singleton({
       label: 'Mentions légales',
       path: 'src/content/pages/mentions-legales/',
