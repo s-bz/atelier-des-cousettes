@@ -3,8 +3,8 @@ import { config, fields, singleton, collection } from '@keystatic/core';
 const coverImageField = () =>
   fields.image({
     label: 'Image de couverture',
-    directory: 'public/images/covers',
-    publicPath: '/images/covers/',
+    directory: 'src/assets/images/covers',
+    publicPath: '/src/assets/images/covers/',
   });
 
 export default config({
@@ -104,8 +104,8 @@ export default config({
         title: fields.slug({ name: { label: 'Titre' } }),
         image: fields.image({
           label: 'Image',
-          directory: 'public/images/creations',
-          publicPath: '/images/creations/',
+          directory: 'src/assets/images/creations',
+          publicPath: '/src/assets/images/creations/',
         }),
         imageAlt: fields.text({ label: 'Texte alternatif' }),
         category: fields.select({

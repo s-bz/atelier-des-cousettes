@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
 import { reader } from '../utils/reader';
@@ -6,36 +7,56 @@ import { reader } from '../utils/reader';
 const creations = await reader.collections.creations.all();
 const sorted = creations.sort((a, b) => (a.entry.order ?? 0) - (b.entry.order ?? 0));
 
-const imagePath = (img: string | null) =>
-  img ? (img.startsWith('/') ? img : `/images/creations/${img}`) : '';
+// Dynamically import all creation images
+const creationImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/creations/*.{jpg,jpeg,png,webp}');
+
+async function resolveImage(img: string | null) {
+  if (!img) return null;
+  const filename = img.startsWith('/') ? img.split('/').pop()! : img;
+  const key = `/src/assets/images/creations/${filename}`;
+  const mod = await creationImages[key]?.();
+  return mod?.default ?? null;
+}
 ---
 
 <BaseLayout title="Mes créations" description="Galerie de créations couture : robes, chapeaux et accessoires faits main par L'Atelier des Cousettes.">
-  <Hero title="Mes créations" subtitle="Robes et chapeaux" coverImage="/images/covers/mes-creations.jpg" />
+  <Hero title="Mes créations" subtitle="Robes et chapeaux" coverImage="mes-creations.jpg" />
 
   <div class="max-w-5xl mx-auto px-4">
     {sorted.length > 0 ? (
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="gallery">
-        {sorted.map((creation) => (
-          <div>
-            <button class="gallery-item w-full" data-src={imagePath(creation.entry.image)}>
-              <img
-                src={imagePath(creation.entry.image)}
-                alt={creation.entry.imageAlt || creation.entry.title}
-                class="rounded-2xl w-full h-72 object-cover hover:opacity-90 transition-opacity cursor-pointer"
-                loading="lazy"
-              />
-            </button>
-            <p class="mt-2 text-center text-sm text-[var(--color-text-light)]">{creation.entry.imageAlt || creation.entry.title}</p>
-          </div>
-        ))}
+        {await Promise.all(sorted.map(async (creation) => {
+          const imgSrc = await resolveImage(creation.entry.image);
+          return (
+            <div>
+              {imgSrc ? (
+                <button class="gallery-item w-full" data-src={imgSrc.src}>
+                  <Image
+                    src={imgSrc}
+                    alt={creation.entry.imageAlt || creation.entry.title}
+                    class="rounded-2xl w-full h-72 object-cover hover:opacity-90 transition-opacity cursor-pointer"
+                    format="webp"
+                    quality={80}
+                    widths={[320, 480, 640]}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  />
+                </button>
+              ) : (
+                <div class="rounded-2xl w-full h-72 bg-[var(--color-bg-accent)] flex items-center justify-center">
+                  <span class="text-[var(--color-text-light)]">Image manquante</span>
+                </div>
+              )}
+              <p class="mt-2 text-center text-sm text-[var(--color-text-light)]">{creation.entry.imageAlt || creation.entry.title}</p>
+            </div>
+          );
+        }))}
       </div>
     ) : (
       <p class="text-center text-[var(--color-text-light)]">Galerie en cours de construction.</p>
     )}
   </div>
 
-  <!-- Lightbox -->
+  <!-- Lightbox (uses original src from Astro's processed image) -->
   <dialog id="lightbox" class="p-0 bg-transparent backdrop:bg-black/80 max-w-[90vw] max-h-[90vh] m-auto">
     <button class="absolute top-2 right-2 text-white text-3xl leading-none z-10 hover:opacity-80" aria-label="Fermer">&times;</button>
     <img id="lightbox-img" src="" alt="" class="max-w-full max-h-[90vh] rounded-2xl block" />
