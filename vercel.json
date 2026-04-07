@@ -1,4 +1,12 @@
 {
+  "redirects": [
+    { "source": "/mentions-lgales", "destination": "/mentions-legales", "permanent": true },
+    { "source": "/stages-thmatiques", "destination": "/stages-thematiques", "permanent": true },
+    { "source": "/ateliers-rguliers", "destination": "/ateliers-reguliers", "permanent": true },
+    { "source": "/cours-particuliers", "destination": "/un-apres-midi-couture", "permanent": true },
+    { "source": "/la-couturire", "destination": "/la-couturiere", "permanent": true },
+    { "source": "/mes-crations", "destination": "/mes-creations", "permanent": true }
+  ],
   "headers": [
     {
       "source": "/images/(.*)",
