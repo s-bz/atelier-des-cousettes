@@ -32,10 +32,6 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
     <meta name="description" content={description} />
     <meta name="robots" content={noIndex ? 'noindex, follow' : 'index, follow'} />
 
-    <!-- Font preload -->
-    <link rel="preload" as="font" type="font/woff2" href="/@fontsource-variable/playfair-display/files/playfair-display-latin-wght-normal.woff2" crossorigin />
-    <link rel="preload" as="font" type="font/woff2" href="/@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2" crossorigin />
-
     <!-- Preconnect hints -->
     <link rel="preconnect" href="https://img.youtube.com" />
     <link rel="dns-prefetch" href="https://img.youtube.com" />
