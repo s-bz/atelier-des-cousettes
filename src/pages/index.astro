@@ -131,7 +131,7 @@ const siteUrl = Astro.site?.origin;
   </Fragment>
 
   <!-- 1. Hero -->
-  <Hero title={homepage.title} subtitle={homepage.subtitle} coverImage={homepage.coverImage ?? undefined} />
+  <Hero title={homepage.title} subtitle={homepage.subtitle} coverImage={homepage.coverImage ?? undefined} flush />
 
   <!-- 2. Introduction + Service Cards -->
   <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">

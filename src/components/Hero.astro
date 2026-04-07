@@ -7,9 +7,10 @@ interface Props {
   subtitle?: string;
   coverImage?: string;
   altText?: string;
+  flush?: boolean;
 }
 
-const { title, subtitle, coverImage: coverImageRaw, altText } = Astro.props;
+const { title, subtitle, coverImage: coverImageRaw, altText, flush = false } = Astro.props;
 
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
 const resolvedCover = await resolveImage(coverImageRaw, coverGlob);
@@ -25,7 +26,7 @@ const preloadImage = resolvedCover
 )}
 
 {resolvedCover ? (
-  <section class="relative h-64 md:h-80 overflow-hidden bg-[#2c2420]">
+  <section class={`relative h-64 md:h-80 overflow-hidden bg-[#2c2420] ${flush ? '' : 'mb-8 md:mb-12'}`}>
     <Image
       src={resolvedCover}
       alt={altText || `Image de couverture — ${title}`}
