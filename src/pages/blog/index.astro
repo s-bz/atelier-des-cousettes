@@ -2,33 +2,26 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Hero from '../../components/Hero.astro';
 import BlogCard from '../../components/BlogCard.astro';
+import ContactCTA from '../../components/ContactCTA.astro';
 import { reader } from '../../utils/reader';
 import { resolveImageUrl } from '../../utils/images';
+import { filterPublishedPosts } from '../../utils/blog';
 
 const page = await reader.singletons.blogIndex.read();
 if (!page) throw new Error('Blog index content not found');
 
 const posts = await reader.collections.blog.all();
-
-const now = new Date();
-const sortedPosts = posts
-  .filter((post): post is typeof post & { entry: { publishDate: string } } =>
-    Boolean(post.entry.publishDate) && new Date(post.entry.publishDate!) <= now,
-  )
+const sortedPosts = filterPublishedPosts(posts)
   .sort((a, b) => new Date(b.entry.publishDate).getTime() - new Date(a.entry.publishDate).getTime());
 
-const siteUrl = Astro.site?.origin;
+const siteUrl = Astro.site?.origin ?? '';
 const settings = await reader.singletons.siteSettings.read();
 
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
 ---
 
-<BaseLayout
-  title={page.title}
-  description={page.seoDescription}
-  ogImage={ogImage}
->
+<BaseLayout title={page.title} description={page.seoDescription} ogImage={ogImage}>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify([
       {
@@ -55,27 +48,46 @@ const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
     ]).replace(/<\//g, '<\\/')} />
   </Fragment>
 
-  <Hero
-    title={page.title}
-    subtitle={page.subtitle}
-    coverImage={page.coverImage || undefined}
-    altText={page.coverImageAlt}
-  />
+  <!-- 1. Hero -->
+  <Hero title={page.title} subtitle={page.subtitle} coverImage={page.coverImage || undefined} altText={page.coverImageAlt} />
 
-  <div class="max-w-3xl mx-auto px-4 pb-16">
-    {sortedPosts.length > 0 ? (
-      <div class="grid gap-6">
-        {sortedPosts.map((post) => (
-          <BlogCard
-            title={post.entry.title}
-            slug={post.slug}
-            publishDate={post.entry.publishDate}
-            description={post.entry.seoDescription}
-          />
-        ))}
+  <!-- 2. Introduction -->
+  {page.introduction && (
+    <section class="py-16 md:py-20">
+      <div class="max-w-3xl mx-auto px-4 text-center">
+        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.introduction}</p>
+        <ContactCTA label={page.ctaLabel || undefined} />
       </div>
-    ) : (
-      <p class="text-center text-[var(--color-text-light)]">Aucun article pour le moment.</p>
-    )}
-  </div>
+    </section>
+  )}
+
+  <!-- 3. Articles -->
+  <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+    <div class="max-w-4xl mx-auto px-4">
+      {sortedPosts.length > 0 ? (
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {sortedPosts.map((post) => (
+            <BlogCard
+              title={post.entry.title}
+              slug={post.slug}
+              publishDate={post.entry.publishDate}
+              description={post.entry.seoDescription}
+            />
+          ))}
+        </div>
+      ) : (
+        <p class="text-center text-[var(--color-text-light)]">Aucun article pour le moment.</p>
+      )}
+    </div>
+  </section>
+
+  <!-- 4. CTA -->
+  <section class="py-16 md:py-20">
+    <div class="max-w-3xl mx-auto px-4 text-center">
+      {page.ctaText && (
+        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)] mb-2">{page.ctaText}</p>
+      )}
+      <ContactCTA label={page.ctaLabel || undefined} />
+    </div>
+  </section>
 </BaseLayout>

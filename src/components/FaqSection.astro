@@ -1,0 +1,32 @@
+---
+import ContactCTA from './ContactCTA.astro';
+
+interface Props {
+  title?: string;
+  items: readonly { readonly question: string; readonly answer: string }[];
+  ctaLabel?: string;
+}
+
+const { title, items, ctaLabel } = Astro.props;
+---
+
+{items.length > 0 && (
+  <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+    <div class="max-w-3xl mx-auto px-4">
+      <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10" style="font-family: var(--font-heading);">
+        {title}
+      </h2>
+      <div class="space-y-6">
+        {items.map((item) => (
+          <div>
+            <h3 class="text-lg font-semibold text-[var(--color-heading)]" style="font-family: var(--font-heading);">
+              {item.question}
+            </h3>
+            <p class="mt-2 text-[var(--color-text)] leading-relaxed">{item.answer}</p>
+          </div>
+        ))}
+      </div>
+      <ContactCTA label={ctaLabel} />
+    </div>
+  </section>
+)}

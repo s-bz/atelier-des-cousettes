@@ -1,4 +1,5 @@
 import { config, fields, singleton, collection } from '@keystatic/core';
+import { ATELIER_GROUPS } from './src/utils/ateliers';
 
 const coverImageFields = (slug: string) => ({
   coverImage: fields.image({
@@ -13,7 +14,7 @@ const schemaOffersField = () =>
   fields.array(
     fields.object({
       name: fields.text({ label: 'Nom' }),
-      price: fields.text({ label: 'Prix (en €)' }),
+      price: fields.text({ label: 'Prix (nombre seul, ex: 40)' }),
     }),
     {
       label: 'Offres (schema SEO)',
@@ -46,6 +47,7 @@ export default config({
         addressLocality: fields.text({ label: 'Ville (schema)' }),
         postalCode: fields.text({ label: 'Code postal (schema)' }),
         addressRegion: fields.text({ label: 'Région (schema)' }),
+        defaultCtaLabel: fields.text({ label: 'Libellé CTA par défaut' }),
       },
     }),
     homepage: singleton({
@@ -169,12 +171,8 @@ export default config({
             time: fields.text({ label: 'Horaire (ex: 14h à 17h)' }),
             group: fields.select({
               label: 'Groupe (navigation)',
-              options: [
-                { label: 'Revel — Adultes', value: 'revel-adultes' },
-                { label: 'Revel — Enfants', value: 'revel-enfants' },
-                { label: 'Verdalle', value: 'verdalle' },
-              ],
-              defaultValue: 'revel-adultes',
+              options: ATELIER_GROUPS.map((g) => ({ label: g.label, value: g.id })),
+              defaultValue: ATELIER_GROUPS[0].id,
             }),
             price: fields.text({ label: 'Tarif résumé (ex: 55 €/mois)' }),
             priceDetails: fields.text({ label: 'Détail tarifaire', multiline: true }),
@@ -283,6 +281,7 @@ export default config({
         ...coverImageFields('mes-creations'),
         introduction: fields.text({ label: 'Introduction', multiline: true }),
         gallerySectionTitle: fields.text({ label: 'Titre section galerie' }),
+        emptyGalleryText: fields.text({ label: 'Texte galerie vide' }),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
@@ -296,6 +295,7 @@ export default config({
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         ...coverImageFields('blog'),
         introduction: fields.text({ label: 'Introduction', multiline: true }),
+        ctaText: fields.text({ label: 'Texte d\'accroche CTA', multiline: true }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
     }),

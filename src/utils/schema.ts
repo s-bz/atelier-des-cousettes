@@ -84,26 +84,27 @@ export function buildServicePageSchemas({
   offers,
   faqItems,
 }: ServicePageSchemaOptions): object[] {
-  const schemas = buildPageSchemas({ title, seoDescription, pageUrl, siteUrl, settings });
-
-  schemas.push({
-    "@context": "https://schema.org",
-    "@type": "Service",
-    "name": title,
-    "description": seoDescription,
-    "provider": { "@id": `${siteUrl}/#organization` },
-    "areaServed": { "@type": "AdministrativeArea", "name": "Tarn" },
-    "serviceType": "Cours de couture",
-    "offers": offers.map((o) => ({
-      "@type": "Offer" as const,
-      "name": o.name,
-      "price": Number(o.price),
-      "priceCurrency": "EUR",
-    })),
-  });
-
-  if (faqItems.length > 0) {
-    schemas.push({
+  return [
+    ...buildPageSchemas({ title, seoDescription, pageUrl, siteUrl, settings }),
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": title,
+      "description": seoDescription,
+      "provider": { "@id": `${siteUrl}/#organization` },
+      "areaServed": { "@type": "AdministrativeArea", "name": "Tarn" },
+      "serviceType": "Cours de couture",
+      "offers": offers.map((o) => {
+        const numericPrice = parseFloat(o.price);
+        return {
+          "@type": "Offer" as const,
+          "name": o.name,
+          "price": Number.isFinite(numericPrice) ? numericPrice : 0,
+          "priceCurrency": "EUR",
+        };
+      }),
+    },
+    ...(faqItems.length > 0 ? [{
       "@context": "https://schema.org",
       "@type": "FAQPage",
       "mainEntity": faqItems.map((item) => ({
@@ -114,8 +115,6 @@ export function buildServicePageSchemas({
           "text": item.answer,
         },
       })),
-    });
-  }
-
-  return schemas;
+    }] : []),
+  ];
 }

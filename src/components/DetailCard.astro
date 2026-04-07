@@ -1,0 +1,45 @@
+---
+interface Props {
+  name: string;
+  anchorId: string;
+  /** Primary badge (price, highlighted colour) */
+  primaryBadge: string;
+  /** Secondary badge (duration, time, muted colour) */
+  secondaryBadge?: string;
+  /** Description lines shown below the name */
+  details?: string[];
+  /** Optional italic note */
+  note?: string;
+}
+
+const { name, anchorId, primaryBadge, secondaryBadge, details = [], note } = Astro.props;
+---
+
+<a href={`#${anchorId}`} class="detail-card group flex flex-col rounded-xl bg-white dark:bg-[var(--color-card-bg)] overflow-hidden transition-all p-5 h-full">
+  <h3 class="text-lg font-semibold text-[var(--color-heading)]" style="font-family: var(--font-heading);">
+    {name}
+  </h3>
+  {(details.length > 0 || note) && (
+    <div class="mt-2 flex-1 space-y-1 text-sm text-[var(--color-text)]">
+      {details.map((line) => (
+        <p>{line}</p>
+      ))}
+      {note && <p class="italic text-[var(--color-text-light)]">{note}</p>}
+    </div>
+  )}
+  <div class="mt-3 flex items-center gap-3 text-sm font-medium">
+    <span class="text-[var(--color-button)]">{primaryBadge}</span>
+    {secondaryBadge && <span class="text-[var(--color-text-light)]">{secondaryBadge}</span>}
+  </div>
+</a>
+
+<style>
+  .detail-card {
+    box-shadow: var(--shadow-ring), var(--shadow-whisper);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .detail-card:hover {
+    box-shadow: var(--shadow-ring), 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+</style>

@@ -7,17 +7,25 @@ interface Props {
 }
 
 const settings = await reader.singletons.siteSettings.read();
-const { label = "Demande d'information", url = settings?.contactFormUrl || '#' } = Astro.props;
+const defaultLabel = settings?.defaultCtaLabel || "Demande d'information";
+const { label = defaultLabel, url = settings?.contactFormUrl || '#' } = Astro.props;
+const isExternal = url.startsWith('http');
 ---
 
-<div class="mt-8 mb-8 text-center">
+<div class="mt-8 mb-8 text-center not-prose">
   <a
     href={url}
-    target="_blank"
-    rel="noopener noreferrer"
-    class="inline-block px-8 py-3 rounded-[var(--radius-button)] font-medium text-sm bg-[var(--color-button)] transition-all hover:bg-[var(--color-button-hover)] hover:scale-[1.02] no-underline"
-    style="color: #ffffff; text-decoration: none;"
+    target={isExternal ? '_blank' : undefined}
+    rel={isExternal ? 'noopener noreferrer' : undefined}
+    class="cta-button inline-block px-8 py-3 rounded-[var(--radius-button)] font-medium text-sm bg-[var(--color-button)] text-white transition-all hover:bg-[var(--color-button-hover)] hover:scale-[1.02] no-underline"
   >
     {label}
   </a>
 </div>
+
+<style>
+  .cta-button {
+    color: white !important;
+    text-decoration: none !important;
+  }
+</style>

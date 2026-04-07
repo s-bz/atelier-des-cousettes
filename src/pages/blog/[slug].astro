@@ -5,36 +5,35 @@ import ContactCTA from '../../components/ContactCTA.astro';
 import Markdoc from '@markdoc/markdoc';
 import { reader } from '../../utils/reader';
 import { resolveImageUrl } from '../../utils/images';
+import { formatFrenchDate } from '../../utils/strings';
+import { filterPublishedPosts } from '../../utils/blog';
 
 export async function getStaticPaths() {
-  const now = new Date();
   const posts = await reader.collections.blog.all();
-  return posts
-    .filter((post) => post.entry.publishDate && new Date(post.entry.publishDate) <= now)
-    .map((post) => ({
-      params: { slug: post.slug },
-    }));
+  return filterPublishedPosts(posts).map((post) => ({
+    params: { slug: post.slug },
+  }));
 }
 
 const { slug } = Astro.params;
 const post = await reader.collections.blog.read(slug!, { resolveLinkedFiles: true });
 if (!post) return Astro.redirect('/blog');
 
+// SECURITY: Markdoc HTML is rendered with set:html (no sanitisation).
+// This is safe because content is authored by a single trusted editor via Keystatic.
+// If adding untrusted editors, add sanitisation (e.g. sanitize-html) here.
 const transformed = post.content.node ? Markdoc.transform(post.content.node) : null;
 const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
-const siteUrl = Astro.site?.origin;
+const siteUrl = Astro.site?.origin ?? '';
 const settings = await reader.singletons.siteSettings.read();
 
-const formattedDate = post.publishDate
-  ? new Date(post.publishDate).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
-  : '';
+const formattedDate = post.publishDate ? formatFrenchDate(post.publishDate) : '';
 
 const blogGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/blog/**/*.{jpg,jpeg,png,webp}');
 const ogImage = await resolveImageUrl(post.coverImage, blogGlob, Astro.site);
+
+const blogIndex = await reader.singletons.blogIndex.read();
+const authorName = settings?.authorName ?? 'L\'Atelier des Cousettes';
 ---
 
 <BaseLayout title={post.title} description={post.seoDescription} ogImage={ogImage}>
@@ -59,7 +58,7 @@ const ogImage = await resolveImageUrl(post.coverImage, blogGlob, Astro.site);
         "dateModified": post.publishDate,
         "author": {
           "@type": "Person",
-          "name": settings?.authorName,
+          "name": authorName,
           "jobTitle": settings?.authorJobTitle,
           "url": `${siteUrl}/la-couturiere/`
         },
@@ -74,19 +73,36 @@ const ogImage = await resolveImageUrl(post.coverImage, blogGlob, Astro.site);
     ]).replace(/<\//g, '<\\/')} />
   </Fragment>
 
+  <!-- 1. Hero -->
   <Hero title={post.title} coverImage={post.coverImage || undefined} altText={post.coverImageAlt || undefined} />
 
-  <div class="max-w-3xl mx-auto px-4 prose overflow-visible">
-    {formattedDate && (
-      <div class="flex items-center gap-2 text-sm text-[var(--color-text-light)] mb-8 not-prose">
-        <time datetime={post.publishDate ?? ''}>{formattedDate}</time>
-        <span>&middot;</span>
-        <span>Par {settings?.authorName}</span>
+  <!-- 2. Article content -->
+  <section class="py-16 md:py-20">
+    <div class="max-w-3xl mx-auto px-4">
+      {formattedDate && (
+        <div class="flex items-center gap-2 text-sm text-[var(--color-text-light)] mb-8">
+          <time datetime={post.publishDate ?? ''}>{formattedDate}</time>
+          <span>&middot;</span>
+          <span>Par {authorName}</span>
+        </div>
+      )}
+
+      <div class="prose overflow-visible">
+        <Fragment set:html={renderedContent} />
       </div>
-    )}
+    </div>
+  </section>
 
-    <Fragment set:html={renderedContent} />
-
-    <ContactCTA />
-  </div>
+  <!-- 3. CTA + Back to blog -->
+  <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+    <div class="max-w-3xl mx-auto px-4 text-center">
+      {blogIndex?.ctaText && (
+        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)] mb-2">{blogIndex.ctaText}</p>
+      )}
+      <ContactCTA label={blogIndex?.ctaLabel || undefined} />
+      <a href="/blog" class="mt-6 inline-block text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+        &larr; Tous les articles
+      </a>
+    </div>
+  </section>
 </BaseLayout>

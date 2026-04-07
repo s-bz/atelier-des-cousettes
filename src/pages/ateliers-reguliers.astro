@@ -1,12 +1,15 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
-import AtelierCard from '../components/AtelierCard.astro';
+import DetailCard from '../components/DetailCard.astro';
 import ContactCTA from '../components/ContactCTA.astro';
+import FaqSection from '../components/FaqSection.astro';
 import { reader } from '../utils/reader';
 import { resolveImageUrl } from '../utils/images';
 import { toSlug } from '../utils/strings';
 import { buildServicePageSchemas } from '../utils/schema';
+import { ATELIER_GROUPS, ATELIER_GROUP_LABELS } from '../utils/ateliers';
+import { SERVICE_LINKS } from '../utils/nav';
 
 const page = await reader.singletons.ateliersReguliers.read();
 if (!page) throw new Error('Ateliers réguliers content not found');
@@ -31,16 +34,11 @@ const schemas = buildServicePageSchemas({
 
 // Group creneaux
 const creneaux = page.creneaux ?? [];
-const groups = [
-  { id: 'revel-adultes', label: 'Revel — Adultes' },
-  { id: 'revel-enfants', label: 'Revel — Enfants' },
-  { id: 'verdalle', label: 'Verdalle' },
-] as const;
-const groupedCreneaux = groups
+const groupedCreneaux = ATELIER_GROUPS
   .map((g) => ({ ...g, items: creneaux.filter((c) => c.group === g.id) }))
   .filter((g) => g.items.length > 0);
-const groupLabels = Object.fromEntries(groups.map((g) => [g.id, g.label]));
 
+const crossLinks = SERVICE_LINKS.filter((l) => l.href !== '/ateliers-reguliers');
 ---
 
 <BaseLayout title={page.title} description={page.seoDescription} ogImage={ogImage}>
@@ -89,13 +87,11 @@ const groupLabels = Object.fromEntries(groups.map((g) => [g.id, g.label]));
             </h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {g.items.map((c) => (
-                <AtelierCard
+                <DetailCard
                   name={c.name}
-                  location={c.location}
-                  day={c.day}
-                  time={c.time}
-                  price={c.price}
                   anchorId={`detail-${toSlug(c.name)}`}
+                  primaryBadge={c.price}
+                  details={[`${c.day} \u00B7 ${c.time}`, c.location]}
                   note={c.note || undefined}
                 />
               ))}
@@ -116,7 +112,8 @@ const groupLabels = Object.fromEntries(groups.map((g) => [g.id, g.label]));
               {c.name}
               <span class="ml-2 text-base font-medium text-[var(--color-button)]">{c.day} &middot; {c.time}</span>
             </h2>
-            <p class="text-sm text-[var(--color-text-light)] mb-4">{groupLabels[c.group] || c.location}</p>
+            <p class="text-sm text-[var(--color-text-light)] mb-4">{/* Keystatic types c.group as string; cast is safe because options are derived from ATELIER_GROUPS */}
+            {ATELIER_GROUP_LABELS[c.group as keyof typeof ATELIER_GROUP_LABELS] || c.location}</p>
             {c.priceDetails && (
               <div class="prose mb-4">
                 {c.priceDetails.split('\n\n').map((para) => (
@@ -142,26 +139,7 @@ const groupLabels = Object.fromEntries(groups.map((g) => [g.id, g.label]));
   )}
 
   <!-- 5. FAQ -->
-  {faqItems.length > 0 && (
-    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
-      <div class="max-w-3xl mx-auto px-4">
-        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10" style="font-family: var(--font-heading);">
-          {page.faqSectionTitle || 'Questions fréquentes'}
-        </h2>
-        <div class="space-y-6">
-          {faqItems.map((item) => (
-            <div>
-              <h3 class="text-lg font-semibold text-[var(--color-heading)]" style="font-family: var(--font-heading);">
-                {item.question}
-              </h3>
-              <p class="mt-2 text-[var(--color-text)] leading-relaxed">{item.answer}</p>
-            </div>
-          ))}
-        </div>
-        <ContactCTA label={page.ctaLabel || undefined} />
-      </div>
-    </section>
-  )}
+  <FaqSection title={page.faqSectionTitle || 'Questions fréquentes'} items={faqItems} ctaLabel={page.ctaLabel || undefined} />
 
   <!-- 6. Cross-links -->
   {page.crossLinksText && (
@@ -169,12 +147,11 @@ const groupLabels = Object.fromEntries(groups.map((g) => [g.id, g.label]));
       <div class="max-w-3xl mx-auto px-4 text-center">
         <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.crossLinksText}</p>
         <div class="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="/stages-thematiques" class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
-            Stages thématiques &rarr;
-          </a>
-          <a href="/un-apres-midi-couture" class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
-            Un après-midi couture &rarr;
-          </a>
+          {crossLinks.map((link) => (
+            <a href={link.href} class="text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+              {link.label} &rarr;
+            </a>
+          ))}
         </div>
       </div>
     </section>

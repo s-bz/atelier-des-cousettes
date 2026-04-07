@@ -1,4 +1,6 @@
 ---
+import { formatFrenchDate } from '../utils/strings';
+
 interface Props {
   title: string;
   slug: string;
@@ -8,11 +10,7 @@ interface Props {
 
 const { title, slug, publishDate, description } = Astro.props;
 
-const formattedDate = new Date(publishDate).toLocaleDateString('fr-FR', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-});
+const formattedDate = formatFrenchDate(publishDate);
 ---
 
 <a href={`/blog/${slug}`} class="group block rounded-lg bg-white dark:bg-[var(--color-card-bg)] p-6 transition-all" style="box-shadow: var(--shadow-ring), var(--shadow-whisper);">
@@ -20,7 +18,9 @@ const formattedDate = new Date(publishDate).toLocaleDateString('fr-FR', {
   <h2 class="mt-2 text-xl font-medium leading-tight group-hover:text-[var(--color-link)] transition-colors" style="font-family: var(--font-heading);">
     {title}
   </h2>
-  <p class="mt-2 text-sm text-[var(--color-text)] line-clamp-3">{description}</p>
+  {description && (
+    <p class="mt-2 text-sm text-[var(--color-text)] line-clamp-2 md:line-clamp-3">{description}</p>
+  )}
   <span class="mt-4 inline-block text-sm font-semibold text-[var(--color-link)] group-hover:text-[var(--color-button)] transition-colors">
     Lire l'article &rarr;
   </span>
