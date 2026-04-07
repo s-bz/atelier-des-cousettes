@@ -33,26 +33,5 @@ const siteUrl = Astro.site?.toString();
         { "@type": "Offer", "name": "Stage sac et tote bag", "price": "40", "priceCurrency": "EUR" }
       ]
     }).replace(/<\//g, '<\\/')} />
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "Quel est le prix d'un stage de couture ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Les stages varient de 40\u20AC à 90\u20AC selon le contenu et la durée. Le tissu et les fournitures ne sont pas compris." }
-        },
-        {
-          "@type": "Question",
-          "name": "Faut-il apporter sa machine à coudre ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Il est préférable d'apprendre sur sa propre machine et de venir avec tous les accessoires et sa notice. Une machine peut être prêtée sur demande." }
-        },
-        {
-          "@type": "Question",
-          "name": "Où ont lieu les stages de couture ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Les stages ont lieu à la maison des associations de Revel et à l'atelier de Verdalle, dans le Tarn." }
-        }
-      ]
-    }).replace(/<\//g, '<\\/')} />
   </Fragment>
 </ContentPage>

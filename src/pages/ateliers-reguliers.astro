@@ -31,26 +31,5 @@ const siteUrl = Astro.site?.toString();
         { "@type": "Offer", "name": "Ateliers enfants (mensuel)", "price": "30", "priceCurrency": "EUR" }
       ]
     }).replace(/<\//g, '<\\/')} />
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "Quels sont les tarifs des ateliers réguliers ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "De 25\u20AC à 55\u20AC par mois selon la formule choisie (1 ou 2 ateliers par mois). Les ateliers enfants sont à 30\u20AC/mois." }
-        },
-        {
-          "@type": "Question",
-          "name": "Faut-il une adhésion pour les ateliers réguliers ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Oui, l'adhésion annuelle à l'association Les P'tits Piafs est de 15\u20AC." }
-        },
-        {
-          "@type": "Question",
-          "name": "Les ateliers sont-ils ouverts aux débutants ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Oui, les ateliers sont ouverts à tous niveaux. Vous bénéficiez d'un suivi individualisé en petits groupes." }
-        }
-      ]
-    }).replace(/<\//g, '<\\/')} />
   </Fragment>
 </ContentPage>
