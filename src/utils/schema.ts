@@ -6,11 +6,6 @@
  * area served, or schema shape only need to happen once.
  */
 
-/** Filter out FAQ items with empty question or answer. */
-function isValidFaqItem(item: FaqItem): boolean {
-  return item.question.trim().length > 0 && item.answer.trim().length > 0;
-}
-
 interface SiteSettings {
   authorName?: string | null;
   authorJobTitle?: string | null;
@@ -43,6 +38,11 @@ interface ServicePageSchemaOptions extends PageSchemaOptions {
 interface BreadcrumbItem {
   name: string;
   url?: string;
+}
+
+/** Filter out FAQ items with empty question or answer. */
+function isValidFaqItem(item: FaqItem): boolean {
+  return item.question.trim().length > 0 && item.answer.trim().length > 0;
 }
 
 /**
@@ -107,6 +107,8 @@ export function buildServicePageSchemas({
   offers,
   faqItems,
 }: ServicePageSchemaOptions): object[] {
+  const validFaqItems = faqItems.filter(isValidFaqItem);
+
   return [
     ...buildPageSchemas({ title, seoDescription, pageUrl, siteUrl, settings }),
     {
@@ -127,14 +129,14 @@ export function buildServicePageSchemas({
         };
       }),
     },
-    ...(faqItems.filter(isValidFaqItem).length > 0 ? [{
+    ...(validFaqItems.length > 0 ? [{
       "@context": "https://schema.org",
       "@type": "FAQPage",
       "speakable": {
         "@type": "SpeakableSpecification",
         "cssSelector": [".faq-question", ".faq-answer"],
       },
-      "mainEntity": faqItems.filter(isValidFaqItem).map((item) => ({
+      "mainEntity": validFaqItems.map((item) => ({
         "@type": "Question",
         "name": item.question,
         "acceptedAnswer": {

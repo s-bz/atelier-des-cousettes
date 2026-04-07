@@ -11,10 +11,15 @@
     "preview": "astro preview",
     "astro": "astro",
     "postinstall": "node scripts/patch-keystatic.mjs",
-    "check": "astro check"
+    "check": "astro check",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["sharp", "esbuild"]
+    "onlyBuiltDependencies": [
+      "sharp",
+      "esbuild"
+    ]
   },
   "dependencies": {
     "@astrojs/check": "^0.9.8",
@@ -37,5 +42,8 @@
     "sharp": "^0.34.5",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.3"
   }
 }

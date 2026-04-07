@@ -23,6 +23,9 @@ jobs:
 
       - run: pnpm install
 
+      - name: Unit tests
+        run: pnpm test
+
       - name: Type check
         run: pnpm check
 

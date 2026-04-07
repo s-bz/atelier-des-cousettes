@@ -22,7 +22,7 @@ const navRight = navLinks.slice(3);
         )}
         {settings?.phones?.map((phone) => (
           <li>
-            <a href={`tel:${phone.replace(/[.\s]/g, '')}`} class="hover:text-white transition-colors">
+            <a href={`tel:${phone.replace(/[-.\s]/g, '')}`} class="hover:text-white transition-colors">
               📱 {phone}
             </a>
           </li>

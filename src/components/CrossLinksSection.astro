@@ -5,7 +5,8 @@ interface Props {
   text: string;
   /** Title displayed above the text (optional, used on la-couturière). */
   title?: string;
-  /** Href to exclude from the list. If omitted, all service links are shown. */
+  /** Href of the current page to exclude from the list.
+   *  If omitted, ALL service links are shown (including a potential self-link). */
   excludeHref?: string;
   /** Extra classes on the <section> element. */
   class?: string;
