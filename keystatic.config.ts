@@ -107,6 +107,17 @@ export default config({
         content: fields.markdoc({ label: 'Contenu' }),
       },
     }),
+    blogIndex: singleton({
+      label: 'Page blog',
+      path: 'src/content/pages/blog/',
+      schema: {
+        title: fields.text({ label: 'Titre' }),
+        subtitle: fields.text({ label: 'Sous-titre' }),
+        seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
+        coverImage: coverImageField('blog'),
+        coverImageAlt: fields.text({ label: 'Texte alternatif image de couverture' }),
+      },
+    }),
     mentionsLegales: singleton({
       label: 'Mentions légales',
       path: 'src/content/pages/mentions-legales/',
@@ -122,6 +133,24 @@ export default config({
     }),
   },
   collections: {
+    blog: collection({
+      label: 'Articles de blog',
+      slugField: 'title',
+      path: 'src/content/blog/*/',
+      format: { contentField: 'content' },
+      schema: {
+        title: fields.slug({ name: { label: 'Titre' } }),
+        publishDate: fields.date({ label: 'Date de publication' }),
+        seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
+        coverImage: fields.image({
+          label: 'Image de couverture',
+          directory: 'src/assets/images/blog',
+          publicPath: '/src/assets/images/blog/',
+        }),
+        coverImageAlt: fields.text({ label: 'Texte alternatif image de couverture' }),
+        content: fields.markdoc({ label: 'Contenu' }),
+      },
+    }),
     creations: collection({
       label: 'Créations',
       slugField: 'title',

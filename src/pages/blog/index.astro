@@ -1,0 +1,85 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Hero from '../../components/Hero.astro';
+import BlogCard from '../../components/BlogCard.astro';
+import { reader } from '../../utils/reader';
+
+const page = await reader.singletons.blogIndex.read();
+const posts = await reader.collections.blog.all();
+
+const sortedPosts = posts
+  .filter((post) => post.entry.publishDate)
+  .sort((a, b) => new Date(b.entry.publishDate!).getTime() - new Date(a.entry.publishDate!).getTime());
+
+const siteUrl = Astro.site?.origin;
+
+// Resolve cover image to absolute URL for OG image
+const coverImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const coverImagePath = page?.coverImage
+  ? coverImages[page.coverImage]
+    ? page.coverImage
+    : Object.keys(coverImages).find(path => path.endsWith(`/${page.coverImage}`))
+  : undefined;
+const resolvedCover = coverImagePath ? await coverImages[coverImagePath]?.() : null;
+const ogImage = resolvedCover ? new URL(resolvedCover.default.src, Astro.site).toString() : undefined;
+
+const title = page?.title || 'Blog couture';
+const subtitle = page?.subtitle || 'Conseils, tutoriels et astuces pour progresser en couture';
+const seoDescription = page?.seoDescription || 'Conseils couture, tutoriels et astuces pour débutants et confirmés. L\'Atelier des Cousettes partage son savoir-faire à Revel et Verdalle, Tarn.';
+---
+
+<BaseLayout
+  title={title}
+  description={seoDescription}
+  ogImage={ogImage}
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify([
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Accueil", "item": siteUrl },
+          { "@type": "ListItem", "position": 2, "name": title }
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": `${title} — L'Atelier des Cousettes`,
+        "description": seoDescription,
+        "url": new URL('/blog', Astro.site).toString(),
+        "isPartOf": { "@id": `${siteUrl}/#website` },
+        "author": {
+          "@type": "Person",
+          "name": "Isabelle Bultez",
+          "jobTitle": "Couturière diplômée CAP"
+        }
+      }
+    ]).replace(/<\//g, '<\\/')} />
+  </Fragment>
+
+  <Hero
+    title={title}
+    subtitle={subtitle}
+    coverImage={page?.coverImage || undefined}
+    altText={page?.coverImageAlt}
+  />
+
+  <div class="max-w-3xl mx-auto px-4 pb-16">
+    {sortedPosts.length > 0 ? (
+      <div class="grid gap-6">
+        {sortedPosts.map((post) => (
+          <BlogCard
+            title={post.entry.title}
+            slug={post.slug}
+            publishDate={post.entry.publishDate!}
+            description={post.entry.seoDescription}
+          />
+        ))}
+      </div>
+    ) : (
+      <p class="text-center text-[var(--color-text-light)]">Aucun article pour le moment.</p>
+    )}
+  </div>
+</BaseLayout>
