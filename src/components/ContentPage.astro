@@ -4,6 +4,7 @@ import Hero from '../components/Hero.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import Markdoc from '@markdoc/markdoc';
 import { resolveImageUrl } from '../utils/images';
+import { reader } from '../utils/reader';
 
 interface Props {
   title: string;
@@ -21,6 +22,7 @@ const { title, subtitle, seoDescription, contentNode, showContactCTA = true, cov
 const transformed = contentNode ? Markdoc.transform(contentNode.node) : null;
 const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
 const siteUrl = Astro.site?.origin;
+const settings = await reader.singletons.siteSettings.read();
 
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
 const ogImage = await resolveImageUrl(coverImage, coverGlob, Astro.site);
@@ -46,10 +48,10 @@ const ogImage = await resolveImageUrl(coverImage, coverGlob, Astro.site);
         "dateModified": new Date().toISOString().split('T')[0],
         "author": {
           "@type": "Person",
-          "name": "Isabelle Bultez",
-          "jobTitle": "Couturière diplômée CAP",
+          "name": settings?.authorName,
+          "jobTitle": settings?.authorJobTitle,
           "url": `${siteUrl}/la-couturiere/`,
-          "sameAs": ["https://www.facebook.com/atelierdescousettes"]
+          "sameAs": settings?.facebookUrl ? [settings.facebookUrl] : []
         },
         "isPartOf": { "@id": `${siteUrl}/#website` }
       }

@@ -71,8 +71,8 @@ const resolvedCards = await Promise.all(
         "sameAs": settings?.facebookUrl ? [settings.facebookUrl] : [],
         "founder": {
           "@type": "Person",
-          "name": "Isabelle Bultez",
-          "jobTitle": "Couturière diplômée CAP",
+          "name": settings?.authorName,
+          "jobTitle": settings?.authorJobTitle,
           "url": `${siteUrl}/la-couturiere/`,
           "knowsAbout": ["couture", "patronage", "surjeteuse", "machine à coudre"],
           "sameAs": settings?.facebookUrl ? [settings.facebookUrl] : []

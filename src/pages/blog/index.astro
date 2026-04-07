@@ -17,6 +17,7 @@ const sortedPosts = posts
   .sort((a, b) => new Date(b.entry.publishDate).getTime() - new Date(a.entry.publishDate).getTime());
 
 const siteUrl = Astro.site?.origin;
+const settings = await reader.singletons.siteSettings.read();
 
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
@@ -40,14 +41,14 @@ const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
       {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
-        "name": `${page.title} — L'Atelier des Cousettes`,
+        "name": `${page.title} — ${settings?.siteName}`,
         "description": page.seoDescription,
         "url": new URL('/blog', Astro.site).toString(),
         "isPartOf": { "@id": `${siteUrl}/#website` },
         "author": {
           "@type": "Person",
-          "name": "Isabelle Bultez",
-          "jobTitle": "Couturière diplômée CAP"
+          "name": settings?.authorName,
+          "jobTitle": settings?.authorJobTitle
         }
       }
     ]).replace(/<\//g, '<\\/')} />

@@ -1,14 +1,7 @@
 ---
-const currentPath = Astro.url.pathname;
+import { navLinks } from '../utils/navLinks';
 
-const navLinks = [
-  { href: '/stages-thematiques', label: 'Stages thématiques' },
-  { href: '/ateliers-reguliers', label: 'Ateliers réguliers' },
-  { href: '/un-apres-midi-couture', label: 'Un après-midi couture' },
-  { href: '/la-couturiere', label: 'La couturière' },
-  { href: '/mes-creations', label: 'Mes créations' },
-  { href: '/blog', label: 'Blog' },
-];
+const currentPath = Astro.url.pathname;
 ---
 
 <header class="sticky top-0 z-50 bg-[var(--color-bg)] border-b border-[var(--color-border)]">
@@ -50,7 +43,7 @@ const navLinks = [
   </nav>
 
   <!-- Mobile menu -->
-  <div id="mobile-menu" class="hidden lg:hidden border-t border-[var(--color-border)] bg-[var(--color-bg)]">
+  <div id="mobile-menu" class="lg:hidden border-t border-[var(--color-border)] bg-[var(--color-bg)] overflow-hidden transition-[max-height] duration-300 ease-in-out max-h-0">
     <ul class="px-4 py-2 space-y-1">
       {navLinks.map((link) => (
         <li>
@@ -77,8 +70,16 @@ const navLinks = [
   const icon = document.getElementById('menu-icon');
 
   toggle?.addEventListener('click', () => {
-    const isOpen = !menu?.classList.contains('hidden');
-    menu?.classList.toggle('hidden');
+    const isOpen = menu?.classList.contains('max-h-0') === false;
+    if (menu) {
+      if (isOpen) {
+        menu.classList.add('max-h-0');
+        menu.classList.remove('max-h-96');
+      } else {
+        menu.classList.remove('max-h-0');
+        menu.classList.add('max-h-96');
+      }
+    }
     toggle.setAttribute('aria-expanded', String(!isOpen));
     if (icon) {
       icon.setAttribute('d', isOpen

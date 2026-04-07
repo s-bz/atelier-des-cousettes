@@ -1,5 +1,6 @@
 ---
 import { reader } from '../utils/reader';
+import { navLinks } from '../utils/navLinks';
 
 const settings = await reader.singletons.siteSettings.read();
 ---
@@ -31,12 +32,9 @@ const settings = await reader.singletons.siteSettings.read();
     <div>
       <h3 class="font-black mb-3" style="font-family: var(--font-heading); color: var(--color-heading);">Navigation</h3>
       <ul class="space-y-2 text-[var(--color-text)]">
-        <li><a href="/stages-thematiques" class="hover:opacity-70 transition-opacity">Stages thématiques</a></li>
-        <li><a href="/ateliers-reguliers" class="hover:opacity-70 transition-opacity">Ateliers réguliers</a></li>
-        <li><a href="/un-apres-midi-couture" class="hover:opacity-70 transition-opacity">Un après-midi couture</a></li>
-        <li><a href="/la-couturiere" class="hover:opacity-70 transition-opacity">La couturière</a></li>
-        <li><a href="/mes-creations" class="hover:opacity-70 transition-opacity">Mes créations</a></li>
-        <li><a href="/blog" class="hover:opacity-70 transition-opacity">Blog</a></li>
+        {navLinks.map((link) => (
+          <li><a href={link.href} class="hover:opacity-70 transition-opacity">{link.label}</a></li>
+        ))}
       </ul>
     </div>
 
