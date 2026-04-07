@@ -1,0 +1,14 @@
+---
+import ContentPage from '../components/ContentPage.astro';
+import { reader } from '../utils/reader';
+
+const page = await reader.singletons.ateliersReguliers.read();
+if (!page) throw new Error('Ateliers réguliers content not found');
+const contentNode = page.content ? await page.content() : null;
+---
+
+<ContentPage
+  title={page.title}
+  seoDescription={page.seoDescription}
+  contentNode={contentNode}
+/>

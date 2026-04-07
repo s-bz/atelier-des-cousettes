@@ -1,0 +1,27 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import ContactCTA from '../components/ContactCTA.astro';
+import Markdoc from '@markdoc/markdoc';
+
+interface Props {
+  title: string;
+  seoDescription: string;
+  contentNode: any;
+  showContactCTA?: boolean;
+}
+
+const { title, seoDescription, contentNode, showContactCTA = true } = Astro.props;
+const transformed = contentNode ? Markdoc.transform(contentNode.node) : null;
+const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
+---
+
+<BaseLayout title={title} description={seoDescription}>
+  <Hero title={title} />
+
+  <div class="max-w-3xl mx-auto px-4 prose">
+    <Fragment set:html={renderedContent} />
+
+    {showContactCTA && <ContactCTA />}
+  </div>
+</BaseLayout>

@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import { reader } from '../utils/reader';
+
+const creations = await reader.collections.creations.all();
+const sorted = creations.sort((a, b) => (a.entry.order ?? 0) - (b.entry.order ?? 0));
+---
+
+<BaseLayout title="Mes créations" description="Galerie de créations couture : robes, chapeaux et accessoires faits main par L'Atelier des Cousettes.">
+  <Hero title="Mes créations" subtitle="Robes et chapeaux" />
+
+  <div class="max-w-5xl mx-auto px-4">
+    {sorted.length > 0 ? (
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="gallery">
+        {sorted.map((creation) => (
+          <button class="gallery-item" data-src={creation.entry.image}>
+            <img
+              src={creation.entry.image}
+              alt={creation.entry.imageAlt || creation.entry.title}
+              class="rounded-2xl w-full h-72 object-cover hover:opacity-90 transition-opacity cursor-pointer"
+              loading="lazy"
+            />
+          </button>
+        ))}
+      </div>
+    ) : (
+      <p class="text-center text-[var(--color-text-light)]">Galerie en cours de construction.</p>
+    )}
+  </div>
+
+  <!-- Lightbox -->
+  <dialog id="lightbox" class="p-0 bg-transparent backdrop:bg-black/80 max-w-[90vw] max-h-[90vh]">
+    <button class="absolute top-2 right-2 text-white text-3xl leading-none z-10 hover:opacity-80" aria-label="Fermer">&times;</button>
+    <img id="lightbox-img" src="" alt="" class="max-w-full max-h-[90vh] rounded-2xl" />
+  </dialog>
+
+  <script>
+    const dialog = document.getElementById('lightbox') as HTMLDialogElement;
+    const lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement;
+
+    document.querySelectorAll('.gallery-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        const src = (item as HTMLElement).dataset.src;
+        if (src && lightboxImg && dialog) {
+          lightboxImg.src = src;
+          dialog.showModal();
+        }
+      });
+    });
+
+    dialog?.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+
+    dialog?.querySelector('button')?.addEventListener('click', () => dialog.close());
+  </script>
+</BaseLayout>

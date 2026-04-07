@@ -1,0 +1,18 @@
+# Un après midi couture
+
+Ces samedis après midi sont ouverts à tous publics. Vous pouvez vous inscrire ponctuellement. Venez pour découvrir la couture ou, si vous savez coudre, pour être accompagné sur un projet.
+
+## Dates
+- 25 octobre
+- 29 novembre
+- 10 janvier
+- 14 février
+- 21 mars
+- 16 mai
+- 20 juin
+
+Ces ateliers auront lieu sous réserve d'un nombre suffisant d'inscriptions.
+
+## Tarifs
+- 40€ pour un atelier de 3 heures
+- Pour un après midi couture merci de régler une adhésion ponctuelle à l'association *Les P'tits Piafs* de 5€

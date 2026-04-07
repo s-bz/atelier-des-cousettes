@@ -1,0 +1,20 @@
+# Claude
+.claude
+.specstory
+
+# macOS
+.DS_Store
+*.pem
+
+# Dependencies
+node_modules/
+
+# Build
+dist/
+.astro/
+.vercel/
+
+# Environment
+.env
+.env.*
+!.env.example

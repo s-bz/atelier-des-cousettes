@@ -1,0 +1,85 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import YouTubeEmbed from '../components/YouTubeEmbed.astro';
+import ContactCTA from '../components/ContactCTA.astro';
+import { reader } from '../utils/reader';
+import Markdoc from '@markdoc/markdoc';
+
+const homepage = await reader.singletons.homepage.read();
+const settings = await reader.singletons.siteSettings.read();
+
+if (!homepage) throw new Error('Homepage content not found');
+
+const contentNode = homepage.content ? await homepage.content() : null;
+const transformed = contentNode ? Markdoc.transform(contentNode.node) : null;
+const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
+---
+
+<BaseLayout title={homepage.title} description={homepage.seoDescription}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": homepage.title,
+      "description": homepage.seoDescription,
+      "url": "https://couture-tarn.fr",
+      "email": settings?.email,
+      "telephone": "+33695783634",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "118 lieu dit En Rivals",
+        "addressLocality": "Verdalle",
+        "postalCode": "81110",
+        "addressRegion": "Tarn",
+        "addressCountry": "FR"
+      },
+      "sameAs": [settings?.facebookUrl]
+    })} />
+  </Fragment>
+  <Hero title={homepage.title} subtitle={homepage.subtitle} />
+
+  <div class="max-w-3xl mx-auto px-4">
+    <!-- Image hero -->
+    <section class="mb-12">
+      <img src="/images/homepage/aaaaa.jpg" alt={homepage.title} class="rounded-2xl w-full h-auto object-cover" />
+    </section>
+
+    <!-- Content from Keystatic -->
+    <section class="mb-12 prose max-w-none">
+      <Fragment set:html={renderedContent} />
+    </section>
+
+    <!-- Vidéo -->
+    {homepage.youtubeVideoId && (
+      <section class="mb-8">
+        <YouTubeEmbed videoId={homepage.youtubeVideoId} title={homepage.title} />
+        {homepage.youtubeCredit && (
+          <p class="mt-2 text-sm text-center text-[var(--color-text-light)] italic">
+            {homepage.youtubeCredit}
+          </p>
+        )}
+      </section>
+    )}
+
+    <!-- Images avec liens -->
+    <section class="mb-12">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <a href="/ateliers-reguliers" class="group">
+          <img src="/images/homepage/011.jpg" alt="Ateliers réguliers" class="rounded-2xl w-full h-64 object-cover group-hover:opacity-90 transition-opacity" loading="lazy" />
+          <p class="mt-2 text-center text-sm font-medium text-[var(--color-heading)]">Ateliers réguliers</p>
+        </a>
+        <a href="/stages-thematiques" class="group">
+          <img src="/images/homepage/sac.jpg" alt="Stages thématiques" class="rounded-2xl w-full h-64 object-cover group-hover:opacity-90 transition-opacity" loading="lazy" />
+          <p class="mt-2 text-center text-sm font-medium text-[var(--color-heading)]">Stages thématiques</p>
+        </a>
+        <a href="/un-apres-midi-couture" class="group">
+          <img src="/images/homepage/002.jpg" alt="Un après midi couture" class="rounded-2xl w-full h-64 object-cover group-hover:opacity-90 transition-opacity" loading="lazy" />
+          <p class="mt-2 text-center text-sm font-medium text-[var(--color-heading)]">Un après midi couture</p>
+        </a>
+      </div>
+    </section>
+
+    <ContactCTA />
+  </div>
+</BaseLayout>

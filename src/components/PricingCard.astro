@@ -1,0 +1,15 @@
+---
+interface Props {
+  label: string;
+  price: string;
+  description?: string;
+}
+
+const { label, price, description } = Astro.props;
+---
+
+<div class="rounded-2xl p-6 border border-[var(--color-border)]" style="background-color: var(--color-bg-accent);">
+  <h3 class="font-bold text-lg mb-2" style="font-family: var(--font-heading); color: var(--color-heading);">{label}</h3>
+  <p class="text-2xl font-black" style="font-family: var(--font-heading); color: var(--color-heading);">{price}</p>
+  {description && <p class="mt-2 text-sm text-[var(--color-text)]">{description}</p>}
+</div>
