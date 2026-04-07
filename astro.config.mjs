@@ -13,6 +13,9 @@ export default defineConfig({
   adapter: vercel(),
   integrations: [react(), markdoc(), keystatic(), sitemap()],
   vite: {
+    build: {
+      chunkSizeWarningLimit: 1000,
+    },
     plugins: [tailwindcss()],
     optimizeDeps: {
       include: [
