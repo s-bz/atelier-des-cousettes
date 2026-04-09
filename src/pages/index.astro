@@ -81,8 +81,8 @@ const siteUrl = Astro.site?.origin;
         },
         "geo": {
           "@type": "GeoCoordinates",
-          "latitude": 43.4833,
-          "longitude": 2.3667
+          "latitude": 43.5208069,
+          "longitude": 2.1482666
         },
         "areaServed": [
           { "@type": "City", "name": "Verdalle" },
@@ -90,7 +90,7 @@ const siteUrl = Astro.site?.origin;
           { "@type": "AdministrativeArea", "name": "Tarn" }
         ],
         "priceRange": "25€–90€",
-        "sameAs": settings?.facebookUrl ? [settings.facebookUrl] : [],
+        "sameAs": [settings?.facebookUrl, settings?.googleBusinessUrl].filter(Boolean),
         "founder": {
           "@type": "Person",
           "name": settings?.authorName,

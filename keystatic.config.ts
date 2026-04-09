@@ -43,6 +43,7 @@ export default config({
           itemLabel: (props) => props.value,
         }),
         facebookUrl: fields.url({ label: 'Facebook URL' }),
+        googleBusinessUrl: fields.url({ label: 'Google Business Profile URL' }),
         contactFormUrl: fields.url({ label: 'URL formulaire de contact' }),
         address: fields.text({ label: 'Adresse', multiline: true }),
         authorName: fields.text({ label: 'Nom de l\'auteur (schema)' }),

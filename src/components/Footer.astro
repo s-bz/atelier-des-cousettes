@@ -40,6 +40,19 @@ const navRight = navLinks.slice(3);
             </a>
           </li>
         )}
+        {settings?.googleBusinessUrl && (
+          <li>
+            <a
+              href={settings.googleBusinessUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="hover:text-white transition-colors inline-flex items-center gap-1.5"
+            >
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 92 92"><path d="M46 2C27.7 2 13 16.7 13 35c0 25.4 33 55 33 55s33-29.6 33-55C79 16.7 64.3 2 46 2zm0 46c-7.2 0-13-5.8-13-13s5.8-13 13-13 13 5.8 13 13-5.8 13-13 13z"/></svg>
+              Google
+            </a>
+          </li>
+        )}
       </ul>
     </div>
 
