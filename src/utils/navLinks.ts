@@ -5,5 +5,4 @@ export const navLinks = [
   { href: '/la-couturiere', label: 'La couturière' },
   { href: '/mes-creations', label: 'Mes créations' },
   { href: '/blog', label: 'Blog' },
-  { href: '/contact', label: 'Contact' },
 ];

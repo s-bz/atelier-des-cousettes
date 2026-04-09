@@ -69,6 +69,25 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
     </main>
     <Footer />
 
+    <!-- Floating contact button -->
+    <button
+      data-tally-open="wvGxVA"
+      data-tally-align-left="1"
+      data-tally-hide-title="1"
+      data-tally-overlay="1"
+      data-tally-emoji-text="🧵"
+      data-tally-emoji-animation="wave"
+      data-tally-auto-close="2000"
+      data-tally-form-events-forwarding="1"
+      aria-label="Nous contacter"
+      class="floating-contact-btn fixed bottom-6 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-[var(--radius-button)] bg-[var(--color-button)] text-white font-medium text-sm shadow-lg transition-all hover:bg-[var(--color-button-hover)] hover:scale-105 hover:shadow-xl cursor-pointer border-none"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+      <span class="hidden sm:inline">Nous contacter</span>
+    </button>
+
     <!-- Markdoc YouTube embed: click-to-play -->
     <script>
       document.addEventListener('click', (e) => {
