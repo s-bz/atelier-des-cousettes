@@ -58,6 +58,8 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
     <title>{fullTitle}</title>
     <slot name="head" />
 
+    <script async src="https://tally.so/widgets/embed.js"></script>
+
     <Analytics />
   </head>
   <body class="min-h-screen flex flex-col">

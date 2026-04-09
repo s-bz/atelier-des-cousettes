@@ -3,28 +3,31 @@ import { reader } from '../utils/reader';
 
 interface Props {
   label?: string;
-  url?: string;
 }
 
 const settings = await reader.singletons.siteSettings.read();
-const { label = settings?.defaultCtaLabel, url = settings?.contactFormUrl || '#' } = Astro.props;
-const isExternal = url.startsWith('http');
+const { label = settings?.defaultCtaLabel } = Astro.props;
 ---
 
 <div class="mt-8 mb-8 text-center not-prose">
-  <a
-    href={url}
-    target={isExternal ? '_blank' : undefined}
-    rel={isExternal ? 'noopener noreferrer' : undefined}
-    class="cta-button inline-block px-8 py-3 rounded-[var(--radius-button)] font-medium text-sm bg-[var(--color-button)] text-white transition-all hover:bg-[var(--color-button-hover)] hover:scale-[1.02] no-underline"
+  <button
+    data-tally-open="wvGxVA"
+    data-tally-align-left="1"
+    data-tally-hide-title="1"
+    data-tally-overlay="1"
+    data-tally-emoji-text="🧵"
+    data-tally-emoji-animation="wave"
+    data-tally-auto-close="2000"
+    data-tally-form-events-forwarding="1"
+    class="cta-button inline-block px-8 py-3 rounded-[var(--radius-button)] font-medium text-sm bg-[var(--color-button)] text-white transition-all hover:bg-[var(--color-button-hover)] hover:scale-[1.02] cursor-pointer"
   >
     {label}
-  </a>
+  </button>
 </div>
 
 <style>
   .cta-button {
     color: white !important;
-    text-decoration: none !important;
+    border: none;
   }
 </style>
