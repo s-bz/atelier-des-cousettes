@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import { getPageContext, reader } from '../utils/reader';
+import { resolveImage, resolveImageUrl } from '../utils/images';
+import { buildPageSchemas } from '../utils/schema';
+import { splitParagraphs } from '../utils/strings';
+
+const page = await reader.singletons.contact.read();
+if (!page) throw new Error('Contact content not found');
+
+const { settings, siteUrl } = await getPageContext(Astro.site);
+
+const schemas = buildPageSchemas({
+  title: page.title,
+  seoDescription: page.seoDescription,
+  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
+  siteUrl,
+  settings,
+});
+
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const resolvedCover = await resolveImage(page.coverImage, coverGlob);
+const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
+---
+
+<BaseLayout title={page.title} description={page.seoDescription} ogImage={ogImage}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
+  </Fragment>
+
+  <!-- 1. Hero -->
+  <Hero title={page.title} subtitle={page.subtitle} coverImage={resolvedCover ?? undefined} altText={page.coverImageAlt ?? undefined} />
+
+  <!-- 2. Introduction -->
+  {page.introduction && (
+    <section class="py-16 md:py-20">
+      <div class="max-w-3xl mx-auto px-4 text-center">
+        {splitParagraphs(page.introduction).map((para) => (
+          <p class="text-lg leading-relaxed mb-4">{para}</p>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- 3. Tally embedded form -->
+  <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+    <div class="max-w-3xl mx-auto px-4">
+      <iframe
+        data-tally-src="https://tally.so/embed/wvGxVA?hideTitle=1&transparentBackground=1&dynamicHeight=1&formEventsForwarding=1"
+        loading="lazy"
+        width="100%"
+        height="571"
+        frameborder="0"
+        marginheight="0"
+        marginwidth="0"
+        title="Demande d'informations"
+      ></iframe>
+    </div>
+  </section>
+</BaseLayout>
+
+<script is:inline>
+  var d=document,w="https://tally.so/widgets/embed.js",v=function(){"undefined"!=typeof Tally?Tally.loadEmbeds():d.querySelectorAll("iframe[data-tally-src]:not([src])").forEach((function(e){e.src=e.dataset.tallySrc}))};if("undefined"!=typeof Tally)v();else if(d.querySelector('script[src="'+w+'"]')==null){var s=d.createElement("script");s.src=w,s.onload=v,s.onerror=v,d.body.appendChild(s);}
+</script>

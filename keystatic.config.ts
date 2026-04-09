@@ -310,6 +310,17 @@ export default config({
         emptyStateText: fields.text({ label: 'Texte aucun article' }),
       },
     }),
+    contact: singleton({
+      label: 'Contact',
+      path: 'src/content/pages/contact/',
+      schema: {
+        title: fields.text({ label: 'Titre' }),
+        subtitle: fields.text({ label: 'Sous-titre' }),
+        seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
+        ...coverImageFields('contact'),
+        introduction: fields.text({ label: 'Introduction', multiline: true }),
+      },
+    }),
     mentionsLegales: singleton({
       label: 'Mentions légales',
       path: 'src/content/pages/mentions-legales/',
