@@ -4,7 +4,7 @@ seoDescription: >-
   Cours de couture, ateliers et stages à Revel et Verdalle (Tarn). Tous niveaux,
   petits groupes, de 25€ à 90€. Avec Isabelle, couturière diplômée CAP.
 coverImage: /src/assets/images/covers/homepage/coverImage.jpeg
-introductionTitle: Apprenez à coudre dans le Tarn
+introductionTitle: Le plaisir de coudre dans le Tarn
 introduction: >-
   Envie de créer vos propres vêtements, de maîtriser votre machine à coudre ou
   simplement de passer un moment créatif ? Isabelle vous accueille en petits
@@ -54,10 +54,16 @@ valuePropositions:
       À la maison des associations de Revel et à l'atelier privé de Verdalle,
       dans le Tarn.
 animatriceTitle: Votre animatrice
-animatriceText: |
-  Isabelle Bultez enseigne la couture depuis plus de dix ans. Diplômée du CAP couture flou, elle a fondé L'Atelier des Cousettes pour partager sa passion avec des élèves de tous âges et de tous niveaux.
+animatriceText: >
+  Isabelle Bultez enseigne la couture depuis plus de dix ans. Diplômée du CAP
+  couture flou, elle a fondé L'Atelier des Cousettes pour partager sa passion
+  avec des élèves de tous âges et de tous niveaux.
 
-  Son parcours mêle héritage familial — son arrière grand-père était tailleur — passion pour le patronage et engagement artisanal. Son approche est bienveillante et personnalisée : chaque participant progresse à son rythme sur le projet de son choix.
+
+  Son parcours mêle héritage familial — son arrière grand-père était tailleur —
+  passion pour le patronage et engagement artisanal. Son approche est
+  bienveillante et personnalisée : chaque participant progresse à son rythme sur
+  le projet de son choix.
 animatriceImage: /src/assets/images/homepage/animatriceImage.jpeg
 animatriceImageAlt: Isabelle Bultez, couturière diplômée CAP
 animatriceLinkLabel: Découvrir le parcours d'Isabelle
