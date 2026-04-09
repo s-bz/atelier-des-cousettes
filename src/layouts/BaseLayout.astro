@@ -60,6 +60,15 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
 
     <script async src="https://tally.so/widgets/embed.js"></script>
 
+    <!-- GA4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-S5FPS810M8"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-S5FPS810M8');
+    </script>
+
     <Analytics />
   </head>
   <body class="min-h-screen flex flex-col">
