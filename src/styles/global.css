@@ -36,25 +36,27 @@
   --shadow-whisper: 0px 4px 24px rgba(0, 0, 0, 0.05);
 }
 
-html {
-  scroll-behavior: smooth;
-}
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
 
-body {
-  font-family: var(--font-sans);
-  color: var(--color-text);
-  background-color: var(--color-bg);
-  font-weight: 400;
-  line-height: 1.60;
-  -webkit-font-smoothing: antialiased;
-}
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    font-weight: 400;
+    line-height: 1.60;
+    -webkit-font-smoothing: antialiased;
+  }
 
-/* Headings */
-h1, h2, h3, h4 {
-  font-family: var(--font-heading);
-  color: var(--color-heading);
-  font-weight: 500;
-  line-height: 1.15;
+  /* Headings */
+  h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    color: var(--color-heading);
+    font-weight: 500;
+    line-height: 1.15;
+  }
 }
 
 /* Heading font on non-heading elements (badges, nav brand, etc.) */
