@@ -10,7 +10,7 @@ import ContactCTA from '../components/ContactCTA.astro';
 import { reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { filterPublishedPosts } from '../utils/blog';
-import Markdoc from '@markdoc/markdoc';
+import { renderMarkdoc } from '../utils/markdoc-components';
 
 const homepage = await reader.singletons.homepage.read();
 const settings = await reader.singletons.siteSettings.read();
@@ -43,8 +43,7 @@ const resolvedAnimatriceImg = await resolveImage(homepage.animatriceImage, homep
 
 // Actualités markdoc
 const actualitesNode = homepage.actualitesContent ? await homepage.actualitesContent() : null;
-const actualitesTransformed = actualitesNode ? Markdoc.transform(actualitesNode.node) : null;
-const actualitesHtml = actualitesTransformed ? Markdoc.renderers.html(actualitesTransformed) : '';
+const actualitesHtml = renderMarkdoc(actualitesNode?.node);
 
 // Latest blog posts
 const blogIndex = await reader.singletons.blogIndex.read();

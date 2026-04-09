@@ -169,6 +169,152 @@
   }
 }
 
+/* --------------------------------------------------- */
+/* Markdoc custom components                           */
+/* --------------------------------------------------- */
+
+/* CTA Button */
+.markdoc-cta-wrapper {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.markdoc-cta {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  border-radius: var(--radius-button);
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-decoration: none !important;
+  transition: all 0.2s;
+}
+
+.markdoc-cta:hover {
+  transform: scale(1.02);
+}
+
+.markdoc-cta--primary {
+  background-color: var(--color-button);
+  color: white !important;
+}
+
+.markdoc-cta--primary:hover {
+  background-color: var(--color-button-hover);
+}
+
+.markdoc-cta--outline {
+  background-color: transparent;
+  color: var(--color-button) !important;
+  box-shadow: inset 0 0 0 2px var(--color-button);
+}
+
+.markdoc-cta--outline:hover {
+  background-color: var(--color-button);
+  color: white !important;
+}
+
+/* Callout */
+.markdoc-callout {
+  border-radius: var(--radius-sm);
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  border-left: 4px solid;
+}
+
+.markdoc-callout--tip {
+  background-color: #fef9f0;
+  border-left-color: var(--color-button-orange);
+}
+
+.markdoc-callout--info {
+  background-color: #f0f4fe;
+  border-left-color: #5b7ec9;
+}
+
+.markdoc-callout--material {
+  background-color: #f5f0f9;
+  border-left-color: #9b6bb5;
+}
+
+.markdoc-callout__title {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-heading);
+}
+
+.markdoc-callout__content p:last-child {
+  margin-bottom: 0;
+}
+
+/* YouTube embed */
+.markdoc-youtube {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: black;
+  cursor: pointer;
+  margin: 2rem 0;
+}
+
+.markdoc-youtube__thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.2s;
+  /* Override prose img styles */
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+.markdoc-youtube:hover .markdoc-youtube__thumb {
+  opacity: 0.8;
+}
+
+.markdoc-youtube__play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.markdoc-youtube__icon {
+  width: 4rem;
+  height: 3rem;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+}
+
+.markdoc-youtube iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Dark mode adjustments for callouts */
+@media (prefers-color-scheme: dark) {
+  .markdoc-callout--tip {
+    background-color: #2a2318;
+  }
+
+  .markdoc-callout--info {
+    background-color: #1a2030;
+  }
+
+  .markdoc-callout--material {
+    background-color: #251e2d;
+  }
+}
+
 /* Lightbox dialog — reset UA styles, fixed centering */
 dialog#lightbox {
   position: fixed;

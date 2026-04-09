@@ -2,9 +2,9 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
 import ContactCTA from '../components/ContactCTA.astro';
-import Markdoc from '@markdoc/markdoc';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { getPageContext } from '../utils/reader';
+import { renderMarkdoc } from '../utils/markdoc-components';
 import { buildPageSchemas } from '../utils/schema';
 
 interface Props {
@@ -20,8 +20,7 @@ interface Props {
 }
 
 const { title, subtitle, seoDescription, contentNode, showContactCTA = true, coverImage, coverImageAlt, contentClass, noIndex = false } = Astro.props;
-const transformed = contentNode ? Markdoc.transform(contentNode.node) : null;
-const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
+const renderedContent = renderMarkdoc(contentNode?.node);
 const { settings, siteUrl } = await getPageContext(Astro.site);
 
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');

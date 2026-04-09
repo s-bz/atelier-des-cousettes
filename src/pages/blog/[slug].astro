@@ -2,8 +2,8 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Hero from '../../components/Hero.astro';
 import ContactCTA from '../../components/ContactCTA.astro';
-import Markdoc from '@markdoc/markdoc';
 import { getPageContext, reader } from '../../utils/reader';
+import { renderMarkdoc } from '../../utils/markdoc-components';
 import { resolveImage } from '../../utils/images';
 import { formatFrenchDate } from '../../utils/strings';
 import { filterPublishedPosts } from '../../utils/blog';
@@ -23,8 +23,7 @@ if (!post) return Astro.redirect('/blog');
 // SECURITY: Markdoc HTML is rendered with set:html (no sanitisation).
 // This is safe because content is authored by a single trusted editor via Keystatic.
 // If adding untrusted editors, add sanitisation (e.g. sanitize-html) here.
-const transformed = post.content.node ? Markdoc.transform(post.content.node) : null;
-const renderedContent = transformed ? Markdoc.renderers.html(transformed) : '';
+const renderedContent = renderMarkdoc(post.content.node);
 const { settings, siteUrl } = await getPageContext(Astro.site);
 
 const formattedDate = post.publishDate ? formatFrenchDate(post.publishDate) : '';

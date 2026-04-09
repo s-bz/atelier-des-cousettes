@@ -1,5 +1,6 @@
 import { config, fields, singleton, collection } from '@keystatic/core';
 import { ATELIER_GROUPS } from './src/utils/ateliers';
+import { markdocComponents } from './src/utils/markdoc-components';
 
 const coverImageFields = (slug: string) => ({
   coverImage: fields.image({
@@ -107,7 +108,7 @@ export default config({
         youtubeDescription: fields.text({ label: 'Texte d\'accompagnement vidéo', multiline: true }),
         youtubeCredit: fields.text({ label: 'Crédit vidéo' }),
         actualitesTitle: fields.text({ label: 'Titre section actualités' }),
-        actualitesContent: fields.markdoc({ label: 'Contenu actualités' }),
+        actualitesContent: fields.markdoc({ label: 'Contenu actualités', components: markdocComponents }),
         blogSectionTitle: fields.text({ label: 'Titre section derniers articles' }),
         actualitesBlogLabel: fields.text({ label: 'Libellé lien vers le blog' }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
@@ -317,7 +318,7 @@ export default config({
         subtitle: fields.text({ label: 'Sous-titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         ...coverImageFields('mentions-legales'),
-        content: fields.markdoc({ label: 'Contenu' }),
+        content: fields.markdoc({ label: 'Contenu', components: markdocComponents }),
       },
     }),
   },
@@ -338,7 +339,7 @@ export default config({
           publicPath: '/src/assets/images/blog/',
         }),
         coverImageAlt: fields.text({ label: 'Texte alternatif image de couverture' }),
-        content: fields.markdoc({ label: 'Contenu' }),
+        content: fields.markdoc({ label: 'Contenu', components: markdocComponents }),
       },
     }),
     creations: collection({

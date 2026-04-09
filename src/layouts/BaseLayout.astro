@@ -66,5 +66,22 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
       <slot />
     </main>
     <Footer />
+
+    <!-- Markdoc YouTube embed: click-to-play -->
+    <script>
+      document.addEventListener('click', (e) => {
+        const container = (e.target as HTMLElement).closest('.markdoc-youtube');
+        if (!container) return;
+        const videoId = container.getAttribute('data-video-id');
+        if (!videoId) return;
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=1`;
+        iframe.title = 'YouTube video';
+        iframe.setAttribute('frameborder', '0');
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+        iframe.allowFullscreen = true;
+        container.replaceChildren(iframe);
+      });
+    </script>
   </body>
 </html>
