@@ -78,36 +78,39 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
     </main>
     <Footer />
 
-    <!-- Floating contact button -->
-    <button
-      data-tally-open="wvGxVA"
-      data-tally-align-left="1"
-      data-tally-hide-title="1"
-      data-tally-overlay="1"
-      data-tally-emoji-text="🧵"
-      data-tally-emoji-animation="wave"
-      data-tally-auto-close="2000"
-      data-tally-form-events-forwarding="1"
+    <!-- Floating contact button (links to /contact, upgraded to Tally popup if script loads) -->
+    <a
+      href="/contact"
+      data-tally-fallback
       aria-label="Nous contacter"
-      class="floating-contact-btn fixed bottom-6 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-[var(--radius-button)] bg-[var(--color-button)] text-white font-medium text-sm shadow-lg transition-all hover:bg-[var(--color-button-hover)] hover:scale-105 hover:shadow-xl cursor-pointer border-none"
+      class="floating-contact-btn fixed bottom-6 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-[var(--radius-button)] bg-[var(--color-button)] text-white font-medium text-sm shadow-lg transition-all hover:bg-[var(--color-button-hover)] hover:scale-105 hover:shadow-xl no-underline"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
       </svg>
       <span class="hidden sm:inline">Nous contacter</span>
-    </button>
+    </a>
 
-    <!-- Tally fallback: redirect to /contact if script is blocked -->
+    <!-- Upgrade contact links to Tally popups if script loaded -->
     <script is:inline>
-      document.addEventListener('click', function(e) {
-        var btn = e.target.closest('[data-tally-open]');
-        if (!btn) return;
-        if (typeof Tally === 'undefined') {
-          e.preventDefault();
-          e.stopPropagation();
-          window.location.href = '/contact';
+      (function() {
+        if (typeof Tally === 'undefined') return;
+        var els = document.querySelectorAll('[data-tally-fallback]');
+        for (var i = 0; i < els.length; i++) {
+          var el = els[i];
+          el.setAttribute('data-tally-open', 'wvGxVA');
+          el.setAttribute('data-tally-align-left', '1');
+          el.setAttribute('data-tally-hide-title', '1');
+          el.setAttribute('data-tally-overlay', '1');
+          el.setAttribute('data-tally-emoji-text', '🧵');
+          el.setAttribute('data-tally-emoji-animation', 'wave');
+          el.setAttribute('data-tally-auto-close', '2000');
+          el.removeAttribute('href');
+          el.removeAttribute('data-tally-fallback');
+          el.style.cursor = 'pointer';
         }
-      }, true);
+        Tally.loadEmbeds();
+      })();
     </script>
 
     <!-- Markdoc YouTube embed: click-to-play -->

@@ -10,24 +10,18 @@ const { label = settings?.defaultCtaLabel } = Astro.props;
 ---
 
 <div class="mt-8 mb-8 text-center not-prose">
-  <button
-    data-tally-open="wvGxVA"
-    data-tally-align-left="1"
-    data-tally-hide-title="1"
-    data-tally-overlay="1"
-    data-tally-emoji-text="🧵"
-    data-tally-emoji-animation="wave"
-    data-tally-auto-close="2000"
-    data-tally-form-events-forwarding="1"
-    class="cta-button inline-block px-8 py-3 rounded-[var(--radius-button)] font-medium text-sm bg-[var(--color-button)] text-white transition-all hover:bg-[var(--color-button-hover)] hover:scale-[1.02] cursor-pointer"
+  <a
+    href="/contact"
+    data-tally-fallback
+    class="cta-button inline-block px-8 py-3 rounded-[var(--radius-button)] font-medium text-sm bg-[var(--color-button)] text-white transition-all hover:bg-[var(--color-button-hover)] hover:scale-[1.02] no-underline"
   >
     {label}
-  </button>
+  </a>
 </div>
 
 <style>
   .cta-button {
     color: white !important;
-    border: none;
+    text-decoration: none !important;
   }
 </style>
