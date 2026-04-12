@@ -1,0 +1,92 @@
+name: CSP smoke test
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'URL to check (defaults to production)'
+        required: false
+        default: 'https://couture-tarn.fr'
+
+jobs:
+  check:
+    # Only run for successful production deployments, or manual dispatch.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'deployment_status' &&
+       github.event.deployment_status.state == 'success' &&
+       github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve target URL
+        id: url
+        run: |
+          if [ "${{ github.event_name }}" = 'workflow_dispatch' ]; then
+            echo "url=${{ github.event.inputs.url }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "url=${{ github.event.deployment_status.target_url }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fetch live CSP header
+        id: csp
+        run: |
+          url='${{ steps.url.outputs.url }}'
+          echo "Checking CSP on $url"
+          # Follow redirects; Vercel sometimes 308s root requests.
+          header=$(curl -sSLI "$url/" | tr -d '\r' | grep -i '^content-security-policy:' || true)
+          if [ -z "$header" ]; then
+            echo "::error::No Content-Security-Policy header returned by $url"
+            exit 1
+          fi
+          # Strip the header name so only the policy value remains.
+          value=${header#*: }
+          echo "csp=$value" >> "$GITHUB_OUTPUT"
+          echo "CSP: $value"
+
+      - name: Assert required origins
+        env:
+          CSP: ${{ steps.csp.outputs.csp }}
+        run: |
+          fail=0
+          require() {
+            local label="$1"
+            local directive="$2"
+            local origin="$3"
+            # Extract the directive value: everything between "<directive> " and the next ";".
+            local segment
+            segment=$(printf '%s' "$CSP" | awk -v d="$directive" '
+              { n = split($0, parts, ";"); for (i = 1; i <= n; i++) {
+                  s = parts[i]; sub(/^ +/, "", s);
+                  if (index(s, d " ") == 1) { print substr(s, length(d) + 2); exit }
+              }}')
+            if [ -z "$segment" ]; then
+              echo "::error::Missing directive '$directive' (needed for $label)"
+              fail=1
+              return
+            fi
+            if ! printf ' %s ' "$segment" | grep -qF " $origin "; then
+              echo "::error::$label: '$directive' is missing '$origin'"
+              echo "::error::  actual $directive: $segment"
+              fail=1
+            else
+              echo "OK  $label: $directive allows $origin"
+            fi
+          }
+
+          # Keep this list in sync with src/utils/__tests__/csp.test.ts.
+          require 'Keystatic tree/graphql'    connect-src 'https://api.github.com'
+          require 'Keystatic public blobs'    connect-src 'https://raw.githubusercontent.com'
+          require 'Vercel analytics'          connect-src 'https://va.vercel-scripts.com'
+          require 'Tally fetch'               connect-src 'https://tally.so'
+          require 'Tally iframe'              frame-src   'https://tally.so'
+          require 'Tally script'              script-src  'https://tally.so'
+          require 'GA4 script'                script-src  'https://www.googletagmanager.com'
+          require 'GA4 beacon'                connect-src 'https://www.google-analytics.com'
+          require 'YouTube frame'             frame-src   'https://www.youtube-nocookie.com'
+          require 'YouTube thumbnail'         img-src     'https://img.youtube.com'
+          require 'Keystatic image previews'  img-src     'https://*.githubusercontent.com'
+          require 'Google Fonts stylesheet'   style-src   'https://fonts.googleapis.com'
+          require 'Google Fonts files'        font-src    'https://fonts.gstatic.com'
+
+          exit $fail
