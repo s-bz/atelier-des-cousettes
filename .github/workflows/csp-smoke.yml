@@ -1,18 +1,26 @@
 name: CSP smoke test
 
 # Verifies the live Content-Security-Policy header still contains every
-# origin declared in `src/config/csp.js`. Fires on any successful
-# deployment (Vercel's environment-name field is not filtered on —
-# see code-review notes from #11 — because the string varies).
+# origin declared in `src/config/csp.js`.
+#
+# On `deployment_status`, we deliberately do NOT use
+# `deployment_status.target_url` — Vercel sets that to the internal
+# deployment alias (e.g. <project>-<hash>.vercel.app), which sits behind
+# Vercel Deployment Protection and returns 401 with no CSP header.
+# Instead we always check the public custom domain, which is where the
+# header actually matters for real users.
 
 on:
   deployment_status:
   workflow_dispatch:
     inputs:
       url:
-        description: 'Base URL to check'
+        description: 'Base URL to check (default: production domain)'
         required: false
         default: 'https://couture-tarn.fr'
+
+env:
+  PRODUCTION_URL: https://couture-tarn.fr
 
 jobs:
   check:
@@ -28,14 +36,10 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Resolve target URL
-        id: url
-        run: |
-          if [ "${{ github.event_name }}" = 'workflow_dispatch' ]; then
-            echo "url=${{ github.event.inputs.url }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "url=${{ github.event.deployment_status.target_url }}" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Verify CSP against SSOT
-        run: node scripts/check-csp.mjs "${{ steps.url.outputs.url }}"
+        env:
+          TARGET_URL: >-
+            ${{ github.event_name == 'workflow_dispatch'
+                && github.event.inputs.url
+                || env.PRODUCTION_URL }}
+        run: node scripts/check-csp.mjs "$TARGET_URL"
