@@ -15,12 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "sharp",
-      "esbuild"
-    ]
-  },
+  "packageManager": "pnpm@11.0.0-rc.0",
   "dependencies": {
     "@astrojs/check": "^0.9.8",
     "@astrojs/markdoc": "^1.0.3",
