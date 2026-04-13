@@ -6,18 +6,18 @@ describe('SERVICE_LINKS', () => {
     expect(SERVICE_LINKS).toHaveLength(3);
   });
 
-  it('all links have href starting with /', () => {
+  it('all links have href starting with / and ending with /', () => {
     SERVICE_LINKS.forEach((link) => {
-      expect(link.href).toMatch(/^\//);
+      expect(link.href).toMatch(/^\/.*\/$/);
     });
   });
 });
 
 describe('getCrossLinks', () => {
   it('excludes the specified href', () => {
-    const links = getCrossLinks('/ateliers-reguliers');
+    const links = getCrossLinks('/ateliers-reguliers/');
     expect(links).toHaveLength(2);
-    expect(links.every((l) => l.href !== '/ateliers-reguliers')).toBe(true);
+    expect(links.every((l) => l.href !== '/ateliers-reguliers/')).toBe(true);
   });
 
   it('returns all links when href does not match any', () => {
