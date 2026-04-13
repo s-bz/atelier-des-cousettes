@@ -1,0 +1,4 @@
+node scripts/lint-trailing-slash.mjs --fix
+git diff --quiet || git add -u
+pnpm check
+pnpm test

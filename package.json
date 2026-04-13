@@ -15,7 +15,8 @@
     "lint:trailing-slash": "node scripts/lint-trailing-slash.mjs",
     "lint:trailing-slash:fix": "node scripts/lint-trailing-slash.mjs --fix",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepare": "husky"
   },
   "packageManager": "pnpm@11.0.0-rc.0",
   "dependencies": {
@@ -41,6 +42,7 @@
     "typescript": "^6.0.2"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
     "vitest": "^4.1.3"
   }
 }
