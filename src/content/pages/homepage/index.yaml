@@ -12,19 +12,19 @@ introduction: >-
 introduction2: Débutants ou confirmés, choisissez la formule qui vous correspond.
 serviceCards:
   - label: Ateliers réguliers
-    href: /ateliers-reguliers
+    href: /ateliers-reguliers/
     image: /src/assets/images/homepage/serviceCards/0/image.jpg
     imageAlt: Ateliers réguliers
     priceRange: Dès 25 €/mois
     shortDescription: Progressez chaque semaine en petits groupes, de septembre à juin.
   - label: Stages thématiques
-    href: /stages-thematiques
+    href: /stages-thematiques/
     image: /src/assets/images/homepage/serviceCards/1/image.jpg
     imageAlt: Stages thématiques
     priceRange: De 40 € à 90 €
     shortDescription: 'Apprenez une technique précise : machine à coudre, surjeteuse, patronage.'
   - label: Un après-midi couture
-    href: /un-apres-midi-couture
+    href: /un-apres-midi-couture/
     image: /src/assets/images/homepage/serviceCards/2/image.jpg
     imageAlt: Un après-midi couture
     priceRange: 40 € les 3 h

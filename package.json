@@ -6,12 +6,14 @@
     "node": "24.x"
   },
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
+    "dev": "node scripts/lint-trailing-slash.mjs --fix && astro dev",
+    "build": "node scripts/lint-trailing-slash.mjs --fix && astro build",
     "preview": "astro preview",
     "astro": "astro",
     "postinstall": "node scripts/patch-keystatic.mjs",
     "check": "astro check",
+    "lint:trailing-slash": "node scripts/lint-trailing-slash.mjs",
+    "lint:trailing-slash:fix": "node scripts/lint-trailing-slash.mjs --fix",
     "test": "vitest run",
     "test:watch": "vitest"
   },

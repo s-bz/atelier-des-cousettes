@@ -3,9 +3,9 @@
  * Each service page links to the other services.
  */
 export const SERVICE_LINKS = [
-  { href: '/ateliers-reguliers', label: 'Ateliers réguliers' },
-  { href: '/stages-thematiques', label: 'Stages thématiques' },
-  { href: '/un-apres-midi-couture', label: 'Un après-midi couture' },
+  { href: '/ateliers-reguliers/', label: 'Ateliers réguliers' },
+  { href: '/stages-thematiques/', label: 'Stages thématiques' },
+  { href: '/un-apres-midi-couture/', label: 'Un après-midi couture' },
 ] as const;
 
 /** Return service links excluding the current page's href. */

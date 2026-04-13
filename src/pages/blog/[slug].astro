@@ -18,7 +18,7 @@ export async function getStaticPaths() {
 
 const { slug } = Astro.params;
 const post = await reader.collections.blog.read(slug!, { resolveLinkedFiles: true });
-if (!post) return Astro.redirect('/blog');
+if (!post) return Astro.redirect('/blog/');
 
 // SECURITY: Markdoc HTML is rendered with set:html (no sanitisation).
 // This is safe because content is authored by a single trusted editor via Keystatic.
@@ -49,7 +49,7 @@ const relatedPosts = filterPublishedPosts(allPosts)
     <script type="application/ld+json" set:html={JSON.stringify([
       buildBreadcrumbSchema([
         { name: 'Accueil', url: siteUrl },
-        { name: 'Blog couture', url: `${siteUrl}/blog` },
+        { name: 'Blog couture', url: `${siteUrl}/blog/` },
         { name: post.title },
       ]),
       {
@@ -106,7 +106,7 @@ const relatedPosts = filterPublishedPosts(allPosts)
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           {relatedPosts.map((related) => (
-            <a href={`/blog/${related.slug}`} class="block bg-white rounded-[var(--radius-xl)] shadow-md p-5 hover:shadow-lg transition-shadow">
+            <a href={`/blog/${related.slug}/`} class="block bg-white rounded-[var(--radius-xl)] shadow-md p-5 hover:shadow-lg transition-shadow">
               <h3 class="text-base font-bold text-[var(--color-heading)] mb-2">
                 {related.entry.title}
               </h3>
@@ -125,7 +125,7 @@ const relatedPosts = filterPublishedPosts(allPosts)
         <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)] mb-2">{blogIndex.ctaText}</p>
       )}
       <ContactCTA label={blogIndex?.ctaLabel} />
-      <a href="/blog" class="mt-6 inline-block text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+      <a href="/blog/" class="mt-6 inline-block text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
         &larr; {blogIndex?.backToListLabel}
       </a>
     </div>

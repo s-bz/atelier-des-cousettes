@@ -15,7 +15,8 @@ interface Props {
 }
 
 const { title, description = "Cours de couture, ateliers et stages dans le Tarn — L'Atelier des Cousettes à Revel et Verdalle", ogImage, noIndex = false, ogType = 'website', articlePublishedTime, articleAuthor } = Astro.props;
-const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const pathname = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`;
+const canonicalURL = new URL(pathname, Astro.site);
 const fullTitle = title === "L'Atelier des Cousettes" ? title : `${title} | L'Atelier des Cousettes`;
 const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toString();
 ---
@@ -80,7 +81,7 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
 
     <!-- Floating contact button (links to /contact, upgraded to Tally popup if script loads) -->
     <a
-      href="/contact"
+      href="/contact/"
       data-tally-fallback
       aria-label="Nous contacter"
       class="floating-contact-btn fixed bottom-6 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-[var(--radius-button)] bg-[var(--color-button)] text-white font-medium text-sm shadow-lg transition-all hover:bg-[var(--color-button-hover)] hover:scale-105 hover:shadow-xl no-underline"

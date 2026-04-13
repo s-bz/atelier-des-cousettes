@@ -21,7 +21,7 @@ const { settings, siteUrl } = await getPageContext(Astro.site);
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
 const resolvedCover = await resolveImage(page.coverImage, coverGlob);
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
-const pageUrl = new URL('/blog', Astro.site).toString();
+const pageUrl = new URL('/blog/', Astro.site).toString();
 
 const schemas = buildPageSchemas({
   title: page.title,
