@@ -137,7 +137,6 @@ All redesigned pages follow a consistent section-based pattern using `BaseLayout
 - `pnpm dev` / `pnpm build` / `pnpm check` for development. Both `dev` and `build` auto-run the trailing slash lint fix before starting.
 - Always run `pnpm check` after code changes to validate types.
 - Deployed on Vercel with `@astrojs/vercel` adapter.
-- Post-install script patches Keystatic for Astro 6 compatibility.
 - Node >= 22.12.0 required.
 - Vercel Analytics injected in BaseLayout.
 - Vite chunk size warning limit set to 5000kB (Keystatic bundle is large).
