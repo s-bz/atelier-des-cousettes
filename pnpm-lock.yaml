@@ -30,8 +30,8 @@ importers:
         specifier: ^5.2.8
         version: 5.2.8
       '@keystatic/astro':
-        specifier: ^5.0.6
-        version: 5.0.6(@keystatic/core@0.5.50(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(astro@6.3.5(@types/node@24.12.2)(@vercel/functions@3.6.0)(idb-keyval@6.2.2)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.4)(yaml@2.8.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        specifier: ^5.1.0
+        version: 5.1.0(@keystatic/core@0.5.50(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(astro@6.3.5(@types/node@24.12.2)(@vercel/functions@3.6.0)(idb-keyval@6.2.2)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.4)(yaml@2.8.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@keystatic/core':
         specifier: ^0.5.50
         version: 0.5.50(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -223,6 +223,10 @@ packages:
 
   '@babel/runtime@7.29.2':
     resolution: {integrity: sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/runtime@7.29.7':
+    resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
     engines: {node: '>=6.9.0'}
 
   '@babel/template@7.28.6':
@@ -710,11 +714,11 @@ packages:
       next:
         optional: true
 
-  '@keystatic/astro@5.0.6':
-    resolution: {integrity: sha512-kUBXkXpE9/JH2fFx0in+tym6YVIDoHgxW9J9WHOJ+uwbpJJcUH6IRqVyutgZr8DO/UDaAhoZc41zcIUyWz0Trw==}
+  '@keystatic/astro@5.1.0':
+    resolution: {integrity: sha512-5DGpUncXdOUnuIczyWudfd/t7JTe4IB7n8ko1BA0gnIyG3WA/9y7QAYYT6r1glZnQIeuv3N3aEp9PxHRfubA8Q==}
     peerDependencies:
       '@keystatic/core': '*'
-      astro: 2 || 3 || 4 || 5
+      astro: 2 || 3 || 4 || 5 || 6
       react: ^18.2.0 || ^19.0.0
       react-dom: ^18.2.0 || ^19.0.0
 
@@ -3932,6 +3936,8 @@ snapshots:
 
   '@babel/runtime@7.29.2': {}
 
+  '@babel/runtime@7.29.7': {}
+
   '@babel/template@7.28.6':
     dependencies:
       '@babel/code-frame': 7.29.0
@@ -4427,9 +4433,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@keystatic/astro@5.0.6(@keystatic/core@0.5.50(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(astro@6.3.5(@types/node@24.12.2)(@vercel/functions@3.6.0)(idb-keyval@6.2.2)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.4)(yaml@2.8.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
+  '@keystatic/astro@5.1.0(@keystatic/core@0.5.50(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(astro@6.3.5(@types/node@24.12.2)(@vercel/functions@3.6.0)(idb-keyval@6.2.2)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.4)(yaml@2.8.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
     dependencies:
-      '@babel/runtime': 7.29.2
+      '@babel/runtime': 7.29.7
       '@keystatic/core': 0.5.50(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@types/react': 19.2.15
       astro: 6.3.5(@types/node@24.12.2)(@vercel/functions@3.6.0)(idb-keyval@6.2.2)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.4)(yaml@2.8.3)
