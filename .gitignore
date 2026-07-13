@@ -1,5 +1,6 @@
-# Claude
-.claude
+# Claude (skills are versioned so scheduled cloud runs can read them)
+.claude/*
+!.claude/skills/
 .specstory
 
 # macOS
