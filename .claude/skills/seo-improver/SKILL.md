@@ -10,6 +10,10 @@ Locale: France (country filter `fra`), French language
 Business location: Verdalle (81110), southern Tarn. Realistic catchment (~30 min drive): Castres, Labruguière, Mazamet, Soual, Dourgne, Sorèze, Revel, Puylaurens. Albi, Gaillac, and northern Tarn are OUT of catchment (~1 h) — do not target them even if they appear in Search Console impressions.
 Tracked keywords: not set (derive from the domain's own ranked queries in Search Console, filtered to catchment + non-geo « tarn »/« montagne noire » terms)
 Content repo: this repo — Keystatic content under `src/content/` (apply mode allowed, on a branch, never `main`)
+Competitor roster (from the 2026-07-13 catchment SERP sweep; update when the sweep is redone):
+- Organic domains: atelierdecouture.fr (L'atelier de couture d'Elise, Toulouse — strongest, ranks on most catchment terms), cameleoncouturecreation.com, atelierarteli.fr (Revel), lacouzeuse.org, acde-couture.fr, atelieraslena.fr (CPF/formation angle), latelierdesgourdes.fr
+- GBP local-pack names: L'atelier de couture d'Elise, Caméléon Couture Création, L'Atelier aux 4 mains (Sorèze), Créa'Isi (Sorèze/Revel), La Fabrique de Marjorie, La Fée Dymotite (Castres), Déco Couture (Castres), FIL EN STYLE (Puylaurens), Atelier Fournier (Puylaurens), Les créas de Sylvie C, L'atelier 3C
+- Name-collision watch: latelierdescousettes.fr is an unrelated business with a near-identical name — track it and flag if it starts winning branded or catchment queries
 <!-- /project-config -->
 
 You are an SEO improver agent. You run on a loop: measure where the site ranks, decide what to change to climb, hand back specific changes, and next run check whether the last changes moved the needle.
@@ -62,8 +66,9 @@ Persist each run under `reports/seo-improver/<YYYY-MM-DD>/`. At the start of eve
    - **Decay**: pages whose clicks or position fell since a prior run; diagnose the likely cause (staleness, SERP change, intent shift) and check what moved above you.
 5. For each opportunity you act on, open the ranking URL, inspect the on-page signals, and write a **specific, ready-to-apply change**: the exact title/meta to use, the heading or section to add, the internal links to add and from where, or the consolidation to make. Tie every recommendation to the ranking evidence that motivates it.
 6. Verify the previous loop: for each improvement recommended in the prior run, state whether it was applied and what happened to that keyword's position. Keep what worked, drop or revise what did not.
+6b. **Competitor tracking** (requires DataForSEO; skip silently without it): from the *same* SERP pulls made in step 2 — no extra API spend — extract every roster competitor's organic position per tracked keyword, and every roster GBP name's local-pack rank, rating, and review count. Write them to `competitors.csv` (spec below) and diff against the previous run: who overtook us, who we passed, whose review count is climbing. Watch the name-collision domain the same way. Additionally, at most **one** Labs call per run may target a roster competitor (`ranked_keywords` or `domain_intersection`) — rotate through the roster across runs, strongest first (atelierdecouture.fr), and note in the report whose turn it was so the next run picks the next one.
 7. **Content gaps** (requires DataForSEO; skip silently without it): look for queries the site does *not* rank for that deserve a new page or blog post. Two hunting grounds, max 3 Labs calls total:
-   - **Competitor gaps**: pull `ranked_keywords` for one or two competitors seen in this run's SERPs (e.g. cameleoncouturecreation.com, atelierarteli.fr) or run `domain_intersection` against couture-tarn.fr. Keep keywords with catchment-local intent or course/technique intent; discard retouches-intent and out-of-catchment geo terms.
+   - **Competitor gaps**: use this run's rotating Labs call from step 6b — `ranked_keywords` for the roster competitor whose turn it is, or `domain_intersection` against couture-tarn.fr. Keep keywords with catchment-local intent or course/technique intent; discard retouches-intent and out-of-catchment geo terms.
    - **Topic expansion**: pull `keyword_ideas` seeded from clusters that already earn the blog impressions (surjeteuse, trousse/fermeture éclair, machine à coudre, débuter en couture). Adjacent how-to topics with measurable volume are proven territory — they build the topical authority that lifts the money pages.
 
 ## Content-gap suggestions (new pages and posts)
@@ -88,9 +93,17 @@ Write two artifacts under `reports/seo-improver/<YYYY-MM-DD>/`:
 
   `status` is one of `gained`, `lost`, `new`, `dropped`, or `flat`. `delta` is positive when position improved (moved toward #1). Leave `previous_position` blank on the baseline run. Leave `search_volume` blank when DataForSEO is unavailable.
 
+- `competitors.csv` — the roster snapshot from step 6b (skip the file entirely when DataForSEO was unavailable):
+
+  ```csv
+  competitor,type,keyword,position,previous_position,delta,rating,reviews,previous_reviews
+  ```
+
+  `type` is `organic` (position = organic rank for that keyword) or `gbp` (position = local-pack rank; `rating`/`reviews` filled). One row per competitor × keyword where they appeared; leave `previous_*` blank on the first tracked run. Include a row for the name-collision domain whenever it ranks.
+
 - `report.md` — a concise Markdown report (in English; the site content stays French):
   1. Executive summary: net movement and the single most important action.
-  2. Movement since last run: biggest gains, biggest losses, new and lost keywords.
+  2. Movement since last run: biggest gains, biggest losses, new and lost keywords — including competitor movement worth acting on (someone overtook us, a review-count gap widened, the name-collision domain gained ground).
   3. Did last run's changes work: per prior recommendation, applied or not, and the ranking response.
   4. This run's improvements: an ordered action list, each with the exact change, the target keyword/URL, the expected effect, and the evidence.
   5. New content suggestions (`SEO-NEW-00X`), when the content-gap step produced any: proposed title, slug, type, outline, and evidence. Omit the section rather than pad it.
