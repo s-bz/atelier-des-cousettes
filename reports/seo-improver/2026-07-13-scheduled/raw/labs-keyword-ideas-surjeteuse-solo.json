@@ -1,0 +1,3196 @@
+{
+    "version": "0.1.20260713",
+    "status_code": 20000,
+    "status_message": "Ok.",
+    "time": "0.3001 sec.",
+    "cost": 0.01548,
+    "tasks_count": 1,
+    "tasks_error": 0,
+    "tasks": [
+        {
+            "id": "07140049-2078-0400-0000-c324330d8aa1",
+            "status_code": 20000,
+            "status_message": "Ok.",
+            "time": "0.2281 sec.",
+            "cost": 0.01548,
+            "result_count": 1,
+            "path": [
+                "v3",
+                "dataforseo_labs",
+                "google",
+                "keyword_ideas",
+                "live"
+            ],
+            "data": {
+                "api": "dataforseo_labs",
+                "function": "keyword_ideas",
+                "se_type": "google",
+                "keywords": [
+                    "surjeteuse"
+                ],
+                "location_name": "France",
+                "language_code": "fr",
+                "closely_variants": true,
+                "limit": 50,
+                "order_by": [
+                    "keyword_info.search_volume,desc"
+                ]
+            },
+            "result": [
+                {
+                    "se_type": "google",
+                    "seed_keywords": [
+                        "surjeteuse"
+                    ],
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "total_count": 29,
+                    "items_count": 29,
+                    "offset": 0,
+                    "offset_token": "eyJDdXJyZW50T2Zmc2V0IjoyOSwiUmVxdWVzdERhdGEiOnsia2V5d29yZHMiOlsic3VyamV0ZXVzZSJdLCJsb2NhdGlvbiI6MjI1MCwibGFuZ3VhZ2UiOiJmciIsImNsb3NlbHlfdmFyaWFudHMiOnRydWUsIm5ld2VzdCI6ZmFsc2UsImV4dGVuZGVkIjpmYWxzZSwibG9hZF9zZXJwX2luZm8iOmZhbHNlLCJhdXRvY29ycmVjdCI6dHJ1ZSwic2V0dGluZ3MiOnsidXNlX2NhdGVnb3JpZXMiOnRydWUsImludGVyc2VjdF93aXRoX2NhdGVnb3JpZXMiOmZhbHNlLCJ1c2VfY2x1c3RlcnMiOnRydWUsImNsdXN0ZXJfc2ltcGxpZmllZF9tYXRjaCI6ZmFsc2UsImNsdXN0ZXJzX2NvdW50IjozLCJza2lwX25lYXJlc3RfY2x1c3RlcnNfY291bnQiOjAsInVzZV9kaXN0YW5jZV9zY29yZSI6ZmFsc2UsInVzZV9zdl9zY29yZSI6dHJ1ZX0sIklzT2xkIjpmYWxzZSwic2VhcmNoX2FmdGVyX3Rva2VuIjpudWxsLCJpZ25vcmVfc3lub255bXMiOmZhbHNlLCJzZWFyY2hfZW5naW5lIjoiZ29vZ2xlIiwidXNlX25ld19jYXRlZ29yaWVzIjp0cnVlLCJvcmRlcl9ieSI6eyJvcmRlcl9maWVsZCI6ImtleXdvcmRfaW5mby5zZWFyY2hfdm9sdW1lIiwib3JkZXJfdHlwZSI6IkRlc2MiLCJuZXh0IjpudWxsfSwibGltaXQiOjUwLCJvZmZzZXQiOjAsImFpZCI6MjA3ODEyLCJ1c2VfY2FjaGUiOnRydWUsInRhc2tfaWQiOiIwNzE0MDA0OS0yMDc4LTA0MDAtMDAwMC1jMzI0MzMwZDhhYTEiLCJmbGFncyI6bnVsbH0sIlJhd1F1ZXJ5IjpudWxsLCJJZCI6ImQ3MDc0OWQ4LWQ3MGMtNGE5NS04NDcwLTQ2OWM3ZDMxNGFjZiIsIlNlYXJjaEFmdGVyRGF0YSI6Wy05MjIzMzcyMDM2ODU0Nzc1ODA4LCJmZDU3Y2I0NS1kMDEwLTk4ZjktZjJjMS02MzUxODMzMjAyMjUiXSwiRXhlY3V0b3IiOi02NjU5MTA0OTgyODI1NjgwMzk3fQ==",
+                    "items": [
+                        {
+                            "se_type": "google",
+                            "keyword": "surjeteuse elna",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-18 11:52:02 +00:00",
+                                "competition": 1,
+                                "competition_level": "HIGH",
+                                "cpc": 0.39,
+                                "search_volume": 170,
+                                "low_top_of_page_bid": 0.12,
+                                "high_top_of_page_bid": 0.64,
+                                "categories": [
+                                    10008
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 170
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 170
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 140
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 140
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 210
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 170
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 170
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 140
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 140
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 140
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 170
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 170
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 21,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": "text_processing",
+                                "keyword_difficulty": 0,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": {
+                                "se_type": "google",
+                                "backlinks": 1.1,
+                                "dofollow": 1,
+                                "referring_pages": 1,
+                                "referring_domains": 0.5,
+                                "referring_main_domains": 0.4,
+                                "rank": 13.4,
+                                "main_domain_rank": 207.4,
+                                "last_updated_time": "2026-06-06 16:27:17 +00:00"
+                            },
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "navigational",
+                                "foreign_intent": [
+                                    "informational",
+                                    "transactional"
+                                ],
+                                "last_updated_time": "2026-04-29 23:31:28 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "surjeteuse auchan",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-16 03:39:46 +00:00",
+                                "competition": 1,
+                                "competition_level": "HIGH",
+                                "cpc": 0.1,
+                                "search_volume": 30,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 20
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 20
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 20
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 20
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 30
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 30
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 40
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 20
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 20
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 20
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 30
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 40
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": -33
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": "text_processing",
+                                "keyword_difficulty": 0,
+                                "detected_language": "de",
+                                "is_another_language": true,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "navigational",
+                                "foreign_intent": [
+                                    "transactional",
+                                    "commercial"
+                                ],
+                                "last_updated_time": "2026-04-29 20:35:53 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "biais surjeteuse",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-07-09 23:58:47 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": 10,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": 24,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "informational",
+                                "foreign_intent": null,
+                                "last_updated_time": "2026-04-29 05:39:00 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "fievee surjeteuse",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-07-12 07:41:54 +00:00",
+                                "competition": 0.43,
+                                "competition_level": "MEDIUM",
+                                "cpc": null,
+                                "search_volume": 10,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 6,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "informational",
+                                "foreign_intent": [
+                                    "navigational"
+                                ],
+                                "last_updated_time": "2026-04-27 18:47:37 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "decoudre surjeteuse",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-07-13 19:57:36 +00:00",
+                                "competition": 0,
+                                "competition_level": "LOW",
+                                "cpc": null,
+                                "search_volume": 10,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 6,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 10
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": "text_processing",
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "transactional",
+                                "foreign_intent": null,
+                                "last_updated_time": "2026-04-27 14:16:23 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "surjeteuse qilive prix",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-18 14:41:35 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": 10,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 10
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "uz",
+                                "is_another_language": true,
+                                "words_count": 3
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "commercial",
+                                "foreign_intent": null,
+                                "last_updated_time": "2026-04-30 03:46:15 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "surjeteuse krefel",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-17 22:54:55 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": 0,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "transactional",
+                                "foreign_intent": null,
+                                "last_updated_time": "2026-04-29 20:57:44 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "makeri st surjeteuse",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-07-13 17:29:50 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": 0,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 3
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "navigational",
+                                "foreign_intent": [
+                                    "informational"
+                                ],
+                                "last_updated_time": "2026-04-29 16:30:35 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "enfilage surjeteuse aeg",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-15 04:11:59 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 3
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "informational",
+                                "foreign_intent": [
+                                    "transactional"
+                                ],
+                                "last_updated_time": "2026-04-27 18:36:40 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "fil surjeteuse cultura",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-14 08:42:45 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10108,
+                                    11866
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "da",
+                                "is_another_language": true,
+                                "words_count": 3
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "navigational",
+                                "foreign_intent": null,
+                                "last_updated_time": "2026-04-27 16:45:28 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "surjeteuse pfaff auchan",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-18 00:40:50 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "de",
+                                "is_another_language": true,
+                                "words_count": 3
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "navigational",
+                                "foreign_intent": [
+                                    "transactional"
+                                ],
+                                "last_updated_time": "2026-04-28 22:27:54 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "ady surjeteuse",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-12 03:28:27 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": null,
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": "text_processing",
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "informational",
+                                "foreign_intent": null,
+                                "last_updated_time": "2026-04-28 23:55:44 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "surjeteuse liege",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-11 16:31:55 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "navigational",
+                                "foreign_intent": [
+                                    "informational"
+                                ],
+                                "last_updated_time": "2026-04-28 22:34:48 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "notice surjeteuse qilive",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-13 11:56:26 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10108,
+                                    13647
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "uz",
+                                "is_another_language": true,
+                                "words_count": 3
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "navigational",
+                                "foreign_intent": [
+                                    "informational"
+                                ],
+                                "last_updated_time": "2026-04-29 16:33:46 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "enfilage surjeteuse lewenstein",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-17 06:52:51 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 3
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "transactional",
+                                "foreign_intent": null,
+                                "last_updated_time": "2026-04-29 14:50:38 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "fiévée surjeteuse",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-13 00:09:32 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "informational",
+                                "foreign_intent": [
+                                    "transactional"
+                                ],
+                                "last_updated_time": "2026-04-29 07:24:23 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "wismer surjeteuse",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-18 08:09:29 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "informational",
+                                "foreign_intent": [
+                                    "transactional"
+                                ],
+                                "last_updated_time": "2026-05-04 00:08:25 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "janome surjeteuse air",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-12 12:34:12 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10018,
+                                    10159,
+                                    10821
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 3
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "transactional",
+                                "foreign_intent": null,
+                                "last_updated_time": "2026-04-28 06:20:51 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "surjeteuse noumea",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-14 09:47:30 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10008
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "navigational",
+                                "foreign_intent": null,
+                                "last_updated_time": "2026-04-28 23:03:23 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "sarouel surjeteuse",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-18 05:15:52 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10008
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "transactional",
+                                "foreign_intent": [
+                                    "informational"
+                                ],
+                                "last_updated_time": "2026-04-29 20:52:05 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "saify surjeteuse",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-12 18:09:19 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "transactional",
+                                "foreign_intent": [
+                                    "navigational",
+                                    "informational"
+                                ],
+                                "last_updated_time": "2026-04-29 20:30:06 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "avon surjeteuse",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-17 00:05:34 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": "avons surjeteuse",
+                                "synonym_clustering_algorithm": "text_processing",
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "transactional",
+                                "foreign_intent": null,
+                                "last_updated_time": "2026-04-29 05:56:36 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "sav surjeteuse pfaff",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-17 05:07:08 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 3
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "transactional",
+                                "foreign_intent": null,
+                                "last_updated_time": "2026-04-28 22:47:01 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "diy surjeteuse",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-18 02:00:03 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "transactional",
+                                "foreign_intent": null,
+                                "last_updated_time": "2026-04-27 14:15:48 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "surjeteuse glasman",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-17 22:34:34 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "transactional",
+                                "foreign_intent": null,
+                                "last_updated_time": "2026-04-28 22:34:32 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "terai surjeteuse",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-14 10:22:31 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "transactional",
+                                "foreign_intent": null,
+                                "last_updated_time": "2026-04-29 22:29:12 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "surjeteuse calanda",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-12 23:01:07 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10008
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "navigational",
+                                "foreign_intent": [
+                                    "transactional",
+                                    "commercial"
+                                ],
+                                "last_updated_time": "2026-04-30 02:13:40 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "surjeteuse elize",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-12 14:44:45 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10004,
+                                    13804
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": null,
+                                "synonym_clustering_algorithm": null,
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "informational",
+                                "foreign_intent": [
+                                    "transactional"
+                                ],
+                                "last_updated_time": "2026-04-28 23:03:23 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword": "surjeteuse ady",
+                            "location_code": 2250,
+                            "language_code": "fr",
+                            "keyword_info": {
+                                "se_type": "google",
+                                "last_updated_time": "2026-06-13 21:16:53 +00:00",
+                                "competition": null,
+                                "competition_level": null,
+                                "cpc": null,
+                                "search_volume": null,
+                                "low_top_of_page_bid": null,
+                                "high_top_of_page_bid": null,
+                                "categories": [
+                                    10018,
+                                    10159
+                                ],
+                                "monthly_searches": [
+                                    {
+                                        "year": 2026,
+                                        "month": 5,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 4,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 3,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 2,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2026,
+                                        "month": 1,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 12,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 11,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 10,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 9,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 8,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 7,
+                                        "search_volume": 0
+                                    },
+                                    {
+                                        "year": 2025,
+                                        "month": 6,
+                                        "search_volume": 0
+                                    }
+                                ],
+                                "search_volume_trend": {
+                                    "monthly": 0,
+                                    "quarterly": 0,
+                                    "yearly": 0
+                                }
+                            },
+                            "keyword_info_normalized_with_bing": null,
+                            "keyword_info_normalized_with_clickstream": null,
+                            "clickstream_keyword_info": null,
+                            "keyword_properties": {
+                                "se_type": "google",
+                                "core_keyword": "ady surjeteuse",
+                                "synonym_clustering_algorithm": "text_processing",
+                                "keyword_difficulty": null,
+                                "detected_language": "fr",
+                                "is_another_language": false,
+                                "words_count": 2
+                            },
+                            "serp_info": null,
+                            "avg_backlinks_info": null,
+                            "search_intent_info": {
+                                "se_type": "google",
+                                "main_intent": "informational",
+                                "foreign_intent": null,
+                                "last_updated_time": "2026-04-29 20:44:15 +00:00"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

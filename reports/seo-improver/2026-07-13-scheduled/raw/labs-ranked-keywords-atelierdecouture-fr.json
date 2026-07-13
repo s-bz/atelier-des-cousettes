@@ -1,0 +1,1465 @@
+{
+    "version": "0.1.20260713",
+    "status_code": 20000,
+    "status_message": "Ok.",
+    "time": "0.2983 sec.",
+    "cost": 0.01284,
+    "tasks_count": 1,
+    "tasks_error": 0,
+    "tasks": [
+        {
+            "id": "07140049-2078-0381-0000-a56c6b7d82a1",
+            "status_code": 20000,
+            "status_message": "Ok.",
+            "time": "0.2709 sec.",
+            "cost": 0.01284,
+            "result_count": 1,
+            "path": [
+                "v3",
+                "dataforseo_labs",
+                "google",
+                "ranked_keywords",
+                "live"
+            ],
+            "data": {
+                "api": "dataforseo_labs",
+                "function": "ranked_keywords",
+                "se_type": "google",
+                "target": "atelierdecouture.fr",
+                "location_name": "France",
+                "language_code": "fr",
+                "limit": 50,
+                "order_by": [
+                    "ranked_serp_element.serp_item.rank_group,asc"
+                ]
+            },
+            "result": [
+                {
+                    "se_type": "google",
+                    "target": "atelierdecouture.fr",
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "total_count": 7,
+                    "items_count": 7,
+                    "metrics": {
+                        "organic": {
+                            "pos_1": 0,
+                            "pos_2_3": 0,
+                            "pos_4_10": 0,
+                            "pos_11_20": 5,
+                            "pos_21_30": 2,
+                            "pos_31_40": 0,
+                            "pos_41_50": 0,
+                            "pos_51_60": 0,
+                            "pos_61_70": 0,
+                            "pos_71_80": 0,
+                            "pos_81_90": 0,
+                            "pos_91_100": 0,
+                            "etv": 5.840499982237816,
+                            "count": 7,
+                            "estimated_paid_traffic_cost": 3.382614940404892,
+                            "is_new": 3,
+                            "is_up": 3,
+                            "is_down": 1,
+                            "is_lost": 0,
+                            "clickstream_etv": null,
+                            "clickstream_gender_distribution": null,
+                            "clickstream_age_distribution": null
+                        },
+                        "paid": {
+                            "pos_1": 0,
+                            "pos_2_3": 0,
+                            "pos_4_10": 0,
+                            "pos_11_20": 0,
+                            "pos_21_30": 0,
+                            "pos_31_40": 0,
+                            "pos_41_50": 0,
+                            "pos_51_60": 0,
+                            "pos_61_70": 0,
+                            "pos_71_80": 0,
+                            "pos_81_90": 0,
+                            "pos_91_100": 0,
+                            "etv": 0,
+                            "count": 0,
+                            "estimated_paid_traffic_cost": 0,
+                            "is_new": 0,
+                            "is_up": 0,
+                            "is_down": 0,
+                            "is_lost": 0,
+                            "clickstream_etv": null,
+                            "clickstream_gender_distribution": null,
+                            "clickstream_age_distribution": null
+                        },
+                        "featured_snippet": null,
+                        "local_pack": null,
+                        "ai_overview_reference": null
+                    },
+                    "metrics_absolute": null,
+                    "items": [
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "atelier d'elise vetement",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-06-12 09:15:17 +00:00",
+                                    "competition": 1,
+                                    "competition_level": "HIGH",
+                                    "cpc": 0.9399999976158142,
+                                    "search_volume": 70,
+                                    "low_top_of_page_bid": null,
+                                    "high_top_of_page_bid": null,
+                                    "categories": [
+                                        10021,
+                                        10176,
+                                        10917,
+                                        13356
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 10
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 10
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 10
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 10
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 50
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 110
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 30
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 20
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 10
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 70
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 170
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 6,
+                                            "search_volume": 320
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": 0,
+                                        "quarterly": 0,
+                                        "yearly": -97
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": null,
+                                    "synonym_clustering_algorithm": null,
+                                    "keyword_difficulty": 0,
+                                    "detected_language": "fr",
+                                    "is_another_language": false
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=atelier%20d%27elise%20vetement&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "organic",
+                                        "people_also_ask",
+                                        "related_searches",
+                                        "images"
+                                    ],
+                                    "se_results_count": 8600,
+                                    "last_updated_time": "2026-04-20 22:52:01 +00:00",
+                                    "previous_updated_time": "2026-03-07 16:56:04 +00:00"
+                                },
+                                "avg_backlinks_info": null,
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "commercial",
+                                    "foreign_intent": [
+                                        "navigational",
+                                        "informational"
+                                    ],
+                                    "last_updated_time": "2026-05-02 23:11:27 +00:00"
+                                }
+                            },
+                            "ranked_serp_element": {
+                                "se_type": "google",
+                                "serp_item": {
+                                    "se_type": "google",
+                                    "type": "organic",
+                                    "rank_group": 11,
+                                    "rank_absolute": 13,
+                                    "position": "left",
+                                    "xpath": "\/html[1]\/body[1]\/div[3]\/div[1]\/div[12]\/div[1]\/div[2]\/div[2]\/div[1]\/div[1]\/div[1]\/div[1]\/div[1]",
+                                    "domain": "www.atelierdecouture.fr",
+                                    "title": "Formation de couture à Toulouse - L'atelier de couture d'Elise",
+                                    "url": "https:\/\/www.atelierdecouture.fr\/",
+                                    "breadcrumb": "https:\/\/www.atelierdecouture.fr",
+                                    "website_name": "L'Atelier de couture d'Elise",
+                                    "is_image": false,
+                                    "is_video": false,
+                                    "is_featured_snippet": false,
+                                    "is_malicious": false,
+                                    "description": "Découvrez L'Atelier de couture d'Elise, spécialiste des formations en couture, retouches et cours de loisirs. Apprenez et perfectionnez votre savoir-faire !",
+                                    "pre_snippet": null,
+                                    "extended_snippet": null,
+                                    "amp_version": false,
+                                    "rating": null,
+                                    "highlighted": [
+                                        "spécialiste des formations en couture",
+                                        "retouches et cours de loisirs"
+                                    ],
+                                    "links": null,
+                                    "about_this_result": null,
+                                    "main_domain": "atelierdecouture.fr",
+                                    "relative_url": "\/",
+                                    "etv": 0.6370000243186951,
+                                    "estimated_paid_traffic_cost": 0.5987799763679504,
+                                    "clickstream_etv": null,
+                                    "rank_changes": {
+                                        "previous_rank_absolute": 19,
+                                        "is_new": false,
+                                        "is_up": true,
+                                        "is_down": false
+                                    },
+                                    "backlinks_info": null,
+                                    "rank_info": {
+                                        "page_rank": 0,
+                                        "main_domain_rank": 77
+                                    }
+                                },
+                                "check_url": "https:\/\/www.google.com\/search?q=atelier%20d%27elise%20vetement&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                "serp_item_types": [
+                                    "organic",
+                                    "people_also_ask",
+                                    "related_searches",
+                                    "images"
+                                ],
+                                "se_results_count": 8600,
+                                "keyword_difficulty": 0,
+                                "is_lost": false,
+                                "last_updated_time": "2026-04-20 22:52:01 +00:00",
+                                "previous_updated_time": "2026-03-07 16:56:04 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "formation couture toulouse",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-06-11 15:40:15 +00:00",
+                                    "competition": 0.6800000071525574,
+                                    "competition_level": "HIGH",
+                                    "cpc": 4.03000020980835,
+                                    "search_volume": 90,
+                                    "low_top_of_page_bid": 1.0499999523162842,
+                                    "high_top_of_page_bid": 3.4000000953674316,
+                                    "categories": [
+                                        10016,
+                                        10141,
+                                        10759
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 70
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 90
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 70
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 110
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 140
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 90
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 110
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 90
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 110
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 70
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 90
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 6,
+                                            "search_volume": 70
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": -22,
+                                        "quarterly": 0,
+                                        "yearly": -36
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": null,
+                                    "synonym_clustering_algorithm": "text_processing",
+                                    "keyword_difficulty": 2,
+                                    "detected_language": "fr",
+                                    "is_another_language": false
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=formation%20couture%20toulouse&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "local_pack",
+                                        "organic",
+                                        "people_also_ask",
+                                        "people_also_search",
+                                        "paid",
+                                        "related_searches"
+                                    ],
+                                    "se_results_count": 63,
+                                    "last_updated_time": "2026-05-26 18:09:54 +00:00",
+                                    "previous_updated_time": "2026-04-10 20:11:27 +00:00"
+                                },
+                                "avg_backlinks_info": {
+                                    "se_type": "google",
+                                    "backlinks": 22.299999237060547,
+                                    "dofollow": 17.299999237060547,
+                                    "referring_pages": 21.700000762939453,
+                                    "referring_domains": 9.600000381469727,
+                                    "referring_main_domains": 8.899999618530273,
+                                    "rank": 87.5,
+                                    "main_domain_rank": 260.70001220703125,
+                                    "last_updated_time": "2026-05-26 18:10:01 +00:00"
+                                },
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "informational",
+                                    "foreign_intent": null,
+                                    "last_updated_time": "2026-04-29 12:05:47 +00:00"
+                                }
+                            },
+                            "ranked_serp_element": {
+                                "se_type": "google",
+                                "serp_item": {
+                                    "se_type": "google",
+                                    "type": "organic",
+                                    "rank_group": 12,
+                                    "rank_absolute": 23,
+                                    "position": "left",
+                                    "xpath": "\/html[1]\/body[1]\/div[3]\/div[1]\/div[13]\/div[1]\/div[2]\/div[2]\/div[1]\/div[1]\/div[2]\/div[1]\/div[1]",
+                                    "domain": "www.atelierdecouture.fr",
+                                    "title": "L'atelier de couture d'Elise: Formation de couture à Toulouse",
+                                    "url": "https:\/\/www.atelierdecouture.fr\/",
+                                    "breadcrumb": "https:\/\/www.atelierdecouture.fr",
+                                    "website_name": "L'atelier de couture d'Elise",
+                                    "is_image": false,
+                                    "is_video": false,
+                                    "is_featured_snippet": false,
+                                    "is_malicious": false,
+                                    "description": "Découvrez L'Atelier de couture d'Elise, spécialiste des formations en couture, retouches et cours de loisirs. Apprenez et perfectionnez votre savoir-faire !",
+                                    "pre_snippet": null,
+                                    "extended_snippet": null,
+                                    "amp_version": false,
+                                    "rating": null,
+                                    "highlighted": [
+                                        "spécialiste des formations en couture",
+                                        "retouches et cours de loisirs"
+                                    ],
+                                    "links": null,
+                                    "about_this_result": null,
+                                    "main_domain": "atelierdecouture.fr",
+                                    "relative_url": "\/",
+                                    "etv": 0.6345000267028809,
+                                    "estimated_paid_traffic_cost": 2.557034969329834,
+                                    "clickstream_etv": null,
+                                    "rank_changes": {
+                                        "previous_rank_absolute": 16,
+                                        "is_new": false,
+                                        "is_up": false,
+                                        "is_down": true
+                                    },
+                                    "backlinks_info": {
+                                        "referring_domains": 1,
+                                        "referring_main_domains": 1,
+                                        "referring_pages": 1,
+                                        "dofollow": 1,
+                                        "backlinks": 1,
+                                        "time_update": "2026-07-01 00:44:44 +00:00"
+                                    },
+                                    "rank_info": {
+                                        "page_rank": 129,
+                                        "main_domain_rank": 77
+                                    }
+                                },
+                                "check_url": "https:\/\/www.google.com\/search?q=formation%20couture%20toulouse&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                "serp_item_types": [
+                                    "local_pack",
+                                    "organic",
+                                    "people_also_ask",
+                                    "people_also_search",
+                                    "paid",
+                                    "related_searches"
+                                ],
+                                "se_results_count": 63,
+                                "keyword_difficulty": 2,
+                                "is_lost": false,
+                                "last_updated_time": "2026-05-26 18:09:54 +00:00",
+                                "previous_updated_time": "2026-04-10 20:11:27 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "lise retouches",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-06-14 22:49:36 +00:00",
+                                    "competition": 0.009999999776482582,
+                                    "competition_level": "LOW",
+                                    "cpc": null,
+                                    "search_volume": 140,
+                                    "low_top_of_page_bid": null,
+                                    "high_top_of_page_bid": null,
+                                    "categories": [
+                                        10016,
+                                        10141,
+                                        11029
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 140
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 140
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 90
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 110
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 170
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 110
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 90
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 140
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 110
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 170
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 6,
+                                            "search_volume": 110
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": 0,
+                                        "quarterly": 56,
+                                        "yearly": 27
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": null,
+                                    "synonym_clustering_algorithm": null,
+                                    "keyword_difficulty": 0,
+                                    "detected_language": "fr",
+                                    "is_another_language": false
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=lise%20retouches&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "organic",
+                                        "related_searches",
+                                        "google_reviews",
+                                        "third_party_reviews",
+                                        "knowledge_graph"
+                                    ],
+                                    "se_results_count": 45,
+                                    "last_updated_time": "2026-06-16 08:58:28 +00:00",
+                                    "previous_updated_time": "2026-04-26 16:05:45 +00:00"
+                                },
+                                "avg_backlinks_info": {
+                                    "se_type": "google",
+                                    "backlinks": 0.6000000238418579,
+                                    "dofollow": 0.20000000298023224,
+                                    "referring_pages": 0.20000000298023224,
+                                    "referring_domains": 0.20000000298023224,
+                                    "referring_main_domains": 0.20000000298023224,
+                                    "rank": 4.099999904632568,
+                                    "main_domain_rank": 417.70001220703125,
+                                    "last_updated_time": "2026-06-16 08:58:31 +00:00"
+                                },
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "informational",
+                                    "foreign_intent": null,
+                                    "last_updated_time": "2026-04-29 17:04:13 +00:00"
+                                }
+                            },
+                            "ranked_serp_element": {
+                                "se_type": "google",
+                                "serp_item": {
+                                    "se_type": "google",
+                                    "type": "organic",
+                                    "rank_group": 12,
+                                    "rank_absolute": 13,
+                                    "position": "left",
+                                    "xpath": "\/html[1]\/body[1]\/div[3]\/div[1]\/div[13]\/div[1]\/div[2]\/div[2]\/div[1]\/div[1]\/div[2]\/div[1]\/div[1]",
+                                    "domain": "www.atelierdecouture.fr",
+                                    "title": "L'atelier de couture d'Elise: Formation de couture à Toulouse",
+                                    "url": "https:\/\/www.atelierdecouture.fr\/",
+                                    "breadcrumb": "https:\/\/www.atelierdecouture.fr",
+                                    "website_name": "L'atelier de couture d'Elise",
+                                    "is_image": false,
+                                    "is_video": false,
+                                    "is_featured_snippet": false,
+                                    "is_malicious": false,
+                                    "description": "Découvrez L'Atelier de couture d'Elise, spécialiste des formations en couture, retouches et cours de loisirs. Apprenez et perfectionnez votre savoir-faire !",
+                                    "pre_snippet": null,
+                                    "extended_snippet": null,
+                                    "amp_version": false,
+                                    "rating": null,
+                                    "highlighted": [
+                                        "spécialiste des formations en couture",
+                                        "retouches"
+                                    ],
+                                    "links": null,
+                                    "about_this_result": null,
+                                    "main_domain": "atelierdecouture.fr",
+                                    "relative_url": "\/",
+                                    "etv": 1.0499999523162842,
+                                    "estimated_paid_traffic_cost": null,
+                                    "clickstream_etv": null,
+                                    "rank_changes": {
+                                        "previous_rank_absolute": null,
+                                        "is_new": true,
+                                        "is_up": false,
+                                        "is_down": false
+                                    },
+                                    "backlinks_info": {
+                                        "referring_domains": 1,
+                                        "referring_main_domains": 1,
+                                        "referring_pages": 1,
+                                        "dofollow": 1,
+                                        "backlinks": 1,
+                                        "time_update": "2026-07-01 00:44:44 +00:00"
+                                    },
+                                    "rank_info": {
+                                        "page_rank": 129,
+                                        "main_domain_rank": 77
+                                    }
+                                },
+                                "check_url": "https:\/\/www.google.com\/search?q=lise%20retouches&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                "serp_item_types": [
+                                    "organic",
+                                    "related_searches",
+                                    "google_reviews",
+                                    "third_party_reviews",
+                                    "knowledge_graph"
+                                ],
+                                "se_results_count": 45,
+                                "keyword_difficulty": 0,
+                                "is_lost": false,
+                                "last_updated_time": "2026-06-16 08:58:28 +00:00",
+                                "previous_updated_time": "2026-04-26 16:05:45 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "calis couture",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-06-16 03:42:51 +00:00",
+                                    "competition": 0,
+                                    "competition_level": "LOW",
+                                    "cpc": null,
+                                    "search_volume": 480,
+                                    "low_top_of_page_bid": null,
+                                    "high_top_of_page_bid": null,
+                                    "categories": [
+                                        10021,
+                                        10176,
+                                        13779
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 590
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 480
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 480
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 390
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 480
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 480
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 590
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 590
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 590
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 320
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 590
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 6,
+                                            "search_volume": 480
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": 23,
+                                        "quarterly": 23,
+                                        "yearly": 23
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": "couture calais",
+                                    "synonym_clustering_algorithm": "text_processing",
+                                    "keyword_difficulty": 0,
+                                    "detected_language": "fr",
+                                    "is_another_language": false
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=calis%20couture&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "organic",
+                                        "related_searches",
+                                        "knowledge_graph",
+                                        "google_reviews"
+                                    ],
+                                    "se_results_count": 79200,
+                                    "last_updated_time": "2026-05-06 18:32:08 +00:00",
+                                    "previous_updated_time": "2026-03-23 21:47:36 +00:00"
+                                },
+                                "avg_backlinks_info": null,
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "navigational",
+                                    "foreign_intent": [
+                                        "transactional",
+                                        "commercial"
+                                    ],
+                                    "last_updated_time": "2026-04-25 07:31:12 +00:00"
+                                }
+                            },
+                            "ranked_serp_element": {
+                                "se_type": "google",
+                                "serp_item": {
+                                    "se_type": "google",
+                                    "type": "organic",
+                                    "rank_group": 15,
+                                    "rank_absolute": 16,
+                                    "position": "left",
+                                    "xpath": "\/html[1]\/body[1]\/div[3]\/div[1]\/div[13]\/div[1]\/div[2]\/div[2]\/div[1]\/div[1]\/div[5]\/div[1]\/div[1]",
+                                    "domain": "www.atelierdecouture.fr",
+                                    "title": "Formation de couture à Toulouse - L'atelier de couture d'Elise",
+                                    "url": "https:\/\/www.atelierdecouture.fr\/",
+                                    "breadcrumb": "https:\/\/www.atelierdecouture.fr",
+                                    "website_name": "L'Atelier de couture d'Elise",
+                                    "is_image": false,
+                                    "is_video": false,
+                                    "is_featured_snippet": false,
+                                    "is_malicious": false,
+                                    "description": "Découvrez L'Atelier de couture d'Elise, spécialiste des formations en couture, retouches et cours de loisirs. Apprenez et perfectionnez votre savoir-faire !",
+                                    "pre_snippet": null,
+                                    "extended_snippet": null,
+                                    "amp_version": false,
+                                    "rating": null,
+                                    "highlighted": [
+                                        "spécialiste des formations en couture",
+                                        "retouches et cours de loisirs"
+                                    ],
+                                    "links": null,
+                                    "about_this_result": null,
+                                    "main_domain": "atelierdecouture.fr",
+                                    "relative_url": "\/",
+                                    "etv": 2.447999954223633,
+                                    "estimated_paid_traffic_cost": null,
+                                    "clickstream_etv": null,
+                                    "rank_changes": {
+                                        "previous_rank_absolute": null,
+                                        "is_new": true,
+                                        "is_up": false,
+                                        "is_down": false
+                                    },
+                                    "backlinks_info": {
+                                        "referring_domains": 1,
+                                        "referring_main_domains": 1,
+                                        "referring_pages": 1,
+                                        "dofollow": 1,
+                                        "backlinks": 1,
+                                        "time_update": "2026-07-01 00:44:44 +00:00"
+                                    },
+                                    "rank_info": {
+                                        "page_rank": 129,
+                                        "main_domain_rank": 77
+                                    }
+                                },
+                                "check_url": "https:\/\/www.google.com\/search?q=calis%20couture&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                "serp_item_types": [
+                                    "organic",
+                                    "related_searches",
+                                    "knowledge_graph",
+                                    "google_reviews"
+                                ],
+                                "se_results_count": 79200,
+                                "keyword_difficulty": 0,
+                                "is_lost": false,
+                                "last_updated_time": "2026-05-06 18:32:08 +00:00",
+                                "previous_updated_time": "2026-03-23 21:47:36 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "l atelier d elise chaussures",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-06-16 13:00:22 +00:00",
+                                    "competition": 1,
+                                    "competition_level": "HIGH",
+                                    "cpc": 0.36000001430511475,
+                                    "search_volume": 70,
+                                    "low_top_of_page_bid": null,
+                                    "high_top_of_page_bid": null,
+                                    "categories": [
+                                        10021
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 10
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 10
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 10
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 10
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 140
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 110
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 40
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 20
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 20
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 70
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 6,
+                                            "search_volume": 170
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": 0,
+                                        "quarterly": 0,
+                                        "yearly": -93
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": null,
+                                    "synonym_clustering_algorithm": "text_processing",
+                                    "keyword_difficulty": 0,
+                                    "detected_language": "fr",
+                                    "is_another_language": false
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=l%20atelier%20d%20elise%20chaussures&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "organic",
+                                        "related_searches"
+                                    ],
+                                    "se_results_count": 263000,
+                                    "last_updated_time": "2026-05-01 11:09:32 +00:00",
+                                    "previous_updated_time": "2026-03-19 18:16:18 +00:00"
+                                },
+                                "avg_backlinks_info": null,
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "navigational",
+                                    "foreign_intent": [
+                                        "informational"
+                                    ],
+                                    "last_updated_time": "2026-05-06 14:55:39 +00:00"
+                                }
+                            },
+                            "ranked_serp_element": {
+                                "se_type": "google",
+                                "serp_item": {
+                                    "se_type": "google",
+                                    "type": "organic",
+                                    "rank_group": 19,
+                                    "rank_absolute": 20,
+                                    "position": "left",
+                                    "xpath": "\/html[1]\/body[1]\/div[3]\/div[1]\/div[12]\/div[1]\/div[2]\/div[2]\/div[1]\/div[1]\/div[9]\/div[1]\/div[1]",
+                                    "domain": "www.atelierdecouture.fr",
+                                    "title": "Formation de couture à Toulouse - L'atelier de couture d'Elise",
+                                    "url": "https:\/\/www.atelierdecouture.fr\/",
+                                    "breadcrumb": "https:\/\/www.atelierdecouture.fr",
+                                    "website_name": "L'Atelier de couture d'Elise",
+                                    "is_image": false,
+                                    "is_video": false,
+                                    "is_featured_snippet": false,
+                                    "is_malicious": false,
+                                    "description": "Découvrez L'Atelier de couture d'Elise, spécialiste des formations en couture, retouches et cours de loisirs. Apprenez et perfectionnez votre savoir-faire !",
+                                    "pre_snippet": null,
+                                    "extended_snippet": null,
+                                    "amp_version": false,
+                                    "rating": null,
+                                    "highlighted": [
+                                        "L'Atelier",
+                                        "d",
+                                        "Elise"
+                                    ],
+                                    "links": null,
+                                    "about_this_result": null,
+                                    "main_domain": "atelierdecouture.fr",
+                                    "relative_url": "\/",
+                                    "etv": 0.1889999955892563,
+                                    "estimated_paid_traffic_cost": 0.06803999841213226,
+                                    "clickstream_etv": null,
+                                    "rank_changes": {
+                                        "previous_rank_absolute": 24,
+                                        "is_new": false,
+                                        "is_up": true,
+                                        "is_down": false
+                                    },
+                                    "backlinks_info": null,
+                                    "rank_info": {
+                                        "page_rank": 0,
+                                        "main_domain_rank": 77
+                                    }
+                                },
+                                "check_url": "https:\/\/www.google.com\/search?q=l%20atelier%20d%20elise%20chaussures&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                "serp_item_types": [
+                                    "organic",
+                                    "related_searches"
+                                ],
+                                "se_results_count": 263000,
+                                "keyword_difficulty": 0,
+                                "is_lost": false,
+                                "last_updated_time": "2026-05-01 11:09:32 +00:00",
+                                "previous_updated_time": "2026-03-19 18:16:18 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "couture castelnau-le-lez",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-06-15 00:13:29 +00:00",
+                                    "competition": 0.03999999910593033,
+                                    "competition_level": "LOW",
+                                    "cpc": 0.18000000715255737,
+                                    "search_volume": 210,
+                                    "low_top_of_page_bid": null,
+                                    "high_top_of_page_bid": null,
+                                    "categories": [
+                                        10015,
+                                        10131,
+                                        11987
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 260
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 260
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 170
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 170
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 170
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 6,
+                                            "search_volume": 210
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": -19,
+                                        "quarterly": -19,
+                                        "yearly": -19
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": null,
+                                    "synonym_clustering_algorithm": "text_processing",
+                                    "keyword_difficulty": 0,
+                                    "detected_language": "en",
+                                    "is_another_language": true
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=couture%20castelnau-le-lez&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "local_pack",
+                                        "compare_sites",
+                                        "organic",
+                                        "people_also_ask",
+                                        "related_searches"
+                                    ],
+                                    "se_results_count": 62,
+                                    "last_updated_time": "2026-05-21 17:15:25 +00:00",
+                                    "previous_updated_time": "2026-04-07 14:39:08 +00:00"
+                                },
+                                "avg_backlinks_info": {
+                                    "se_type": "google",
+                                    "backlinks": 0.699999988079071,
+                                    "dofollow": 0.699999988079071,
+                                    "referring_pages": 0.699999988079071,
+                                    "referring_domains": 0.699999988079071,
+                                    "referring_main_domains": 0.10000000149011612,
+                                    "rank": 9.100000381469727,
+                                    "main_domain_rank": 385.79998779296875,
+                                    "last_updated_time": "2026-05-21 17:16:50 +00:00"
+                                },
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "navigational",
+                                    "foreign_intent": [
+                                        "commercial"
+                                    ],
+                                    "last_updated_time": "2026-04-26 10:44:42 +00:00"
+                                }
+                            },
+                            "ranked_serp_element": {
+                                "se_type": "google",
+                                "serp_item": {
+                                    "se_type": "google",
+                                    "type": "organic",
+                                    "rank_group": 24,
+                                    "rank_absolute": 37,
+                                    "position": "left",
+                                    "xpath": "\/html[1]\/body[1]\/div[3]\/div[1]\/div[13]\/div[1]\/div[2]\/div[2]\/div[1]\/div[1]\/div[4]\/div[1]\/div[1]",
+                                    "domain": "www.atelierdecouture.fr",
+                                    "title": "L'atelier de couture d'Elise: Formation de couture à Toulouse",
+                                    "url": "https:\/\/www.atelierdecouture.fr\/",
+                                    "breadcrumb": "https:\/\/www.atelierdecouture.fr",
+                                    "website_name": "L'atelier de couture d'Elise",
+                                    "is_image": false,
+                                    "is_video": false,
+                                    "is_featured_snippet": false,
+                                    "is_malicious": false,
+                                    "description": "Découvrez L'Atelier de couture d'Elise, spécialiste des formations en couture, retouches et cours de loisirs. Apprenez et perfectionnez votre savoir-faire !",
+                                    "pre_snippet": null,
+                                    "extended_snippet": null,
+                                    "amp_version": false,
+                                    "rating": null,
+                                    "highlighted": [
+                                        "spécialiste des formations en couture",
+                                        "retouches et cours de loisirs"
+                                    ],
+                                    "links": null,
+                                    "about_this_result": null,
+                                    "main_domain": "atelierdecouture.fr",
+                                    "relative_url": "\/",
+                                    "etv": 0.4410000145435333,
+                                    "estimated_paid_traffic_cost": 0.07937999814748764,
+                                    "clickstream_etv": null,
+                                    "rank_changes": {
+                                        "previous_rank_absolute": 42,
+                                        "is_new": false,
+                                        "is_up": true,
+                                        "is_down": false
+                                    },
+                                    "backlinks_info": {
+                                        "referring_domains": 1,
+                                        "referring_main_domains": 1,
+                                        "referring_pages": 1,
+                                        "dofollow": 1,
+                                        "backlinks": 1,
+                                        "time_update": "2026-07-01 00:44:44 +00:00"
+                                    },
+                                    "rank_info": {
+                                        "page_rank": 129,
+                                        "main_domain_rank": 77
+                                    }
+                                },
+                                "check_url": "https:\/\/www.google.com\/search?q=couture%20castelnau-le-lez&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                "serp_item_types": [
+                                    "local_pack",
+                                    "compare_sites",
+                                    "organic",
+                                    "people_also_ask",
+                                    "related_searches"
+                                ],
+                                "se_results_count": 62,
+                                "keyword_difficulty": 0,
+                                "is_lost": false,
+                                "last_updated_time": "2026-05-21 17:15:25 +00:00",
+                                "previous_updated_time": "2026-04-07 14:39:08 +00:00"
+                            }
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "couture castelnau le lez",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-06-14 22:55:44 +00:00",
+                                    "competition": 0.03999999910593033,
+                                    "competition_level": "LOW",
+                                    "cpc": 0.18000000715255737,
+                                    "search_volume": 210,
+                                    "low_top_of_page_bid": null,
+                                    "high_top_of_page_bid": null,
+                                    "categories": [
+                                        10015,
+                                        10131,
+                                        11987,
+                                        13017
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 260
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 260
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 170
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 170
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 170
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 6,
+                                            "search_volume": 210
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": -19,
+                                        "quarterly": -19,
+                                        "yearly": -19
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": "couture castelnau-le-lez",
+                                    "synonym_clustering_algorithm": "text_processing",
+                                    "keyword_difficulty": 0,
+                                    "detected_language": "fr",
+                                    "is_another_language": false
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=couture%20castelnau%20le%20lez&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "local_pack",
+                                        "compare_sites",
+                                        "organic",
+                                        "people_also_ask",
+                                        "related_searches"
+                                    ],
+                                    "se_results_count": 168000,
+                                    "last_updated_time": "2026-05-11 06:05:26 +00:00",
+                                    "previous_updated_time": "2026-03-28 13:10:44 +00:00"
+                                },
+                                "avg_backlinks_info": {
+                                    "se_type": "google",
+                                    "backlinks": 0.699999988079071,
+                                    "dofollow": 0.699999988079071,
+                                    "referring_pages": 0.699999988079071,
+                                    "referring_domains": 0.699999988079071,
+                                    "referring_main_domains": 0.10000000149011612,
+                                    "rank": 9.100000381469727,
+                                    "main_domain_rank": 413.3999938964844,
+                                    "last_updated_time": "2026-05-11 06:05:59 +00:00"
+                                },
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "navigational",
+                                    "foreign_intent": [
+                                        "informational"
+                                    ],
+                                    "last_updated_time": "2026-04-25 09:49:07 +00:00"
+                                }
+                            },
+                            "ranked_serp_element": {
+                                "se_type": "google",
+                                "serp_item": {
+                                    "se_type": "google",
+                                    "type": "organic",
+                                    "rank_group": 26,
+                                    "rank_absolute": 39,
+                                    "position": "left",
+                                    "xpath": "\/html[1]\/body[1]\/div[3]\/div[1]\/div[13]\/div[1]\/div[2]\/div[2]\/div[1]\/div[1]\/div[6]\/div[1]\/div[1]",
+                                    "domain": "www.atelierdecouture.fr",
+                                    "title": "Formation de couture à Toulouse - L'atelier de couture d'Elise",
+                                    "url": "https:\/\/www.atelierdecouture.fr\/",
+                                    "breadcrumb": "https:\/\/www.atelierdecouture.fr",
+                                    "website_name": "L'Atelier de couture d'Elise",
+                                    "is_image": false,
+                                    "is_video": false,
+                                    "is_featured_snippet": false,
+                                    "is_malicious": false,
+                                    "description": "Découvrez L'Atelier de couture d'Elise, spécialiste des formations en couture, retouches et cours de loisirs. Apprenez et perfectionnez votre savoir-faire !",
+                                    "pre_snippet": null,
+                                    "extended_snippet": null,
+                                    "amp_version": false,
+                                    "rating": null,
+                                    "highlighted": [
+                                        "spécialiste des formations en couture",
+                                        "retouches et cours de loisirs"
+                                    ],
+                                    "links": null,
+                                    "about_this_result": null,
+                                    "main_domain": "atelierdecouture.fr",
+                                    "relative_url": "\/",
+                                    "etv": 0.4410000145435333,
+                                    "estimated_paid_traffic_cost": 0.07937999814748764,
+                                    "clickstream_etv": null,
+                                    "rank_changes": {
+                                        "previous_rank_absolute": null,
+                                        "is_new": true,
+                                        "is_up": false,
+                                        "is_down": false
+                                    },
+                                    "backlinks_info": {
+                                        "referring_domains": 1,
+                                        "referring_main_domains": 1,
+                                        "referring_pages": 1,
+                                        "dofollow": 1,
+                                        "backlinks": 1,
+                                        "time_update": "2026-07-01 00:44:44 +00:00"
+                                    },
+                                    "rank_info": {
+                                        "page_rank": 129,
+                                        "main_domain_rank": 77
+                                    }
+                                },
+                                "check_url": "https:\/\/www.google.com\/search?q=couture%20castelnau%20le%20lez&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                "serp_item_types": [
+                                    "local_pack",
+                                    "compare_sites",
+                                    "organic",
+                                    "people_also_ask",
+                                    "related_searches"
+                                ],
+                                "se_results_count": 168000,
+                                "keyword_difficulty": 0,
+                                "is_lost": false,
+                                "last_updated_time": "2026-05-11 06:05:26 +00:00",
+                                "previous_updated_time": "2026-03-28 13:10:44 +00:00"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
