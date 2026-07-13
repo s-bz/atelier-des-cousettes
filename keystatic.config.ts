@@ -310,6 +310,7 @@ export default config({
         ctaText: fields.text({ label: 'Texte d\'accroche CTA', multiline: true }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
         readMoreLabel: fields.text({ label: 'Libellé « Lire l\'article »' }),
+        relatedTitle: fields.text({ label: 'Titre « Articles connexes »' }),
         backToListLabel: fields.text({ label: 'Libellé « Retour à la liste »' }),
         emptyStateText: fields.text({ label: 'Texte aucun article' }),
       },
