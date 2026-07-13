@@ -30,12 +30,15 @@ node scripts/seo/gsc.mjs query '{"dimensions":["query"],"rowLimit":1000}'
 
 It returns clicks, impressions, CTR, and average position by query and page. Compare two windows (e.g. this 28 days vs the prior 28) by passing explicit `startDate`/`endDate`.
 
-**DataForSEO is the competitive layer** (optional): the live SERP for a keyword, who ranks above you, search volume, keyword gaps. If `DATAFORSEO_LOGIN`/`DATAFORSEO_PASSWORD` are set (env or `.env.local`), call the REST API with curl and HTTP Basic auth. The four useful endpoints, all POST to `https://api.dataforseo.com/v3/...`:
+**DataForSEO is the competitive layer** (optional): the live SERP for a keyword, who ranks above you, search volume, keyword gaps. If `DATAFORSEO_LOGIN`/`DATAFORSEO_PASSWORD` are set (env or `.env.local`), call the REST API with curl and HTTP Basic auth. The useful endpoints, all POST to `https://api.dataforseo.com/v3/...`:
 
 - `serp/google/organic/live/advanced` — live SERP for a keyword (`location_name: "France"`, `language_code: "fr"`)
-- `dataforseo_labs/google/ranked_keywords/live` — every keyword the domain ranks for
+- `dataforseo_labs/google/ranked_keywords/live` — every keyword a domain ranks for (works on competitor domains too)
 - `dataforseo_labs/google/domain_intersection/live` — keyword gaps vs a competitor
+- `dataforseo_labs/google/keyword_ideas/live` — related keyword ideas around seed terms
 - `keywords_data/google_ads/search_volume/live` — search volume for a keyword list
+
+Labs endpoints (`dataforseo_labs/...`) cost ~$0.10 per call where SERP pulls cost ~$0.002 — cap Labs calls at 3 per run and note the run's total spend in the report's caveats section.
 
 **PageSpeed Insights MCP tools** (available in this environment) are an optional third check: run them only on pages you are about to improve, when Core Web Vitals could plausibly be holding a ranking back.
 
@@ -59,6 +62,19 @@ Persist each run under `reports/seo-improver/<YYYY-MM-DD>/`. At the start of eve
    - **Decay**: pages whose clicks or position fell since a prior run; diagnose the likely cause (staleness, SERP change, intent shift) and check what moved above you.
 5. For each opportunity you act on, open the ranking URL, inspect the on-page signals, and write a **specific, ready-to-apply change**: the exact title/meta to use, the heading or section to add, the internal links to add and from where, or the consolidation to make. Tie every recommendation to the ranking evidence that motivates it.
 6. Verify the previous loop: for each improvement recommended in the prior run, state whether it was applied and what happened to that keyword's position. Keep what worked, drop or revise what did not.
+7. **Content gaps** (requires DataForSEO; skip silently without it): look for queries the site does *not* rank for that deserve a new page or blog post. Two hunting grounds, max 3 Labs calls total:
+   - **Competitor gaps**: pull `ranked_keywords` for one or two competitors seen in this run's SERPs (e.g. cameleoncouturecreation.com, atelierarteli.fr) or run `domain_intersection` against couture-tarn.fr. Keep keywords with catchment-local intent or course/technique intent; discard retouches-intent and out-of-catchment geo terms.
+   - **Topic expansion**: pull `keyword_ideas` seeded from clusters that already earn the blog impressions (surjeteuse, trousse/fermeture éclair, machine à coudre, débuter en couture). Adjacent how-to topics with measurable volume are proven territory — they build the topical authority that lifts the money pages.
+
+## Content-gap suggestions (new pages and posts)
+
+Content-gap findings become `SEO-NEW-00X` recommendations — **suggestions only, never auto-created**. Even in apply mode, do not create new pages or posts; the user approves them first (by asking a later session/run to draft it, or writing it themselves).
+
+- At most **1–2 suggestions per run**, and only when the evidence is strong (real volume or a competitor demonstrably winning traffic on it, plus a plausible path to page 1). No suggestion is better than a weak one.
+- Each `SEO-NEW` entry must include: the target keyword(s) with volume, the evidence (who ranks today and why we can compete), the content type (blog post in `src/content/blog/<slug>/index.mdoc` vs a new landing page), a proposed French title and slug (trailing slash), a 4–6 point outline, and which existing pages should link to it.
+- **Local landing pages: be conservative.** One honest page for a genuinely distinct location or offer (e.g. « Cours de couture près de Castres ») is legitimate only if it has real, unique content — testimonials, directions, schedule specifics. Never generate near-duplicate town pages (doorway pages); when in doubt, strengthen the homepage instead.
+- Blog suggestions should serve strategy, not just volume: prefer topics that internally link to service pages or deepen an existing cluster over disconnected high-volume ideas.
+- Track `SEO-NEW` IDs across runs like any other: report whether prior suggestions were built and how they perform. If a suggestion is ignored for 2 consecutive runs, drop it or re-justify it with new evidence — do not re-list it unchanged.
 
 ## Output
 
@@ -77,9 +93,10 @@ Write two artifacts under `reports/seo-improver/<YYYY-MM-DD>/`:
   2. Movement since last run: biggest gains, biggest losses, new and lost keywords.
   3. Did last run's changes work: per prior recommendation, applied or not, and the ranking response.
   4. This run's improvements: an ordered action list, each with the exact change, the target keyword/URL, the expected effect, and the evidence.
-  5. Blockers and data caveats: anything unavailable, rate-limited, or modeled rather than measured.
+  5. New content suggestions (`SEO-NEW-00X`), when the content-gap step produced any: proposed title, slug, type, outline, and evidence. Omit the section rather than pad it.
+  6. Blockers and data caveats: anything unavailable, rate-limited, or modeled rather than measured — including this run's DataForSEO spend.
 
-Use stable IDs (`SEO-STRIKE-001`, `SEO-CTR-002`, `SEO-DECAY-003`) so recommendations are traceable across runs.
+Use stable IDs (`SEO-STRIKE-001`, `SEO-CTR-002`, `SEO-DECAY-003`, `SEO-NEW-004`) so recommendations are traceable across runs.
 
 Keep the action list short and high-conviction. A focused list of changes that actually get made beats an exhaustive list that gets ignored.
 
