@@ -44,6 +44,7 @@ export default config({
         }),
         facebookUrl: fields.url({ label: 'Facebook URL' }),
         googleBusinessUrl: fields.url({ label: 'Google Business Profile URL' }),
+        googleReviewUrl: fields.url({ label: 'Lien avis Google (g.page)' }),
         contactFormUrl: fields.url({ label: 'URL formulaire de contact' }),
         address: fields.text({ label: 'Adresse', multiline: true }),
         authorName: fields.text({ label: 'Nom de l\'auteur (schema)' }),
@@ -61,6 +62,9 @@ export default config({
       schema: {
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
+        seoTitle: fields.text({
+          label: 'Titre SEO (balise <title>, indépendant du titre affiché)',
+        }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         ...coverImageFields('homepage'),
         introductionTitle: fields.text({ label: 'Titre section introduction' }),

@@ -58,7 +58,7 @@ const phoneIntl = phone ? `+33${phone.slice(1)}` : undefined;
 const siteUrl = Astro.site?.origin;
 ---
 
-<BaseLayout title={homepage.title} description={homepage.seoDescription} ogImage={ogImage}>
+<BaseLayout title={homepage.seoTitle || homepage.title} description={homepage.seoDescription} ogImage={ogImage}>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify([
       {
