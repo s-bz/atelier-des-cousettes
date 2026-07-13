@@ -30,6 +30,7 @@ The site is a local business: a sewing workshop (atelier de couture) in Verdalle
 node scripts/seo/gsc.mjs sites                 # confirm access and the exact property
 node scripts/seo/gsc.mjs query                 # last 28 days, query+page dims, France
 node scripts/seo/gsc.mjs query '{"dimensions":["query"],"rowLimit":1000}'
+node scripts/seo/gsc.mjs inspect <url>         # URL Inspection: verdict, coverageState, canonical, last crawl
 ```
 
 It returns clicks, impressions, CTR, and average position by query and page. Compare two windows (e.g. this 28 days vs the prior 28) by passing explicit `startDate`/`endDate`.
@@ -61,11 +62,15 @@ Persist each run under `reports/seo-improver/<YYYY-MM-DD>/`. At the start of eve
 3. Load the previous run and compute movement: gained, lost, new, dropped-off, unchanged. Flag anything that fell out of the top 100.
 4. Identify the highest-leverage opportunities, ranked by realistic upside:
    - **Striking distance**: queries at ~4–20 where a focused improvement can win a page-1 or top-3 slot; confirm the competition against the live SERP when DataForSEO is available.
-   - **High impressions, low CTR**: pages that earn impressions but lose the click; rewrite title/`seoDescription` to win it without new rankings.
+   - **High impressions, low CTR**: pages that earn impressions but lose the click; rewrite title/`seoDescription` to win it without new rankings. Judge "low" against expected CTR for the position, not in the absolute: #1 ≈ 25–35 %, #2 ≈ 12–18 %, #3 ≈ 8–12 %, #4–5 ≈ 5–7 %, #6–10 ≈ 2–5 % (halve the top-3 figures when the SERP carries an AI Overview or heavy local pack). A page at #4 with 2 % CTR is an opportunity; a page at #8 with 3 % is already outperforming.
    - **Cannibalization**: several pages competing for one query; recommend which to consolidate.
    - **Decay**: pages whose clicks or position fell since a prior run; diagnose the likely cause (staleness, SERP change, intent shift) and check what moved above you.
 5. For each opportunity you act on, open the ranking URL, inspect the on-page signals, and write a **specific, ready-to-apply change**: the exact title/meta to use, the heading or section to add, the internal links to add and from where, or the consolidation to make. Tie every recommendation to the ranking evidence that motivates it.
 6. Verify the previous loop: for each improvement recommended in the prior run, state whether it was applied and what happened to that keyword's position. Keep what worked, drop or revise what did not.
+6a. **Index coverage check**: pull the live sitemap (`https://couture-tarn.fr/sitemap-0.xml`) and run `node scripts/seo/gsc.mjs inspect` on every URL (~30 pages, well inside the 2000/day quota; parallelize). Record each `coverageState` in the report and triage:
+   - `Submitted and indexed` — fine; `Excluded by 'noindex' tag` on mentions-légales — intentional, fine.
+   - `URL is unknown to Google` / `Discovered - currently not indexed` on a page **younger than ~2 weeks** — normal lag, just note it. On an **older** page — flag it: check the page is internally linked and tell the user to hit « Request indexing » in the GSC UI (the API cannot do this; the Indexing API only covers job postings and live events).
+   - `Crawled - currently not indexed` — Google saw it and declined. Not a technical error: diagnose as a quality/priority call. Check internal links pointing at the page, content overlap with a sibling article, and title/intent match; recommend a content strengthening or consolidation, and track whether the state flips across runs.
 6b. **Competitor tracking** (requires DataForSEO; skip silently without it): from the *same* SERP pulls made in step 2 — no extra API spend — extract every roster competitor's organic position per tracked keyword, and every roster GBP name's local-pack rank, rating, and review count. Write them to `competitors.csv` (spec below) and diff against the previous run: who overtook us, who we passed, whose review count is climbing. Watch the name-collision domain the same way. Additionally, at most **one** Labs call per run may target a roster competitor (`ranked_keywords` or `domain_intersection`) — rotate through the roster across runs, strongest first (atelierdecouture.fr), and note in the report whose turn it was so the next run picks the next one.
 7. **Content gaps** (requires DataForSEO; skip silently without it): look for queries the site does *not* rank for that deserve a new page or blog post. Two hunting grounds, max 3 Labs calls total:
    - **Competitor gaps**: use this run's rotating Labs call from step 6b — `ranked_keywords` for the roster competitor whose turn it is, or `domain_intersection` against couture-tarn.fr. Keep keywords with catchment-local intent or course/technique intent; discard retouches-intent and out-of-catchment geo terms.
