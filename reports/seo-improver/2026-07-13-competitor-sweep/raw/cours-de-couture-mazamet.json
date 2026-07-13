@@ -1,0 +1,38 @@
+{
+    "version": "0.1.20260713",
+    "status_code": 20000,
+    "status_message": "Ok.",
+    "time": "0 sec.",
+    "cost": 0,
+    "tasks_count": 1,
+    "tasks_error": 1,
+    "tasks": [
+        {
+            "id": "07140013-2078-0139-0000-41e1ad74cee7",
+            "status_code": 40201,
+            "status_message": "We noticed some unusual activity in your DataForSEO account, so we’ve temporarily paused access as a precaution. Please, reach out to our support team at support@dataforseo.com for more details, and we’ll work with you to resolve this quickly.",
+            "time": "0 sec.",
+            "cost": 0,
+            "result_count": 0,
+            "path": [
+                "v3",
+                "serp",
+                "google",
+                "organic",
+                "live",
+                "advanced"
+            ],
+            "data": {
+                "api": "serp",
+                "function": "live",
+                "se": "google",
+                "se_type": "organic",
+                "keyword": "cours de couture mazamet",
+                "location_name": "France",
+                "language_code": "fr",
+                "depth": 20
+            },
+            "result": null
+        }
+    ]
+}
