@@ -1,0 +1,28 @@
+{
+  "inspectionResult": {
+    "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:couture-tarn.fr&id=wdyWwJT4prh12ljaZ6JrVA&utm_medium=link&utm_source=api",
+    "indexStatusResult": {
+      "verdict": "NEUTRAL",
+      "coverageState": "Crawled - currently not indexed",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED",
+      "lastCrawlTime": "2026-06-26T23:38:59Z",
+      "pageFetchState": "SUCCESSFUL",
+      "googleCanonical": "https://couture-tarn.fr/blog/choisir-machine-a-coudre/",
+      "userCanonical": "https://couture-tarn.fr/blog/choisir-machine-a-coudre/",
+      "sitemap": [
+        "https://couture-tarn.fr/sitemap-0.xml",
+        "https://couture-tarn.fr/sitemap-index.xml",
+        "https://couture-tarn.fr/sitemap.xml"
+      ],
+      "referringUrls": [
+        "https://couture-tarn.fr/blog/surjeteuse-a-quoi-ca-sert/",
+        "https://couture-tarn.fr/blog"
+      ],
+      "crawledAs": "MOBILE"
+    },
+    "mobileUsabilityResult": {
+      "verdict": "VERDICT_UNSPECIFIED"
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "inspectionResult": {
+    "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:couture-tarn.fr&id=rL9H9bfFbwwIuQ71rGFUeQ&utm_medium=link&utm_source=api",
+    "indexStatusResult": {
+      "verdict": "PASS",
+      "coverageState": "Submitted and indexed",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED",
+      "lastCrawlTime": "2026-07-03T09:40:15Z",
+      "pageFetchState": "SUCCESSFUL",
+      "googleCanonical": "https://couture-tarn.fr/ateliers-reguliers/",
+      "userCanonical": "https://couture-tarn.fr/ateliers-reguliers/",
+      "referringUrls": [
+        "https://couture-tarn.fr/blog/coudre-ourlet-invisible/"
+      ],
+      "crawledAs": "MOBILE"
+    },
+    "mobileUsabilityResult": {
+      "verdict": "VERDICT_UNSPECIFIED"
+    },
+    "richResultsResult": {
+      "verdict": "PASS",
+      "detectedItems": [
+        {
+          "richResultType": "Breadcrumbs",
+          "items": [
+            {
+              "name": "Unnamed item"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

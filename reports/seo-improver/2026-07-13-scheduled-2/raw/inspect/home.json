@@ -1,0 +1,28 @@
+{
+  "inspectionResult": {
+    "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:couture-tarn.fr&id=PcQyKY0gv6UbjfoPBLx9HQ&utm_medium=link&utm_source=api",
+    "indexStatusResult": {
+      "verdict": "PASS",
+      "coverageState": "Submitted and indexed",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED",
+      "lastCrawlTime": "2026-07-10T04:42:46Z",
+      "pageFetchState": "SUCCESSFUL",
+      "googleCanonical": "https://couture-tarn.fr/",
+      "userCanonical": "https://couture-tarn.fr/",
+      "sitemap": [
+        "https://couture-tarn.fr/sitemap-0.xml",
+        "https://couture-tarn.fr/sitemap-index.xml",
+        "https://couture-tarn.fr/sitemap.xml"
+      ],
+      "referringUrls": [
+        "https://moneygame.pro/l-96217929bb755cf8241d3194c509772e.html",
+        "https://couture-tarn.fr/stages-thmatiques"
+      ],
+      "crawledAs": "MOBILE"
+    },
+    "mobileUsabilityResult": {
+      "verdict": "VERDICT_UNSPECIFIED"
+    }
+  }
+}
