@@ -7,10 +7,16 @@
 // Usage:
 //   node scripts/seo/gsc.mjs sites
 //   node scripts/seo/gsc.mjs query [json-body]
+//   node scripts/seo/gsc.mjs inspect <url> [siteUrl]
 //
 // `query` posts to searchAnalytics/query. The optional json-body argument is
 // merged over the defaults below (last 28 days, query+page dimensions, France).
 //   node scripts/seo/gsc.mjs query '{"dimensions":["query"],"rowLimit":1000}'
+//
+// `inspect` calls the URL Inspection API for one URL: index verdict, coverage
+// state (e.g. "Crawled - currently not indexed"), Google-selected canonical,
+// last crawl time. Quota: 2000 inspections/day per property.
+//   node scripts/seo/gsc.mjs inspect https://couture-tarn.fr/blog/coudre-tote-bag/
 //
 // Credentials: GSC_CREDENTIALS_JSON env var (whole service-account key JSON on
 // one line), or the same variable in .env.local at the repo root.
@@ -82,6 +88,18 @@ async function api(path, init) {
   return res.json();
 }
 
+// URL Inspection lives under the v1 API, not webmasters/v3.
+async function inspectUrl(inspectionUrl, siteUrl) {
+  const token = await accessToken();
+  const res = await fetch("https://searchconsole.googleapis.com/v1/urlInspection/index:inspect", {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ inspectionUrl, siteUrl }),
+  });
+  if (!res.ok) throw new Error(`URL inspection failed: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
 function isoDate(daysAgo) {
   const d = new Date(Date.now() - daysAgo * 86400_000);
   return d.toISOString().slice(0, 10);
@@ -114,7 +132,17 @@ switch (command) {
     console.log(JSON.stringify(result, null, 2));
     break;
   }
+  case "inspect": {
+    const url = bodyArg;
+    const site = process.argv[4] || DEFAULT_SITE;
+    if (!url) {
+      console.error("Usage: node scripts/seo/gsc.mjs inspect <url> [siteUrl]");
+      process.exit(1);
+    }
+    console.log(JSON.stringify(await inspectUrl(url, site), null, 2));
+    break;
+  }
   default:
-    console.error("Usage: node scripts/seo/gsc.mjs <sites|query> [json-body]");
+    console.error("Usage: node scripts/seo/gsc.mjs <sites|query|inspect> [json-body|url]");
     process.exit(1);
 }
