@@ -23,6 +23,8 @@ N/A — baseline run.
 
 ## 4. This run's improvements
 
+**Applied in [PR #71](https://github.com/s-bz/atelier-des-cousettes/pull/71)** (SEO-CTR-001, SEO-STRIKE-002, SEO-CTR-003 — branch `seo-improver/2026-07-13`). SEO-GBP-004 remains an owner action.
+
 **SEO-CTR-001 — Homepage title: add keywords + locations.** *(highest priority)*
 - Current: `<title>L'Atelier des Cousettes</title>` (from `title` in `src/content/pages/homepage/index.yaml`, special-cased in `BaseLayout.astro` so no suffix is added).
 - Proposed title tag: **« Cours de couture à Revel et Verdalle, près de Castres | L'Atelier des Cousettes »**.
