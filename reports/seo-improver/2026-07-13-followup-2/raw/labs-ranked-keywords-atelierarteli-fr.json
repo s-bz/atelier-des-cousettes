@@ -1,0 +1,39 @@
+{
+    "version": "0.1.20260713",
+    "status_code": 20000,
+    "status_message": "Ok.",
+    "time": "0 sec.",
+    "cost": 0,
+    "tasks_count": 1,
+    "tasks_error": 1,
+    "tasks": [
+        {
+            "id": "07140011-2078-0381-0000-191ada8e14ee",
+            "status_code": 40201,
+            "status_message": "We noticed some unusual activity in your DataForSEO account, so we’ve temporarily paused access as a precaution. Please, reach out to our support team at support@dataforseo.com for more details, and we’ll work with you to resolve this quickly.",
+            "time": "0 sec.",
+            "cost": 0,
+            "result_count": 0,
+            "path": [
+                "v3",
+                "dataforseo_labs",
+                "google",
+                "ranked_keywords",
+                "live"
+            ],
+            "data": {
+                "api": "dataforseo_labs",
+                "function": "ranked_keywords",
+                "se_type": "google",
+                "target": "atelierarteli.fr",
+                "location_name": "France",
+                "language_code": "fr",
+                "limit": 100,
+                "order_by": [
+                    "keyword_data.keyword_info.search_volume,desc"
+                ]
+            },
+            "result": null
+        }
+    ]
+}
