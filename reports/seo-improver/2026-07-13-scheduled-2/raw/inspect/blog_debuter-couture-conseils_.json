@@ -1,0 +1,27 @@
+{
+  "inspectionResult": {
+    "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:couture-tarn.fr&id=t22eLLmZPA8pyY2s8p4Urg&utm_medium=link&utm_source=api",
+    "indexStatusResult": {
+      "verdict": "NEUTRAL",
+      "coverageState": "Crawled - currently not indexed",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED",
+      "lastCrawlTime": "2026-04-14T20:47:55Z",
+      "pageFetchState": "SUCCESSFUL",
+      "googleCanonical": "https://couture-tarn.fr/blog/debuter-couture-conseils/",
+      "userCanonical": "https://couture-tarn.fr/blog/debuter-couture-conseils/",
+      "sitemap": [
+        "https://couture-tarn.fr/sitemap-0.xml",
+        "https://couture-tarn.fr/sitemap-index.xml",
+        "https://couture-tarn.fr/sitemap.xml"
+      ],
+      "referringUrls": [
+        "https://couture-tarn.fr/blog"
+      ],
+      "crawledAs": "MOBILE"
+    },
+    "mobileUsabilityResult": {
+      "verdict": "VERDICT_UNSPECIFIED"
+    }
+  }
+}
