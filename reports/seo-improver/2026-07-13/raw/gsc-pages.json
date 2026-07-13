@@ -1,0 +1,68 @@
+{
+  "rows": [
+    {
+      "keys": [
+        "https://couture-tarn.fr/"
+      ],
+      "clicks": 4,
+      "impressions": 459,
+      "ctr": 0.008714596949891068,
+      "position": 9.100217864923748
+    },
+    {
+      "keys": [
+        "https://couture-tarn.fr/blog/choisir-machine-a-coudre/"
+      ],
+      "clicks": 0,
+      "impressions": 3,
+      "ctr": 0,
+      "position": 13.666666666666666
+    },
+    {
+      "keys": [
+        "https://couture-tarn.fr/blog/coudre-trousse-fermeture-eclair/"
+      ],
+      "clicks": 0,
+      "impressions": 50,
+      "ctr": 0,
+      "position": 8.86
+    },
+    {
+      "keys": [
+        "https://couture-tarn.fr/blog/debuter-couture-conseils/"
+      ],
+      "clicks": 0,
+      "impressions": 4,
+      "ctr": 0,
+      "position": 14.5
+    },
+    {
+      "keys": [
+        "https://couture-tarn.fr/blog/idees-cadeaux-couture-faits-main/"
+      ],
+      "clicks": 0,
+      "impressions": 3,
+      "ctr": 0,
+      "position": 5
+    },
+    {
+      "keys": [
+        "https://couture-tarn.fr/blog/retouches-simples-ourlet-bouton-fermeture/"
+      ],
+      "clicks": 0,
+      "impressions": 3,
+      "ctr": 0,
+      "position": 9.666666666666666
+    },
+    {
+      "keys": [
+        "https://couture-tarn.fr/blog/surjeteuse-a-quoi-ca-sert/"
+      ],
+      "clicks": 0,
+      "impressions": 13,
+      "ctr": 0,
+      "position": 16.76923076923077
+    }
+  ],
+  "responseAggregationType": "byPage"
+}

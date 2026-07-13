@@ -61,6 +61,9 @@ export default config({
       schema: {
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
+        seoTitle: fields.text({
+          label: 'Titre SEO (balise <title>, indépendant du titre affiché)',
+        }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         ...coverImageFields('homepage'),
         introductionTitle: fields.text({ label: 'Titre section introduction' }),
