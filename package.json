@@ -27,7 +27,7 @@
     "@fontsource-variable/manrope": "^5.2.8",
     "@fontsource-variable/playfair-display": "^5.2.8",
     "@keystatic/astro": "^5.1.0",
-    "@keystatic/core": "^0.5.50",
+    "@keystatic/core": "^0.6.0",
     "@markdoc/markdoc": "^0.5.7",
     "@tailwindcss/vite": "^4.2.2",
     "@types/react": "^19.2.14",
