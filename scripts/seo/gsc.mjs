@@ -16,7 +16,7 @@
 // `inspect` calls the URL Inspection API for one URL: index verdict, coverage
 // state (e.g. "Crawled - currently not indexed"), Google-selected canonical,
 // last crawl time. Quota: 2000 inspections/day per property.
-//   node scripts/seo/gsc.mjs inspect https://couture-tarn.fr/blog/coudre-tote-bag/
+//   node scripts/seo/gsc.mjs inspect https://atelier-des-cousettes.fr/blog/coudre-tote-bag/
 //
 // Credentials: GSC_CREDENTIALS_JSON env var (whole service-account key JSON on
 // one line), or the same variable in .env.local at the repo root.
@@ -27,7 +27,7 @@ import { readFileSync } from "node:fs";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const SCOPE = "https://www.googleapis.com/auth/webmasters.readonly";
 const API_BASE = "https://searchconsole.googleapis.com/webmasters/v3";
-const DEFAULT_SITE = "sc-domain:couture-tarn.fr";
+const DEFAULT_SITE = "sc-domain:atelier-des-cousettes.fr";
 
 function credentials() {
   let raw = process.env.GSC_CREDENTIALS_JSON;

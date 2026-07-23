@@ -1,11 +1,11 @@
 ---
 name: seo-improver
-description: Weekly SEO loop for couture-tarn.fr — read real rankings from Google Search Console, diff against the previous run, recommend a short list of high-leverage fixes, verify whether last week's changes worked, and optionally apply content fixes on a branch. Use when the user asks to run the SEO loop, check rankings, or improve search performance.
+description: Weekly SEO loop for atelier-des-cousettes.fr — read real rankings from Google Search Console, diff against the previous run, recommend a short list of high-leverage fixes, verify whether last week's changes worked, and optionally apply content fixes on a branch. Use when the user asks to run the SEO loop, check rankings, or improve search performance.
 ---
 
 <!-- project-config -->
-Search Console property: sc-domain:couture-tarn.fr
-Project domain: couture-tarn.fr
+Search Console property: sc-domain:atelier-des-cousettes.fr
+Project domain: atelier-des-cousettes.fr
 Locale: France (country filter `fra`), French language
 Business location: Verdalle (81110), southern Tarn. Realistic catchment (~30 min drive): Castres, Labruguière, Mazamet, Soual, Dourgne, Sorèze, Revel, Puylaurens. Albi, Gaillac, and northern Tarn are OUT of catchment (~1 h) — do not target them even if they appear in Search Console impressions.
 Tracked keywords: not set (derive from the domain's own ranked queries in Search Console, filtered to catchment + non-geo « tarn »/« montagne noire » terms)
@@ -49,7 +49,7 @@ Labs endpoints (`dataforseo_labs/...`) cost ~$0.10 per call where SERP pulls cos
 
 If Search Console is unauthorized or errors, stop and report the blocker instead of fabricating data (point the user to `SETUP.md` in this skill folder). If only DataForSEO is missing, continue with Search Console alone and note the competitive layer was skipped. Do not silently fabricate a missing source.
 
-Lightweight page checks (HTTP status, titles, meta) go through `curl` against the live site. Keep the run read-only against the live site: never submit forms or mutate anything at couture-tarn.fr. The only place you write is this repo, on a branch.
+Lightweight page checks (HTTP status, titles, meta) go through `curl` against the live site. Keep the run read-only against the live site: never submit forms or mutate anything at atelier-des-cousettes.fr. The only place you write is this repo, on a branch.
 
 ## State and the loop
 
@@ -67,13 +67,13 @@ Persist each run under `reports/seo-improver/<YYYY-MM-DD>/`. At the start of eve
    - **Decay**: pages whose clicks or position fell since a prior run; diagnose the likely cause (staleness, SERP change, intent shift) and check what moved above you.
 5. For each opportunity you act on, open the ranking URL, inspect the on-page signals, and write a **specific, ready-to-apply change**: the exact title/meta to use, the heading or section to add, the internal links to add and from where, or the consolidation to make. Tie every recommendation to the ranking evidence that motivates it.
 6. Verify the previous loop: for each improvement recommended in the prior run, state whether it was applied and what happened to that keyword's position. Keep what worked, drop or revise what did not.
-6a. **Index coverage check**: pull the live sitemap (`https://couture-tarn.fr/sitemap-0.xml`) and run `node scripts/seo/gsc.mjs inspect` on every URL (~30 pages, well inside the 2000/day quota; parallelize). Record each `coverageState` in the report and triage:
+6a. **Index coverage check**: pull the live sitemap (`https://atelier-des-cousettes.fr/sitemap-0.xml`) and run `node scripts/seo/gsc.mjs inspect` on every URL (~30 pages, well inside the 2000/day quota; parallelize). Record each `coverageState` in the report and triage:
    - `Submitted and indexed` — fine; `Excluded by 'noindex' tag` on mentions-légales — intentional, fine.
    - `URL is unknown to Google` / `Discovered - currently not indexed` on a page **younger than ~2 weeks** — normal lag, just note it. On an **older** page — flag it: check the page is internally linked and tell the user to hit « Request indexing » in the GSC UI (the API cannot do this; the Indexing API only covers job postings and live events).
    - `Crawled - currently not indexed` — Google saw it and declined. Not a technical error: diagnose as a quality/priority call. Check internal links pointing at the page, content overlap with a sibling article, and title/intent match; recommend a content strengthening or consolidation, and track whether the state flips across runs.
 6b. **Competitor tracking** (requires DataForSEO; skip silently without it): from the *same* SERP pulls made in step 2 — no extra API spend — extract every roster competitor's organic position per tracked keyword, and every roster GBP name's local-pack rank, rating, and review count. Write them to `competitors.csv` (spec below) and diff against the previous run: who overtook us, who we passed, whose review count is climbing. Watch the name-collision domain the same way. Additionally, at most **one** Labs call per run may target a roster competitor (`ranked_keywords` or `domain_intersection`) — rotate through the roster across runs, strongest first (atelierdecouture.fr), and note in the report whose turn it was so the next run picks the next one.
 7. **Content gaps** (requires DataForSEO; skip silently without it): look for queries the site does *not* rank for that deserve a new page or blog post. Two hunting grounds, max 3 Labs calls total:
-   - **Competitor gaps**: use this run's rotating Labs call from step 6b — `ranked_keywords` for the roster competitor whose turn it is, or `domain_intersection` against couture-tarn.fr. Keep keywords with catchment-local intent or course/technique intent; discard retouches-intent and out-of-catchment geo terms.
+   - **Competitor gaps**: use this run's rotating Labs call from step 6b — `ranked_keywords` for the roster competitor whose turn it is, or `domain_intersection` against atelier-des-cousettes.fr. Keep keywords with catchment-local intent or course/technique intent; discard retouches-intent and out-of-catchment geo terms.
    - **Topic expansion**: pull `keyword_ideas` seeded from clusters that already earn the blog impressions (surjeteuse, trousse/fermeture éclair, machine à coudre, débuter en couture). Adjacent how-to topics with measurable volume are proven territory — they build the topical authority that lifts the money pages.
 
 ## Content-gap suggestions (new pages and posts)

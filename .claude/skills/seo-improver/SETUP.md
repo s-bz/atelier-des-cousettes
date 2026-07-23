@@ -26,7 +26,7 @@ the env var is set.
 
 Then the one step that is always manual: in
 [Search Console](https://search.google.com/search-console), select the
-`couture-tarn.fr` property → Settings → Users and permissions → Add user, and add the
+`atelier-des-cousettes.fr` property → Settings → Users and permissions → Add user, and add the
 service account's email. **Restricted** permission is enough; the agent only reads.
 
 Set the variable in `.env.local`, the whole key JSON on a single line, single-quoted
