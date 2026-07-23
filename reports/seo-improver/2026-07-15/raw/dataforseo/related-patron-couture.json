@@ -1,0 +1,1369 @@
+{
+    "version": "0.1.20260713",
+    "status_code": 20000,
+    "status_message": "Ok.",
+    "time": "0.2675 sec.",
+    "cost": 0.01308,
+    "tasks_count": 1,
+    "tasks_error": 0,
+    "tasks": [
+        {
+            "id": "07150806-2078-0387-0000-df9d81c15648",
+            "status_code": 20000,
+            "status_message": "Ok.",
+            "time": "0.1858 sec.",
+            "cost": 0.01308,
+            "result_count": 1,
+            "path": [
+                "v3",
+                "dataforseo_labs",
+                "google",
+                "related_keywords",
+                "live"
+            ],
+            "data": {
+                "api": "dataforseo_labs",
+                "function": "related_keywords",
+                "se_type": "google",
+                "keyword": "patron couture",
+                "location_name": "France",
+                "language_code": "fr",
+                "limit": 50
+            },
+            "result": [
+                {
+                    "se_type": "google",
+                    "seed_keyword": "patron couture",
+                    "seed_keyword_data": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "total_count": 9,
+                    "items_count": 9,
+                    "items": [
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "patron couture",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-07-12 01:13:52 +00:00",
+                                    "competition": 1,
+                                    "competition_level": "HIGH",
+                                    "cpc": 0.22,
+                                    "search_volume": 12100,
+                                    "low_top_of_page_bid": 0.11,
+                                    "high_top_of_page_bid": 0.33,
+                                    "categories": [
+                                        10015,
+                                        10131,
+                                        11987
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 6,
+                                            "search_volume": 12100
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 12100
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 12100
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 14800
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 12100
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 14800
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 12100
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 12100
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 14800
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 12100
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 9900
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 14800
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": 0,
+                                        "quarterly": 0,
+                                        "yearly": 0
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": null,
+                                    "synonym_clustering_algorithm": "text_processing",
+                                    "keyword_difficulty": 0,
+                                    "detected_language": "en",
+                                    "is_another_language": true
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=patron%20couture&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "organic",
+                                        "people_also_ask",
+                                        "images",
+                                        "related_searches"
+                                    ],
+                                    "se_results_count": 132,
+                                    "last_updated_time": "2026-05-27 22:31:32 +00:00",
+                                    "previous_updated_time": "2026-05-27 20:29:40 +00:00"
+                                },
+                                "avg_backlinks_info": {
+                                    "se_type": "google",
+                                    "backlinks": 6.1,
+                                    "dofollow": 4.6,
+                                    "referring_pages": 5.2,
+                                    "referring_domains": 2.9,
+                                    "referring_main_domains": 2.8,
+                                    "rank": 66.3,
+                                    "main_domain_rank": 366.9,
+                                    "last_updated_time": "2026-05-27 19:32:08 +00:00"
+                                },
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "navigational",
+                                    "foreign_intent": [
+                                        "informational",
+                                        "commercial"
+                                    ],
+                                    "last_updated_time": "2026-04-29 17:27:41 +00:00"
+                                }
+                            },
+                            "depth": 0,
+                            "related_keywords": [
+                                "patron couture gratuit",
+                                "patrons couture gratuits pdf",
+                                "patron couture pdf",
+                                "patron couture femme",
+                                "patron couture burda",
+                                "patron couture gratuit à télécharger pdf burda",
+                                "patron couture facile",
+                                "patron couture facile gratuit à télécharger"
+                            ]
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "patron couture gratuit",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-07-13 09:28:43 +00:00",
+                                    "competition": 0.39,
+                                    "competition_level": "MEDIUM",
+                                    "cpc": 0.22,
+                                    "search_volume": 6600,
+                                    "low_top_of_page_bid": 0.11,
+                                    "high_top_of_page_bid": 0.24,
+                                    "categories": [
+                                        10015,
+                                        10015,
+                                        10131,
+                                        10131,
+                                        11987,
+                                        11987,
+                                        13017
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 6,
+                                            "search_volume": 6600
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 8100
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 8100
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 8100
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 6600
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 8100
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 5400
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 5400
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 5400
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 4400
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 5400
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 5400
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": -19,
+                                        "quarterly": -19,
+                                        "yearly": 22
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": "couture patron gratuit",
+                                    "synonym_clustering_algorithm": "text_processing",
+                                    "keyword_difficulty": 0,
+                                    "detected_language": "fr",
+                                    "is_another_language": false
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=patron%20couture%20gratuit&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "organic",
+                                        "video",
+                                        "images",
+                                        "related_searches"
+                                    ],
+                                    "se_results_count": 65,
+                                    "last_updated_time": "2026-05-27 23:31:45 +00:00",
+                                    "previous_updated_time": "2026-04-12 14:11:44 +00:00"
+                                },
+                                "avg_backlinks_info": {
+                                    "se_type": "google",
+                                    "backlinks": 14.2,
+                                    "dofollow": 4.3,
+                                    "referring_pages": 13.8,
+                                    "referring_domains": 11.3,
+                                    "referring_main_domains": 11.2,
+                                    "rank": 29,
+                                    "main_domain_rank": 362.1,
+                                    "last_updated_time": "2026-05-27 20:32:37 +00:00"
+                                },
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "informational",
+                                    "foreign_intent": null,
+                                    "last_updated_time": "2026-04-29 17:40:22 +00:00"
+                                }
+                            },
+                            "depth": 1,
+                            "related_keywords": [
+                                "patrons couture gratuits pdf",
+                                "patron couture gratuit débutant",
+                                "patron de couture gratuit à imprimer",
+                                "patron couture gratuit femme",
+                                "patron couture gratuit robe",
+                                "patron robe gratuit pdf",
+                                "patron couture gratuit enfant",
+                                "pop couture patron gratuit"
+                            ]
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "patron couture facile gratuit à télécharger",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-07-12 21:36:52 +00:00",
+                                    "competition": 0.23,
+                                    "competition_level": "LOW",
+                                    "cpc": 0.18,
+                                    "search_volume": 1600,
+                                    "low_top_of_page_bid": 0.12,
+                                    "high_top_of_page_bid": 0.16,
+                                    "categories": [
+                                        10015,
+                                        10015,
+                                        10131,
+                                        10131,
+                                        11987,
+                                        11987,
+                                        13017
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 6,
+                                            "search_volume": 1300
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 1600
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 1600
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 1900
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 1600
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 1600
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 1300
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 1600
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 1900
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 1600
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 1300
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 1600
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": -19,
+                                        "quarterly": -19,
+                                        "yearly": -32
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": null,
+                                    "synonym_clustering_algorithm": null,
+                                    "keyword_difficulty": 0,
+                                    "detected_language": "fr",
+                                    "is_another_language": false
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=patron%20couture%20facile%20gratuit%20%C3%A0%20t%C3%A9l%C3%A9charger&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "organic",
+                                        "video",
+                                        "people_also_ask",
+                                        "images",
+                                        "related_searches"
+                                    ],
+                                    "se_results_count": 63,
+                                    "last_updated_time": "2026-05-29 02:28:23 +00:00",
+                                    "previous_updated_time": "2026-04-13 20:47:02 +00:00"
+                                },
+                                "avg_backlinks_info": {
+                                    "se_type": "google",
+                                    "backlinks": 14.2,
+                                    "dofollow": 4.3,
+                                    "referring_pages": 13.8,
+                                    "referring_domains": 11.3,
+                                    "referring_main_domains": 11.2,
+                                    "rank": 29,
+                                    "main_domain_rank": 331.9,
+                                    "last_updated_time": "2026-05-28 23:28:23 +00:00"
+                                },
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "informational",
+                                    "foreign_intent": null,
+                                    "last_updated_time": "2026-04-28 21:20:51 +00:00"
+                                }
+                            },
+                            "depth": 1,
+                            "related_keywords": [
+                                "patron couture gratuit à télécharger pdf",
+                                "patron de couture gratuit à imprimer",
+                                "patrons couture gratuits pdf débutant",
+                                "patron couture gratuit débutant",
+                                "patron couture robe gratuit à télécharger pdf",
+                                "patron couture gratuit à télécharger pdf enfant",
+                                "patron couture gratuit femme pdf",
+                                "patron haut femme gratuit à télécharger"
+                            ]
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "patrons couture gratuits pdf",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-07-14 18:21:48 +00:00",
+                                    "competition": 0.65,
+                                    "competition_level": "MEDIUM",
+                                    "cpc": 0.2,
+                                    "search_volume": 1300,
+                                    "low_top_of_page_bid": 0.12,
+                                    "high_top_of_page_bid": 0.19,
+                                    "categories": [
+                                        10015,
+                                        10015,
+                                        10131,
+                                        10131,
+                                        11987,
+                                        11987,
+                                        13017
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 6,
+                                            "search_volume": 1000
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 1300
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 1600
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 1600
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 1300
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 1600
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 1000
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 1300
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 1300
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 1300
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 1300
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 1600
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": -23,
+                                        "quarterly": -38,
+                                        "yearly": -38
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": null,
+                                    "synonym_clustering_algorithm": "text_processing",
+                                    "keyword_difficulty": 0,
+                                    "detected_language": "nl",
+                                    "is_another_language": true
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=patrons%20couture%20gratuits%20pdf&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "organic",
+                                        "related_searches"
+                                    ],
+                                    "se_results_count": 44,
+                                    "last_updated_time": "2026-05-29 14:27:28 +00:00",
+                                    "previous_updated_time": "2026-04-13 20:43:14 +00:00"
+                                },
+                                "avg_backlinks_info": {
+                                    "se_type": "google",
+                                    "backlinks": 14.1,
+                                    "dofollow": 4.3,
+                                    "referring_pages": 14,
+                                    "referring_domains": 11.1,
+                                    "referring_main_domains": 11,
+                                    "rank": 27.5,
+                                    "main_domain_rank": 392.9,
+                                    "last_updated_time": "2026-05-29 11:28:37 +00:00"
+                                },
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "informational",
+                                    "foreign_intent": null,
+                                    "last_updated_time": "2026-04-29 17:22:54 +00:00"
+                                }
+                            },
+                            "depth": 1,
+                            "related_keywords": [
+                                "patron de couture gratuit à imprimer",
+                                "patrons couture gratuits pdf débutant",
+                                "patron couture facile gratuit à télécharger",
+                                "patron couture robe gratuit à télécharger pdf",
+                                "patron couture gratuit débutant",
+                                "patrons couture gratuits pdf débutant enfant",
+                                "patron couture gratuit femme pdf",
+                                "patron top gratuit pdf"
+                            ]
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "patron couture gratuit à télécharger pdf burda",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-07-10 16:53:03 +00:00",
+                                    "competition": 0.33,
+                                    "competition_level": "LOW",
+                                    "cpc": 0.16,
+                                    "search_volume": 1000,
+                                    "low_top_of_page_bid": 0.09,
+                                    "high_top_of_page_bid": 0.26,
+                                    "categories": [
+                                        10015,
+                                        10015,
+                                        10131,
+                                        10131,
+                                        11987,
+                                        11987,
+                                        13017
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 6,
+                                            "search_volume": 1000
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 10
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 590
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 1900
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 1300
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 1300
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 880
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 1300
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 1600
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 1300
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 1300
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 1600
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": 9900,
+                                        "quarterly": 69,
+                                        "yearly": -47
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": null,
+                                    "synonym_clustering_algorithm": null,
+                                    "keyword_difficulty": 8,
+                                    "detected_language": "fr",
+                                    "is_another_language": false
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=patron%20couture%20gratuit%20%C3%A0%20t%C3%A9l%C3%A9charger%20pdf%20burda&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "organic",
+                                        "people_also_ask",
+                                        "images",
+                                        "related_searches"
+                                    ],
+                                    "se_results_count": 54,
+                                    "last_updated_time": "2026-05-29 15:29:18 +00:00",
+                                    "previous_updated_time": "2026-05-29 12:46:11 +00:00"
+                                },
+                                "avg_backlinks_info": {
+                                    "se_type": "google",
+                                    "backlinks": 1261.8,
+                                    "dofollow": 667.8,
+                                    "referring_pages": 671.8,
+                                    "referring_domains": 13.6,
+                                    "referring_main_domains": 12.8,
+                                    "rank": 93.2,
+                                    "main_domain_rank": 466.8,
+                                    "last_updated_time": "2026-05-29 12:30:21 +00:00"
+                                },
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "informational",
+                                    "foreign_intent": [
+                                        "navigational"
+                                    ],
+                                    "last_updated_time": "2026-04-29 17:27:41 +00:00"
+                                }
+                            },
+                            "depth": 1,
+                            "related_keywords": [
+                                "patrons couture gratuits pdf",
+                                "patron couture robe gratuit à télécharger pdf",
+                                "patrons couture gratuits pdf débutant",
+                                "patron de couture gratuit à imprimer",
+                                "patron couture facile gratuit à télécharger",
+                                "patron couture gratuit femme pdf",
+                                "patron de couture gratuit à imprimer robe",
+                                "patron couture accessoires gratuit à télécharger pdf"
+                            ]
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "patron couture femme",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-07-10 04:56:59 +00:00",
+                                    "competition": 1,
+                                    "competition_level": "HIGH",
+                                    "cpc": 0.22,
+                                    "search_volume": 880,
+                                    "low_top_of_page_bid": 0.08,
+                                    "high_top_of_page_bid": 0.28,
+                                    "categories": [
+                                        10015,
+                                        10015,
+                                        10131,
+                                        10131,
+                                        11987,
+                                        11987,
+                                        13373
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 6,
+                                            "search_volume": 880
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 1000
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 1000
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 1000
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 1000
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 1000
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 720
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 880
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 880
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 880
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 880
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 880
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": -12,
+                                        "quarterly": -12,
+                                        "yearly": -12
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": "patrons couture femme",
+                                    "synonym_clustering_algorithm": "text_processing",
+                                    "keyword_difficulty": 3,
+                                    "detected_language": "fr",
+                                    "is_another_language": false
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=patron%20couture%20femme&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "organic",
+                                        "video",
+                                        "popular_products",
+                                        "people_also_ask",
+                                        "related_searches",
+                                        "images"
+                                    ],
+                                    "se_results_count": 135,
+                                    "last_updated_time": "2026-05-30 09:12:20 +00:00",
+                                    "previous_updated_time": "2026-05-30 07:59:20 +00:00"
+                                },
+                                "avg_backlinks_info": {
+                                    "se_type": "google",
+                                    "backlinks": 14,
+                                    "dofollow": 9.4,
+                                    "referring_pages": 13.1,
+                                    "referring_domains": 7.9,
+                                    "referring_main_domains": 7.6,
+                                    "rank": 95.8,
+                                    "main_domain_rank": 276.9,
+                                    "last_updated_time": "2026-05-30 06:13:16 +00:00"
+                                },
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "commercial",
+                                    "foreign_intent": [
+                                        "informational",
+                                        "transactional"
+                                    ],
+                                    "last_updated_time": "2026-04-29 17:50:54 +00:00"
+                                }
+                            },
+                            "depth": 1,
+                            "related_keywords": [
+                                "patron couture femme moderne",
+                                "patron couture femme gratuit à télécharger",
+                                "patron couture femme facile",
+                                "patrons couture gratuits pdf",
+                                "patron couture femme burda",
+                                "patron couture femme robe",
+                                "patron couture femme haut",
+                                "patron couture femme pdf"
+                            ]
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "patron couture facile",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-07-14 11:00:26 +00:00",
+                                    "competition": 0.99,
+                                    "competition_level": "HIGH",
+                                    "cpc": 0.16,
+                                    "search_volume": 480,
+                                    "low_top_of_page_bid": 0.11,
+                                    "high_top_of_page_bid": 0.25,
+                                    "categories": [
+                                        10015,
+                                        10131,
+                                        11987
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 6,
+                                            "search_volume": 390
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 480
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 390
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 480
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 480
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 720
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 590
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 480
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 590
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 480
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 480
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 590
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": -19,
+                                        "quarterly": 0,
+                                        "yearly": -34
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": null,
+                                    "synonym_clustering_algorithm": "text_processing",
+                                    "keyword_difficulty": 0,
+                                    "detected_language": "fr",
+                                    "is_another_language": false
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=patron%20couture%20facile&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "organic",
+                                        "video",
+                                        "images",
+                                        "popular_products",
+                                        "related_searches"
+                                    ],
+                                    "se_results_count": 119,
+                                    "last_updated_time": "2026-07-06 14:45:02 +00:00",
+                                    "previous_updated_time": "2026-05-05 08:53:16 +00:00"
+                                },
+                                "avg_backlinks_info": {
+                                    "se_type": "google",
+                                    "backlinks": 11.2,
+                                    "dofollow": 7,
+                                    "referring_pages": 7.7,
+                                    "referring_domains": 2.7,
+                                    "referring_main_domains": 2.7,
+                                    "rank": 36.7,
+                                    "main_domain_rank": 294.9,
+                                    "last_updated_time": "2026-07-06 11:45:50 +00:00"
+                                },
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "informational",
+                                    "foreign_intent": null,
+                                    "last_updated_time": "2026-04-29 18:09:24 +00:00"
+                                }
+                            },
+                            "depth": 1,
+                            "related_keywords": [
+                                "patrons couture débutant gratuit",
+                                "patron couture facile femme",
+                                "patron couture débutant gratuit pdf",
+                                "patron couture facile burda",
+                                "patrons couture gratuits pdf",
+                                "patron couture gratuit",
+                                "patron robe débutant gratuit",
+                                "patron couture facile accessoire"
+                            ]
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "patron couture pdf",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-07-11 15:27:57 +00:00",
+                                    "competition": 0.89,
+                                    "competition_level": "HIGH",
+                                    "cpc": 0.27,
+                                    "search_volume": 210,
+                                    "low_top_of_page_bid": 0.13,
+                                    "high_top_of_page_bid": 0.42,
+                                    "categories": [
+                                        10015,
+                                        10131,
+                                        11987
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 6,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 260
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 260
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 260
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 210
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 260
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 170
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 260
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 320
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": -19,
+                                        "quarterly": 0,
+                                        "yearly": -34
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": "patrons couture pdf",
+                                    "synonym_clustering_algorithm": "text_processing",
+                                    "keyword_difficulty": 0,
+                                    "detected_language": "de",
+                                    "is_another_language": true
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=patron%20couture%20pdf&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "organic",
+                                        "related_searches",
+                                        "images"
+                                    ],
+                                    "se_results_count": 63,
+                                    "last_updated_time": "2026-07-11 08:19:05 +00:00",
+                                    "previous_updated_time": "2026-05-09 11:20:04 +00:00"
+                                },
+                                "avg_backlinks_info": {
+                                    "se_type": "google",
+                                    "backlinks": 3.1,
+                                    "dofollow": 1.9,
+                                    "referring_pages": 2.1,
+                                    "referring_domains": 1.3,
+                                    "referring_main_domains": 1.3,
+                                    "rank": 24.1,
+                                    "main_domain_rank": 355.6,
+                                    "last_updated_time": "2026-07-11 05:19:33 +00:00"
+                                },
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "informational",
+                                    "foreign_intent": null,
+                                    "last_updated_time": "2026-04-29 17:54:09 +00:00"
+                                }
+                            },
+                            "depth": 1,
+                            "related_keywords": [
+                                "patron couture pdf gratuit",
+                                "patron pochette gratuit pdf",
+                                "patron de pochette gratuit à télécharger",
+                                "super bison patron gratuit",
+                                "patron pochette zippée gratuit pdf",
+                                "super bison pdf",
+                                "patron de pochette gratuit à imprimer",
+                                "maison essentielle patron pdf"
+                            ]
+                        },
+                        {
+                            "se_type": "google",
+                            "keyword_data": {
+                                "se_type": "google",
+                                "keyword": "patron couture burda",
+                                "location_code": 2250,
+                                "language_code": "fr",
+                                "keyword_info": {
+                                    "se_type": "google",
+                                    "last_updated_time": "2026-07-12 02:50:30 +00:00",
+                                    "competition": 0.99,
+                                    "competition_level": "HIGH",
+                                    "cpc": 0.18,
+                                    "search_volume": 140,
+                                    "low_top_of_page_bid": 0.05,
+                                    "high_top_of_page_bid": 0.26,
+                                    "categories": [
+                                        10004,
+                                        10271,
+                                        13804
+                                    ],
+                                    "monthly_searches": [
+                                        {
+                                            "year": 2026,
+                                            "month": 6,
+                                            "search_volume": 140
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 5,
+                                            "search_volume": 140
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 4,
+                                            "search_volume": 170
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 3,
+                                            "search_volume": 170
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 2,
+                                            "search_volume": 140
+                                        },
+                                        {
+                                            "year": 2026,
+                                            "month": 1,
+                                            "search_volume": 170
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 12,
+                                            "search_volume": 110
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 11,
+                                            "search_volume": 140
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 10,
+                                            "search_volume": 110
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 9,
+                                            "search_volume": 140
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 8,
+                                            "search_volume": 110
+                                        },
+                                        {
+                                            "year": 2025,
+                                            "month": 7,
+                                            "search_volume": 110
+                                        }
+                                    ],
+                                    "search_volume_trend": {
+                                        "monthly": 0,
+                                        "quarterly": -18,
+                                        "yearly": 0
+                                    }
+                                },
+                                "keyword_info_normalized_with_bing": null,
+                                "keyword_info_normalized_with_clickstream": null,
+                                "clickstream_keyword_info": null,
+                                "keyword_properties": {
+                                    "se_type": "google",
+                                    "core_keyword": "patrons couture burda",
+                                    "synonym_clustering_algorithm": "text_processing",
+                                    "keyword_difficulty": 0,
+                                    "detected_language": "en",
+                                    "is_another_language": true
+                                },
+                                "serp_info": {
+                                    "se_type": "google",
+                                    "check_url": "https:\/\/www.google.com\/search?q=patron%20couture%20burda&hl=fr&gl=FR&ie=UTF-8&uule=w+CAIQIFISCTFXeDMpoFQNEffZR8eWP_1r",
+                                    "serp_item_types": [
+                                        "organic",
+                                        "people_also_ask",
+                                        "video",
+                                        "images",
+                                        "popular_products",
+                                        "related_searches"
+                                    ],
+                                    "se_results_count": 621000,
+                                    "last_updated_time": "2026-05-13 00:11:10 +00:00",
+                                    "previous_updated_time": "2026-03-29 11:26:39 +00:00"
+                                },
+                                "avg_backlinks_info": {
+                                    "se_type": "google",
+                                    "backlinks": 561.7,
+                                    "dofollow": 298.7,
+                                    "referring_pages": 300.7,
+                                    "referring_domains": 6.7,
+                                    "referring_main_domains": 6.3,
+                                    "rank": 46.4,
+                                    "main_domain_rank": 338.7,
+                                    "last_updated_time": "2026-05-12 21:11:10 +00:00"
+                                },
+                                "search_intent_info": {
+                                    "se_type": "google",
+                                    "main_intent": "navigational",
+                                    "foreign_intent": [
+                                        "transactional",
+                                        "commercial"
+                                    ],
+                                    "last_updated_time": "2026-04-29 17:38:37 +00:00"
+                                }
+                            },
+                            "depth": 1,
+                            "related_keywords": [
+                                "patron couture burda femme",
+                                "patron burda nouvelle collection",
+                                "patron burda pdf gratuit",
+                                "patrons couture gratuits pdf",
+                                "catalogue burda",
+                                "patron de couture gratuit à imprimer",
+                                "patrons couture gratuits pdf débutant",
+                                "patron burda robe facile"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
