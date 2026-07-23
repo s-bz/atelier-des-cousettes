@@ -12,6 +12,10 @@ import { readFileSync, readdirSync } from 'node:fs';
 // on every URL gets discounted by Google as noise (the daily rebuild would
 // stamp all pages "modified today", every day); honest dates on posts and no
 // lastmod elsewhere is the crawl-priority signal search engines actually use.
+// Canonical production origin. Single source of truth: the sitemap keys below
+// and the `site` field must always agree, or blog lastmods silently drop out.
+const SITE = 'https://atelier-des-cousettes.fr';
+
 /** @type {Map<string, string>} */
 const blogLastmod = new Map();
 for (const entry of readdirSync('src/content/blog', { withFileTypes: true })) {
@@ -19,12 +23,12 @@ for (const entry of readdirSync('src/content/blog', { withFileTypes: true })) {
   const frontmatter = readFileSync(`src/content/blog/${entry.name}/index.mdoc`, 'utf8');
   const date = frontmatter.match(/^lastModified:\s*'?([\d-]+)'?/m)?.[1]
     ?? frontmatter.match(/^publishDate:\s*'?([\d-]+)'?/m)?.[1];
-  if (date) blogLastmod.set(`https://couture-tarn.fr/blog/${entry.name}/`, date);
+  if (date) blogLastmod.set(`${SITE}/blog/${entry.name}/`, date);
 }
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://couture-tarn.fr',
+  site: SITE,
   adapter: vercel(),
   integrations: [react(), markdoc(), keystatic(), sitemap({
     serialize(item) {

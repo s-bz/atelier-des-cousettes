@@ -2,7 +2,7 @@
 
 Site web de L'Atelier des Cousettes, un atelier de couture situé dans le Tarn, France. Construit avec Astro et déployé sur Vercel.
 
-**Site en ligne :** [couture-tarn.fr](https://couture-tarn.fr)
+**Site en ligne :** [atelier-des-cousettes.fr](https://atelier-des-cousettes.fr)
 
 ## Stack technique
 
@@ -117,7 +117,7 @@ Le contenu est géré via [Keystatic](https://keystatic.com/), un CMS headless b
 ### Accès à l'interface d'administration
 
 - **En local :** Lancer `pnpm dev` et naviguer vers `http://localhost:4321/keystatic`
-- **En production :** Aller sur `https://couture-tarn.fr/keystatic` (authentification via GitHub)
+- **En production :** Aller sur `https://atelier-des-cousettes.fr/keystatic` (authentification via GitHub)
 
 ### Modes de stockage
 

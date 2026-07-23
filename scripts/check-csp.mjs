@@ -10,7 +10,7 @@
  * unit test's job and runs at PR time.
  *
  * Usage: node scripts/check-csp.mjs <base-url>
- * Example: node scripts/check-csp.mjs https://couture-tarn.fr
+ * Example: node scripts/check-csp.mjs https://atelier-des-cousettes.fr
  *
  * Exit codes:
  *   0  all origins present on every checked path

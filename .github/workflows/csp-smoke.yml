@@ -17,10 +17,10 @@ on:
       url:
         description: 'Base URL to check (default: production domain)'
         required: false
-        default: 'https://couture-tarn.fr'
+        default: 'https://atelier-des-cousettes.fr'
 
 env:
-  PRODUCTION_URL: https://couture-tarn.fr
+  PRODUCTION_URL: https://atelier-des-cousettes.fr
 
 jobs:
   check:
