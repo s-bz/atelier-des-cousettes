@@ -59,6 +59,7 @@ export default config({
     homepage: singleton({
       label: 'Accueil',
       path: 'src/content/pages/homepage/',
+      previewUrl: '/',
       schema: {
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
@@ -122,6 +123,7 @@ export default config({
     stagesThematiques: singleton({
       label: 'Stages thématiques',
       path: 'src/content/pages/stages-thematiques/',
+      previewUrl: '/stages-thematiques/',
       schema: {
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
@@ -165,6 +167,7 @@ export default config({
     ateliersReguliers: singleton({
       label: 'Ateliers réguliers',
       path: 'src/content/pages/ateliers-reguliers/',
+      previewUrl: '/ateliers-reguliers/',
       schema: {
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
@@ -214,6 +217,7 @@ export default config({
     apresMidiCouture: singleton({
       label: 'Un après-midi couture',
       path: 'src/content/pages/un-apres-midi-couture/',
+      previewUrl: '/un-apres-midi-couture/',
       schema: {
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
@@ -255,6 +259,7 @@ export default config({
     couturiere: singleton({
       label: 'La couturière',
       path: 'src/content/pages/la-couturiere/',
+      previewUrl: '/la-couturiere/',
       schema: {
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
@@ -285,6 +290,7 @@ export default config({
     mesCreations: singleton({
       label: 'Mes créations',
       path: 'src/content/pages/mes-creations/',
+      previewUrl: '/mes-creations/',
       schema: {
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
@@ -301,6 +307,7 @@ export default config({
     blogIndex: singleton({
       label: 'Page blog',
       path: 'src/content/pages/blog/',
+      previewUrl: '/blog/',
       schema: {
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
@@ -318,6 +325,7 @@ export default config({
     contact: singleton({
       label: 'Contact',
       path: 'src/content/pages/contact/',
+      previewUrl: '/contact/',
       schema: {
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
@@ -329,6 +337,7 @@ export default config({
     mentionsLegales: singleton({
       label: 'Mentions légales',
       path: 'src/content/pages/mentions-legales/',
+      previewUrl: '/mentions-legales/',
       format: { contentField: 'content' },
       schema: {
         title: fields.text({ label: 'Titre' }),
@@ -344,6 +353,7 @@ export default config({
       label: 'Articles de blog',
       slugField: 'title',
       path: 'src/content/blog/*/',
+      previewUrl: '/blog/{slug}/',
       format: { contentField: 'content' },
       schema: {
         title: fields.slug({ name: { label: 'Titre' } }),
@@ -363,6 +373,7 @@ export default config({
       label: 'Créations',
       slugField: 'title',
       path: 'src/content/creations/*',
+      previewUrl: '/mes-creations/',
       schema: {
         title: fields.slug({ name: { label: 'Titre' } }),
         image: fields.image({

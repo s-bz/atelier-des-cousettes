@@ -16,7 +16,7 @@ const { settings, siteUrl } = await getPageContext(Astro.site);
 const creations = await reader.collections.creations.all();
 const sorted = creations.sort((a, b) => (a.entry.order ?? 0) - (b.entry.order ?? 0));
 
-const creationGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/creations/*.{jpg,jpeg,png,webp}');
+const creationGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/creations/**/*.{jpg,jpeg,png,webp}');
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
 const resolvedCover = await resolveImage(page.coverImage, coverGlob);
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
