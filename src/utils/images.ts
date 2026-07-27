@@ -6,7 +6,14 @@ export function resolveImagePath(
 ): string | undefined {
   if (!rawPath) return undefined;
   if (glob[rawPath]) return rawPath;
-  return Object.keys(glob).find((p) => p.endsWith(`/${rawPath}`));
+  const byPath = Object.keys(glob).find((p) => p.endsWith(`/${rawPath}`));
+  if (byPath) return byPath;
+  // Keystatic collections store `publicPath + <entry slug> + / + filename`, but write
+  // the asset flat into `directory`. The slug segment is therefore not a real folder,
+  // so fall back to matching on the basename alone.
+  const basename = rawPath.split('/').pop();
+  if (!basename || basename === rawPath) return undefined;
+  return Object.keys(glob).find((p) => p.endsWith(`/${basename}`));
 }
 
 export async function resolveImage(

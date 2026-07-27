@@ -23,6 +23,13 @@ describe('resolveImagePath', () => {
       .toBe('/src/assets/images/covers/blog/post1.webp');
   });
 
+  it('resolves a Keystatic collection value whose slug segment is not a real folder', () => {
+    // Keystatic stores `publicPath + <entry slug> + / + filename` but writes the
+    // asset flat into `directory`, so the slug segment never exists on disk.
+    expect(resolveImagePath('/src/assets/images/couturiere/some-entry/photo.png', mockGlob))
+      .toBe('/src/assets/images/couturiere/photo.png');
+  });
+
   it('returns undefined for non-existent image', () => {
     expect(resolveImagePath('nonexistent.jpg', mockGlob)).toBeUndefined();
   });
