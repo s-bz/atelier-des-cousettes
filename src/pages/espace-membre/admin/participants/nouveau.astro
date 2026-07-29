@@ -37,7 +37,7 @@ const { data: creneaux } = await supabase
 
 const champs = {
   prenom: '', nom: '', telephone: '', email: '', notes: '', audience: 'adulte',
-  creneau: '', type: 'mensuel', credits: '2', debut: '', fin: '',
+  creneau: '', type: 'forfait', credits: '20', debut: '', fin: '',
 };
 let erreur: string | null = null;
 
@@ -213,11 +213,31 @@ if (Astro.request.method === 'POST') {
           </p>
         </div>
 
+        <div class="sm:col-span-2">
+          <label for="type" class="block text-sm font-medium mb-1">Type de forfait</label>
+          <select id="type" name="type" required class="champ">
+            <option value="forfait" selected={champs.type === 'forfait'}>
+              Forfait pour la saison — 10 ou 20 séances, disponibles dès le début
+            </option>
+            <option value="mensuel" selected={champs.type !== 'forfait'}>
+              Tant de séances par mois — elles s’acquièrent au fil des mois
+            </option>
+          </select>
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Un forfait affiche d’emblée tout ce qui a été acheté et se place où l’on veut dans
+            la saison. Un forfait mensuel ouvre son quota chaque mois. Dans les deux cas,
+            l’inscription d’office étale les séances sur l’année.
+          </p>
+        </div>
+
         <div>
-          <label for="credits" class="block text-sm font-medium mb-1">Séances par mois</label>
+          <label for="credits" class="block text-sm font-medium mb-1">Nombre de séances</label>
           <input id="credits" name="credits" type="number" min="0" required
                  value={champs.credits} class="champ" />
-          <p class="mt-1 text-sm text-[var(--color-text-light)]">0 en cas de paiement à la séance.</p>
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Pour la saison, ou par mois, selon le type choisi.
+            0 en cas de paiement à la séance.
+          </p>
         </div>
 
         <div>
