@@ -30,8 +30,8 @@ insert into sessions (id, creneau_id, starts_at, ends_at, location,
 
 -- Alice a un abonnement, Bruno et Chloé n'en ont pas (solde 0, dépassement).
 insert into subscriptions (participant_id, season, credits_per_month,
-                           monthly_price_cents, starts_on, ends_on)
-values ('a0000000-0000-0000-0000-000000000001', '2026-2027', 2, 5500,
+                           starts_on, ends_on)
+values ('a0000000-0000-0000-0000-000000000001', '2026-2027', 2,
         '2026-10-01', '2027-06-30');
 
 -- ── 1. Réserver une place libre ──────────────────────────────────────────

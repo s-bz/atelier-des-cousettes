@@ -15,22 +15,22 @@ values ('11111111-1111-1111-1111-111111111111', 'Test', 'Bornes'),
 
 -- A. Un abonnement simple, 2 crédits/mois, octobre → juin.
 insert into subscriptions (participant_id, season, credits_per_month,
-                           monthly_price_cents, starts_on, ends_on)
-values ('11111111-1111-1111-1111-111111111111', '2026-2027', 2, 5500,
+                           starts_on, ends_on)
+values ('11111111-1111-1111-1111-111111111111', '2026-2027', 2,
         '2026-10-01', '2027-06-30');
 
 -- B. Changement de formule au 1er janvier : 1/mois puis 2/mois.
 insert into subscriptions (participant_id, season, credits_per_month,
-                           monthly_price_cents, starts_on, ends_on)
-values ('22222222-2222-2222-2222-222222222222', '2026-2027', 1, 3300,
+                           starts_on, ends_on)
+values ('22222222-2222-2222-2222-222222222222', '2026-2027', 1,
         '2026-10-01', '2026-12-31'),
-       ('22222222-2222-2222-2222-222222222222', '2026-2027', 2, 5500,
+       ('22222222-2222-2222-2222-222222222222', '2026-2027', 2,
         '2027-01-01', '2027-06-30');
 
 -- C. Consommation : une réservation active, une libérée, une sur séance annulée.
 insert into subscriptions (participant_id, season, credits_per_month,
-                           monthly_price_cents, starts_on, ends_on)
-values ('33333333-3333-3333-3333-333333333333', '2026-2027', 2, 5500,
+                           starts_on, ends_on)
+values ('33333333-3333-3333-3333-333333333333', '2026-2027', 2,
         '2026-10-01', '2027-06-30');
 
 insert into sessions (id, creneau_id, starts_at, ends_at, location,
