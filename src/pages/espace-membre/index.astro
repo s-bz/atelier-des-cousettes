@@ -4,7 +4,7 @@ export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SelecteurParticipant from '../../components/SelecteurParticipant.astro';
 import { getAdminClient } from '../../utils/supabase';
-import { participantsDuCompte, soldeDe, dateLongue, heure } from '../../utils/membre';
+import { participantsDuCompte, soldeDe, libererPlace, dateLongue, heure } from '../../utils/membre';
 
 const { session, account, isAdmin } = Astro.locals;
 
@@ -23,6 +23,18 @@ if (isAdmin && personnes.length === 0) {
 }
 
 const supabase = getAdminClient();
+
+let message: string | null = null;
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST' && choisie) {
+  const form = await Astro.request.formData();
+  if (String(form.get('action')) === 'liberer') {
+    const r = await libererPlace(String(form.get('reservation')), choisie.id);
+    if (r.ok) message = r.message;
+    else erreur = r.message;
+  }
+}
 
 let solde = 0, octroye = 0, consomme = 0;
 let prochaines: any[] = [];
@@ -64,6 +76,13 @@ if (choisie) {
 
       <SelecteurParticipant personnes={personnes} choisie={choisie} base="/espace-membre/" />
 
+      {message && (
+        <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">{message}</p>
+      )}
+      {erreur && (
+        <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>
+      )}
+
       {!choisie ? (
         <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
           Aucune inscription n’est rattachée à ce compte. Contactez Isabelle.
@@ -88,13 +107,18 @@ if (choisie) {
             </p>
           </div>
 
-          <div class="mb-6 flex flex-wrap items-baseline gap-x-4">
-            <h2 class="text-lg font-bold text-[var(--color-heading)]">Prochaines séances</h2>
-            <a href={`/espace-membre/planning/${personnes.length > 1 ? `?personne=${choisie.id}` : ''}`}
-               class="ml-auto text-sm text-[var(--color-button)] underline">
-              Voir le planning
-            </a>
-          </div>
+          {/*
+            Réserver est l'action principale de cet écran, et « Voir le planning »
+            la nommait par son écran plutôt que par ce qu'on y fait. Un lien
+            discret en bout de ligne demandait en plus de deviner que c'était là
+            qu'on réservait.
+          */}
+          <a href={`/espace-membre/planning/${personnes.length > 1 ? `?personne=${choisie.id}` : ''}`}
+             class="mb-8 flex items-center justify-center gap-2 rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-4 text-lg font-medium text-white transition-opacity hover:opacity-90">
+            Réserver une séance
+          </a>
+
+          <h2 class="mb-4 text-lg font-bold text-[var(--color-heading)]">Prochaines séances</h2>
 
           {prochaines.length === 0 ? (
             <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
@@ -111,8 +135,19 @@ if (choisie) {
                     {heure.format(new Date(r.sessions.starts_at))} – {heure.format(new Date(r.sessions.ends_at))}
                   </span>
                   <span class="text-sm text-[var(--color-text-light)]">{r.sessions.location}</span>
-                  {r.sessions.status === 'cancelled' && (
-                    <span class="text-sm font-medium text-[var(--color-button)]">Annulée</span>
+                  {r.sessions.status === 'cancelled' ? (
+                    <span class="ml-auto text-sm font-medium text-[var(--color-button)]">Annulée</span>
+                  ) : (
+                    /* Libérer depuis ici : c'est le geste le plus courant — on
+                       vient voir ses prochaines séances précisément parce qu'on
+                       ne peut pas venir à l'une d'elles. */
+                    <form method="post" class="ml-auto">
+                      <input type="hidden" name="action" value="liberer" />
+                      <input type="hidden" name="reservation" value={r.id} />
+                      <button type="submit" class="text-sm text-[var(--color-button)] underline">
+                        Je ne peux pas venir
+                      </button>
+                    </form>
                   )}
                 </li>
               ))}

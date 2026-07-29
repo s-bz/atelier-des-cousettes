@@ -50,6 +50,41 @@ export async function soldeDe(participantId: string) {
   };
 }
 
+/**
+ * Libère une place, après avoir vérifié qu'elle appartient bien à la personne.
+ *
+ * LA VÉRIFICATION EST ICI, et non déléguée à release_booking. Les écrans membre
+ * appellent la base avec la clé secrète, laquelle contourne le RLS — et donc
+ * aussi le contrôle interne de la fonction, qui ne se déclenche que pour le
+ * rôle « authenticated ». Sans ce garde-fou, publier un identifiant de
+ * réservation quelconque libérerait la place de n'importe qui.
+ *
+ * Fonction partagée plutôt que recopiée dans chaque écran : un contrôle
+ * d'appartenance dupliqué est un contrôle qu'on oubliera dans la deuxième
+ * copie.
+ */
+export async function libererPlace(
+  reservationId: string,
+  participantId: string,
+): Promise<{ ok: boolean; message: string }> {
+  const supabase = getAdminClient();
+
+  const { data: cible } = await supabase
+    .from('bookings')
+    .select('participant_id')
+    .eq('id', reservationId)
+    .maybeSingle();
+
+  if (!cible || cible.participant_id !== participantId) {
+    return { ok: false, message: 'Cette réservation ne vous appartient pas.' };
+  }
+
+  const { error } = await supabase.rpc('release_booking', { p_booking: reservationId });
+  if (error) return { ok: false, message: error.message };
+
+  return { ok: true, message: 'Place libérée. La séance revient à votre solde.' };
+}
+
 export const dateLongue = new Intl.DateTimeFormat('fr-FR', {
   weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris',
 });

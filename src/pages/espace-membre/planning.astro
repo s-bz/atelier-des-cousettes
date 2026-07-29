@@ -4,7 +4,7 @@ export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SelecteurParticipant from '../../components/SelecteurParticipant.astro';
 import { getAdminClient } from '../../utils/supabase';
-import { participantsDuCompte, soldeDe, dateLongue, heure } from '../../utils/membre';
+import { participantsDuCompte, soldeDe, libererPlace, dateLongue, heure } from '../../utils/membre';
 import { notifier } from '../../utils/emails';
 
 const { session, account } = Astro.locals;
@@ -55,28 +55,9 @@ if (Astro.request.method === 'POST' && choisie) {
   }
 
   if (action === 'liberer') {
-    const reservation = String(form.get('reservation'));
-
-    // L'appartenance est vérifiée ICI, et non déléguée à release_booking.
-    //
-    // Cette page appelle la base avec la clé secrète, laquelle contourne le
-    // RLS — et donc aussi la vérification interne de la fonction, qui ne se
-    // déclenche que pour le rôle « authenticated ». Sans ce contrôle, publier
-    // un identifiant de réservation quelconque libérerait la place de
-    // n'importe qui.
-    const { data: cible } = await supabase
-      .from('bookings')
-      .select('participant_id')
-      .eq('id', reservation)
-      .maybeSingle();
-
-    if (!cible || cible.participant_id !== choisie.id) {
-      erreur = 'Cette réservation ne vous appartient pas.';
-    } else {
-      const { error } = await supabase.rpc('release_booking', { p_booking: reservation });
-      if (error) erreur = error.message;
-      else message = 'Place libérée. La séance revient à votre solde.';
-    }
+    const r = await libererPlace(String(form.get('reservation')), choisie.id);
+    if (r.ok) message = r.message;
+    else erreur = r.message;
   }
 }
 
