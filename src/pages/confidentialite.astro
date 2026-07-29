@@ -1,0 +1,18 @@
+---
+import ContentPage from '../components/ContentPage.astro';
+import { reader } from '../utils/reader';
+
+const page = await reader.singletons.confidentialite.read();
+if (!page) throw new Error('Politique de confidentialité content not found');
+const contentNode = page.content ? await page.content() : null;
+---
+
+<ContentPage
+  title={page.title}
+  subtitle={page.subtitle}
+  seoDescription={page.seoDescription}
+  contentNode={contentNode}
+  coverImage={page.coverImage ?? undefined}
+  showContactCTA={false}
+  noIndex={true}
+/>
