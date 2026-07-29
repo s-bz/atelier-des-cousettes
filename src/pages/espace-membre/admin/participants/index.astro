@@ -4,6 +4,7 @@ export const prerender = false;
 import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
+import { lienEmail, lienWhatsApp } from '../../../../utils/contact';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -73,31 +74,63 @@ const libelleSolde = (s: number) =>
         const ligne = (p: Personne) => {
           const solde = soldes.get(p.id) ?? 0;
           const sansAbonnement = (p.subscriptions ?? []).length === 0;
+          const email = lienEmail((p.accounts as any)?.email);
+          const whatsapp = lienWhatsApp(p.phone);
+
+          // Les boutons de contact sont HORS du lien de la fiche : un lien
+          // n'en contient pas un autre, et les imbriquer produirait un balisage
+          // que les navigateurs réparent chacun à leur façon.
           return (
-            <a href={`/espace-membre/admin/participants/${p.id}/`}
-               class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-4 py-3 transition-opacity hover:opacity-70">
-              <span class="font-medium text-[var(--color-heading)]">
-                {p.last_name} {p.first_name}
-              </span>
-              {!famille && !p.account_id && (
-                /* Sans accès, le téléphone est le seul moyen de joindre :
-                   on l'affiche à la place de l'adresse absente. */
-                <span class="text-xs text-[var(--color-text-light)]">
-                  {p.phone ? `sans accès · ${p.phone}` : 'sans accès — ne recevra aucun e-mail'}
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
+              <a href={`/espace-membre/admin/participants/${p.id}/`}
+                 class="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 transition-opacity hover:opacity-70">
+                <span class="font-medium text-[var(--color-heading)]">
+                  {p.last_name} {p.first_name}
                 </span>
-              )}
-              {!famille && p.account_id && (
-                <span class="text-sm text-[var(--color-text-light)]">
-                  {(p.accounts as any)?.email}
-                </span>
-              )}
-              {sansAbonnement && (
-                <span class="text-xs text-[var(--color-button)]">aucun abonnement</span>
-              )}
-              <span class={`ml-auto text-sm font-medium ${solde < 0 ? 'text-[var(--color-button)]' : 'text-[var(--color-text-light)]'}`}>
+                {!famille && !p.account_id && (
+                  <span class="text-xs text-[var(--color-text-light)]">
+                    {p.phone ? `sans accès · ${p.phone}` : 'sans accès — ne recevra aucun e-mail'}
+                  </span>
+                )}
+                {!famille && p.account_id && (
+                  <span class="text-sm text-[var(--color-text-light)]">
+                    {(p.accounts as any)?.email}
+                  </span>
+                )}
+                {sansAbonnement && (
+                  <span class="text-xs text-[var(--color-button)]">aucun abonnement</span>
+                )}
+              </a>
+
+              <span class={`text-sm font-medium ${solde < 0 ? 'text-[var(--color-button)]' : 'text-[var(--color-text-light)]'}`}>
                 {libelleSolde(solde)}
               </span>
-            </a>
+
+              <span class="flex items-center gap-1">
+                {email && (
+                  <a href={email}
+                     title={`Écrire à ${p.first_name}`}
+                     aria-label={`Écrire à ${p.first_name} ${p.last_name}`}
+                     class="rounded-lg p-2 text-[var(--color-text-light)] transition-colors hover:bg-[var(--color-bg-accent)] hover:text-[var(--color-button)]">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                      <rect x="2.5" y="4.5" width="19" height="15" rx="2.5" />
+                      <path d="m3 7 9 6 9-6" />
+                    </svg>
+                  </a>
+                )}
+                {whatsapp && (
+                  <a href={whatsapp} target="_blank" rel="noopener noreferrer"
+                     title={`WhatsApp — ${p.phone}`}
+                     aria-label={`Écrire à ${p.first_name} ${p.last_name} sur WhatsApp`}
+                     class="rounded-lg p-2 text-[var(--color-text-light)] transition-colors hover:bg-[var(--color-bg-accent)] hover:text-[var(--color-button)]">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.87 9.87 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 18.15h-.01a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.11.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.24-8.23a8.18 8.18 0 0 1 8.23 8.24c0 4.54-3.7 8.23-8.24 8.23Zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.78.97-.15.16-.29.18-.53.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.43h-.47c-.16 0-.43.06-.65.31-.22.25-.85.83-.85 2.03s.87 2.35.99 2.51c.12.16 1.71 2.61 4.14 3.66.58.25 1.03.4 1.38.51.58.19 1.11.16 1.53.1.47-.07 1.44-.59 1.64-1.16.2-.57.2-1.05.14-1.16-.06-.1-.22-.16-.47-.28Z" />
+                    </svg>
+                  </a>
+                )}
+              </span>
+            </div>
           );
         };
 
