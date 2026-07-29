@@ -213,11 +213,15 @@ if (Astro.request.method === 'POST') {
 
         {/* La connexion elle-même. */}
         <div class="mx-auto w-full max-w-md">
-          <p class="mb-6 text-[var(--color-text-light)]">
-            {etape === 'email'
-              ? 'Indiquez votre adresse e-mail : un code de connexion vous sera envoyé.'
-              : 'Saisissez le code reçu par e-mail.'}
-          </p>
+          {/*
+            Rien à dire à l'étape de l'adresse : le champ est étiqueté, le
+            bouton annonce « Recevoir mon code ». La consigne ne faisait que
+            répéter ce que l'écran montrait déjà. À l'étape suivante en
+            revanche, le code vient d'arriver ailleurs — là, un mot aide.
+          */}
+          {etape === 'code' && (
+            <p class="mb-6 text-[var(--color-text-light)]">Saisissez le code reçu par e-mail.</p>
+          )}
 
       {erreur && (
         <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">
@@ -305,20 +309,14 @@ if (Astro.request.method === 'POST') {
 
           <p class="mt-6 text-sm text-[var(--color-text-light)]">
             L’accès est réservé aux personnes inscrites aux ateliers.
-            Pas encore d’accès ? Demandez-le à Isabelle :
+            Pas encore d’accès ? Demandez-le à Isabelle par
+            {' '}<a href={`mailto:${MOBILE_ET_MAIL.email}`}
+                    class="text-[var(--color-button)] underline">e-mail</a>
+            {whatsapp ? (
+              <>{' '}ou <a href={whatsapp} target="_blank" rel="noopener noreferrer"
+                           class="text-[var(--color-button)] underline">WhatsApp</a>.</>
+            ) : '.'}
           </p>
-          <div class="mt-3 flex flex-wrap gap-3">
-            <a href={`mailto:${MOBILE_ET_MAIL.email}`}
-               class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-2 text-sm font-medium text-[var(--color-heading)] transition-colors hover:bg-[var(--color-bg-accent)]">
-              Écrire un e-mail
-            </a>
-            {whatsapp && (
-              <a href={whatsapp} target="_blank" rel="noopener noreferrer"
-                 class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-2 text-sm font-medium text-[var(--color-heading)] transition-colors hover:bg-[var(--color-bg-accent)]">
-                WhatsApp {MOBILE_ET_MAIL.mobile}
-              </a>
-            )}
-          </div>
         </div>
       </div>
 
