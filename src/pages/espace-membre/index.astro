@@ -39,8 +39,30 @@ if (Astro.request.method === 'POST' && choisie) {
 let solde = 0, octroye = 0, consomme = 0;
 let prochaines: any[] = [];
 
+// Ce qu'on dit à quelqu'un dont le solde est à zéro dépend de sa formule, et
+// la phrase d'origine ne parlait qu'aux abonnements mensuels : « d'autres
+// s'ajouteront au début du mois prochain » est faux pour un forfait de saison,
+// dont tout le crédit est ouvert dès le premier jour. Le lui promettre, c'est
+// lui faire attendre des séances qui ne viendront jamais.
+let formule: 'mensuelle' | 'forfait' | 'terminee' | null = null;
+
 if (choisie) {
   ({ solde, octroye, consomme } = await soldeDe(choisie.id));
+
+  const { data: abonnement } = await supabase
+    .from('subscriptions')
+    .select('credits_per_month, total_credits, ends_on')
+    .eq('participant_id', choisie.id)
+    .order('starts_on', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (abonnement) {
+    const aujourdhui = new Date().toISOString().slice(0, 10);
+    formule = abonnement.ends_on < aujourdhui
+      ? 'terminee'
+      : abonnement.credits_per_month ? 'mensuelle' : 'forfait';
+  }
 
   const { data } = await supabase
     .from('bookings')
@@ -99,7 +121,14 @@ if (choisie) {
             </p>
             <p class="mt-2 text-sm text-[var(--color-text)]">
               {solde > 0 && `Vous pouvez en réserver ${solde} de plus dès maintenant.`}
-              {solde === 0 && 'Vos séances acquises sont toutes réservées. D’autres s’ajouteront au début du mois prochain.'}
+              {solde === 0 && formule === 'mensuelle' &&
+                'Vos séances acquises sont toutes réservées. D’autres s’ajouteront au début du mois prochain.'}
+              {solde === 0 && formule === 'forfait' &&
+                'Votre forfait de la saison est entièrement placé. Libérez une date pour pouvoir en réserver une autre.'}
+              {solde === 0 && formule === 'terminee' &&
+                'Votre abonnement est arrivé à son terme. Contactez Isabelle pour le renouveler.'}
+              {solde === 0 && formule === null &&
+                'Aucun abonnement en cours. Contactez Isabelle pour vous inscrire.'}
               {solde < 0 && `${-solde} séance${-solde < -1 ? 's' : ''} au-delà de votre forfait, à régler avec Isabelle.`}
             </p>
             <p class="mt-1 text-sm text-[var(--color-text-light)]">
