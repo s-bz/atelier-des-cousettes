@@ -37,7 +37,7 @@ const { data: creneaux } = await supabase
 
 const champs = {
   prenom: '', nom: '', telephone: '', email: '', notes: '', audience: 'adulte',
-  creneau: '', credits: '2', debut: '', fin: '',
+  creneau: '', type: 'mensuel', credits: '2', debut: '', fin: '',
 };
 let erreur: string | null = null;
 
@@ -110,7 +110,10 @@ if (Astro.request.method === 'POST') {
           participant_id: personne.id,
           season: `${anneeSaison}-${anneeSaison + 1}`,
           home_creneau_id: champs.creneau || null,
-          credits_per_month: Number(champs.credits),
+          // Exactement l'un des deux : la contrainte en base refuse les deux
+          // à la fois, et un abonnement sans droit n'a pas de sens.
+          credits_per_month: champs.type === 'forfait' ? null : Number(champs.credits),
+          total_credits: champs.type === 'forfait' ? Number(champs.credits) : null,
           starts_on: champs.debut,
           ends_on: champs.fin,
         });

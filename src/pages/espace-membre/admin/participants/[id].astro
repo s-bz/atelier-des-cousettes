@@ -43,7 +43,8 @@ if (Astro.request.method === 'POST') {
         participant_id: id,
         season: String(form.get('saison') ?? ''),
         home_creneau_id: String(form.get('creneau') ?? '') || null,
-        credits_per_month: Number(form.get('credits')),
+        credits_per_month: form.get('type') === 'forfait' ? null : Number(form.get('credits')),
+        total_credits: form.get('type') === 'forfait' ? Number(form.get('credits')) : null,
         starts_on: debut,
         ends_on: fin,
       });
@@ -85,7 +86,8 @@ if (Astro.request.method === 'POST') {
         .from('subscriptions')
         .update({
           home_creneau_id: String(form.get('creneau') ?? '') || null,
-          credits_per_month: Number(form.get('credits')),
+          credits_per_month: form.get('type') === 'forfait' ? null : Number(form.get('credits')),
+          total_credits: form.get('type') === 'forfait' ? Number(form.get('credits')) : null,
           starts_on: debut,
           ends_on: fin,
         })
@@ -180,7 +182,7 @@ if (!participant) return new Response('Participant introuvable', { status: 404 }
 
 const { data: abonnements } = await supabase
   .from('subscriptions')
-  .select('id, season, home_creneau_id, credits_per_month, starts_on, ends_on, helloasso_order_id, creneaux(label)')
+  .select('id, season, home_creneau_id, credits_per_month, total_credits, starts_on, ends_on, helloasso_order_id, creneaux(label)')
   .eq('participant_id', id)
   .order('starts_on');
 
@@ -249,7 +251,9 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
         <li class="rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
           <div class="flex flex-wrap items-center gap-x-4">
             <span class="font-medium text-[var(--color-heading)]">
-              {a.credits_per_month} séance{a.credits_per_month > 1 ? 's' : ''}/mois
+              {a.total_credits !== null
+                ? `Forfait ${a.total_credits} séance${a.total_credits > 1 ? 's' : ''}`
+                : `${a.credits_per_month} séance${a.credits_per_month > 1 ? 's' : ''}/mois`}
             </span>
             <span class="text-sm text-[var(--color-text-light)]">
               {(a.creneaux as any)?.label ?? 'sans créneau d’origine'}
@@ -291,10 +295,17 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
                     ))}
                   </select>
                 </div>
+                <div class="sm:col-span-2">
+                  <label for={`c-type-${a.id}`} class="block text-sm font-medium mb-1">Type</label>
+                  <select id={`c-type-${a.id}`} name="type" class="champ">
+                    <option value="mensuel" selected={a.total_credits === null}>Séances par mois</option>
+                    <option value="forfait" selected={a.total_credits !== null}>Forfait pour la saison</option>
+                  </select>
+                </div>
                 <div>
-                  <label for={`c-credits-${a.id}`} class="block text-sm font-medium mb-1">Séances par mois</label>
+                  <label for={`c-credits-${a.id}`} class="block text-sm font-medium mb-1">Nombre de séances</label>
                   <input id={`c-credits-${a.id}`} name="credits" type="number" min="0" required
-                         value={a.credits_per_month} class="champ" />
+                         value={a.total_credits ?? a.credits_per_month} class="champ" />
                 </div>
                 <div>
                   <label for={`c-debut-${a.id}`} class="block text-sm font-medium mb-1">Premier mois</label>
@@ -370,8 +381,16 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
             {(creneaux ?? []).map((c) => <option value={c.id}>{c.label} — {c.audience}</option>)}
           </select>
         </div>
+        <div class="sm:col-span-2">
+          <label for="type" class="block text-sm font-medium mb-1">Type de forfait</label>
+          <select id="type" name="type" required class="champ">
+            <option value="mensuel">Tant de séances par mois</option>
+            <option value="forfait">Forfait pour la saison, acquis en entier</option>
+          </select>
+        </div>
+
         <div>
-          <label for="credits" class="block text-sm font-medium mb-1">Séances incluses par mois</label>
+          <label for="credits" class="block text-sm font-medium mb-1">Nombre de séances</label>
           <input id="credits" name="credits" type="number" min="0" required value="2"
                  class="champ" />
           <p class="mt-1 text-xs text-[var(--color-text-light)]">0 pour un créneau payé à la séance.</p>
