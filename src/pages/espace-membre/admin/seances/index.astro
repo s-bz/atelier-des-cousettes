@@ -10,84 +10,126 @@ if (garde) return garde;
 
 const supabase = getAdminClient();
 
-const { data: creneaux } = await supabase
-  .from('creneaux')
-  .select('id, label, default_capacity')
-  .order('label');
+/**
+ * À venir par défaut, passé sur demande.
+ *
+ * Une saison compte 100 à 140 séances. Tout afficher, c'est obliger Isabelle à
+ * faire défiler des mois révolus pour atteindre la semaine prochaine — ce
+ * qu'elle regarde presque toujours.
+ *
+ * La bascule passe par l'URL et non par du JavaScript : l'écran doit
+ * fonctionner sans, et un lien reste partageable.
+ */
+const passe = Astro.url.searchParams.get('quand') === 'passe';
 
-const { data: seances } = await supabase
+// La journée entière compte comme « à venir » : une séance de cet après-midi
+// ne doit pas basculer dans le passé à midi.
+const debutDuJour = new Date();
+debutDuJour.setHours(0, 0, 0, 0);
+
+const requete = supabase
   .from('sessions')
-  .select('id, creneau_id, starts_at, ends_at, capacity, status, bookings(status)')
-  .order('starts_at');
+  .select('id, creneau_id, starts_at, ends_at, capacity, status, bookings(status), creneaux(label)');
+
+const { data: seances } = passe
+  ? await requete.lt('starts_at', debutDuJour.toISOString()).order('starts_at', { ascending: false })
+  : await requete.gte('starts_at', debutDuJour.toISOString()).order('starts_at');
+
+// Compte de l'autre côté, pour que l'onglet annonce ce qu'il contient.
+const { count: nombreAutre } = await supabase
+  .from('sessions')
+  .select('id', { count: 'exact', head: true })
+  [passe ? 'gte' : 'lt']('starts_at', debutDuJour.toISOString());
 
 type Seance = NonNullable<typeof seances>[number];
-
-const parCreneau = new Map<string, Seance[]>();
-for (const s of seances ?? []) {
-  const liste = parCreneau.get(s.creneau_id) ?? [];
-  liste.push(s);
-  parCreneau.set(s.creneau_id, liste);
-}
 
 const occupees = (s: Seance) =>
   (s.bookings ?? []).filter((b: { status: string }) => b.status === 'booked').length;
 
 const dateFr = new Intl.DateTimeFormat('fr-FR', {
-  weekday: 'long', day: 'numeric', month: 'long',
-  timeZone: 'Europe/Paris',
+  weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris',
 });
 const heureFr = new Intl.DateTimeFormat('fr-FR', {
   hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris',
 });
+const moisFr = new Intl.DateTimeFormat('fr-FR', {
+  month: 'long', year: 'numeric', timeZone: 'Europe/Paris',
+});
+
+// Groupées par mois plutôt que par créneau : au quotidien, Isabelle cherche une
+// date, pas un créneau. Le créneau devient une mention sur chaque ligne.
+const parMois = new Map<string, Seance[]>();
+for (const s of seances ?? []) {
+  const cle = moisFr.format(new Date(s.starts_at));
+  parMois.set(cle, [...(parMois.get(cle) ?? []), s]);
+}
 ---
 
-<AdminLayout title="Séances" soustitre="Le calendrier de la saison, créneau par créneau.">
+<AdminLayout title="Séances" soustitre="Le calendrier de la saison.">
 
-  <a
-    href="/espace-membre/admin/seances/nouvelles/"
-    class="mb-8 inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white"
-  >
-    Créer des séances
-  </a>
+  <div class="mb-8 flex flex-wrap items-center gap-3">
+    <a href="/espace-membre/admin/seances/nouvelles/"
+       class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
+      Créer des séances
+    </a>
+
+    <nav class="ml-auto flex gap-2" aria-label="Période">
+      <a href="/espace-membre/admin/seances/"
+         aria-current={!passe ? 'page' : undefined}
+         class={`rounded-[var(--radius-button)] px-4 py-2 text-sm font-medium ${
+           !passe ? 'bg-[var(--color-button)] text-white'
+                  : 'border border-[var(--color-border-prominent)] text-[var(--color-text)]'}`}>
+        À venir{!passe ? '' : ` (${nombreAutre ?? 0})`}
+      </a>
+      <a href="/espace-membre/admin/seances/?quand=passe"
+         aria-current={passe ? 'page' : undefined}
+         class={`rounded-[var(--radius-button)] px-4 py-2 text-sm font-medium ${
+           passe ? 'bg-[var(--color-button)] text-white'
+                 : 'border border-[var(--color-border-prominent)] text-[var(--color-text)]'}`}>
+        Passées{passe ? '' : ` (${nombreAutre ?? 0})`}
+      </a>
+    </nav>
+  </div>
 
   {(seances ?? []).length === 0 && (
     <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
-      Aucune séance pour l’instant. Commencez par en créer pour un créneau.
+      {passe
+        ? 'Aucune séance passée.'
+        : 'Aucune séance à venir. Créez-en pour un créneau.'}
     </p>
   )}
 
-  {(creneaux ?? []).map((creneau) => {
-    const liste = parCreneau.get(creneau.id) ?? [];
-    if (liste.length === 0) return null;
-    return (
-      <div class="mb-10">
-        <h2 class="mb-3 text-lg font-bold text-[var(--color-heading)]">{creneau.label}</h2>
-        <ul class="space-y-2">
-          {liste.map((s) => {
-            const prises = occupees(s);
-            const complet = prises >= s.capacity;
-            const annulee = s.status === 'cancelled';
-            return (
-              <li>
-                <a
-                  href={`/espace-membre/admin/seances/${s.id}/`}
-                  class={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md transition-opacity hover:opacity-80 ${annulee ? 'opacity-50' : ''}`}
-                >
-                  <span class="font-medium text-[var(--color-heading)]">
-                    {dateFr.format(new Date(s.starts_at))}
-                  </span>
-                  <span class="text-sm text-[var(--color-text-light)]">
-                    {heureFr.format(new Date(s.starts_at))} – {heureFr.format(new Date(s.ends_at))}
-                  </span>
-                  <span class={`ml-auto text-sm font-medium ${complet && !annulee ? 'text-[var(--color-button)]' : 'text-[var(--color-text-light)]'}`}>
-                    {annulee ? 'Annulée' : `${prises} / ${s.capacity}`}
-                  </span>
-                </a>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    );
-  })}
+  {[...parMois.entries()].map(([mois, liste]) => (
+    <div class="mb-8">
+      <h2 class="mb-3 text-lg font-bold text-[var(--color-heading)] first-letter:uppercase">
+        {mois}
+      </h2>
+      <ul class="space-y-2">
+        {liste.map((s) => {
+          const prises = occupees(s);
+          const complet = prises >= s.capacity;
+          const annulee = s.status === 'cancelled';
+          return (
+            <li>
+              <a href={`/espace-membre/admin/seances/${s.id}/`}
+                 class={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md transition-opacity hover:opacity-80 ${annulee ? 'opacity-50' : ''}`}>
+                <span class="font-medium text-[var(--color-heading)] first-letter:uppercase">
+                  {dateFr.format(new Date(s.starts_at))}
+                </span>
+                <span class="text-sm text-[var(--color-text-light)]">
+                  {heureFr.format(new Date(s.starts_at))} – {heureFr.format(new Date(s.ends_at))}
+                </span>
+                <span class="text-sm text-[var(--color-text-light)]">
+                  {(s.creneaux as any)?.label}
+                </span>
+                <span class={`ml-auto text-sm font-medium ${complet && !annulee ? 'text-[var(--color-button)]' : 'text-[var(--color-text-light)]'}`}>
+                  {annulee ? 'Annulée' : `${prises} / ${s.capacity}`}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  ))}
 </AdminLayout>
