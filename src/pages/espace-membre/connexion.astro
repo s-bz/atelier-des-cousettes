@@ -56,9 +56,30 @@ if (Astro.request.method === 'POST') {
         options: { shouldCreateUser: false },
       });
       if (error) {
-        // On ne distingue pas « adresse inconnue » d’une autre panne : le
-        // message reste le même, pour ne pas révéler qui est adhérent.
-        erreur = 'Compte non reconnu. Contactez Isabelle pour obtenir un accès.';
+        // Le message affiché reste identique quelle que soit la cause, pour ne
+        // pas révéler qui est adhérent. Mais la cause réelle DOIT être
+        // journalisée : sans cela, une panne de quota ou de SMTP est
+        // indiscernable d'une adresse inconnue, et indiagnosticable.
+        console.error('[connexion] signInWithOtp a échoué :', {
+          status: error.status,
+          code: error.code,
+          message: error.message,
+        });
+
+        if (error.status === 429 || error.code === 'over_email_send_rate_limit') {
+          // Distingué du reste À DESSEIN. Supabase n'autorise qu'une demande
+          // par minute ; confondre cette attente avec « compte inconnu »
+          // enverrait vers Isabelle des adhérentes qui ont simplement cliqué
+          // deux fois. Le message reste sans information sur l'appartenance.
+          erreur =
+            'Un code vient déjà d’être envoyé. Attendez une minute avant d’en demander un nouveau, ' +
+            'et pensez à regarder dans vos indésirables.';
+          etape = 'code';
+        } else {
+          // Toute autre cause reste indistincte, pour ne pas révéler qui est
+          // adhérent.
+          erreur = 'Compte non reconnu. Contactez Isabelle pour obtenir un accès.';
+        }
       } else {
         etape = 'code';
         info = `Un code à 6 chiffres vient d’être envoyé à ${email}.`;
