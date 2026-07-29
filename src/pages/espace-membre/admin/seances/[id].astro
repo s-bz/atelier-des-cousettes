@@ -13,10 +13,19 @@ const supabase = getAdminClient();
 
 let message: string | null = null;
 let erreur: string | null = null;
+let confirmationAnnulation = false;
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   const action = String(form.get('action') ?? '');
+
+  // Annulation en deux temps, par aller-retour serveur plutôt que par une
+  // boîte de dialogue JavaScript : le geste est destructeur — il libère les
+  // places de tout le monde et n'est défaisable qu'en recréant la séance —
+  // et l'écran doit fonctionner sans JavaScript.
+  if (action === 'annuler-demande') {
+    confirmationAnnulation = true;
+  }
 
   if (action === 'annuler') {
     const { data, error } = await supabase.rpc('cancel_session', { p_session: id });
@@ -171,19 +180,67 @@ const debut = new Date(seance.starts_at);
       </button>
     </form>
 
-    {!annulee && (
+    {!annulee && !confirmationAnnulation && (
       <form method="post" class="rounded-xl bg-white p-5 shadow-md">
-        <input type="hidden" name="action" value="annuler" />
+        <input type="hidden" name="action" value="annuler-demande" />
         <p class="font-medium text-[var(--color-heading)]">Annuler la séance</p>
         <p class="mt-1 text-sm text-[var(--color-text)]">
           {prises === 0
             ? 'Personne n’est inscrit.'
-            : `${prises} personne${prises > 1 ? 's' : ''} ${prises > 1 ? 'seront prévenues et récupéreront leur séance' : 'sera prévenue et récupérera sa séance'}.`}
+            : `${prises} personne${prises > 1 ? 's' : ''} inscrite${prises > 1 ? 's' : ''}.`}
         </p>
         <button type="submit" class="mt-3 rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)]">
           Annuler cette séance
         </button>
       </form>
+    )}
+
+    {!annulee && confirmationAnnulation && (
+      <div class="rounded-xl border-2 border-[var(--color-button)] bg-white p-5 shadow-md">
+        <p class="font-medium text-[var(--color-button)]">Confirmer l’annulation</p>
+
+        <p class="mt-2 text-sm text-[var(--color-text)]">
+          {dateFr.format(debut)}, {heureFr.format(debut)}.
+        </p>
+
+        {prises > 0 ? (
+          <>
+            <p class="mt-2 text-sm text-[var(--color-text)]">
+              {prises === 1
+                ? 'Une personne perdra sa place et récupérera sa séance :'
+                : `${prises} personnes perdront leur place et récupéreront leur séance :`}
+            </p>
+            <ul class="mt-1 list-disc pl-5 text-sm text-[var(--color-text)]">
+              {(reservations ?? []).map((r: any) => (
+                <li>{r.participants?.first_name} {r.participants?.last_name}</li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p class="mt-2 text-sm text-[var(--color-text)]">Personne n’est inscrit.</p>
+        )}
+
+        <p class="mt-3 text-sm text-[var(--color-text-light)]">
+          Cette action ne se défait pas : il faudrait recréer la séance et
+          réinscrire chacun. Prévenez les personnes concernées, aucun message
+          n’est envoyé pour l’instant.
+        </p>
+
+        <div class="mt-4 flex flex-wrap gap-3">
+          <form method="post">
+            <input type="hidden" name="action" value="annuler" />
+            <button type="submit" class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-5 py-2 text-sm font-medium text-white">
+              Oui, annuler la séance
+            </button>
+          </form>
+          <a
+            href={`/espace-membre/admin/seances/${seance.id}/`}
+            class="self-center text-sm underline"
+          >
+            Non, revenir
+          </a>
+        </div>
+      </div>
     )}
   </div>
 
