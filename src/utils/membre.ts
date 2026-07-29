@@ -1,5 +1,5 @@
 import { getAdminClient } from './supabase';
-import { notifier, variablesSeance } from './emails';
+import { notifier, notifierAdmin, variablesSeance, variablesAdmin } from './emails';
 
 /**
  * Personnes rattachées à un compte, et personne sélectionnée.
@@ -83,8 +83,8 @@ export async function libererPlace(
     .from('bookings')
     .select(`
       participant_id,
-      participants(first_name, accounts(email)),
-      sessions(starts_at, ends_at, location)
+      participants(first_name, last_name, accounts(email)),
+      sessions(id, starts_at, ends_at, location, capacity, creneaux(label))
     `)
     .eq('id', reservationId)
     .maybeSingle();
@@ -104,6 +104,27 @@ export async function libererPlace(
       starts_at: seance.starts_at,
       ends_at: seance.ends_at,
       location: seance.location,
+    }));
+
+    // Et Isabelle, pour qu'elle puisse proposer la place. C'est le seul avis
+    // qui lui laisse un délai utile : sans lui, elle découvre le désistement
+    // le jour même, quand plus personne ne peut prendre la place.
+    //
+    // L'occupation est comptée APRÈS la libération — celle qu'elle doit lire.
+    const { count } = await supabase
+      .from('bookings')
+      .select('id', { count: 'exact', head: true })
+      .eq('session_id', seance.id)
+      .eq('status', 'booked');
+
+    await notifierAdmin('admin_liberation', variablesAdmin({
+      participant: `${personne?.first_name ?? ''} ${personne?.last_name ?? ''}`.trim(),
+      starts_at: seance.starts_at,
+      ends_at: seance.ends_at,
+      location: seance.location,
+      creneau: seance.creneaux?.label ?? null,
+      occupees: count ?? 0,
+      capacite: seance.capacity,
     }));
   }
 

@@ -146,7 +146,7 @@ describe('habillage HTML', () => {
 
   it('sépare les paragraphes sur les lignes vides', () => {
     const html = enHtml('Objet', 'Premier.\n\nSecond.');
-    expect(html.match(/<p class="e-(texte|pied)"/g)?.length).toBe(3); // deux blocs + le pied
+    expect(html.match(/<p class="e-texte"/g)?.length).toBe(2);
   });
 
   it('porte les couleurs du site', () => {
@@ -202,6 +202,15 @@ describe('habillage HTML', () => {
   it('nomme le bouton d’après sa destination', () => {
     expect(enHtml('O', 'https://x.fr/espace-membre/')).toContain('Ouvrir mon espace');
     expect(enHtml('O', 'https://x.fr/espace-membre/planning/')).toContain('Voir le planning');
+  });
+
+  it('signe chaque message avec l’e-mail et WhatsApp', () => {
+    // Dans l'habillage et non dans les gabarits : recopiée cinq fois, la
+    // signature finirait par manquer au sixième message.
+    const html = enHtml('Objet', 'Bonjour');
+    expect(html).toContain('mailto:info@atelier-des-cousettes.fr');
+    expect(html).toContain('https://wa.me/33695783634');
+    expect(html).toContain('WhatsApp 06 95 78 36 34');
   });
 
   it('centre la marque', () => {

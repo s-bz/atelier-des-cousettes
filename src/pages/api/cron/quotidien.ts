@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getAdminClient } from '../../../utils/supabase';
-import { notifier, variablesSeance } from '../../../utils/emails';
+import { notifier, notifierAdmin, variablesSeance, variablesSemaine } from '../../../utils/emails';
 
 export const prerender = false;
 
@@ -30,7 +30,7 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   const supabase = getAdminClient();
-  const bilan = { inscriptions: 0, rappels: 0, echecs: 0 };
+  const bilan = { inscriptions: 0, rappels: 0, echecs: 0, recapitulatif: false };
 
   // ── 1. Auto-inscription ────────────────────────────────────────────────
   const { data: inscrites, error: erreurInscription } =
@@ -86,6 +86,62 @@ export const GET: APIRoute = async ({ request }) => {
       .from('bookings')
       .update({ reminder_sent_at: new Date().toISOString() })
       .eq('id', reservation.id);
+  }
+
+  // ── 3. Récapitulatif de la semaine, le dimanche ────────────────────────
+  //
+  // Replié dans la tâche quotidienne plutôt que déclaré comme second cron : le
+  // palier Hobby de Vercel n'autorise qu'un déclenchement par jour et par
+  // tâche, et un test sur le jour de la semaine ne coûte rien face à une
+  // deuxième entrée dans vercel.json qu'il faudrait maintenir en parallèle.
+  //
+  // Le jour est lu à Paris, pas en UTC : le cron tourne à 07:00 UTC, et un
+  // dimanche calculé sur le fuseau du serveur basculerait un jour trop tôt ou
+  // trop tard selon l'heure d'été.
+  const jourParis = new Intl.DateTimeFormat('en-US', {
+    weekday: 'short', timeZone: 'Europe/Paris',
+  }).format(new Date());
+
+  if (jourParis === 'Sun') {
+    const lundi = new Date();
+    lundi.setHours(0, 0, 0, 0);
+    lundi.setDate(lundi.getDate() + 1);
+    const dimanche = new Date(lundi);
+    dimanche.setDate(dimanche.getDate() + 6);
+    const borneHaute = new Date(dimanche);
+    borneHaute.setDate(borneHaute.getDate() + 1);
+
+    const { data: seances } = await supabase
+      .from('sessions')
+      .select(`
+        starts_at, ends_at, location, capacity,
+        creneaux(label),
+        bookings(status, participants(first_name, last_name))
+      `)
+      .gte('starts_at', lundi.toISOString())
+      .lt('starts_at', borneHaute.toISOString())
+      .eq('status', 'scheduled')
+      .order('starts_at');
+
+    const resume = (seances ?? []).map((s: any) => ({
+      starts_at: s.starts_at,
+      ends_at: s.ends_at,
+      location: s.location,
+      creneau: s.creneaux?.label ?? null,
+      capacite: s.capacity,
+      inscrits: (s.bookings ?? [])
+        .filter((b: any) => b.status === 'booked')
+        .map((b: any) => `${b.participants?.first_name ?? ''} ${b.participants?.last_name ?? ''}`.trim())
+        .filter(Boolean)
+        .sort((a: string, b: string) => a.localeCompare(b, 'fr')),
+    }));
+
+    const parti = await notifierAdmin('admin_semaine', variablesSemaine({
+      debut: lundi, fin: dimanche, seances: resume,
+    }));
+
+    bilan.recapitulatif = parti;
+    if (!parti) console.error('[cron] récapitulatif hebdomadaire non parti');
   }
 
   console.log('[cron] terminé :', bilan);

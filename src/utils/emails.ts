@@ -1,4 +1,5 @@
 import { getAdminClient } from './supabase';
+import { lienWhatsApp } from './contact';
 
 /**
  * Envoi des e-mails du service.
@@ -24,6 +25,42 @@ import { getAdminClient } from './supabase';
 
 const EXPEDITEUR = "L'Atelier des Cousettes <no_reply@portail.atelier-des-cousettes.fr>";
 const REPONSE_VERS = 'info@atelier-des-cousettes.fr';
+
+/**
+ * Où partent les messages destinés à Isabelle.
+ *
+ * La boîte de l'atelier, et non « tous les comptes admin » : le rôle admin est
+ * aussi porté par des comptes techniques, qui n'ont rien à faire d'un avis de
+ * réservation. Une adresse nommée pour son usage se change en une ligne, là où
+ * une requête sur les rôles se change en réfléchissant.
+ */
+const ADMIN = 'info@atelier-des-cousettes.fr';
+
+/**
+ * La signature, sur tous les messages sans exception.
+ *
+ * Posée dans l'habillage et non dans les gabarits : recopiée cinq fois, elle
+ * finirait par manquer au sixième message — celui, justement, qu'on reçoit
+ * quand on cherche à joindre quelqu'un.
+ *
+ * WhatsApp autant que l'e-mail parce que c'est le canal réellement utilisé :
+ * un adhérent qui ne peut pas venir jeudi écrit un message, il n'ouvre pas son
+ * client de messagerie.
+ *
+ * Valeurs reprises de src/content/site-settings.yaml — comme les couleurs le
+ * sont de global.css. Un e-mail ne peut lire ni l'un ni l'autre.
+ */
+const CONTACT = {
+  email: 'info@atelier-des-cousettes.fr',
+  mobile: '06 95 78 36 34',
+};
+const WHATSAPP = lienWhatsApp(CONTACT.mobile);
+
+const SIGNATURE_TEXTE =
+  `— L'Atelier des Cousettes\n` +
+  `Email : ${CONTACT.email}\n` +
+  `WhatsApp : ${CONTACT.mobile}\n` +
+  `Vous pouvez aussi répondre directement à ce message.`;
 const LIEN_PLANNING = 'https://atelier-des-cousettes.fr/espace-membre/planning/';
 const LIEN_ESPACE = 'https://atelier-des-cousettes.fr/espace-membre/';
 
@@ -189,6 +226,78 @@ export function variablesAccueil(o: {
 }
 
 /**
+ * Valeurs des avis envoyés à Isabelle quand quelqu'un réserve ou libère.
+ *
+ * `places` porte l'occupation APRÈS le geste : c'est la seule information qui
+ * lui dise s'il faut agir. « Marie a libéré » ne vaut rien ; « Marie a libéré,
+ * il reste 3 places sur 6 » lui dit qu'elle peut proposer la place.
+ */
+export function variablesAdmin(o: {
+  participant: string;
+  starts_at: string;
+  ends_at: string;
+  location: string;
+  creneau: string | null;
+  occupees: number;
+  capacite: number;
+}): Valeurs {
+  return {
+    ...LIENS,
+    participant: o.participant,
+    date: dateLongue.format(new Date(o.starts_at)),
+    heure_debut: heure.format(new Date(o.starts_at)),
+    heure_fin: heure.format(new Date(o.ends_at)),
+    lieu: o.location,
+    creneau: o.creneau ?? '—',
+    places: `${o.occupees} / ${o.capacite}`,
+    restantes: String(Math.max(0, o.capacite - o.occupees)),
+  };
+}
+
+/** Une séance de la semaine, avec qui y est attendu. */
+export interface SeanceSemaine {
+  starts_at: string;
+  ends_at: string;
+  location: string;
+  creneau: string | null;
+  capacite: number;
+  inscrits: string[];
+}
+
+const jourEtDate = new Intl.DateTimeFormat('fr-FR', {
+  weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris',
+});
+
+/**
+ * Valeurs du récapitulatif hebdomadaire.
+ *
+ * Une ligne par séance, avec l'occupation et les noms. Les séances vides sont
+ * signalées explicitement : c'est la seule chose du récapitulatif sur laquelle
+ * Isabelle peut encore agir le dimanche pour la semaine qui vient.
+ */
+export function variablesSemaine(o: { debut: Date; fin: Date; seances: SeanceSemaine[] }): Valeurs {
+  const lignes = o.seances.map((s) => {
+    const qui = s.inscrits.length ? s.inscrits.join(', ') : 'personne pour l’instant';
+    return `- ${jourEtDate.format(new Date(s.starts_at))}, ` +
+           `${heure.format(new Date(s.starts_at))} – ${heure.format(new Date(s.ends_at))}, ` +
+           `${s.location} — ${s.inscrits.length}/${s.capacite} : ${qui}`;
+  });
+
+  const vides = o.seances.filter((s) => s.inscrits.length === 0).length;
+
+  return {
+    ...LIENS,
+    periode: `du ${jourEtDate.format(o.debut)} au ${jourEtDate.format(o.fin)}`,
+    nombre_seances: String(o.seances.length),
+    nombre_inscrits: String(o.seances.reduce((n, s) => n + s.inscrits.length, 0)),
+    seances: lignes.length ? lignes.join('\n') : '- aucune séance cette semaine',
+    alerte: vides
+      ? `${vides} séance${vides > 1 ? 's n’ont' : ' n’a'} encore personne.`
+      : 'Toutes les séances ont au moins un inscrit.',
+  };
+}
+
+/**
  * Remplace {{variable}} par sa valeur.
  *
  * Une variable inconnue est laissée telle quelle plutôt que vidée : un
@@ -300,10 +409,20 @@ export function enHtml(sujet: string, texte: string): string {
         ${blocs.join('\n        ')}
       </td></tr>
     </table>
-    <p class="e-pied" style="margin:20px 0 0;max-width:560px;font-family:${SANS};font-size:13px;line-height:1.5;color:${COULEURS.discret};">
-      Vous recevez ce message parce que vous participez aux ateliers.
-      Vous pouvez répondre directement à cet e-mail.
-    </p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+      <tr><td align="center" style="padding:22px 8px 0;font-family:${SANS};font-size:13px;line-height:1.7;">
+        <span class="e-pied" style="color:${COULEURS.discret};">Une question, un empêchement ?</span><br />
+        <a class="e-lien" href="mailto:${CONTACT.email}" style="color:${COULEURS.accent};text-decoration:none;">Email ${CONTACT.email}</a>
+        <span class="e-pied" style="color:${COULEURS.discret};"> &nbsp;·&nbsp; </span>
+        ${WHATSAPP
+          ? `<a class="e-lien" href="${WHATSAPP}" style="color:${COULEURS.accent};text-decoration:none;">WhatsApp ${CONTACT.mobile}</a>`
+          : `<span class="e-pied" style="color:${COULEURS.discret};">${CONTACT.mobile}</span>`}
+        <br />
+        <span class="e-pied" style="color:${COULEURS.discret};">
+          Vous pouvez aussi répondre directement à ce message.
+        </span>
+      </td></tr>
+    </table>
   </td></tr>
 </table>
 </body>
@@ -349,7 +468,15 @@ export async function preparer(id: string, valeurs: Valeurs): Promise<Message | 
 
   const sujet = remplir(data.subject, valeurs);
   const corps = remplir(data.body, valeurs);
-  return { sujet, corps, html: enHtml(sujet, corps) };
+
+  // La signature est ajoutée à la version texte, et rendue par l'habillage pour
+  // la version HTML : elle ne doit pas apparaître deux fois dans le message
+  // affiché, ni manquer à celui qu'on lit en texte brut.
+  return {
+    sujet,
+    corps: `${corps}\n\n${SIGNATURE_TEXTE}`,
+    html: enHtml(sujet, corps),
+  };
 }
 
 /**
@@ -367,4 +494,15 @@ export async function notifier(
   const message = await preparer(id, valeurs);
   if (!message) return false;
   return envoyer(destinataire, message);
+}
+
+/**
+ * Prévient Isabelle.
+ *
+ * Séparé de notifier() pour que le destinataire ne soit jamais à fournir : un
+ * avis d'administration envoyé par erreur à l'adhérent serait une fuite, et
+ * c'est le genre d'argument qu'on inverse un jour de fatigue.
+ */
+export async function notifierAdmin(id: string, valeurs: Valeurs): Promise<boolean> {
+  return notifier(id, ADMIN, valeurs);
 }

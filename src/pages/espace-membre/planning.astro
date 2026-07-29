@@ -5,7 +5,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import SelecteurParticipant from '../../components/SelecteurParticipant.astro';
 import { getAdminClient } from '../../utils/supabase';
 import { participantsDuCompte, soldeDe, libererPlace, dateLongue, heure } from '../../utils/membre';
-import { notifier, variablesSeance } from '../../utils/emails';
+import { notifier, notifierAdmin, variablesSeance, variablesAdmin } from '../../utils/emails';
 
 const { session, account } = Astro.locals;
 if (!session) return Astro.redirect('/espace-membre/connexion/');
@@ -38,10 +38,11 @@ if (Astro.request.method === 'POST' && choisie) {
       erreur = error.message;
     } else {
       message = 'Place réservée.';
+      const seanceId = String(form.get('seance'));
       const { data: s } = await supabase
         .from('sessions')
-        .select('starts_at, ends_at, location')
-        .eq('id', String(form.get('seance')))
+        .select('starts_at, ends_at, location, capacity, creneaux(label)')
+        .eq('id', seanceId)
         .maybeSingle();
       if (s) {
         await notifier('confirmation', account.email, variablesSeance({
@@ -49,6 +50,26 @@ if (Astro.request.method === 'POST' && choisie) {
           starts_at: s.starts_at,
           ends_at: s.ends_at,
           location: s.location,
+        }));
+
+        // Et Isabelle. Seuls les gestes des adhérents la préviennent : ses
+        // propres ajouts depuis la feuille de présence et l'inscription
+        // d'office de la nuit n'envoient rien. Être notifié de ce qu'on vient
+        // de faire soi-même apprend surtout à ignorer ses notifications.
+        const { count } = await supabase
+          .from('bookings')
+          .select('id', { count: 'exact', head: true })
+          .eq('session_id', seanceId)
+          .eq('status', 'booked');
+
+        await notifierAdmin('admin_reservation', variablesAdmin({
+          participant: `${choisie.first_name} ${choisie.last_name ?? ''}`.trim(),
+          starts_at: s.starts_at,
+          ends_at: s.ends_at,
+          location: s.location,
+          creneau: (s.creneaux as any)?.label ?? null,
+          occupees: count ?? 0,
+          capacite: s.capacity,
         }));
       }
     }
