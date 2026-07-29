@@ -135,18 +135,90 @@ if (Astro.request.method === 'POST') {
 }
 ---
 
-<BaseLayout title="Connexion" description="Accès à votre espace adhérent." noIndex={true}>
-  <section class="py-16 md:py-20">
-    <div class="max-w-md mx-auto px-4">
-      <h1 class="text-2xl md:text-3xl font-bold text-center text-[var(--color-heading)] mb-2"
-          style="font-family: var(--font-heading)">
-        Votre espace
-      </h1>
-      <p class="text-center text-[var(--color-text-light)] mb-8">
-        {etape === 'email'
-          ? 'Indiquez votre adresse e-mail : un code de connexion vous sera envoyé.'
-          : 'Saisissez le code reçu par e-mail.'}
-      </p>
+{/*
+  Cette page est aussi la « page d'accueil de l'application » déclarée à Google
+  pour la validation de l'écran de consentement OAuth.
+
+  Son examinateur la charge sans être connecté et y cherche trois choses : ce
+  que fait l'application, quelles données Google elle reçoit et pourquoi, et un
+  lien vers la politique de confidentialité — hébergée sur le même domaine. Une
+  page réduite à un formulaire de connexion est refusée.
+
+  Ce n'est pas seulement une exigence administrative : quelqu'un qui arrive ici
+  depuis un e-mail doit pouvoir comprendre où il est avant de cliquer sur un
+  bouton qui partage son identité.
+
+  noIndex reste posé : l'exigence est d'être ACCESSIBLE publiquement, pas
+  indexée, et cette page n'a rien à faire dans les résultats de recherche.
+*/}
+<BaseLayout
+  title="Espace adhérent"
+  description="Réservez et libérez vos séances de couture à L’Atelier des Cousettes."
+  noIndex={true}
+>
+  <section class="py-12 md:py-16">
+    <div class="mx-auto max-w-4xl px-4">
+
+      <div class="flex flex-col items-center text-center">
+        <img src="/logo-oauth-120.png" alt="" width="64" height="64" class="h-16 w-16" />
+        <h1 class="mt-5 text-2xl md:text-3xl font-bold text-[var(--color-heading)]"
+            style="font-family: var(--font-heading)">
+          Espace adhérent
+        </h1>
+        <p class="mt-2 text-[var(--color-text-light)]">L’Atelier des Cousettes — Verdalle, Tarn</p>
+        <p class="mx-auto mt-4 max-w-xl text-[var(--color-text)]">
+          Votre espace personnel pour suivre vos séances de couture : voir celles qui vous
+          sont réservées, en libérer une quand vous êtes empêché, et en choisir une autre.
+        </p>
+      </div>
+
+      <div class="mt-12 grid items-start gap-10 lg:grid-cols-2">
+
+        {/* Ce que fait l'application — exigé par Google, utile à tout le monde. */}
+        <div class="order-last lg:order-none">
+          <h2 class="text-lg font-bold text-[var(--color-heading)]"
+              style="font-family: var(--font-heading)">
+            Ce que vous pouvez y faire
+          </h2>
+          <ul class="mt-4 space-y-4">
+            {[
+              ['Voir vos séances', 'Les dates déjà retenues pour vous, et le nombre de séances qu’il vous reste.'],
+              ['Libérer une place', 'Un empêchement ? La séance vous reste acquise et la place profite à quelqu’un d’autre.'],
+              ['Choisir une autre date', 'Y compris sur un autre créneau, selon les places disponibles.'],
+            ].map(([titre, texte]) => (
+              <li>
+                <h3 class="font-medium text-[var(--color-heading)]">{titre}</h3>
+                <p class="mt-0.5 text-sm text-[var(--color-text)]">{texte}</p>
+              </li>
+            ))}
+          </ul>
+
+          <div class="mt-8 rounded-xl bg-[var(--color-bg-accent)] p-4">
+            <h2 class="text-sm font-bold text-[var(--color-heading)]">
+              Si vous vous connectez avec Google
+            </h2>
+            <p class="mt-1 text-sm text-[var(--color-text)]">
+              Google nous transmet uniquement votre <strong>adresse e-mail</strong> et votre
+              <strong> nom</strong>, pour vérifier qu’un accès vous a bien été ouvert. Aucune autre
+              autorisation n’est demandée — ni contacts, ni agenda, ni fichiers. Ces informations ne
+              sont ni vendues ni utilisées à des fins publicitaires.
+            </p>
+            <p class="mt-2 text-sm text-[var(--color-text-light)]">
+              La connexion par code e-mail ne transmet rien à Google.
+              <a href="/confidentialite/" class="ml-1 text-[var(--color-button)] underline">
+                Politique de confidentialité
+              </a>
+            </p>
+          </div>
+        </div>
+
+        {/* La connexion elle-même. */}
+        <div class="mx-auto w-full max-w-md">
+          <p class="mb-6 text-[var(--color-text-light)]">
+            {etape === 'email'
+              ? 'Indiquez votre adresse e-mail : un code de connexion vous sera envoyé.'
+              : 'Saisissez le code reçu par e-mail.'}
+          </p>
 
       {erreur && (
         <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">
@@ -232,9 +304,39 @@ if (Astro.request.method === 'POST') {
         </button>
       </form>
 
-      <p class="mt-8 text-center text-sm text-[var(--color-text-light)]">
-        Pas encore d’accès ? Demandez-le à Isabelle.
-      </p>
+          <p class="mt-6 text-sm text-[var(--color-text-light)]">
+            L’accès est réservé aux personnes inscrites aux ateliers. Pas encore d’accès ?
+            Demandez-le à Isabelle — par e-mail à
+            {' '}<a href="mailto:info@atelier-des-cousettes.fr"
+                    class="text-[var(--color-button)] underline">info@atelier-des-cousettes.fr</a>,
+            {' '}ou par WhatsApp au 06 95 78 36 34.
+          </p>
+        </div>
+      </div>
+
+      {/*
+        Pied de page dédié : Google exige un lien accessible vers la politique
+        de confidentialité depuis la page d'accueil de l'application, sans avoir
+        à faire défiler jusqu'au pied de page général du site.
+      */}
+      <footer class="mt-14 border-t border-[var(--color-border-prominent)] pt-6">
+        <nav class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-[var(--color-text-light)]"
+             aria-label="Informations légales">
+          <a href="/" class="underline hover:text-[var(--color-text)]">
+            Site de L’Atelier des Cousettes
+          </a>
+          <a href="/confidentialite/" class="underline hover:text-[var(--color-text)]">
+            Confidentialité
+          </a>
+          <a href="/mentions-legales/" class="underline hover:text-[var(--color-text)]">
+            Mentions légales
+          </a>
+        </nav>
+        <p class="mt-4 text-center text-xs text-[var(--color-text-light)]">
+          L’Atelier des Cousettes — 118 lieu-dit En Rivals, 81110 Verdalle, France
+        </p>
+      </footer>
+
     </div>
   </section>
 </BaseLayout>
