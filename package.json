@@ -29,6 +29,8 @@
     "@keystatic/astro": "^5.1.0",
     "@keystatic/core": "^0.6.0",
     "@markdoc/markdoc": "^0.5.7",
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.110.9",
     "@tailwindcss/vite": "^4.2.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

@@ -1,0 +1,75 @@
+---
+export const prerender = false;
+
+import { getRequestClient, getAdminClient } from '../../utils/supabase';
+
+/**
+ * Retour de Google. Échange le code d'autorisation contre une session, côté
+ * serveur : aucun jeton ne transite par le JavaScript de la page.
+ *
+ * Cette page ne rend rien — elle redirige toujours.
+ */
+// Supabase peut revenir SANS code : c'est ce qu'il fait quand l'inscription
+// libre est désactivée et que le compte Google est inconnu. Il renvoie alors
+// error / error_code / error_description.
+//
+// Sans ce traitement, on retombait sur la page de connexion sans le moindre
+// message : la personne venait d'accepter le partage d'informations chez
+// Google et se retrouvait au point de départ, sans savoir pourquoi. Un renvoi
+// muet est le pire des retours.
+const erreurOAuth =
+  Astro.url.searchParams.get('error') ??
+  Astro.url.searchParams.get('error_code');
+
+if (erreurOAuth) {
+  console.error('[callback] retour OAuth en erreur :', {
+    error: Astro.url.searchParams.get('error'),
+    code: Astro.url.searchParams.get('error_code'),
+    description: Astro.url.searchParams.get('error_description'),
+  });
+  return Astro.redirect('/espace-membre/connexion/?inconnu=1');
+}
+
+const code = Astro.url.searchParams.get('code');
+if (!code) {
+  console.error('[callback] retour sans code ni erreur :', Astro.url.search);
+  return Astro.redirect('/espace-membre/connexion/?inconnu=1');
+}
+
+const supabase = getRequestClient(Astro.request, Astro.cookies);
+const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+if (error || !data.user?.email) {
+  return Astro.redirect('/espace-membre/connexion/?inconnu=1');
+}
+
+// Rattachement à un compte existant. On ne crée JAMAIS de compte ici :
+// contrairement à signInWithOtp, signInWithOAuth n'a pas d'équivalent à
+// shouldCreateUser: false. La seule barrière côté Supabase est la désactivation
+// de l'inscription libre ; celle-ci en est la contrepartie applicative.
+const admin = getAdminClient();
+const email = data.user.email.toLowerCase();
+
+const { data: compte } = await admin
+  .from('accounts')
+  .select('id, auth_user_id')
+  .eq('email', email)
+  .maybeSingle();
+
+if (!compte) {
+  // Identité Google valide, mais inconnue de l'association. On referme la
+  // session immédiatement : sans cela, une session ouverte subsisterait pour
+  // quelqu'un qui n'a aucun droit.
+  await supabase.auth.signOut();
+  return Astro.redirect('/espace-membre/connexion/?inconnu=1');
+}
+
+if (!compte.auth_user_id) {
+  await admin
+    .from('accounts')
+    .update({ auth_user_id: data.user.id })
+    .eq('id', compte.id);
+}
+
+return Astro.redirect('/espace-membre/');
+---

@@ -20,3 +20,9 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Supabase CLI
+supabase/.branches
+supabase/.temp
+.vercel
+.env*

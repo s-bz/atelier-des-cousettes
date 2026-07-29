@@ -38,7 +38,7 @@ export const CSP_DIRECTIVES = {
     'https://va.vercel-scripts.com', // Vercel Analytics
     'https://vercel.live', // Vercel toolbar / live preview
     'https://tally.so', // Tally contact form script
-    'https://www.googletagmanager.com', // Google Analytics 4 loader
+    'https://b.atelier-des-cousettes.fr', // PostHog via proxy inverse first-party
   ],
 
   'style-src': [
@@ -54,7 +54,6 @@ export const CSP_DIRECTIVES = {
     'https://img.youtube.com', // YouTube thumbnails (hqdefault.jpg)
     'https://*.ytimg.com', // YouTube thumbnails (alternate CDN)
     'https://*.githubusercontent.com', // Keystatic image previews in admin
-    'https://www.googletagmanager.com', // GA4 tracking pixel
   ],
 
   'frame-src': [
@@ -71,9 +70,7 @@ export const CSP_DIRECTIVES = {
     'https://va.vercel-scripts.com', // Vercel Analytics beacon
     'https://vercel.live', // Vercel toolbar
     'https://tally.so', // Tally API fallbacks
-    'https://www.google-analytics.com', // GA4 beacon
-    'https://*.google-analytics.com', // GA4 beacon (regional endpoints)
-    'https://*.analytics.google.com', // GA4 beacon (regional endpoints)
+    'https://b.atelier-des-cousettes.fr', // PostHog via proxy inverse first-party
   ],
 
   'font-src': [

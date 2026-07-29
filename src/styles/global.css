@@ -350,3 +350,42 @@ dialog#lightbox {
     --shadow-whisper: 0px 4px 24px rgba(0, 0, 0, 0.3);
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Champs de formulaire (espace membre et administration).
+
+   Une seule définition, adossée aux variables de thème, plutôt que des classes
+   utilitaires répétées : la première version utilisait --color-bg-accent comme
+   couleur de BORDURE — or c'est un jeton de fond, presque identique à celui de
+   la page. Les champs devenaient invisibles, en clair comme en sombre. Et le
+   bg-white codé en dur restait blanc sur fond noir.
+
+   color-scheme fait suivre les contrôles natifs (sélecteur de date, cases) au
+   thème du système : sans lui, l'icône de calendrier reste noire sur fond
+   sombre.
+--------------------------------------------------------------------------- */
+.champ {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--color-border-prominent);
+  border-radius: var(--radius-xl);
+  background: var(--color-card-bg);
+  color: var(--color-heading);
+  font: inherit;
+  color-scheme: light dark;
+}
+
+.champ::placeholder {
+  color: var(--color-text-light);
+}
+
+.champ:focus-visible {
+  outline: 2px solid var(--color-button);
+  outline-offset: 1px;
+  border-color: var(--color-button);
+}
+
+.champ[readonly] {
+  background: var(--color-bg-accent);
+  color: var(--color-text);
+}

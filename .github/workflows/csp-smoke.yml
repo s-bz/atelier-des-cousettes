@@ -24,10 +24,22 @@ env:
 
 jobs:
   check:
+    # Déploiements de PRODUCTION seulement.
+    #
+    # Le contrôle compare le fichier de référence de la BRANCHE au en-tête servi
+    # par le DOMAINE DE PRODUCTION. Sur un déploiement de préversion, ces deux
+    # côtés ne décrivent pas le même déploiement : toute PR touchant à la CSP
+    # échouait donc par construction, en signalant comme un défaut ce qui n'est
+    # qu'un changement pas encore mis en ligne.
+    #
+    # La préversion ne peut pas être contrôlée à sa place : son URL est derrière
+    # la protection de déploiement Vercel et répond 401, sans en-tête.
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'deployment_status' &&
-       github.event.deployment_status.state == 'success')
+       github.event.deployment_status.state == 'success' &&
+       contains(fromJSON('["Production","production"]'),
+                github.event.deployment_status.environment))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -35,6 +47,13 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
+
+      # Un contrôle qui cesse silencieusement de tourner est pire qu'un contrôle
+      # qui échoue : on croit être couvert. Cette ligne laisse une trace de
+      # l'environnement reconnu, de quoi diagnostiquer si Vercel changeait un
+      # jour la casse de « Production ».
+      - name: Environnement déployé
+        run: echo "environment = ${{ github.event.deployment_status.environment || 'manuel' }}"
 
       - name: Verify CSP against SSOT
         env:

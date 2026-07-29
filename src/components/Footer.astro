@@ -80,13 +80,25 @@ const navRight = navLinks.slice(3);
           {navRight.map((link) => (
             <li><a href={link.href} class="hover:text-white transition-colors">{link.label}</a></li>
           ))}
+          {/*
+            L'espace adhérent est ici et non dans le menu principal : il ne
+            concerne qu'une vingtaine de personnes déjà inscrites, et le placer
+            en tête donnerait à un visiteur l'impression qu'il faut un compte
+            pour venir coudre. En pied de page, il reste trouvable — « tout en
+            bas du site » se dit au téléphone — sans encombrer la navigation.
+          */}
+          <li>
+            <a href="/espace-membre/" class="hover:text-white transition-colors">
+              Espace adhérent
+            </a>
+          </li>
         </ul>
       </nav>
     </div>
   </div>
 
   <div class="border-t border-[rgba(255,255,255,0.1)] py-4 text-center text-xs text-[var(--color-dark-text)]">
-    &copy; <span id="footer-year"></span> {settings?.siteName || "L'Atelier des Cousettes"} · <a href="/mentions-legales/" class="hover:text-white transition-colors">Mentions légales</a>
+    &copy; <span id="footer-year"></span> {settings?.siteName || "L'Atelier des Cousettes"} · <a href="/mentions-legales/" class="hover:text-white transition-colors">Mentions légales</a> · <a href="/confidentialite/" class="hover:text-white transition-colors">Confidentialité</a>
   </div>
 
   <script>

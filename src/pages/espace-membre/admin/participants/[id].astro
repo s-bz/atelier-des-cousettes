@@ -1,0 +1,513 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../../utils/guards';
+import { getAdminClient } from '../../../../utils/supabase';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const { id } = Astro.params;
+const supabase = getAdminClient();
+
+// Le sort du message d'accueil est dit explicitement : sans adresse e-mail,
+// personne n'a été prévenu, et Isabelle doit savoir qu'elle a ce relais à
+// faire elle-même plutôt que de le découvrir à la première séance.
+let message: string | null = Astro.url.searchParams.has('inscrit')
+  ? 'Adhérent créé, et inscrit d’office aux prochaines séances de son créneau. '
+    + (Astro.url.searchParams.has('accueil')
+        ? 'Un message de bienvenue lui a été envoyé, avec la liste de ses dates.'
+        : 'Sans adresse e-mail, aucun message n’a pu partir : prévenez-le vous-même.')
+  : null;
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = String(form.get('action') ?? '');
+
+  if (action === 'abonnement') {
+    const debut = String(form.get('debut') ?? '');
+    const fin = String(form.get('fin') ?? '');
+    const cloturer = String(form.get('cloturer') ?? '');
+
+    // Clore l'abonnement en cours plutôt que de le modifier. Changer
+    // credits_per_month sur une ligne existante réécrirait rétroactivement
+    // l'octroi de tous les mois déjà consommés (SPEC §6).
+    if (cloturer) {
+      const veille = new Date(debut);
+      veille.setUTCDate(veille.getUTCDate() - 1);
+      const { error } = await supabase
+        .from('subscriptions')
+        .update({ ends_on: veille.toISOString().slice(0, 10) })
+        .eq('id', cloturer);
+      if (error) erreur = `Clôture impossible : ${error.message}`;
+    }
+
+    if (!erreur) {
+      const { error } = await supabase.from('subscriptions').insert({
+        participant_id: id,
+        season: String(form.get('saison') ?? ''),
+        home_creneau_id: String(form.get('creneau') ?? '') || null,
+        credits_per_month: form.get('type') === 'forfait' ? null : Number(form.get('credits')),
+        total_credits: form.get('type') === 'forfait' ? Number(form.get('credits')) : null,
+        starts_on: debut,
+        ends_on: fin,
+      });
+      if (error) {
+        erreur = `Abonnement impossible : ${error.message}`;
+      } else {
+        // Même raison qu'à la création : le résultat doit être visible
+        // immédiatement, pas le lendemain matin.
+        const { data: posees, error: e3 } =
+          await supabase.rpc('run_auto_enrolment', { p_horizon_days: 60 });
+        if (e3) {
+          console.error('[abonnement] auto-inscription :', e3);
+          message = 'Abonnement enregistré.';
+        } else {
+          const n = (posees as number) ?? 0;
+          message = n > 0
+            ? `Abonnement enregistré. ${n} place${n > 1 ? 's ont été réservées' : ' a été réservée'} d’office.`
+            : 'Abonnement enregistré. Aucune séance à venir sur ce créneau pour l’instant.';
+        }
+      }
+    }
+  }
+
+  // Corriger un abonnement saisi de travers.
+  //
+  // À distinguer du changement de formule en cours de saison (§6), qui se fait
+  // en clôturant puis en ouvrant : là, on RÉÉCRIT une ligne existante, ce qui
+  // modifie rétroactivement l'octroi de tous ses mois. C'est exactement ce
+  // qu'il faut pour réparer une faute de frappe, et exactement ce qu'il ne faut
+  // pas pour acter une évolution réelle — l'écran le dit.
+  if (action === 'corriger-abonnement') {
+    const debut = String(form.get('debut') ?? '');
+    const fin = String(form.get('fin') ?? '');
+
+    if (debut > fin) {
+      erreur = 'Le dernier mois ne peut pas précéder le premier.';
+    } else {
+      const { error } = await supabase
+        .from('subscriptions')
+        .update({
+          home_creneau_id: String(form.get('creneau') ?? '') || null,
+          credits_per_month: form.get('type') === 'forfait' ? null : Number(form.get('credits')),
+          total_credits: form.get('type') === 'forfait' ? Number(form.get('credits')) : null,
+          starts_on: debut,
+          ends_on: fin,
+        })
+        .eq('id', String(form.get('abonnement')));
+      if (error) erreur = `Correction impossible : ${error.message}`;
+      else message = 'Abonnement corrigé. Le solde a été recalculé.';
+    }
+  }
+
+  if (action === 'supprimer-abonnement') {
+    const { error } = await supabase
+      .from('subscriptions').delete().eq('id', String(form.get('abonnement')));
+    if (error) erreur = `Suppression impossible : ${error.message}`;
+    else message = 'Abonnement supprimé. Les réservations existantes sont conservées.';
+  }
+
+  // Corriger une identité. Sans cet écran, une faute de frappe dans un nom
+  // n'était réparable qu'en SQL.
+  if (action === 'identite') {
+    const prenom = String(form.get('prenom') ?? '').trim();
+    const nom = String(form.get('nom') ?? '').trim();
+    if (!prenom || !nom) {
+      erreur = 'Le prénom et le nom sont nécessaires.';
+    } else {
+      const { error } = await supabase
+        .from('participants')
+        .update({ first_name: prenom, last_name: nom,
+                  phone: String(form.get('telephone') ?? '').trim() || null,
+                  audience: String(form.get('audience') ?? 'adulte'),
+                  notes: String(form.get('notes') ?? '').trim() || null })
+        .eq('id', id);
+      if (error) erreur = `Modification impossible : ${error.message}`;
+      else message = 'Identité mise à jour.';
+    }
+  }
+
+  // Ouvrir un accès à quelqu'un qui n'en avait pas, ou corriger l'adresse.
+  //
+  // La SPEC promet que « le rattachement ultérieur ne perd rien » : abonnements,
+  // réservations et solde sont portés par la personne, pas par le compte. C'est
+  // aussi l'outil de réparation du cas le plus probable — une adresse Google
+  // différente de celle enregistrée.
+  if (action === 'acces') {
+    const email = String(form.get('email') ?? '').trim().toLowerCase();
+
+    if (!email) {
+      // Détacher : la personne reste, son historique aussi, elle ne se connecte
+      // simplement plus. On ne supprime jamais le compte lui-même, il peut
+      // porter d'autres personnes.
+      const { error } = await supabase
+        .from('participants').update({ account_id: null }).eq('id', id);
+      if (error) erreur = `Détachement impossible : ${error.message}`;
+      else message = 'Accès retiré. L’historique est conservé.';
+    } else {
+      const { data: existant } = await supabase
+        .from('accounts').select('id').eq('email', email).maybeSingle();
+
+      let compteId = existant?.id ?? null;
+
+      if (!compteId) {
+        const { data: authUser, error: authError } =
+          await supabase.auth.admin.createUser({ email, email_confirm: true });
+        if (authError || !authUser?.user) {
+          erreur = `Création de l’accès impossible : ${authError?.message ?? 'erreur inconnue'}`;
+        } else {
+          const { data: compte, error: e } = await supabase
+            .from('accounts')
+            .insert({ email, auth_user_id: authUser.user.id, role: 'member' })
+            .select('id').single();
+          if (e) erreur = `Création du compte impossible : ${e.message}`;
+          else compteId = compte.id;
+        }
+      }
+
+      if (!erreur && compteId) {
+        const { error } = await supabase
+          .from('participants').update({ account_id: compteId }).eq('id', id);
+        if (error) erreur = `Rattachement impossible : ${error.message}`;
+        else message = `Accès rattaché à ${email}.`;
+      }
+    }
+  }
+}
+
+const { data: participant } = await supabase
+  .from('participants')
+  .select('id, first_name, last_name, phone, audience, notes, account_id, accounts(email)')
+  .eq('id', id)
+  .maybeSingle();
+
+if (!participant) return new Response('Participant introuvable', { status: 404 });
+
+const { data: abonnements } = await supabase
+  .from('subscriptions')
+  .select('id, season, home_creneau_id, credits_per_month, total_credits, starts_on, ends_on, helloasso_order_id, creneaux(label)')
+  .eq('participant_id', id)
+  .order('starts_on');
+
+const { data: solde } = await supabase.rpc('balance', { p_participant: id });
+const { data: octroye } = await supabase.rpc('granted_credits', {
+  p_participant: id, p_at: new Date().toISOString().slice(0, 10),
+});
+const { data: consomme } = await supabase.rpc('consumed_credits', { p_participant: id });
+
+const { data: creneaux } = await supabase
+  .from('creneaux')
+  .select('id, label, audience')
+  .order('label');
+
+const { data: reservations } = await supabase
+  .from('bookings')
+  .select('id, source, status, sessions(starts_at, status, creneaux(label))')
+  .eq('participant_id', id)
+  .eq('status', 'booked');
+
+const enCours = (abonnements ?? []).filter((a) => a.ends_on >= new Date().toISOString().slice(0, 10));
+const dateFr = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
+const anneeCourante = new Date().getFullYear();
+const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
+---
+
+<AdminLayout
+  title={`${participant.first_name} ${participant.last_name}`}
+  soustitre={participant.account_id
+    ? `Accès : ${(participant.accounts as any)?.email}`
+    : 'Sans accès au site — ne recevra aucun e-mail'}
+>
+  {message && <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm">{message}</p>}
+  {erreur && <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>}
+
+  {/*
+    Une seule quantité en grand : celle qui répond à une question.
+    « Disponibles » décide s'il reste une place à poser ; « acquises » et
+    « réservées » ne servent qu'à vérifier le calcul, et grossissent toute la
+    saison — 24 et 22 en juin. Les mettre au même rang rendrait les deux moins
+    utiles les plus visibles, et « acquises : 24 » se lirait comme un stock
+    disponible.
+  */}
+  <div class="mb-8 rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+    <p class="text-sm text-[var(--color-text-light)]">Séances disponibles</p>
+    <p class={`text-4xl font-bold ${(solde as number) < 0 ? 'text-[var(--color-button)]' : 'text-[var(--color-heading)]'}`}>
+      {solde}
+    </p>
+    <p class="mt-2 text-sm text-[var(--color-text-light)]">
+      {octroye} acquise{(octroye as number) > 1 ? 's' : ''} depuis le début de l’abonnement,
+      {' '}{consomme} déjà réservée{(consomme as number) > 1 ? 's' : ''}.
+    </p>
+    <p class="mt-1 text-sm text-[var(--color-text-light)]">
+      {(solde as number) < 0
+        ? `${-(solde as number)} séance${-(solde as number) > 1 ? 's' : ''} au-delà du forfait, à facturer.`
+        : 'Une séance s’acquiert au premier de chaque mois, se reporte jusqu’en juin, et une réservation lointaine est décomptée dès maintenant.'}
+    </p>
+  </div>
+
+  <h2 class="mb-3 text-lg font-bold text-[var(--color-heading)]">Abonnements</h2>
+  {(abonnements ?? []).length === 0 ? (
+    <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">Aucun abonnement.</p>
+  ) : (
+    <ul class="space-y-2">
+      {(abonnements ?? []).map((a) => (
+        <li class="rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
+          <div class="flex flex-wrap items-center gap-x-4">
+            <span class="font-medium text-[var(--color-heading)]">
+              {a.total_credits !== null
+                ? `Forfait ${a.total_credits} séance${a.total_credits > 1 ? 's' : ''}`
+                : `${a.credits_per_month} séance${a.credits_per_month > 1 ? 's' : ''}/mois`}
+            </span>
+            <span class="text-sm text-[var(--color-text-light)]">
+              {(a.creneaux as any)?.label ?? 'sans créneau d’origine'}
+            </span>
+            <span class="ml-auto text-sm text-[var(--color-text-light)]">
+              {dateFr.format(new Date(a.starts_on))} → {dateFr.format(new Date(a.ends_on))}
+            </span>
+          </div>
+          {!a.helloasso_order_id && (
+            <p class="mt-1 text-xs text-[var(--color-text-light)]">Saisi à la main</p>
+          )}
+
+          <details class="mt-3">
+            <summary class="cursor-pointer text-sm text-[var(--color-text-light)]">
+              Corriger cet abonnement
+            </summary>
+
+            <p class="mt-2 max-w-xl text-sm text-[var(--color-text)]">
+              À n’utiliser que pour <strong>réparer une saisie fautive</strong>. Corriger ici
+              réécrit l’octroi de tous les mois déjà passés, et le solde change aussitôt.
+              Pour acter un vrai changement de formule en cours de saison, n’y touchez pas :
+              utilisez « Ajouter un abonnement » ci-dessous, qui clôture celui-ci à la
+              veille du nouveau et conserve l’historique.
+            </p>
+
+            <form method="post" class="mt-3">
+              <input type="hidden" name="action" value="corriger-abonnement" />
+              <input type="hidden" name="abonnement" value={a.id} />
+
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label for={`c-creneau-${a.id}`} class="block text-sm font-medium mb-1">Créneau habituel</label>
+                  <select id={`c-creneau-${a.id}`} name="creneau" class="champ">
+                    <option value="">Aucun</option>
+                    {(creneaux ?? []).map((c) => (
+                      <option value={c.id} selected={c.id === a.home_creneau_id}>
+                        {c.label} — {c.audience}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div class="sm:col-span-2">
+                  <label for={`c-type-${a.id}`} class="block text-sm font-medium mb-1">Type</label>
+                  <select id={`c-type-${a.id}`} name="type" class="champ">
+                    <option value="mensuel" selected={a.total_credits === null}>Séances par mois</option>
+                    <option value="forfait" selected={a.total_credits !== null}>Forfait pour la saison</option>
+                  </select>
+                </div>
+                <div>
+                  <label for={`c-credits-${a.id}`} class="block text-sm font-medium mb-1">Nombre de séances</label>
+                  <input id={`c-credits-${a.id}`} name="credits" type="number" min="0" required
+                         value={a.total_credits ?? a.credits_per_month} class="champ" />
+                </div>
+                <div>
+                  <label for={`c-debut-${a.id}`} class="block text-sm font-medium mb-1">Premier mois</label>
+                  <input id={`c-debut-${a.id}`} name="debut" type="date" required
+                         value={a.starts_on} class="champ" />
+                </div>
+                <div>
+                  <label for={`c-fin-${a.id}`} class="block text-sm font-medium mb-1">Dernier mois</label>
+                  <input id={`c-fin-${a.id}`} name="fin" type="date" required
+                         value={a.ends_on} class="champ" />
+                </div>
+              </div>
+
+              <button type="submit"
+                      class="mt-3 rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)]">
+                Corriger
+              </button>
+            </form>
+
+            <form method="post" class="mt-3 border-t border-[var(--color-border)] pt-3">
+              <input type="hidden" name="action" value="supprimer-abonnement" />
+              <input type="hidden" name="abonnement" value={a.id} />
+              <button type="submit" class="text-sm text-[var(--color-button)] underline">
+                Supprimer cet abonnement
+              </button>
+              <span class="ml-3 text-sm text-[var(--color-text-light)]">
+                Les réservations déjà posées restent : elles deviendront des séances
+                supplémentaires, à facturer.
+              </span>
+            </form>
+          </details>
+        </li>
+      ))}
+    </ul>
+  )}
+
+  <details class="mt-6 rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+    <summary class="cursor-pointer font-medium text-[var(--color-heading)]">
+      Ajouter un abonnement
+    </summary>
+
+    <p class="mt-3 text-sm text-[var(--color-text-light)]">
+      Pour changer de formule, ne modifiez pas l’abonnement en cours : clôturez-le et ouvrez-en
+      un nouveau. Modifier le nombre de séances réécrirait rétroactivement les mois déjà passés.
+    </p>
+
+    <form method="post" class="mt-4 space-y-4">
+      <input type="hidden" name="action" value="abonnement" />
+
+      {enCours.length > 0 && (
+        <div>
+          <label for="cloturer" class="block text-sm font-medium mb-1">
+            Clôturer un abonnement en cours ?
+          </label>
+          <select id="cloturer" name="cloturer"
+                  class="champ">
+            <option value="">Non, c’est un abonnement supplémentaire</option>
+            {enCours.map((a) => (
+              <option value={a.id}>
+                Oui, clore « {a.credits_per_month} séance(s)/mois » la veille du nouveau début
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="creneau" class="block text-sm font-medium mb-1">Créneau d’origine</label>
+          <select id="creneau" name="creneau"
+                  class="champ">
+            <option value="">Aucun</option>
+            {(creneaux ?? []).map((c) => <option value={c.id}>{c.label} — {c.audience}</option>)}
+          </select>
+        </div>
+        <div class="sm:col-span-2">
+          <label for="type" class="block text-sm font-medium mb-1">Type de forfait</label>
+          <select id="type" name="type" required class="champ">
+            <option value="mensuel">Tant de séances par mois</option>
+            <option value="forfait">Forfait pour la saison, acquis en entier</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="credits" class="block text-sm font-medium mb-1">Nombre de séances</label>
+          <input id="credits" name="credits" type="number" min="0" required value="2"
+                 class="champ" />
+          <p class="mt-1 text-xs text-[var(--color-text-light)]">0 pour un créneau payé à la séance.</p>
+        </div>
+        <div>
+          <label for="saison" class="block text-sm font-medium mb-1">Saison</label>
+          <input id="saison" name="saison" required value={saisonDefaut}
+                 class="champ" />
+        </div>
+        <div>
+          <label for="debut" class="block text-sm font-medium mb-1">Premier mois</label>
+          <input id="debut" name="debut" type="date" required
+                 class="champ" />
+        </div>
+        <div>
+          <label for="fin" class="block text-sm font-medium mb-1">Dernier mois</label>
+          <input id="fin" name="fin" type="date" required
+                 class="champ" />
+        </div>
+      </div>
+
+      <button type="submit" class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-2 font-medium text-white">
+        Enregistrer
+      </button>
+    </form>
+  </details>
+
+  <h2 class="mt-10 mb-3 text-lg font-bold text-[var(--color-heading)]">Séances réservées</h2>
+  {(reservations ?? []).length === 0 ? (
+    <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">Aucune réservation.</p>
+  ) : (
+    <ul class="space-y-2">
+      {(reservations ?? []).map((r: any) => (
+        <li class="flex flex-wrap items-center gap-x-4 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
+          <span class="font-medium text-[var(--color-heading)]">
+            {dateFr.format(new Date(r.sessions.starts_at))}
+          </span>
+          <span class="text-sm text-[var(--color-text-light)]">{r.sessions.creneaux?.label}</span>
+          {r.sessions.status === 'cancelled' && (
+            <span class="text-sm text-[var(--color-button)]">séance annulée</span>
+          )}
+        </li>
+      ))}
+    </ul>
+  )}
+
+  <h2 class="mt-10 mb-3 text-lg font-bold text-[var(--color-heading)]">Fiche</h2>
+
+  <div class="grid gap-4 md:grid-cols-2">
+
+    <form method="post" class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+      <input type="hidden" name="action" value="identite" />
+      <p class="mb-3 font-medium text-[var(--color-heading)]">Identité</p>
+
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label for="prenom" class="block text-sm font-medium mb-1">Prénom</label>
+          <input id="prenom" name="prenom" required value={participant.first_name} class="champ" />
+        </div>
+        <div>
+          <label for="nom" class="block text-sm font-medium mb-1">Nom</label>
+          <input id="nom" name="nom" required value={participant.last_name} class="champ" />
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <label for="audience" class="block text-sm font-medium mb-1">Public</label>
+        <select id="audience" name="audience" class="champ">
+          <option value="adulte" selected={participant.audience === 'adulte'}>Adulte</option>
+          <option value="enfant" selected={participant.audience === 'enfant'}>Enfant</option>
+        </select>
+      </div>
+
+      <div class="mt-3">
+        <label for="telephone" class="block text-sm font-medium mb-1">Téléphone</label>
+        <input id="telephone" name="telephone" type="tel" autocomplete="tel"
+               value={participant.phone ?? ''} class="champ" />
+      </div>
+
+      <div class="mt-3">
+        <label for="notes" class="block text-sm font-medium mb-1">Notes</label>
+        <textarea id="notes" name="notes" rows="2" class="champ">{participant.notes ?? ''}</textarea>
+      </div>
+
+      <button type="submit"
+              class="mt-3 rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)]">
+        Enregistrer
+      </button>
+    </form>
+
+    <form method="post" class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+      <input type="hidden" name="action" value="acces" />
+      <p class="mb-3 font-medium text-[var(--color-heading)]">Accès au site</p>
+
+      <label for="email" class="block text-sm font-medium mb-1">Adresse e-mail</label>
+      <input id="email" name="email" type="email"
+             value={(participant.accounts as any)?.email ?? ''} class="champ" />
+
+      <p class="mt-2 text-sm text-[var(--color-text-light)]">
+        {participant.account_id
+          ? 'Modifier l’adresse rattache la personne à un autre compte. Vider le champ retire l’accès — abonnements, réservations et solde sont conservés dans tous les cas.'
+          : 'Ouvrir un accès plus tard ne fait rien perdre : abonnements, réservations et solde appartiennent à la personne, pas au compte.'}
+      </p>
+
+      <button type="submit"
+              class="mt-3 rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)]">
+        {participant.account_id ? 'Mettre à jour' : 'Ouvrir un accès'}
+      </button>
+    </form>
+
+  </div>
+
+  <a href="/espace-membre/admin/participants/" class="mt-8 inline-block text-sm underline">← Tous les adhérents</a>
+</AdminLayout>

@@ -1,0 +1,240 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getRequestClient, getAdminClient } from '../../utils/supabase';
+
+// Déjà connecté : rien à faire ici.
+if (Astro.locals.account) {
+  return Astro.redirect('/espace-membre/');
+}
+
+let etape: 'email' | 'code' = 'email';
+let email = '';
+let erreur: string | null = null;
+let info: string | null = null;
+
+// Renvoyé par /espace-membre/callback/ quand l'identité Google n'a pas de
+// compte correspondant.
+if (Astro.url.searchParams.has('inconnu')) {
+  erreur =
+    'Ce compte n’est pas encore relié à un accès adhérent. Si vous participez aux ateliers, ' +
+    'demandez à Isabelle de vous ouvrir l’accès — en lui indiquant l’adresse que vous venez ' +
+    'd’utiliser, afin qu’elle enregistre la bonne.';
+}
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  email = String(form.get('email') ?? '').trim().toLowerCase();
+  const code = String(form.get('code') ?? '').trim();
+  const supabase = getRequestClient(Astro.request, Astro.cookies);
+
+  // Bouton « Continuer avec Google » : on demande l'URL d'autorisation et on
+  // redirige. Le flux PKCE dépose son vérificateur en cookie ; l'échange du
+  // code contre une session se fait ensuite côté serveur, dans le callback.
+  if (form.get('provider') === 'google') {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${Astro.url.origin}/espace-membre/callback/`,
+        skipBrowserRedirect: true,
+      },
+    });
+    if (error || !data?.url) {
+      erreur = 'La connexion Google est momentanément indisponible.';
+    } else {
+      return Astro.redirect(data.url, 303);
+    }
+  } else if (!code) {
+    // Étape 1 — demander l'envoi d'un code.
+    //
+    // shouldCreateUser: false est essentiel. Sans lui, une faute de frappe
+    // crée un compte fantôme, et la promesse « aucun compte ne naît autrement
+    // que par la main d'Isabelle » devient fausse.
+    if (!email || !email.includes('@')) {
+      erreur = 'Merci d’indiquer une adresse e-mail valide.';
+    } else {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false },
+      });
+      if (error) {
+        // Le message affiché reste identique quelle que soit la cause, pour ne
+        // pas révéler qui est adhérent. Mais la cause réelle DOIT être
+        // journalisée : sans cela, une panne de quota ou de SMTP est
+        // indiscernable d'une adresse inconnue, et indiagnosticable.
+        console.error('[connexion] signInWithOtp a échoué :', {
+          status: error.status,
+          code: error.code,
+          message: error.message,
+        });
+
+        if (error.status === 429 || error.code === 'over_email_send_rate_limit') {
+          // Distingué du reste À DESSEIN. Supabase n'autorise qu'une demande
+          // par minute ; confondre cette attente avec « compte inconnu »
+          // enverrait vers Isabelle des adhérents qui ont simplement cliqué
+          // deux fois. Le message reste sans information sur l'appartenance.
+          erreur =
+            'Un code vient déjà d’être envoyé. Attendez une minute avant d’en demander un nouveau, ' +
+            'et pensez à regarder dans vos indésirables.';
+          etape = 'code';
+        } else {
+          // Toute autre cause reste indistincte, pour ne pas révéler qui est
+          // adhérent.
+          erreur = 'Compte non reconnu. Contactez Isabelle pour obtenir un accès.';
+        }
+      } else {
+        etape = 'code';
+        info = `Un code vient d’être envoyé à ${email}.`;
+      }
+    }
+  } else {
+    // Étape 2 — vérifier le code.
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token: code,
+      type: 'email',
+    });
+
+    if (error || !data.user) {
+      console.error('[connexion] verifyOtp a échoué :', {
+        status: error?.status,
+        code: error?.code,
+        message: error?.message,
+        emailFourni: Boolean(email),
+        longueurCode: code.length,
+      });
+      etape = 'code';
+      erreur = 'Code incorrect ou expiré. Demandez-en un nouveau si besoin.';
+    } else {
+      // Rattachement de l’identité au compte, à la première connexion.
+      const admin = getAdminClient();
+      const { data: compte } = await admin
+        .from('accounts')
+        .select('id, auth_user_id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (!compte) {
+        // Ne devrait pas arriver : shouldCreateUser: false empêche l’envoi du
+        // code à une adresse inconnue. On refuse plutôt que de créer.
+        await supabase.auth.signOut();
+        etape = 'email';
+        erreur = 'Compte non reconnu. Contactez Isabelle pour obtenir un accès.';
+      } else {
+        if (!compte.auth_user_id) {
+          await admin
+            .from('accounts')
+            .update({ auth_user_id: data.user.id })
+            .eq('id', compte.id);
+        }
+        return Astro.redirect('/espace-membre/');
+      }
+    }
+  }
+}
+---
+
+<BaseLayout title="Connexion" description="Accès à votre espace adhérent." noIndex={true}>
+  <section class="py-16 md:py-20">
+    <div class="max-w-md mx-auto px-4">
+      <h1 class="text-2xl md:text-3xl font-bold text-center text-[var(--color-heading)] mb-2"
+          style="font-family: var(--font-heading)">
+        Votre espace
+      </h1>
+      <p class="text-center text-[var(--color-text-light)] mb-8">
+        {etape === 'email'
+          ? 'Indiquez votre adresse e-mail : un code de connexion vous sera envoyé.'
+          : 'Saisissez le code reçu par e-mail.'}
+      </p>
+
+      {erreur && (
+        <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">
+          {erreur}
+        </p>
+      )}
+      {info && (
+        <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">
+          {info}
+        </p>
+      )}
+
+      {etape === 'email' && (
+        <>
+          {/*
+            Google d'abord : c'est le chemin le plus court — un clic, aucun
+            aller-retour vers la boîte aux lettres. Le code par e-mail reste
+            juste en dessous, et non replié derrière un lien : une part
+            importante des adhérents est sur orange.fr, free.fr ou wanadoo.fr,
+            pour qui ce bouton ne sert à rien. Les deux chemins restent donc
+            visibles d'emblée, Google seulement en premier.
+          */}
+          <form method="post">
+            <input type="hidden" name="provider" value="google" />
+            <button
+              type="submit"
+              class="flex w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border-2 border-[var(--color-border)] bg-[var(--color-card-bg)] px-6 py-3 font-medium text-[var(--color-heading)] transition-colors hover:bg-[var(--color-bg-accent)]"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z"/>
+                <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.34A9 9 0 0 0 9 18Z"/>
+                <path fill="#FBBC05" d="M3.97 10.72a5.41 5.41 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.01-2.34Z"/>
+                <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.94l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58Z"/>
+              </svg>
+              Continuer avec Google
+            </button>
+          </form>
+
+          <div class="my-6 flex items-center gap-4" aria-hidden="true">
+            <span class="h-px flex-1 bg-[var(--color-bg-accent)]"></span>
+            <span class="text-sm text-[var(--color-text-light)]">ou</span>
+            <span class="h-px flex-1 bg-[var(--color-bg-accent)]"></span>
+          </div>
+        </>
+      )}
+
+      <form method="post" class="space-y-4">
+        <div>
+          <label for="email" class="block text-sm font-medium mb-1">Adresse e-mail</label>
+          <input
+            id="email" name="email" type="email" required autocomplete="email"
+            value={email} readonly={etape === 'code'}
+            class="champ"
+          />
+        </div>
+
+        {etape === 'code' && (
+          <div>
+            <label for="code" class="block text-sm font-medium mb-1">Code reçu par e-mail</label>
+            {/*
+              La longueur du code N'EST PAS figée. Elle est réglable côté
+              Supabase et vaut 8 sur ce projet, alors que la valeur par défaut
+              documentée est 6. Un maxlength="6" tronquait silencieusement la
+              saisie : le formulaire acceptait l'envoi, et le code partait
+              amputé de ses deux derniers chiffres. Le message d'erreur — « code
+              incorrect ou expiré » — désignait alors une cause inexistante.
+              On accepte donc l'intervalle, plutôt que de dupliquer ici un
+              réglage qui vit ailleurs.
+            */}
+            <input
+              id="code" name="code" type="text" required autocomplete="one-time-code"
+              inputmode="numeric" pattern="[0-9]{6,8}" maxlength="8" autofocus
+              class="champ tracking-[0.5em] text-center text-lg"
+            />
+          </div>
+        )}
+
+        <button
+          type="submit"
+          class="w-full rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white transition-opacity hover:opacity-90"
+        >
+          {etape === 'email' ? 'Recevoir mon code' : 'Me connecter'}
+        </button>
+      </form>
+
+      <p class="mt-8 text-center text-sm text-[var(--color-text-light)]">
+        Pas encore d’accès ? Demandez-le à Isabelle.
+      </p>
+    </div>
+  </section>
+</BaseLayout>

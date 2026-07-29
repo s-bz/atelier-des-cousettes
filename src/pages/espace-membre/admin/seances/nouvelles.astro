@@ -1,0 +1,165 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../../utils/guards';
+import { getAdminClient } from '../../../../utils/supabase';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const supabase = getAdminClient();
+
+const { data: creneaux } = await supabase
+  .from('creneaux')
+  .select('id, label, default_start_time, default_end_time, default_location, default_capacity')
+  .is('archived_at', null)   // un créneau archivé n'est plus proposé
+  .order('label');
+
+/**
+ * Accepte « 12/10/2026 », « 12-10-2026 » et « 2026-10-12 ».
+ *
+ * Isabelle tient aujourd'hui ses dates en texte libre dans Keystatic, au format
+ * français. Imposer AAAA-MM-JJ la ferait convertir cent dates à la main : le
+ * plus sûr moyen d'introduire des erreurs dans le calendrier de la saison.
+ */
+function lireDate(ligne: string): string | null {
+  const t = ligne.trim();
+  if (!t) return null;
+
+  let a: number, m: number, j: number;
+  const fr = t.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$/);
+  const iso = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+
+  if (fr) { j = +fr[1]; m = +fr[2]; a = +fr[3]; }
+  else if (iso) { a = +iso[1]; m = +iso[2]; j = +iso[3]; }
+  else return null;
+
+  // Contrôle réel, et non seulement de forme : le 31 février s'écrit
+  // correctement mais n'existe pas, et Postgres le refuserait plus loin avec
+  // un message incompréhensible pour Isabelle.
+  const d = new Date(Date.UTC(a, m - 1, j));
+  if (d.getUTCFullYear() !== a || d.getUTCMonth() !== m - 1 || d.getUTCDate() !== j) return null;
+
+  return `${a}-${String(m).padStart(2, '0')}-${String(j).padStart(2, '0')}`;
+}
+
+let creneauChoisi = '';
+let saisie = '';
+let erreur: string | null = null;
+let creees: number | null = null;
+let ignorees = 0;
+let illisibles: string[] = [];
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  creneauChoisi = String(form.get('creneau') ?? '');
+  saisie = String(form.get('dates') ?? '');
+
+  const lignes = saisie.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const dates: string[] = [];
+  for (const ligne of lignes) {
+    const d = lireDate(ligne);
+    if (d) dates.push(d);
+    else illisibles.push(ligne);
+  }
+
+  if (!creneauChoisi) {
+    erreur = 'Choisissez un créneau.';
+  } else if (dates.length === 0) {
+    erreur = 'Aucune date lisible. Écrivez une date par ligne, par exemple 09/10/2026.';
+  } else {
+    const uniques = [...new Set(dates)];
+    const { data, error } = await supabase.rpc('create_sessions', {
+      p_creneau: creneauChoisi,
+      p_dates: uniques,
+    });
+    if (error) {
+      console.error('[seances] create_sessions a échoué :', error);
+      erreur = `Création impossible : ${error.message}`;
+    } else {
+      creees = data as number;
+      // Écart entre demandé et créé : ces dates existaient déjà. On le dit,
+      // plutôt que de laisser croire à une création intégrale.
+      ignorees = uniques.length - (data as number);
+    }
+  }
+}
+---
+
+<AdminLayout title="Créer des séances" soustitre="Un créneau, autant de dates que nécessaire.">
+
+  {creees !== null && (
+    <div class="mb-8 rounded-xl bg-[var(--color-bg-accent)] p-5">
+      <p class="font-medium text-[var(--color-heading)]">
+        {creees} séance{creees > 1 ? 's' : ''} créée{creees > 1 ? 's' : ''}.
+      </p>
+      {ignorees > 0 && (
+        <p class="mt-1 text-sm text-[var(--color-text)]">
+          {ignorees} date{ignorees > 1 ? 's' : ''} déjà présente{ignorees > 1 ? 's' : ''}, ignorée{ignorees > 1 ? 's' : ''}.
+        </p>
+      )}
+      <a href="/espace-membre/admin/seances/" class="mt-3 inline-block text-sm underline">
+        Voir les séances
+      </a>
+    </div>
+  )}
+
+  {illisibles.length > 0 && (
+    <div role="alert" class="mb-8 rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+      <p class="font-medium text-[var(--color-button)]">
+        {illisibles.length} ligne{illisibles.length > 1 ? 's' : ''} non comprise{illisibles.length > 1 ? 's' : ''}, donc ignorée{illisibles.length > 1 ? 's' : ''} :
+      </p>
+      <ul class="mt-2 list-disc pl-5 text-sm text-[var(--color-text)]">
+        {illisibles.map((l) => <li>{l}</li>)}
+      </ul>
+    </div>
+  )}
+
+  {erreur && (
+    <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">
+      {erreur}
+    </p>
+  )}
+
+  <form method="post" class="space-y-6">
+    <div>
+      <label for="creneau" class="block text-sm font-medium mb-1">Créneau</label>
+      <select
+        id="creneau" name="creneau" required
+        class="champ"
+      >
+        <option value="">Choisir…</option>
+        {(creneaux ?? []).map((c) => (
+          <option value={c.id} selected={c.id === creneauChoisi}>
+            {c.label} — {c.default_start_time.slice(0, 5)} à {c.default_end_time.slice(0, 5)},
+            {' '}{c.default_location}, {c.default_capacity} places
+          </option>
+        ))}
+      </select>
+      <p class="mt-1 text-sm text-[var(--color-text-light)]">
+        Horaire, lieu et capacité sont repris du créneau. Chaque séance reste modifiable ensuite.
+      </p>
+    </div>
+
+    <div>
+      <label for="dates" class="block text-sm font-medium mb-1">Dates, une par ligne</label>
+      <textarea
+        id="dates" name="dates" rows="10" required
+        placeholder={'09/10/2026\n23/10/2026\n06/11/2026'}
+        class="champ font-mono text-sm"
+      >{saisie}</textarea>
+      <p class="mt-1 text-sm text-[var(--color-text-light)]">
+        Formats acceptés : 09/10/2026 ou 2026-10-09. Une date déjà enregistrée est ignorée,
+        vous pouvez donc relancer sans risque de doublon.
+      </p>
+    </div>
+
+    <button
+      type="submit"
+      class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white"
+    >
+      Créer les séances
+    </button>
+  </form>
+</AdminLayout>

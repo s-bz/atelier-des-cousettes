@@ -1,0 +1,76 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import { getPageContext } from '../utils/reader';
+import { SERVICE_LINKS } from '../utils/nav';
+import couverture from '../assets/images/covers/homepage/coverImage.jpeg';
+
+const { settings } = await getPageContext(Astro.site);
+
+/**
+ * Page d'erreur 404.
+ *
+ * Elle propose les pages que les gens cherchent réellement plutôt qu'un simple
+ * retour à l'accueil : une adresse fautive vient le plus souvent d'un lien
+ * ancien ou d'un moteur de recherche, et renvoyer à la page d'accueil oblige à
+ * recommencer la navigation depuis le début.
+ *
+ * noIndex : une page d'erreur n'a rien à faire dans un index de recherche.
+ */
+---
+
+<BaseLayout
+  title="Page introuvable"
+  description="Cette page n’existe pas ou plus."
+  noIndex={true}
+>
+  {/*
+    Même bandeau que les autres pages, plutôt qu'une page nue : une erreur 404
+    est souvent le premier écran d'un visiteur venu d'un lien ancien ou d'un
+    moteur de recherche. Lui montrer l'atelier — et non un mur de texte gris —
+    lui dit qu'il est au bon endroit, seulement pas à la bonne adresse.
+  */}
+  <Hero
+    title="Cette page n’existe pas"
+    subtitle="Erreur 404"
+    coverImage={couverture}
+    altText="L’atelier des Cousettes"
+  />
+
+  <section class="pb-16 md:pb-20">
+    <div class="mx-auto max-w-2xl px-4 text-center">
+
+      <p class="mx-auto max-w-md text-[var(--color-text)]">
+        Le lien que vous avez suivi est peut-être ancien, ou l’adresse comporte une
+        coquille. Voici ce que vous cherchiez peut-être.
+      </p>
+
+      <div class="mt-10 grid gap-3 text-left sm:grid-cols-2">
+        {SERVICE_LINKS.map((lien) => (
+          <a href={lien.href}
+             class="rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md transition-opacity hover:opacity-80">
+            <span class="font-medium text-[var(--color-heading)]">{lien.label}</span>
+          </a>
+        ))}
+        <a href="/mes-creations/"
+           class="rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md transition-opacity hover:opacity-80">
+          <span class="font-medium text-[var(--color-heading)]">Mes créations</span>
+        </a>
+        <a href="/blog/"
+           class="rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md transition-opacity hover:opacity-80">
+          <span class="font-medium text-[var(--color-heading)]">Le blog</span>
+        </a>
+      </div>
+
+      <p class="mt-12 text-[var(--color-text)]">
+        Vous ne trouvez pas ? Écrivez à
+        {' '}<a href={`mailto:${settings?.email ?? 'info@atelier-des-cousettes.fr'}`}
+                class="text-[var(--color-button)] underline">
+          {settings?.email ?? 'info@atelier-des-cousettes.fr'}
+        </a>,
+        {' '}ou revenez à <a href="/" class="text-[var(--color-button)] underline">l’accueil</a>.
+      </p>
+
+    </div>
+  </section>
+</BaseLayout>

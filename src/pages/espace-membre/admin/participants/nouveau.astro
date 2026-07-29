@@ -1,0 +1,299 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../../utils/guards';
+import { getAdminClient } from '../../../../utils/supabase';
+import { notifier, variablesAccueil } from '../../../../utils/emails';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const supabase = getAdminClient();
+
+/**
+ * Un seul écran pour une seule action : inscrire quelqu'un aux ateliers.
+ *
+ * La version précédente créait d'abord une « personne », puis obligeait à
+ * ouvrir une autre page et à déplier un panneau pour lui donner un abonnement.
+ * C'était le modèle de données exposé tel quel : or une personne sans
+ * abonnement n'a aucun crédit, n'est jamais auto-inscrit, et ne sert donc à
+ * rien. Les deux ne se séparent pas dans le travail réel d'Isabelle.
+ */
+
+// Ajout d'une personne sur un compte existant (une deuxième fille).
+const compteExistant = Astro.url.searchParams.get('compte');
+let emailCompteExistant: string | null = null;
+if (compteExistant) {
+  const { data } = await supabase
+    .from('accounts').select('email').eq('id', compteExistant).maybeSingle();
+  emailCompteExistant = data?.email ?? null;
+}
+
+const { data: creneaux } = await supabase
+  .from('creneaux')
+  .select('id, label, audience')
+  .is('archived_at', null)   // un créneau archivé n'est plus proposé
+  .order('label');
+
+const champs = {
+  prenom: '', nom: '', telephone: '', email: '', notes: '', audience: 'adulte',
+  creneau: '', type: 'forfait', credits: '20', debut: '', fin: '',
+};
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  for (const cle of Object.keys(champs) as (keyof typeof champs)[]) {
+    champs[cle] = String(form.get(cle) ?? '').trim();
+  }
+
+  const email = champs.email.toLowerCase();
+
+  if (!champs.prenom || !champs.nom) {
+    erreur = 'Le prénom et le nom sont nécessaires.';
+  } else if (!champs.debut || !champs.fin) {
+    erreur = 'Indiquez le premier et le dernier mois.';
+  } else if (champs.debut > champs.fin) {
+    erreur = 'Le dernier mois ne peut pas précéder le premier.';
+  } else {
+    let accountId: string | null = compteExistant;
+
+    if (!accountId && email) {
+      const { data: existant } = await supabase
+        .from('accounts').select('id').eq('email', email).maybeSingle();
+
+      if (existant) {
+        accountId = existant.id;
+      } else {
+        // L'utilisateur d'authentification ET la ligne accounts, ensemble.
+        // Sans le premier, la connexion échouerait et l'écran afficherait
+        // « Compte non reconnu » alors que le compte existe.
+        const { data: authUser, error: authError } =
+          await supabase.auth.admin.createUser({ email, email_confirm: true });
+        if (authError || !authUser?.user) {
+          erreur = `Création de l’accès impossible : ${authError?.message ?? 'erreur inconnue'}`;
+        } else {
+          const { data: compte, error: e } = await supabase
+            .from('accounts')
+            .insert({ email, auth_user_id: authUser.user.id, role: 'member' })
+            .select('id').single();
+          if (e) erreur = `Création du compte impossible : ${e.message}`;
+          else accountId = compte.id;
+        }
+      }
+    }
+
+    if (!erreur) {
+      const { data: personne, error: e1 } = await supabase
+        .from('participants')
+        .insert({
+          account_id: accountId,
+          first_name: champs.prenom,
+          last_name: champs.nom,
+          phone: champs.telephone || null,
+          audience: champs.audience,
+          notes: champs.notes || null,
+        })
+        .select('id').single();
+
+      if (e1) {
+        erreur = `Création impossible : ${e1.message}`;
+      } else {
+        // La saison court de septembre à juin : un début en janvier appartient
+        // à la saison ouverte l'automne précédent.
+        const debut = new Date(champs.debut);
+        const anneeSaison = debut.getUTCMonth() >= 7
+          ? debut.getUTCFullYear()
+          : debut.getUTCFullYear() - 1;
+
+        const { error: e2 } = await supabase.from('subscriptions').insert({
+          participant_id: personne.id,
+          season: `${anneeSaison}-${anneeSaison + 1}`,
+          home_creneau_id: champs.creneau || null,
+          // Exactement l'un des deux : la contrainte en base refuse les deux
+          // à la fois, et un abonnement sans droit n'a pas de sens.
+          credits_per_month: champs.type === 'forfait' ? null : Number(champs.credits),
+          total_credits: champs.type === 'forfait' ? Number(champs.credits) : null,
+          starts_on: champs.debut,
+          ends_on: champs.fin,
+        });
+
+        if (e2) {
+          erreur = `Personne créée, mais abonnement impossible : ${e2.message}`;
+        } else {
+          // Inscrire d'office TOUT DE SUITE, sans attendre le cron du
+          // lendemain. Sans cela, Isabelle crée quelqu'un, ouvre la feuille de
+          // présence, n'y voit personne, et conclut que ça ne marche pas.
+          // La fonction est idempotente : l'appeler ici ne fait pas double
+          // emploi avec la tâche quotidienne.
+          const { error: e3 } = await supabase.rpc('run_auto_enrolment', { p_horizon_days: 60 });
+          if (e3) console.error('[inscription] auto-inscription :', e3);
+
+          // Message d'accueil, APRÈS l'auto-inscription : il porte la liste des
+          // séances retenues, et l'envoyer avant donnerait une liste vide.
+          //
+          // Sans adresse e-mail, rien ne part — c'est le cas normal d'une
+          // personne inscrite au téléphone, pas un échec. L'écran suivant le
+          // dit, pour qu'Isabelle sache qu'elle a ce relais à faire.
+          // Sur un compte existant, l'adresse n'est pas dans le formulaire —
+          // le champ n'y figure même pas : elle vient du compte.
+          const destinataire = email || emailCompteExistant;
+
+          if (accountId && destinataire) {
+            const { data: retenues } = await supabase
+              .from('bookings')
+              .select('sessions!inner(starts_at, ends_at, location)')
+              .eq('participant_id', personne.id)
+              .eq('status', 'booked')
+              .order('starts_at', { referencedTable: 'sessions' });
+
+            const creneauChoisi = (creneaux ?? []).find((c) => c.id === champs.creneau);
+
+            await notifier('bienvenue', destinataire, variablesAccueil({
+              prenom: champs.prenom,
+              creneau: creneauChoisi?.label ?? null,
+              seances: (retenues ?? []).map((r: any) => r.sessions),
+              solde: Number(champs.credits),
+            }));
+          }
+
+          return Astro.redirect(
+            `/espace-membre/admin/participants/${personne.id}/?inscrit=1`
+            + (accountId && destinataire ? '&accueil=1' : ''),
+          );
+        }
+      }
+    }
+  }
+}
+---
+
+<AdminLayout
+  title={emailCompteExistant ? 'Ajouter une personne' : 'Inscrire quelqu’un'}
+  soustitre={emailCompteExistant
+    ? `Sur le compte ${emailCompteExistant}`
+    : 'Son identité, et la formule choisie.'}
+>
+  {erreur && (
+    <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">
+      {erreur}
+    </p>
+  )}
+
+  <form method="post" class="max-w-2xl space-y-8">
+
+    <fieldset class="space-y-4">
+      <legend class="mb-2 text-lg font-bold text-[var(--color-heading)]">Qui</legend>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="prenom" class="block text-sm font-medium mb-1">Prénom</label>
+          <input id="prenom" name="prenom" required value={champs.prenom} class="champ" />
+        </div>
+        <div>
+          <label for="nom" class="block text-sm font-medium mb-1">Nom</label>
+          <input id="nom" name="nom" required value={champs.nom} class="champ" />
+        </div>
+        <div>
+          <label for="audience" class="block text-sm font-medium mb-1">Public</label>
+          <select id="audience" name="audience" required class="champ">
+            <option value="adulte" selected={champs.audience === 'adulte'}>Adulte</option>
+            <option value="enfant" selected={champs.audience === 'enfant'}>Enfant</option>
+          </select>
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Les séances enfants durent 2 h, les séances adultes 2 h 30 ou 3 h.
+            Chacun ne peut s’inscrire qu’aux séances de son public.
+          </p>
+        </div>
+
+        <div>
+          <label for="telephone" class="block text-sm font-medium mb-1">
+            Téléphone <span class="text-[var(--color-text-light)]">— facultatif</span>
+          </label>
+          <input id="telephone" name="telephone" type="tel" autocomplete="tel"
+                 value={champs.telephone} class="champ" />
+        </div>
+        {!emailCompteExistant && (
+          <div>
+            <label for="email" class="block text-sm font-medium mb-1">
+              Adresse e-mail <span class="text-[var(--color-text-light)]">— facultatif</span>
+            </label>
+            <input id="email" name="email" type="email" value={champs.email} class="champ" />
+            <p class="mt-1 text-sm text-[var(--color-text-light)]">
+              Pour permettre la réservation en ligne. Sans adresse, vous gérez les réservations
+              et aucun e-mail n’est envoyé.
+            </p>
+          </div>
+        )}
+      </div>
+    </fieldset>
+
+    <fieldset class="space-y-4">
+      <legend class="mb-2 text-lg font-bold text-[var(--color-heading)]">Sa formule</legend>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div class="sm:col-span-2">
+          <label for="creneau" class="block text-sm font-medium mb-1">Créneau habituel</label>
+          <select id="creneau" name="creneau" class="champ">
+            <option value="">Aucun créneau attitré</option>
+            {(creneaux ?? []).map((c) => (
+              <option value={c.id} selected={c.id === champs.creneau}>{c.label} — {c.audience}</option>
+            ))}
+          </select>
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Celui où l’inscription est automatique. Venir à un autre créneau reste possible.
+          </p>
+        </div>
+
+        <div class="sm:col-span-2">
+          <label for="type" class="block text-sm font-medium mb-1">Type de forfait</label>
+          <select id="type" name="type" required class="champ">
+            <option value="forfait" selected={champs.type === 'forfait'}>
+              Forfait pour la saison — 10 ou 20 séances, disponibles dès le début
+            </option>
+            <option value="mensuel" selected={champs.type !== 'forfait'}>
+              Tant de séances par mois — elles s’acquièrent au fil des mois
+            </option>
+          </select>
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Un forfait affiche d’emblée tout ce qui a été acheté et se place où l’on veut dans
+            la saison. Un forfait mensuel ouvre son quota chaque mois. Dans les deux cas,
+            l’inscription d’office étale les séances sur l’année.
+          </p>
+        </div>
+
+        <div>
+          <label for="credits" class="block text-sm font-medium mb-1">Nombre de séances</label>
+          <input id="credits" name="credits" type="number" min="0" required
+                 value={champs.credits} class="champ" />
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Pour la saison, ou par mois, selon le type choisi.
+            0 en cas de paiement à la séance.
+          </p>
+        </div>
+
+        <div>
+          <label for="debut" class="block text-sm font-medium mb-1">Premier mois</label>
+          <input id="debut" name="debut" type="date" required value={champs.debut} class="champ" />
+        </div>
+        <div>
+          <label for="fin" class="block text-sm font-medium mb-1">Dernier mois</label>
+          <input id="fin" name="fin" type="date" required value={champs.fin} class="champ" />
+        </div>
+      </div>
+    </fieldset>
+
+    <div>
+      <label for="notes" class="block text-sm font-medium mb-1">
+        Notes <span class="text-[var(--color-text-light)]">— facultatif</span>
+      </label>
+      <textarea id="notes" name="notes" rows="2" class="champ">{champs.notes}</textarea>
+    </div>
+
+    <button type="submit"
+            class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
+      Inscrire
+    </button>
+  </form>
+</AdminLayout>

@@ -1,0 +1,189 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SelecteurParticipant from '../../components/SelecteurParticipant.astro';
+import { getAdminClient } from '../../utils/supabase';
+import { participantsDuCompte, soldeDe, libererPlace, dateLongue, heure } from '../../utils/membre';
+
+const { session, account, isAdmin } = Astro.locals;
+
+if (!session) return Astro.redirect('/espace-membre/connexion/');
+if (!account) return Astro.redirect('/espace-membre/connexion/?inconnu=1');
+
+const { personnes, choisie } = await participantsDuCompte(
+  account.id,
+  Astro.url.searchParams.get('personne'),
+);
+
+// Isabelle administre, elle ne vient pas consommer de crédits : son compte n'a
+// aucune personne rattachée. Lui montrer un solde vide n'aurait pas de sens.
+if (isAdmin && personnes.length === 0) {
+  return Astro.redirect('/espace-membre/admin/seances/', 302);
+}
+
+const supabase = getAdminClient();
+
+let message: string | null = null;
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST' && choisie) {
+  const form = await Astro.request.formData();
+  if (String(form.get('action')) === 'liberer') {
+    const r = await libererPlace(String(form.get('reservation')), choisie.id);
+    if (r.ok) message = r.message;
+    else erreur = r.message;
+  }
+}
+
+let solde = 0, octroye = 0, consomme = 0;
+let prochaines: any[] = [];
+
+// Ce qu'on dit à quelqu'un dont le solde est à zéro dépend de sa formule, et
+// la phrase d'origine ne parlait qu'aux abonnements mensuels : « d'autres
+// s'ajouteront au début du mois prochain » est faux pour un forfait de saison,
+// dont tout le crédit est ouvert dès le premier jour. Le lui promettre, c'est
+// lui faire attendre des séances qui ne viendront jamais.
+let formule: 'mensuelle' | 'forfait' | 'terminee' | null = null;
+
+if (choisie) {
+  ({ solde, octroye, consomme } = await soldeDe(choisie.id));
+
+  const { data: abonnement } = await supabase
+    .from('subscriptions')
+    .select('credits_per_month, total_credits, ends_on')
+    .eq('participant_id', choisie.id)
+    .order('starts_on', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (abonnement) {
+    const aujourdhui = new Date().toISOString().slice(0, 10);
+    formule = abonnement.ends_on < aujourdhui
+      ? 'terminee'
+      : abonnement.credits_per_month ? 'mensuelle' : 'forfait';
+  }
+
+  const { data } = await supabase
+    .from('bookings')
+    .select('id, sessions(id, starts_at, ends_at, location, status, creneaux(label))')
+    .eq('participant_id', choisie.id)
+    .eq('status', 'booked');
+
+  prochaines = (data ?? [])
+    .filter((r: any) => r.sessions && new Date(r.sessions.starts_at) >= new Date())
+    .sort((a: any, b: any) => a.sessions.starts_at.localeCompare(b.sessions.starts_at));
+}
+---
+
+<BaseLayout title="Mon espace" description="Votre espace adhérent." noIndex={true}>
+  <section class="py-12 md:py-16">
+    <div class="max-w-2xl mx-auto px-4">
+
+      <div class="mb-8 flex flex-wrap items-baseline gap-x-4">
+        <h1 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)]"
+            style="font-family: var(--font-heading)">
+          Mon espace
+        </h1>
+        {isAdmin && (
+          <a href="/espace-membre/admin/seances/"
+             class="text-sm text-[var(--color-button)] underline">Administration</a>
+        )}
+        <form method="post" action="/espace-membre/deconnexion/" class="ml-auto">
+          <button type="submit" class="text-sm text-[var(--color-text-light)] underline">
+            Me déconnecter
+          </button>
+        </form>
+      </div>
+
+      <SelecteurParticipant personnes={personnes} choisie={choisie} base="/espace-membre/" />
+
+      {message && (
+        <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">{message}</p>
+      )}
+      {erreur && (
+        <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>
+      )}
+
+      {!choisie ? (
+        <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
+          Aucune inscription n’est rattachée à ce compte. Contactez Isabelle.
+        </p>
+      ) : (
+        <>
+          <div class="mb-8 rounded-xl bg-[var(--color-card-bg)] p-6 shadow-md">
+            <p class="text-sm text-[var(--color-text-light)]">
+              {personnes.length > 1 ? `Séances disponibles pour ${choisie.first_name}` : 'Séances disponibles'}
+            </p>
+
+            <p class={`mt-1 text-4xl font-bold ${solde < 0 ? 'text-[var(--color-button)]' : 'text-[var(--color-heading)]'}`}>
+              {solde}
+            </p>
+            <p class="mt-2 text-sm text-[var(--color-text)]">
+              {solde > 0 && `Vous pouvez en réserver ${solde} de plus dès maintenant.`}
+              {solde === 0 && formule === 'mensuelle' &&
+                'Vos séances acquises sont toutes réservées. D’autres s’ajouteront au début du mois prochain.'}
+              {solde === 0 && formule === 'forfait' &&
+                'Votre forfait de la saison est entièrement placé. Libérez une date pour pouvoir en réserver une autre.'}
+              {solde === 0 && formule === 'terminee' &&
+                'Votre abonnement est arrivé à son terme. Contactez Isabelle pour le renouveler.'}
+              {solde === 0 && formule === null &&
+                'Aucun abonnement en cours. Contactez Isabelle pour vous inscrire.'}
+              {solde < 0 && `${-solde} séance${-solde < -1 ? 's' : ''} au-delà de votre forfait, à régler avec Isabelle.`}
+            </p>
+            <p class="mt-1 text-sm text-[var(--color-text-light)]">
+              {octroye} acquise{octroye > 1 ? 's' : ''} depuis le début, {consomme} déjà réservée{consomme > 1 ? 's' : ''}.
+            </p>
+          </div>
+
+          {/*
+            Réserver est l'action principale de cet écran, et « Voir le planning »
+            la nommait par son écran plutôt que par ce qu'on y fait. Un lien
+            discret en bout de ligne demandait en plus de deviner que c'était là
+            qu'on réservait.
+          */}
+          <a href={`/espace-membre/planning/${personnes.length > 1 ? `?personne=${choisie.id}` : ''}`}
+             class="mb-8 flex items-center justify-center gap-2 rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-4 text-lg font-medium text-white transition-opacity hover:opacity-90">
+            Réserver une séance
+          </a>
+
+          <h2 class="mb-4 text-lg font-bold text-[var(--color-heading)]">Prochaines séances</h2>
+
+          {prochaines.length === 0 ? (
+            <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
+              Aucune séance réservée pour l’instant.
+            </p>
+          ) : (
+            <ul class="space-y-2">
+              {prochaines.map((r: any) => (
+                <li class={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md ${r.sessions.status === 'cancelled' ? 'opacity-60' : ''}`}>
+                  <span class="font-medium text-[var(--color-heading)] first-letter:uppercase">
+                    {dateLongue.format(new Date(r.sessions.starts_at))}
+                  </span>
+                  <span class="text-sm text-[var(--color-text-light)]">
+                    {heure.format(new Date(r.sessions.starts_at))} – {heure.format(new Date(r.sessions.ends_at))}
+                  </span>
+                  <span class="text-sm text-[var(--color-text-light)]">{r.sessions.location}</span>
+                  {r.sessions.status === 'cancelled' ? (
+                    <span class="ml-auto text-sm font-medium text-[var(--color-button)]">Annulée</span>
+                  ) : (
+                    /* Libérer depuis ici : c'est le geste le plus courant — on
+                       vient voir ses prochaines séances précisément parce qu'on
+                       ne peut pas venir à l'une d'elles. */
+                    <form method="post" class="ml-auto">
+                      <input type="hidden" name="action" value="liberer" />
+                      <input type="hidden" name="reservation" value={r.id} />
+                      <button type="submit" class="text-sm text-[var(--color-button)] underline">
+                        Je ne peux pas venir
+                      </button>
+                    </form>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+    </div>
+  </section>
+</BaseLayout>

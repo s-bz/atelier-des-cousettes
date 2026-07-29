@@ -1,0 +1,166 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../utils/guards';
+import { getAdminClient } from '../../../utils/supabase';
+import { remplir, enHtml, variablesSeance, variablesAccueil } from '../../../utils/emails';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const supabase = getAdminClient();
+
+let message: string | null = null;
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const id = String(form.get('gabarit') ?? '');
+  const subject = String(form.get('sujet') ?? '').trim();
+  // Un <textarea> renvoie du CRLF, la norme HTML l'impose. Stocké tel quel, il
+  // casse le découpage en paragraphes à l'affichage. On normalise à l'entrée
+  // pour que la base ne contienne qu'une seule forme de fin de ligne.
+  const body = String(form.get('corps') ?? '').replace(/\r\n?/g, '\n').trim();
+
+  if (!subject || !body) {
+    erreur = 'Le sujet et le message ne peuvent pas être vides.';
+  } else {
+    const { error } = await supabase
+      .from('email_templates')
+      .update({ subject, body, updated_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) erreur = `Enregistrement impossible : ${error.message}`;
+    else message = 'Message enregistré.';
+  }
+}
+
+const { data: gabarits } = await supabase
+  .from('email_templates')
+  .select('id, label, description, subject, body, variables, updated_at')
+  .order('label');
+
+// Aperçu avec des valeurs d'exemple : lire un gabarit truffé d'accolades ne
+// dit pas ce que l'adhérent recevra.
+//
+// Le message d'accueil n'a PAS les mêmes variables que les autres : il parle
+// d'une saison entière, pas d'une séance. Lui appliquer l'exemple des autres
+// laisserait « {{seances}} » en clair dans l'aperçu — soit exactement ce que
+// l'aperçu est censé éviter.
+const exempleSeance = variablesSeance({
+  prenom: 'Marie',
+  starts_at: '2026-10-09T12:00:00Z',
+  ends_at: '2026-10-09T15:00:00Z',
+  location: 'Revel',
+});
+
+const exempleAccueil = variablesAccueil({
+  prenom: 'Marie',
+  creneau: 'Atelier du jeudi après-midi',
+  solde: 20,
+  seances: [
+    { starts_at: '2026-10-08T12:00:00Z', ends_at: '2026-10-08T15:00:00Z', location: 'Revel' },
+    { starts_at: '2026-10-22T12:00:00Z', ends_at: '2026-10-22T15:00:00Z', location: 'Revel' },
+    { starts_at: '2026-11-05T13:00:00Z', ends_at: '2026-11-05T16:00:00Z', location: 'Revel' },
+  ],
+});
+
+const exemplePour = (id: string) => (id === 'bienvenue' ? exempleAccueil : exempleSeance);
+---
+
+<AdminLayout
+  title="Messages"
+  soustitre="Les e-mails envoyés automatiquement aux adhérents."
+>
+  {message && (
+    <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">{message}</p>
+  )}
+  {erreur && (
+    <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>
+  )}
+
+  <p class="mb-8 max-w-2xl text-[var(--color-text)]">
+    Ces textes sont les vôtres : modifiez-les librement. Les mots entre doubles
+    accolades sont remplacés à l’envoi — <code>{'{{prenom}}'}</code> devient le prénom
+    de la personne concernée. Un aperçu figure sous chaque message.
+  </p>
+
+  <div class="space-y-6">
+    {(gabarits ?? []).map((g) => (
+      <div class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+        <h2 class="font-bold text-[var(--color-heading)]">{g.label}</h2>
+        <p class="mt-1 text-sm text-[var(--color-text-light)]">{g.description}</p>
+
+        <form method="post" class="mt-4">
+          <input type="hidden" name="gabarit" value={g.id} />
+
+          <div>
+            <label for={`sujet-${g.id}`} class="block text-sm font-medium mb-1">Sujet</label>
+            <input id={`sujet-${g.id}`} name="sujet" required value={g.subject} class="champ" />
+          </div>
+
+          <div class="mt-3">
+            <label for={`corps-${g.id}`} class="block text-sm font-medium mb-1">Message</label>
+            <textarea id={`corps-${g.id}`} name="corps" required rows="16"
+                      class="champ font-mono text-sm">{g.body}</textarea>
+          </div>
+
+          <p class="mt-2 text-sm text-[var(--color-text-light)]">
+            Disponible ici :
+            {(g.variables ?? []).map((v: string, i: number) => (
+              <>
+                {i > 0 && ', '}
+                <code>{`{{${v}}}`}</code>
+              </>
+            ))}
+          </p>
+
+          <button type="submit"
+                  class="mt-3 rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)]">
+            Enregistrer
+          </button>
+        </form>
+
+        {/*
+          L'aperçu montre le message TEL QU'IL PART, habillage compris. Montrer
+          le texte nu donnerait une idée fausse : ce n'est pas ce que l'adhérent
+          voit. L'iframe isole les styles de l'e-mail de ceux de cette page,
+          qui sinon se mélangeraient.
+        */}
+        <details class="mt-4">
+          <summary class="cursor-pointer text-sm text-[var(--color-text-light)]">
+            Aperçu, avec un exemple
+          </summary>
+          <p class="mt-2 text-sm text-[var(--color-text-light)]">
+            Objet : <span class="font-medium text-[var(--color-heading)]">
+              {remplir(g.subject, exemplePour(g.id))}
+            </span>
+          </p>
+          <iframe
+            title={`Aperçu — ${g.label}`}
+            class="mt-2 h-[32rem] w-full rounded-xl border border-[var(--color-border-prominent)]"
+            srcdoc={enHtml(
+              remplir(g.subject, exemplePour(g.id)),
+              remplir(g.body, exemplePour(g.id)),
+            )}
+          ></iframe>
+        </details>
+      </div>
+    ))}
+  </div>
+
+  <div class="mt-8 rounded-xl border border-[var(--color-border-prominent)] p-5">
+    <p class="font-medium text-[var(--color-heading)]">Le code de connexion n’est pas ici</p>
+    <p class="mt-1 text-sm text-[var(--color-text)]">
+      Ce message-là est émis par Supabase et se modifie dans son tableau de bord,
+      sous Authentication → Emails. Il n’a pas pu être rapatrié : c’est Supabase
+      qui l’envoie, pas cette application.
+    </p>
+  </div>
+
+  <p class="mt-6 text-sm text-[var(--color-text-light)]">
+    Tous ces messages partent de <code>no_reply@portail.atelier-des-cousettes.fr</code>,
+    et une réponse arrive sur <code>info@atelier-des-cousettes.fr</code>.
+    Les personnes sans accès au site n’en reçoivent aucun.
+  </p>
+</AdminLayout>

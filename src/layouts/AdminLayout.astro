@@ -1,0 +1,69 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  /** Fil d'ariane court, affiché sous le titre. */
+  soustitre?: string;
+}
+
+const { title, soustitre } = Astro.props;
+const chemin = Astro.url.pathname;
+
+const onglets = [
+  { href: '/espace-membre/admin/seances/', label: 'Séances' },
+  { href: '/espace-membre/admin/creneaux/', label: 'Créneaux' },
+  { href: '/espace-membre/admin/participants/', label: 'Adhérents' },
+  { href: '/espace-membre/admin/a-facturer/', label: 'À facturer' },
+  { href: '/espace-membre/admin/emails/', label: 'Messages' },
+];
+---
+
+<BaseLayout title={`${title} — administration`} description="Administration" noIndex={true}>
+  <section class="py-10 md:py-14">
+    <div class="max-w-4xl mx-auto px-4">
+
+      <nav class="mb-8 flex flex-wrap gap-2" aria-label="Administration">
+        {onglets.map((onglet) => {
+          const actif = chemin.startsWith(onglet.href);
+          return (
+            <a
+              href={onglet.href}
+              aria-current={actif ? 'page' : undefined}
+              class={`rounded-[var(--radius-button)] px-4 py-2 text-sm font-medium transition-colors ${
+                actif
+                  ? 'bg-[var(--color-button)] text-white'
+                  : 'border-2 border-[var(--color-button)] text-[var(--color-button)] hover:bg-[var(--color-bg-accent)]'
+              }`}
+            >
+              {onglet.label}
+            </a>
+          );
+        })}
+        {/*
+          « Mon espace » figurait ici : inutile pour Isabelle, qui n'a aucune
+          personne rattachée et se retrouvait donc renvoyée immédiatement à
+          l'administration. Un lien qui ramène où l'on est n'est pas un lien.
+        */}
+        <form method="post" action="/espace-membre/deconnexion/" class="ml-auto self-center">
+          <button
+            type="submit"
+            class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-1.5 text-sm text-[var(--color-text)] transition-colors hover:border-[var(--color-button)] hover:text-[var(--color-button)]"
+          >
+            Se déconnecter
+          </button>
+        </form>
+      </nav>
+
+      <h1 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)]"
+          style="font-family: var(--font-heading)">
+        {title}
+      </h1>
+      {soustitre && <p class="mt-1 text-[var(--color-text-light)]">{soustitre}</p>}
+
+      <div class="mt-8">
+        <slot />
+      </div>
+    </div>
+  </section>
+</BaseLayout>

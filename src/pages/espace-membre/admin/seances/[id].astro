@@ -1,0 +1,354 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../../utils/guards';
+import { getAdminClient } from '../../../../utils/supabase';
+import { notifier, variablesSeance } from '../../../../utils/emails';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const { id } = Astro.params;
+const supabase = getAdminClient();
+
+let message: string | null = null;
+let erreur: string | null = null;
+let confirmationAnnulation = false;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = String(form.get('action') ?? '');
+
+  // Annulation en deux temps, par aller-retour serveur plutôt que par une
+  // boîte de dialogue JavaScript : le geste est destructeur — il libère les
+  // places de tout le monde et n'est défaisable qu'en recréant la séance —
+  // et l'écran doit fonctionner sans JavaScript.
+  if (action === 'annuler-demande') {
+    confirmationAnnulation = true;
+  }
+
+  if (action === 'annuler') {
+    // Les inscrits sont lus AVANT l'annulation : après, leurs réservations sont
+    // libérées et la liste serait vide. Personne ne serait prévenu.
+    const { data: aPrevenir } = await supabase
+      .from('bookings')
+      .select('participants(first_name, accounts(email)), sessions(starts_at, ends_at, location)')
+      .eq('session_id', id)
+      .eq('status', 'booked');
+
+    const { data, error } = await supabase.rpc('cancel_session', { p_session: id });
+
+    if (error) {
+      erreur = error.message;
+    } else {
+      let prevenus = 0;
+      for (const r of (aPrevenir ?? []) as any[]) {
+        const envoye = await notifier('annulation', r.participants?.accounts?.email, variablesSeance({
+          prenom: r.participants?.first_name ?? '',
+          starts_at: r.sessions.starts_at,
+          ends_at: r.sessions.ends_at,
+          location: r.sessions.location,
+        }));
+        if (envoye) prevenus++;
+      }
+
+      const rendues = data as number;
+      const sansCompte = (aPrevenir ?? []).length - prevenus;
+      message = `Séance annulée. ${rendues} place${rendues > 1 ? 's rendues' : ' rendue'}, `
+        + `${prevenus} personne${prevenus > 1 ? 's prévenues' : ' prévenue'} par e-mail`
+        + (sansCompte > 0
+            ? ` — ${sansCompte} sans accès au site, à prévenir vous-même.`
+            : '.');
+    }
+  }
+
+  if (action === 'capacite') {
+    const capacite = Number(form.get('capacite'));
+    const { error } = await supabase.rpc('set_session_capacity', {
+      p_session: id, p_capacity: capacite,
+    });
+    // Le message de la fonction indique déjà le nombre de réservations en
+    // cours : le reprendre tel quel est plus utile que le reformuler.
+    if (error) erreur = error.message;
+    else message = 'Capacité modifiée.';
+  }
+
+  if (action === 'deplacer') {
+    const horaire = /^([01]\d|2[0-3]):[0-5]\d$/;
+    const debut = String(form.get('debut') ?? '').trim();
+    const fin = String(form.get('fin') ?? '').trim();
+
+    if (!horaire.test(debut) || !horaire.test(fin)) {
+      erreur = 'Les horaires s’écrivent sur 24 heures, par exemple 14:00.';
+    } else {
+      const { error } = await supabase.rpc('update_session_schedule', {
+        p_session: id,
+        p_date: String(form.get('date')),
+        p_start: debut,
+        p_end: fin,
+        p_location: String(form.get('lieu_autre') ?? '').trim()
+                    || String(form.get('lieu') ?? '').trim(),
+      });
+      if (error) erreur = error.message;
+      else message = 'Séance déplacée. Les inscrits gardent leur place.';
+    }
+  }
+
+  if (action === 'liberer') {
+    const { error } = await supabase.rpc('release_booking', {
+      p_booking: String(form.get('booking')),
+    });
+    if (error) erreur = error.message;
+    else message = 'Place libérée, le crédit est rendu.';
+  }
+
+  if (action === 'inscrire') {
+    const { error } = await supabase.rpc('book_participant', {
+      p_session: id,
+      p_participant: String(form.get('participant')),
+      p_source: 'admin',
+    });
+    if (error) erreur = error.message;
+    else message = 'Participant inscrit.';
+  }
+}
+
+const { data: seance } = await supabase
+  .from('sessions')
+  .select('id, starts_at, ends_at, location, capacity, unit_price_cents, status, creneaux(label, audience)')
+  .eq('id', id)
+  .maybeSingle();
+
+if (!seance) return new Response('Séance introuvable', { status: 404 });
+
+const { data: lieuxCreneaux } = await supabase
+  .from('creneaux').select('default_location');
+const lieux = [...new Set([
+  ...(lieuxCreneaux ?? []).map((c) => c.default_location),
+  seance.location,   // le lieu actuel, même s'il ne vient d'aucun créneau
+])].sort();
+
+const { data: reservations } = await supabase
+  .from('bookings')
+  .select('id, source, status, participants(id, first_name, last_name)')
+  .eq('session_id', id)
+  .eq('status', 'booked');
+
+// Participants non encore inscrits à cette séance, pour le sélecteur.
+const dejaInscrits = new Set((reservations ?? []).map((r: any) => r.participants?.id));
+// Seules les personnes du public de la séance : proposer les autres serait
+// proposer un geste que la base refusera.
+const publicSeance = (seance.creneaux as any)?.audience ?? 'adultes';
+const { data: tousParticipants } = await supabase
+  .from('participants')
+  .select('id, first_name, last_name')
+  .eq('audience', publicSeance === 'enfants' ? 'enfant' : 'adulte')
+  .order('last_name');
+const inscriptibles = (tousParticipants ?? []).filter((p) => !dejaInscrits.has(p.id));
+
+const prises = (reservations ?? []).length;
+const annulee = seance.status === 'cancelled';
+
+const dateFr = new Intl.DateTimeFormat('fr-FR', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris',
+});
+const heureFr = new Intl.DateTimeFormat('fr-FR', {
+  hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris',
+});
+const debut = new Date(seance.starts_at);
+---
+
+<AdminLayout
+  title={dateFr.format(debut)}
+  soustitre={`${(seance.creneaux as any)?.label ?? ''} · ${heureFr.format(debut)} – ${heureFr.format(new Date(seance.ends_at))} · ${seance.location}`}
+>
+  {message && (
+    <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">{message}</p>
+  )}
+  {erreur && (
+    <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>
+  )}
+
+  {annulee && (
+    <p class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 font-medium text-[var(--color-button)] shadow-md">
+      Séance annulée. Les crédits ont été rendus ; aucune inscription n’est possible.
+    </p>
+  )}
+
+  <h2 class="mb-3 text-lg font-bold text-[var(--color-heading)]">
+    Inscrits — {prises} / {seance.capacity}
+  </h2>
+
+  {prises === 0 ? (
+    <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">Personne pour l’instant.</p>
+  ) : (
+    <ul class="space-y-2">
+      {(reservations ?? []).map((r: any) => (
+        <li class="flex items-center gap-4 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
+          <span class="font-medium text-[var(--color-heading)]">
+            {r.participants?.first_name} {r.participants?.last_name}
+          </span>
+          <span class="text-sm text-[var(--color-text-light)]">
+            {r.source === 'auto' ? 'inscription automatique' : r.source === 'admin' ? 'inscrit par vous' : 'réservé en ligne'}
+          </span>
+          <form method="post" class="ml-auto">
+            <input type="hidden" name="action" value="liberer" />
+            <input type="hidden" name="booking" value={r.id} />
+            <button type="submit" class="text-sm text-[var(--color-button)] underline">Libérer la place</button>
+          </form>
+        </li>
+      ))}
+    </ul>
+  )}
+
+  {!annulee && (
+    <form method="post" class="mt-6 flex flex-wrap items-end gap-3">
+      <input type="hidden" name="action" value="inscrire" />
+      <div class="min-w-[240px] flex-1">
+        <label for="participant" class="block text-sm font-medium mb-1">Inscrire quelqu’un</label>
+        <select id="participant" name="participant" required
+                class="champ">
+          <option value="">Choisir…</option>
+          {inscriptibles.map((p) => (
+            <option value={p.id}>{p.last_name} {p.first_name}</option>
+          ))}
+        </select>
+      </div>
+      <button type="submit" class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-5 py-2 font-medium text-white">
+        Inscrire
+      </button>
+      {inscriptibles.length === 0 && (
+        <p class="w-full text-sm text-[var(--color-text-light)]">
+          Aucun participant disponible. Créez-en depuis l’onglet Participants.
+        </p>
+      )}
+    </form>
+  )}
+
+  <hr class="my-10 border-[var(--color-border)]" />
+
+  {!annulee && (
+    <form method="post" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+      <input type="hidden" name="action" value="deplacer" />
+      <p class="mb-3 font-medium text-[var(--color-heading)]">Déplacer la séance</p>
+
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <label for="date" class="block text-sm font-medium mb-1">Date</label>
+          <input id="date" name="date" type="date" required class="champ"
+                 value={new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(debut)} />
+        </div>
+        <div>
+          <label for="debut" class="block text-sm font-medium mb-1">Début</label>
+          <input id="debut" name="debut" required class="champ"
+                 inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]"
+                 value={heureFr.format(debut).replace('h', ':')} />
+        </div>
+        <div>
+          <label for="fin" class="block text-sm font-medium mb-1">Fin</label>
+          <input id="fin" name="fin" required class="champ"
+                 inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]"
+                 value={heureFr.format(new Date(seance.ends_at)).replace('h', ':')} />
+        </div>
+        <div>
+          <label for="lieu" class="block text-sm font-medium mb-1">Lieu</label>
+          <select id="lieu" name="lieu" class="champ">
+            {lieux.map((l) => <option value={l} selected={l === seance.location}>{l}</option>)}
+          </select>
+          <input name="lieu_autre" class="champ mt-2" placeholder="ou un nouveau lieu" />
+        </div>
+      </div>
+
+      <p class="mt-2 text-sm text-[var(--color-text-light)]">
+        Les personnes inscrites gardent leur place : c’est la même séance à une autre date,
+        pas une annulation. Prévenez-les, aucun message n’est envoyé.
+      </p>
+
+      <button type="submit"
+              class="mt-3 rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)]">
+        Déplacer
+      </button>
+    </form>
+  )}
+
+  <div class="grid gap-6 md:grid-cols-2">
+    <form method="post" class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+      <input type="hidden" name="action" value="capacite" />
+      <label for="capacite" class="block text-sm font-medium mb-1">Nombre de places</label>
+      <input id="capacite" name="capacite" type="number" min="1" required value={seance.capacity}
+             class="champ" />
+      <p class="mt-1 text-sm text-[var(--color-text-light)]">
+        Impossible de descendre sous le nombre d’inscrits : libérez d’abord une place.
+      </p>
+      <button type="submit" class="mt-3 rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)]">
+        Modifier
+      </button>
+    </form>
+
+    {!annulee && !confirmationAnnulation && (
+      <form method="post" class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+        <input type="hidden" name="action" value="annuler-demande" />
+        <p class="font-medium text-[var(--color-heading)]">Annuler la séance</p>
+        <p class="mt-1 text-sm text-[var(--color-text)]">
+          {prises === 0
+            ? 'Personne n’est inscrit.'
+            : `${prises} personne${prises > 1 ? 's' : ''} inscrite${prises > 1 ? 's' : ''}.`}
+        </p>
+        <button type="submit" class="mt-3 rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)]">
+          Annuler cette séance
+        </button>
+      </form>
+    )}
+
+    {!annulee && confirmationAnnulation && (
+      <div class="rounded-xl border-2 border-[var(--color-button)] bg-[var(--color-card-bg)] p-5 shadow-md">
+        <p class="font-medium text-[var(--color-button)]">Confirmer l’annulation</p>
+
+        <p class="mt-2 text-sm text-[var(--color-text)]">
+          {dateFr.format(debut)}, {heureFr.format(debut)}.
+        </p>
+
+        {prises > 0 ? (
+          <>
+            <p class="mt-2 text-sm text-[var(--color-text)]">
+              {prises === 1
+                ? 'Une personne perdra sa place et récupérera sa séance :'
+                : `${prises} personnes perdront leur place et récupéreront leur séance :`}
+            </p>
+            <ul class="mt-1 list-disc pl-5 text-sm text-[var(--color-text)]">
+              {(reservations ?? []).map((r: any) => (
+                <li>{r.participants?.first_name} {r.participants?.last_name}</li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p class="mt-2 text-sm text-[var(--color-text)]">Personne n’est inscrit.</p>
+        )}
+
+        <p class="mt-3 text-sm text-[var(--color-text-light)]">
+          Cette action ne se défait pas : il faudrait recréer la séance et
+          réinscrire chacun. Prévenez les personnes concernées, aucun message
+          n’est envoyé pour l’instant.
+        </p>
+
+        <div class="mt-4 flex flex-wrap gap-3">
+          <form method="post">
+            <input type="hidden" name="action" value="annuler" />
+            <button type="submit" class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-5 py-2 text-sm font-medium text-white">
+              Oui, annuler la séance
+            </button>
+          </form>
+          <a
+            href={`/espace-membre/admin/seances/${seance.id}/`}
+            class="self-center text-sm underline"
+          >
+            Non, revenir
+          </a>
+        </div>
+      </div>
+    )}
+  </div>
+
+  <a href="/espace-membre/admin/seances/" class="mt-8 inline-block text-sm underline">← Toutes les séances</a>
+</AdminLayout>

@@ -1,0 +1,16 @@
+-- Suppression de la date de naissance.
+--
+-- Elle avait été prévue pour vérifier l'éligibilité au créneau enfants, mais
+-- personne n'en a l'usage : Isabelle sait qui sont les enfants qu'elle
+-- accueille, et rien dans l'application n'interroge cette colonne.
+--
+-- Ce n'est pas un simple nettoyage. Le RGPD demande de ne collecter que ce qui
+-- sert, et il s'agissait de dates de naissance de MINEURS — la donnée la plus
+-- délicate de tout le schéma. La politique de confidentialité s'engageait à la
+-- protéger ; le meilleur moyen de tenir cet engagement est de ne pas l'avoir.
+--
+-- La colonne est supprimée plutôt que laissée vide : une colonne nullable
+-- inutilisée finit toujours par être remplie « puisqu'elle existe ».
+--
+-- Aucune donnée réelle n'est perdue : la table ne contient que des essais.
+alter table participants drop column birthdate;

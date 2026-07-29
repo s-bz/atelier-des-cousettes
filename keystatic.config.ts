@@ -347,6 +347,19 @@ export default config({
         content: fields.markdoc({ label: 'Contenu', components: markdocComponents }),
       },
     }),
+    confidentialite: singleton({
+      label: 'Politique de confidentialité',
+      path: 'src/content/pages/confidentialite/',
+      previewUrl: '/confidentialite/',
+      format: { contentField: 'content' },
+      schema: {
+        title: fields.text({ label: 'Titre' }),
+        subtitle: fields.text({ label: 'Sous-titre' }),
+        seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
+        ...coverImageFields('confidentialite'),
+        content: fields.markdoc({ label: 'Contenu', components: markdocComponents }),
+      },
+    }),
   },
   collections: {
     blog: collection({
