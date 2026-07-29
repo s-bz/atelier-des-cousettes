@@ -4,6 +4,8 @@ export const prerender = false;
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../utils/guards';
 import { getAdminClient } from '../../../utils/supabase';
+import { ATELIER_GROUPS } from '../../../utils/ateliers';
+import { toSlug } from '../../../utils/strings';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -15,24 +17,50 @@ let erreur: string | null = null;
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  const id = String(form.get('creneau') ?? '');
+  const action = String(form.get('action') ?? 'modifier');
 
   const debut = String(form.get('debut') ?? '');
   const fin = String(form.get('fin') ?? '');
+  const valeurs = {
+    default_start_time: debut,
+    default_end_time: fin,
+    default_location: String(form.get('lieu') ?? '').trim(),
+    default_capacity: Number(form.get('places')),
+    default_unit_price_cents: Math.round(Number(form.get('prix')) * 100),
+  };
 
   if (debut >= fin) {
     erreur = 'L’heure de fin doit suivre l’heure de début.';
+  } else if (action === 'creer') {
+    const label = String(form.get('label') ?? '').trim();
+    // L'identifiant suit toSlug(), comme les ancres du site public : un lien
+    // profond vers un créneau doit continuer de fonctionner.
+    const id = toSlug(label);
+
+    if (!label) {
+      erreur = 'Donnez un nom au créneau.';
+    } else if (!id) {
+      erreur = 'Ce nom ne produit aucun identifiant utilisable.';
+    } else {
+      const { error } = await supabase.from('creneaux').insert({
+        id,
+        label,
+        group_id: String(form.get('groupe') ?? ''),
+        ...valeurs,
+      });
+      if (error) {
+        erreur = error.code === '23505'
+          ? `Un créneau porte déjà ce nom (${id}).`
+          : `Création impossible : ${error.message}`;
+      } else {
+        message = `Créneau « ${label} » créé.`;
+      }
+    }
   } else {
     const { error } = await supabase
       .from('creneaux')
-      .update({
-        default_start_time: debut,
-        default_end_time: fin,
-        default_location: String(form.get('lieu') ?? '').trim(),
-        default_capacity: Number(form.get('places')),
-        default_unit_price_cents: Math.round(Number(form.get('prix')) * 100),
-      })
-      .eq('id', id);
+      .update(valeurs)
+      .eq('id', String(form.get('creneau') ?? ''));
 
     if (error) erreur = `Modification impossible : ${error.message}`;
     else message = 'Créneau modifié. Les séances déjà créées ne changent pas.';
@@ -62,9 +90,62 @@ const { data: creneaux } = await supabase
     une séance existante, ouvrez-la depuis l’onglet Séances.
   </p>
 
+  <details class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+    <summary class="cursor-pointer font-medium text-[var(--color-heading)]">
+      Ajouter un créneau
+    </summary>
+
+    <form method="post" class="mt-4">
+      <input type="hidden" name="action" value="creer" />
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="label" class="block text-sm font-medium mb-1">Nom</label>
+          <input id="label" name="label" required placeholder="Atelier du mercredi matin"
+                 class="champ" />
+        </div>
+        <div>
+          <label for="groupe" class="block text-sm font-medium mb-1">Groupe</label>
+          <select id="groupe" name="groupe" required class="champ">
+            {ATELIER_GROUPS.map((g) => <option value={g.id}>{g.label}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div>
+          <label for="n-debut" class="block text-sm font-medium mb-1">Début</label>
+          <input id="n-debut" name="debut" type="time" required value="14:00" class="champ" />
+        </div>
+        <div>
+          <label for="n-fin" class="block text-sm font-medium mb-1">Fin</label>
+          <input id="n-fin" name="fin" type="time" required value="17:00" class="champ" />
+        </div>
+        <div>
+          <label for="n-lieu" class="block text-sm font-medium mb-1">Lieu</label>
+          <input id="n-lieu" name="lieu" required value="Revel" class="champ" />
+        </div>
+        <div>
+          <label for="n-places" class="block text-sm font-medium mb-1">Places</label>
+          <input id="n-places" name="places" type="number" min="1" required value="6" class="champ" />
+        </div>
+        <div>
+          <label for="n-prix" class="block text-sm font-medium mb-1">Séance seule (€)</label>
+          <input id="n-prix" name="prix" type="number" min="0" step="0.01" required value="25.00" class="champ" />
+        </div>
+      </div>
+
+      <button type="submit"
+              class="mt-4 rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-2 font-medium text-white">
+        Créer le créneau
+      </button>
+    </form>
+  </details>
+
   <div class="space-y-4">
     {(creneaux ?? []).map((c) => (
       <form method="post" class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+        <input type="hidden" name="action" value="modifier" />
         <input type="hidden" name="creneau" value={c.id} />
 
         <div class="mb-4 flex flex-wrap items-baseline gap-x-3">
