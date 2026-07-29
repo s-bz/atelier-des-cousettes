@@ -1,0 +1,78 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../../utils/guards';
+import { getAdminClient } from '../../../../utils/supabase';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const supabase = getAdminClient();
+
+const { data: participants } = await supabase
+  .from('participants')
+  .select('id, first_name, last_name, account_id, accounts(email), subscriptions(id)')
+  .order('last_name');
+
+// Le solde est une fonction SQL, jamais une colonne : il se recalcule à chaque
+// affichage depuis les abonnements et les réservations actives.
+const soldes = new Map<string, number>();
+for (const p of participants ?? []) {
+  const { data } = await supabase.rpc('balance', { p_participant: p.id });
+  soldes.set(p.id, (data as number) ?? 0);
+}
+---
+
+<AdminLayout title="Participants" soustitre="Les personnes qui viennent à l’atelier.">
+
+  <a href="/espace-membre/admin/participants/nouveau/"
+     class="mb-8 inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
+    Nouveau participant
+  </a>
+
+  {(participants ?? []).length === 0 ? (
+    <p class="rounded-xl bg-white p-5 text-[var(--color-text)] shadow-md">
+      Aucun participant pour l’instant.
+    </p>
+  ) : (
+    <ul class="space-y-2">
+      {(participants ?? []).map((p) => {
+        const solde = soldes.get(p.id) ?? 0;
+        const sansAbonnement = (p.subscriptions ?? []).length === 0;
+        return (
+          <li>
+            <a href={`/espace-membre/admin/participants/${p.id}/`}
+               class="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-white p-4 shadow-md transition-opacity hover:opacity-80">
+              <span class="font-medium text-[var(--color-heading)]">
+                {p.last_name} {p.first_name}
+              </span>
+
+              {p.account_id ? (
+                <span class="text-sm text-[var(--color-text-light)]">
+                  {(p.accounts as any)?.email}
+                </span>
+              ) : (
+                // Signalé visiblement : sans compte, aucun e-mail ne partira.
+                // Un silence pourrait passer pour une panne du système.
+                <span class="rounded-full bg-[var(--color-bg-accent)] px-3 py-0.5 text-xs text-[var(--color-text)]">
+                  sans accès — ne recevra aucun e-mail
+                </span>
+              )}
+
+              {sansAbonnement && (
+                <span class="text-xs text-[var(--color-button)]">aucun abonnement</span>
+              )}
+
+              <span class={`ml-auto text-sm font-medium ${solde < 0 ? 'text-[var(--color-button)]' : 'text-[var(--color-text-light)]'}`}>
+                {solde < 0
+                  ? `${-solde} séance${-solde > 1 ? 's' : ''} à facturer`
+                  : `${solde} séance${solde > 1 ? 's' : ''}`}
+              </span>
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  )}
+</AdminLayout>

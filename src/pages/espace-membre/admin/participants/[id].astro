@@ -1,0 +1,234 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../../utils/guards';
+import { getAdminClient } from '../../../../utils/supabase';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const { id } = Astro.params;
+const supabase = getAdminClient();
+
+let message: string | null = null;
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = String(form.get('action') ?? '');
+
+  if (action === 'abonnement') {
+    const debut = String(form.get('debut') ?? '');
+    const fin = String(form.get('fin') ?? '');
+    const cloturer = String(form.get('cloturer') ?? '');
+
+    // Clore l'abonnement en cours plutôt que de le modifier. Changer
+    // credits_per_month sur une ligne existante réécrirait rétroactivement
+    // l'octroi de tous les mois déjà consommés (SPEC §6).
+    if (cloturer) {
+      const veille = new Date(debut);
+      veille.setUTCDate(veille.getUTCDate() - 1);
+      const { error } = await supabase
+        .from('subscriptions')
+        .update({ ends_on: veille.toISOString().slice(0, 10) })
+        .eq('id', cloturer);
+      if (error) erreur = `Clôture impossible : ${error.message}`;
+    }
+
+    if (!erreur) {
+      const { error } = await supabase.from('subscriptions').insert({
+        participant_id: id,
+        season: String(form.get('saison') ?? ''),
+        home_creneau_id: String(form.get('creneau') ?? '') || null,
+        credits_per_month: Number(form.get('credits')),
+        monthly_price_cents: Math.round(Number(form.get('prix')) * 100),
+        starts_on: debut,
+        ends_on: fin,
+      });
+      if (error) erreur = `Abonnement impossible : ${error.message}`;
+      else message = 'Abonnement enregistré.';
+    }
+  }
+}
+
+const { data: participant } = await supabase
+  .from('participants')
+  .select('id, first_name, last_name, birthdate, notes, account_id, accounts(email)')
+  .eq('id', id)
+  .maybeSingle();
+
+if (!participant) return new Response('Participant introuvable', { status: 404 });
+
+const { data: abonnements } = await supabase
+  .from('subscriptions')
+  .select('id, season, home_creneau_id, credits_per_month, monthly_price_cents, starts_on, ends_on, helloasso_order_id, creneaux(label)')
+  .eq('participant_id', id)
+  .order('starts_on');
+
+const { data: solde } = await supabase.rpc('balance', { p_participant: id });
+const { data: octroye } = await supabase.rpc('granted_credits', {
+  p_participant: id, p_at: new Date().toISOString().slice(0, 10),
+});
+const { data: consomme } = await supabase.rpc('consumed_credits', { p_participant: id });
+
+const { data: creneaux } = await supabase
+  .from('creneaux')
+  .select('id, label')
+  .order('label');
+
+const { data: reservations } = await supabase
+  .from('bookings')
+  .select('id, source, status, sessions(starts_at, status, creneaux(label))')
+  .eq('participant_id', id)
+  .eq('status', 'booked');
+
+const enCours = (abonnements ?? []).filter((a) => a.ends_on >= new Date().toISOString().slice(0, 10));
+const dateFr = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
+const anneeCourante = new Date().getFullYear();
+const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
+---
+
+<AdminLayout
+  title={`${participant.first_name} ${participant.last_name}`}
+  soustitre={participant.account_id
+    ? `Accès : ${(participant.accounts as any)?.email}`
+    : 'Sans accès au site — ne recevra aucun e-mail'}
+>
+  {message && <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm">{message}</p>}
+  {erreur && <p role="alert" class="mb-6 rounded-xl bg-white p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>}
+
+  <div class="mb-8 rounded-xl bg-white p-5 shadow-md">
+    <p class="text-sm text-[var(--color-text-light)]">Solde de séances</p>
+    <p class={`text-3xl font-bold ${(solde as number) < 0 ? 'text-[var(--color-button)]' : 'text-[var(--color-heading)]'}`}>
+      {solde}
+    </p>
+    <p class="mt-1 text-sm text-[var(--color-text-light)]">
+      {octroye} octroyée{(octroye as number) > 1 ? 's' : ''} à ce jour, {consomme} consommée{(consomme as number) > 1 ? 's' : ''}.
+      {(solde as number) < 0 && ' Le solde négatif correspond à des séances supplémentaires à facturer.'}
+    </p>
+  </div>
+
+  <h2 class="mb-3 text-lg font-bold text-[var(--color-heading)]">Abonnements</h2>
+  {(abonnements ?? []).length === 0 ? (
+    <p class="rounded-xl bg-white p-5 text-[var(--color-text)] shadow-md">Aucun abonnement.</p>
+  ) : (
+    <ul class="space-y-2">
+      {(abonnements ?? []).map((a) => (
+        <li class="rounded-xl bg-white p-4 shadow-md">
+          <div class="flex flex-wrap items-center gap-x-4">
+            <span class="font-medium text-[var(--color-heading)]">
+              {a.credits_per_month} séance{a.credits_per_month > 1 ? 's' : ''}/mois
+            </span>
+            <span class="text-sm text-[var(--color-text-light)]">
+              {(a.creneaux as any)?.label ?? 'sans créneau d’origine'}
+            </span>
+            <span class="text-sm text-[var(--color-text-light)]">
+              {(a.monthly_price_cents / 100).toFixed(2)} €/mois
+            </span>
+            <span class="ml-auto text-sm text-[var(--color-text-light)]">
+              {dateFr.format(new Date(a.starts_on))} → {dateFr.format(new Date(a.ends_on))}
+            </span>
+          </div>
+          {!a.helloasso_order_id && (
+            <p class="mt-1 text-xs text-[var(--color-text-light)]">Saisi à la main</p>
+          )}
+        </li>
+      ))}
+    </ul>
+  )}
+
+  <details class="mt-6 rounded-xl bg-white p-5 shadow-md">
+    <summary class="cursor-pointer font-medium text-[var(--color-heading)]">
+      Ajouter un abonnement
+    </summary>
+
+    <p class="mt-3 text-sm text-[var(--color-text-light)]">
+      Pour changer de formule, ne modifiez pas l’abonnement en cours : clôturez-le et ouvrez-en
+      un nouveau. Modifier le nombre de séances réécrirait rétroactivement les mois déjà passés.
+    </p>
+
+    <form method="post" class="mt-4 space-y-4">
+      <input type="hidden" name="action" value="abonnement" />
+
+      {enCours.length > 0 && (
+        <div>
+          <label for="cloturer" class="block text-sm font-medium mb-1">
+            Clôturer un abonnement en cours ?
+          </label>
+          <select id="cloturer" name="cloturer"
+                  class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2">
+            <option value="">Non, c’est un abonnement supplémentaire</option>
+            {enCours.map((a) => (
+              <option value={a.id}>
+                Oui, clore « {a.credits_per_month} séance(s)/mois » la veille du nouveau début
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="creneau" class="block text-sm font-medium mb-1">Créneau d’origine</label>
+          <select id="creneau" name="creneau"
+                  class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2">
+            <option value="">Aucun</option>
+            {(creneaux ?? []).map((c) => <option value={c.id}>{c.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label for="credits" class="block text-sm font-medium mb-1">Séances incluses par mois</label>
+          <input id="credits" name="credits" type="number" min="0" required value="2"
+                 class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+          <p class="mt-1 text-xs text-[var(--color-text-light)]">0 pour un créneau payé à la séance.</p>
+        </div>
+        <div>
+          <label for="prix" class="block text-sm font-medium mb-1">Montant mensuel (€)</label>
+          <input id="prix" name="prix" type="number" min="0" step="0.01" required value="55"
+                 class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+        </div>
+        <div>
+          <label for="saison" class="block text-sm font-medium mb-1">Saison</label>
+          <input id="saison" name="saison" required value={saisonDefaut}
+                 class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+        </div>
+        <div>
+          <label for="debut" class="block text-sm font-medium mb-1">Premier mois</label>
+          <input id="debut" name="debut" type="date" required
+                 class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+        </div>
+        <div>
+          <label for="fin" class="block text-sm font-medium mb-1">Dernier mois</label>
+          <input id="fin" name="fin" type="date" required
+                 class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+        </div>
+      </div>
+
+      <button type="submit" class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-2 font-medium text-white">
+        Enregistrer
+      </button>
+    </form>
+  </details>
+
+  <h2 class="mt-10 mb-3 text-lg font-bold text-[var(--color-heading)]">Séances réservées</h2>
+  {(reservations ?? []).length === 0 ? (
+    <p class="rounded-xl bg-white p-5 text-[var(--color-text)] shadow-md">Aucune réservation.</p>
+  ) : (
+    <ul class="space-y-2">
+      {(reservations ?? []).map((r: any) => (
+        <li class="flex flex-wrap items-center gap-x-4 rounded-xl bg-white p-4 shadow-md">
+          <span class="font-medium text-[var(--color-heading)]">
+            {dateFr.format(new Date(r.sessions.starts_at))}
+          </span>
+          <span class="text-sm text-[var(--color-text-light)]">{r.sessions.creneaux?.label}</span>
+          {r.sessions.status === 'cancelled' && (
+            <span class="text-sm text-[var(--color-button)]">séance annulée</span>
+          )}
+        </li>
+      ))}
+    </ul>
+  )}
+
+  <a href="/espace-membre/admin/participants/" class="mt-8 inline-block text-sm underline">← Tous les participants</a>
+</AdminLayout>

@@ -1,0 +1,145 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../../utils/guards';
+import { getAdminClient } from '../../../../utils/supabase';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const supabase = getAdminClient();
+
+let prenom = '';
+let nom = '';
+let naissance = '';
+let notes = '';
+let emailCompte = '';
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  prenom = String(form.get('prenom') ?? '').trim();
+  nom = String(form.get('nom') ?? '').trim();
+  naissance = String(form.get('naissance') ?? '').trim();
+  notes = String(form.get('notes') ?? '').trim();
+  emailCompte = String(form.get('email') ?? '').trim().toLowerCase();
+
+  if (!prenom || !nom) {
+    erreur = 'Le prénom et le nom sont nécessaires.';
+  } else {
+    let accountId: string | null = null;
+
+    // Un accès est FACULTATIF. Sans adresse, le participant existe quand même :
+    // c'est le cas de toute personne qui ne se servira jamais du site, et
+    // exiger une adresse obligerait à en inventer.
+    if (emailCompte) {
+      const { data: existant } = await supabase
+        .from('accounts')
+        .select('id')
+        .eq('email', emailCompte)
+        .maybeSingle();
+
+      if (existant) {
+        // Rattachement à un compte déjà là : c'est ainsi qu'une mère inscrit
+        // une deuxième fille.
+        accountId = existant.id;
+      } else {
+        // Créer l'utilisateur d'authentification ET la ligne accounts. Omettre
+        // le premier produirait un compte impossible à utiliser : la connexion
+        // emploie shouldCreateUser: false, l'envoi du code échouerait, et
+        // l'écran afficherait « Compte non reconnu » alors que le compte existe.
+        const { data: authUser, error: authError } =
+          await supabase.auth.admin.createUser({ email: emailCompte, email_confirm: true });
+
+        if (authError || !authUser?.user) {
+          erreur = `Création de l’accès impossible : ${authError?.message ?? 'erreur inconnue'}`;
+        } else {
+          const { data: compte, error: compteError } = await supabase
+            .from('accounts')
+            .insert({ email: emailCompte, auth_user_id: authUser.user.id, role: 'member' })
+            .select('id')
+            .single();
+          if (compteError) erreur = `Création du compte impossible : ${compteError.message}`;
+          else accountId = compte.id;
+        }
+      }
+    }
+
+    if (!erreur) {
+      const { data: participant, error } = await supabase
+        .from('participants')
+        .insert({
+          account_id: accountId,
+          first_name: prenom,
+          last_name: nom,
+          birthdate: naissance || null,
+          notes: notes || null,
+        })
+        .select('id')
+        .single();
+
+      if (error) erreur = `Création impossible : ${error.message}`;
+      else return Astro.redirect(`/espace-membre/admin/participants/${participant.id}/`);
+    }
+  }
+}
+---
+
+<AdminLayout title="Nouveau participant" soustitre="L’accès au site est facultatif.">
+  {erreur && (
+    <p role="alert" class="mb-6 rounded-xl bg-white p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>
+  )}
+
+  <form method="post" class="max-w-lg space-y-5">
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="prenom" class="block text-sm font-medium mb-1">Prénom</label>
+        <input id="prenom" name="prenom" required value={prenom}
+               class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+      </div>
+      <div>
+        <label for="nom" class="block text-sm font-medium mb-1">Nom</label>
+        <input id="nom" name="nom" required value={nom}
+               class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+      </div>
+    </div>
+
+    <div>
+      <label for="naissance" class="block text-sm font-medium mb-1">
+        Date de naissance <span class="text-[var(--color-text-light)]">(pour les enfants)</span>
+      </label>
+      <input id="naissance" name="naissance" type="date" value={naissance}
+             class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+    </div>
+
+    <div>
+      <label for="notes" class="block text-sm font-medium mb-1">
+        Notes <span class="text-[var(--color-text-light)]">(facultatif)</span>
+      </label>
+      <textarea id="notes" name="notes" rows="2"
+                class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2">{notes}</textarea>
+    </div>
+
+    <div class="rounded-xl bg-[var(--color-bg-accent)] p-5">
+      <label for="email" class="block text-sm font-medium mb-1">
+        Adresse e-mail pour l’accès au site <span class="text-[var(--color-text-light)]">(facultatif)</span>
+      </label>
+      <input id="email" name="email" type="email" value={emailCompte}
+             class="w-full rounded-xl border border-white bg-white px-4 py-2" />
+      <p class="mt-2 text-sm text-[var(--color-text)]">
+        Laissez vide si la personne ne souhaite pas de compte : vous gérerez ses réservations
+        vous-même, et elle ne recevra aucun e-mail. Un accès pourra toujours être ajouté plus tard,
+        sans rien perdre.
+      </p>
+      <p class="mt-2 text-sm text-[var(--color-text)]">
+        Pour un enfant, indiquez l’adresse d’un parent. Si cette adresse a déjà un compte,
+        le participant y sera rattaché — c’est ainsi qu’on inscrit une deuxième fille.
+      </p>
+    </div>
+
+    <button type="submit" class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
+      Créer le participant
+    </button>
+  </form>
+</AdminLayout>
