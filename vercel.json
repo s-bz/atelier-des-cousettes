@@ -1,36 +1,112 @@
 {
   "redirects": [
-    { "source": "/mentions-lgales", "destination": "/mentions-legales/", "permanent": true },
-    { "source": "/mentions-lgales/", "destination": "/mentions-legales/", "permanent": true },
-    { "source": "/stages-thmatiques", "destination": "/stages-thematiques/", "permanent": true },
-    { "source": "/stages-thmatiques/", "destination": "/stages-thematiques/", "permanent": true },
-    { "source": "/ateliers-rguliers", "destination": "/ateliers-reguliers/", "permanent": true },
-    { "source": "/ateliers-rguliers/", "destination": "/ateliers-reguliers/", "permanent": true },
-    { "source": "/cours-particuliers", "destination": "/un-apres-midi-couture/", "permanent": true },
-    { "source": "/cours-particuliers/", "destination": "/un-apres-midi-couture/", "permanent": true },
-    { "source": "/la-couturire", "destination": "/la-couturiere/", "permanent": true },
-    { "source": "/la-couturire/", "destination": "/la-couturiere/", "permanent": true },
-    { "source": "/mes-crations", "destination": "/mes-creations/", "permanent": true },
-    { "source": "/mes-crations/", "destination": "/mes-creations/", "permanent": true },
-    { "source": "/sitemap.xml", "destination": "/sitemap-index.xml", "permanent": true }
+    {
+      "source": "/mentions-lgales",
+      "destination": "/mentions-legales/",
+      "permanent": true
+    },
+    {
+      "source": "/mentions-lgales/",
+      "destination": "/mentions-legales/",
+      "permanent": true
+    },
+    {
+      "source": "/stages-thmatiques",
+      "destination": "/stages-thematiques/",
+      "permanent": true
+    },
+    {
+      "source": "/stages-thmatiques/",
+      "destination": "/stages-thematiques/",
+      "permanent": true
+    },
+    {
+      "source": "/ateliers-rguliers",
+      "destination": "/ateliers-reguliers/",
+      "permanent": true
+    },
+    {
+      "source": "/ateliers-rguliers/",
+      "destination": "/ateliers-reguliers/",
+      "permanent": true
+    },
+    {
+      "source": "/cours-particuliers",
+      "destination": "/un-apres-midi-couture/",
+      "permanent": true
+    },
+    {
+      "source": "/cours-particuliers/",
+      "destination": "/un-apres-midi-couture/",
+      "permanent": true
+    },
+    {
+      "source": "/la-couturire",
+      "destination": "/la-couturiere/",
+      "permanent": true
+    },
+    {
+      "source": "/la-couturire/",
+      "destination": "/la-couturiere/",
+      "permanent": true
+    },
+    {
+      "source": "/mes-crations",
+      "destination": "/mes-creations/",
+      "permanent": true
+    },
+    {
+      "source": "/mes-crations/",
+      "destination": "/mes-creations/",
+      "permanent": true
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/sitemap-index.xml",
+      "permanent": true
+    }
   ],
   "trailingSlash": true,
   "headers": [
     {
       "source": "/images/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     },
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vercel.live https://tally.so https://b.atelier-des-cousettes.fr; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://img.youtube.com https://*.ytimg.com https://*.githubusercontent.com; frame-src https://www.youtube-nocookie.com https://vercel.live https://tally.so; connect-src 'self' https://api.github.com https://raw.githubusercontent.com https://*.githubusercontent.com https://va.vercel-scripts.com https://vercel.live https://tally.so https://b.atelier-des-cousettes.fr; font-src 'self' data: https://fonts.gstatic.com" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vercel.live https://tally.so https://b.atelier-des-cousettes.fr; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://img.youtube.com https://*.ytimg.com https://*.githubusercontent.com; frame-src https://www.youtube-nocookie.com https://vercel.live https://tally.so; connect-src 'self' https://api.github.com https://raw.githubusercontent.com https://*.githubusercontent.com https://va.vercel-scripts.com https://vercel.live https://tally.so https://b.atelier-des-cousettes.fr; font-src 'self' data: https://fonts.gstatic.com"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=()"
+        }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/quotidien/",
+      "schedule": "0 7 * * *"
     }
   ]
 }

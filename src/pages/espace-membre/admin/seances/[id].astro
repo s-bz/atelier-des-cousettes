@@ -4,6 +4,7 @@ export const prerender = false;
 import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
+import { notifier } from '../../../../utils/emails';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -28,9 +29,38 @@ if (Astro.request.method === 'POST') {
   }
 
   if (action === 'annuler') {
+    // Les inscrits sont lus AVANT l'annulation : après, leurs réservations sont
+    // libérées et la liste serait vide. Personne ne serait prévenu.
+    const { data: aPrevenir } = await supabase
+      .from('bookings')
+      .select('participants(first_name, accounts(email)), sessions(starts_at, ends_at, location)')
+      .eq('session_id', id)
+      .eq('status', 'booked');
+
     const { data, error } = await supabase.rpc('cancel_session', { p_session: id });
-    if (error) erreur = error.message;
-    else message = `Séance annulée. ${data} place${(data as number) > 1 ? 's ont été rendues' : ' a été rendue'}.`;
+
+    if (error) {
+      erreur = error.message;
+    } else {
+      let prevenus = 0;
+      for (const r of (aPrevenir ?? []) as any[]) {
+        const envoye = await notifier('annulation', r.participants?.accounts?.email, {
+          prenom: r.participants?.first_name ?? '',
+          starts_at: r.sessions.starts_at,
+          ends_at: r.sessions.ends_at,
+          location: r.sessions.location,
+        });
+        if (envoye) prevenus++;
+      }
+
+      const rendues = data as number;
+      const sansCompte = (aPrevenir ?? []).length - prevenus;
+      message = `Séance annulée. ${rendues} place${rendues > 1 ? 's rendues' : ' rendue'}, `
+        + `${prevenus} personne${prevenus > 1 ? 's prévenues' : ' prévenue'} par e-mail`
+        + (sansCompte > 0
+            ? ` — ${sansCompte} sans accès au site, à prévenir vous-même.`
+            : '.');
+    }
   }
 
   if (action === 'capacite') {
