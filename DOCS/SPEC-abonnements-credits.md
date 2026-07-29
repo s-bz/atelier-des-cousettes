@@ -278,6 +278,15 @@ Un job idempotent, exécuté quotidiennement sur un horizon glissant de 60 jours
 
 **Le job raisonne par participant.** Deux sœurs sur le même créneau et le même compte produisent deux réservations distinctes sur chaque séance — et consomment donc deux places. La capacité se compte en participants, jamais en comptes.
 
+**Libérer une place ne rouvre pas un créneau d'auto-inscription.** Le quota du
+mois se calcule sur toutes les lignes de ce mois, libérées comprises. Sans cette
+règle, §9 et §5 règle 2 se contredisent : on libérerait sa place pour capitaliser
+le crédit, et l'auto-inscription le redépenserait aussitôt sur une séance que
+personne n'a choisie. Capitaliser deviendrait impossible.
+
+Les pierres tombales empêchent qu'une séance précise revienne ; cette règle-ci
+empêche que le mois soit recomblé. Les deux sont nécessaires.
+
 **Le job est rejouable.** Le relancer dix fois de suite ne change rien. C'est ce qui permet de le faire tourner tous les jours, d'ajouter des séances en cours de saison, et de créer un adhérent en janvier sans traitement de rattrapage particulier.
 
 ### Le conflit de réservation
