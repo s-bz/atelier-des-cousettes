@@ -105,7 +105,11 @@ Si la réponse ne vous satisfait pas, vous pouvez saisir la **CNIL** — 3 place
 
 **Ce site ne dépose aucun cookie de mesure d'audience, et n'affiche donc aucun bandeau de consentement.**
 
-La fréquentation est mesurée par PostHog, hébergé dans l'Union européenne et configuré **sans aucun stockage** : ni cookie, ni donnée conservée dans votre navigateur. Les pages consultées sont comptées, mais aucun identifiant ne permet de vous reconnaître d'une visite à l'autre. L'enregistrement de session est désactivé.
+La fréquentation est mesurée par PostHog, hébergé dans l'Union européenne et configuré en **mode sans cookie** : rien n'est écrit ni lu sur votre appareil, ni cookie ni aucune autre forme de stockage.
+
+Pour compter les visiteurs sans vous suivre, PostHog calcule sur ses propres serveurs un **condensat non réversible** à partir de données techniques ordinaires (adresse IP, navigateur). Ce condensat change régulièrement, ne permet pas de remonter jusqu'à vous, et n'est jamais rapproché de votre compte adhérent. L'enregistrement de session et la capture automatique des interactions sont désactivés.
+
+Les mesures transitent par le sous-domaine `b.atelier-des-cousettes.fr`, qui relaie vers PostHog.
 
 Une seconde mesure, également sans cookie, est réalisée par l'hébergeur.
 

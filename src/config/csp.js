@@ -38,7 +38,7 @@ export const CSP_DIRECTIVES = {
     'https://va.vercel-scripts.com', // Vercel Analytics
     'https://vercel.live', // Vercel toolbar / live preview
     'https://tally.so', // Tally contact form script
-    'https://eu-assets.i.posthog.com', // PostHog loader (cloud UE)
+    'https://b.atelier-des-cousettes.fr', // PostHog via proxy inverse first-party
   ],
 
   'style-src': [
@@ -70,8 +70,7 @@ export const CSP_DIRECTIVES = {
     'https://va.vercel-scripts.com', // Vercel Analytics beacon
     'https://vercel.live', // Vercel toolbar
     'https://tally.so', // Tally API fallbacks
-    'https://eu.i.posthog.com', // PostHog ingestion (cloud UE)
-    'https://eu-assets.i.posthog.com', // PostHog assets / configuration distante
+    'https://b.atelier-des-cousettes.fr', // PostHog via proxy inverse first-party
   ],
 
   'font-src': [
