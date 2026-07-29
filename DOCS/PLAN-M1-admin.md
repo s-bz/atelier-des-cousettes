@@ -183,15 +183,34 @@ supabase db query --linked -f supabase/tests/bookings.sql
 
 Dans `.env.local` puis dans Vercel :
 
-```
+```bash
 ADMIN_EMAILS=isabelle@exemple.fr,sam@exemple.fr
 ```
 
 - [ ] **Étape 2 — Écrire le script**
 
-`scripts/bootstrap-admins.mjs` : pour chaque adresse, `upsert` dans `accounts` avec `role = 'admin'` via `getAdminClient()`, sur conflit d'`email` mettre à jour `role` uniquement. Idempotent.
+`scripts/bootstrap-admins.mjs`, pour chaque adresse et via `getAdminClient()` :
 
-Le compte est créé **sans `auth_user_id`** : il sera rattaché à la première connexion, en comparant l'adresse. Un compte admin n'a besoin d'aucun participant.
+1. **créer l'utilisateur d'authentification** — `auth.admin.createUser({ email, email_confirm: true })`, en ignorant l'erreur « déjà existant » ;
+2. `upsert` dans `accounts` avec `role = 'admin'` **et `auth_user_id` renseigné depuis l'étape 1**, en ne mettant à jour que `role` et `auth_user_id` sur conflit d'`email`.
+
+Idempotent : rejouable sans doublon.
+
+> **Les deux étapes sont indispensables.** La connexion utilise
+> `shouldCreateUser: false` (Task 3) : sans ligne dans `auth.users`, l'envoi du
+> code échoue et **personne ne peut se connecter, pas même Isabelle**. Créer
+> seulement la ligne `accounts` produit un compte inutilisable — l'écran dirait
+> « Compte non reconnu » alors que le compte existe.
+>
+> La même contrainte vaut pour tout compte adhérent créé par Isabelle (Task 7) :
+> créer un accès, c'est toujours créer l'utilisateur d'authentification **et** la
+> ligne `accounts`, jamais l'une sans l'autre.
+
+- [ ] **Étape 2 bis — Interdire l'auto-inscription**
+
+Dans le tableau de bord Supabase (Authentication → Sign In / Providers), désactiver l'inscription libre. Aucun compte ne doit jamais naître autrement que par la main d'Isabelle ou par le webhook HelloAsso (M5).
+
+`shouldCreateUser: false` couvre déjà le chemin de l'application ; couper l'inscription au niveau du projet ferme aussi l'appel direct à `/auth/v1/signup`, qui n'est protégé que par le caractère non public de la clé publishable.
 
 - [ ] **Étape 3 — Exécuter et vérifier**
 
@@ -321,6 +340,8 @@ Après annulation : `status = 'cancelled'`, zéro réservation active, et le sol
 - [ ] **Étape 1 — Créer un participant**
 
 Nom, prénom, date de naissance (facultative), notes. **Le compte est facultatif** : une case « créer aussi un accès » révèle un champ e-mail. Sans e-mail, `account_id` reste nul et la personne n'aura jamais de compte — c'est un cas normal, pas une erreur.
+
+Quand un accès est demandé, créer **l'utilisateur d'authentification et la ligne `accounts`**, comme au Task 2 : `auth.admin.createUser({ email, email_confirm: true })` puis l'insertion avec `auth_user_id`. Omettre la première étape produit un compte qui ne peut pas se connecter, et dont le message d'erreur — « Compte non reconnu » — désigne la mauvaise cause.
 
 Rattacher un participant existant à un compte, et créer un compte seul, sont deux gestes distincts du même écran.
 
