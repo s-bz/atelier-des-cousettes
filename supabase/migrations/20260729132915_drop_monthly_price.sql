@@ -1,0 +1,17 @@
+-- Suppression du montant mensuel de l'abonnement.
+--
+-- Il ne servait à rien. Aucun calcul ne s'en sert : les séances
+-- supplémentaires sont facturées au unit_price_cents de LEUR séance, jamais au
+-- montant mensuel. Aucun suivi de paiement n'existe. Le champ était donc saisi
+-- pour chaque personne et seulement réaffiché à Isabelle, qui connaît ses
+-- propres tarifs.
+--
+-- Il était en outre mal placé : 55 €/mois est une propriété de la FORMULE, pas
+-- de Marie. Le dupliquer sur chaque abonnement, c'est vingt occasions de faute
+-- de frappe et vingt lignes à reprendre au moindre changement de tarif.
+--
+-- L'argent réel vit chez HelloAsso, ou dans la comptabilité d'Isabelle. Si un
+-- jour l'application doit connaître les tarifs, ils appartiendront à une table
+-- de formules — celle-là même que le provisionnement HelloAsso (M5) exige déjà
+-- pour traduire un tarif en créneau et en nombre de séances.
+alter table subscriptions drop column monthly_price_cents;

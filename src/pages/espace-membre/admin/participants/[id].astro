@@ -42,7 +42,6 @@ if (Astro.request.method === 'POST') {
         season: String(form.get('saison') ?? ''),
         home_creneau_id: String(form.get('creneau') ?? '') || null,
         credits_per_month: Number(form.get('credits')),
-        monthly_price_cents: Math.round(Number(form.get('prix')) * 100),
         starts_on: debut,
         ends_on: fin,
       });
@@ -54,7 +53,7 @@ if (Astro.request.method === 'POST') {
 
 const { data: participant } = await supabase
   .from('participants')
-  .select('id, first_name, last_name, birthdate, notes, account_id, accounts(email)')
+  .select('id, first_name, last_name, notes, account_id, accounts(email)')
   .eq('id', id)
   .maybeSingle();
 
@@ -62,7 +61,7 @@ if (!participant) return new Response('Participant introuvable', { status: 404 }
 
 const { data: abonnements } = await supabase
   .from('subscriptions')
-  .select('id, season, home_creneau_id, credits_per_month, monthly_price_cents, starts_on, ends_on, helloasso_order_id, creneaux(label)')
+  .select('id, season, home_creneau_id, credits_per_month, starts_on, ends_on, helloasso_order_id, creneaux(label)')
   .eq('participant_id', id)
   .order('starts_on');
 
@@ -123,9 +122,6 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
             <span class="text-sm text-[var(--color-text-light)]">
               {(a.creneaux as any)?.label ?? 'sans créneau d’origine'}
             </span>
-            <span class="text-sm text-[var(--color-text-light)]">
-              {(a.monthly_price_cents / 100).toFixed(2)} €/mois
-            </span>
             <span class="ml-auto text-sm text-[var(--color-text-light)]">
               {dateFr.format(new Date(a.starts_on))} → {dateFr.format(new Date(a.ends_on))}
             </span>
@@ -182,11 +178,6 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
           <input id="credits" name="credits" type="number" min="0" required value="2"
                  class="champ" />
           <p class="mt-1 text-xs text-[var(--color-text-light)]">0 pour un créneau payé à la séance.</p>
-        </div>
-        <div>
-          <label for="prix" class="block text-sm font-medium mb-1">Montant mensuel (€)</label>
-          <input id="prix" name="prix" type="number" min="0" step="0.01" required value="55"
-                 class="champ" />
         </div>
         <div>
           <label for="saison" class="block text-sm font-medium mb-1">Saison</label>

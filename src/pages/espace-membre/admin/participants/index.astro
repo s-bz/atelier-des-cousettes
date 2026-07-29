@@ -12,7 +12,7 @@ const supabase = getAdminClient();
 
 const { data: personnes } = await supabase
   .from('participants')
-  .select('id, first_name, last_name, birthdate, account_id, accounts(email), subscriptions(id)')
+  .select('id, first_name, last_name, account_id, accounts(email), subscriptions(id)')
   .order('last_name');
 
 const soldes = new Map<string, number>();
@@ -48,16 +48,6 @@ for (const [compte, membres] of parCompte) {
 
 foyers.sort((a, b) => a.membres[0].last_name.localeCompare(b.membres[0].last_name, 'fr'));
 
-const age = (naissance: string | null) => {
-  if (!naissance) return null;
-  const n = new Date(naissance);
-  const maintenant = new Date();
-  let a = maintenant.getFullYear() - n.getFullYear();
-  const m = maintenant.getMonth() - n.getMonth();
-  if (m < 0 || (m === 0 && maintenant.getDate() < n.getDate())) a--;
-  return a;
-};
-
 const libelleSolde = (s: number) =>
   s < 0
     ? `${-s} à facturer`
@@ -81,7 +71,6 @@ const libelleSolde = (s: number) =>
         const famille = foyer.membres.length > 1;
 
         const ligne = (p: Personne) => {
-          const ans = age(p.birthdate);
           const solde = soldes.get(p.id) ?? 0;
           const sansAbonnement = (p.subscriptions ?? []).length === 0;
           return (
@@ -90,9 +79,6 @@ const libelleSolde = (s: number) =>
               <span class="font-medium text-[var(--color-heading)]">
                 {p.last_name} {p.first_name}
               </span>
-              {ans !== null && (
-                <span class="text-sm text-[var(--color-text-light)]">{ans} ans</span>
-              )}
               {!famille && !p.account_id && (
                 <span class="text-xs text-[var(--color-text-light)]">
                   sans accès — ne recevra aucun e-mail
