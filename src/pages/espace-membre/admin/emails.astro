@@ -18,7 +18,10 @@ if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   const id = String(form.get('gabarit') ?? '');
   const subject = String(form.get('sujet') ?? '').trim();
-  const body = String(form.get('corps') ?? '').trim();
+  // Un <textarea> renvoie du CRLF, la norme HTML l'impose. Stocké tel quel, il
+  // casse le découpage en paragraphes à l'affichage. On normalise à l'entrée
+  // pour que la base ne contienne qu'une seule forme de fin de ligne.
+  const body = String(form.get('corps') ?? '').replace(/\r\n?/g, '\n').trim();
 
   if (!subject || !body) {
     erreur = 'Le sujet et le message ne peuvent pas être vides.';

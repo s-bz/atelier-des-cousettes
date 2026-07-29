@@ -39,6 +39,17 @@ const COULEURS = {
   accent: '#c96442',
 };
 
+// Le thème sombre du site, à l'identique.
+const SOMBRE = {
+  fond: '#141413',
+  carte: '#1e1e1c',
+  trait: '#3d3d3a',
+  titre: '#faf9f5',
+  texte: '#b0aea5',
+  discret: '#87867f',
+  accent: '#e08a6d',   // --color-link : le corail s'éclaircit sur fond sombre
+};
+
 // Les polices du site sont auto-hébergées : aucun client de messagerie ne les
 // chargera. On garde donc l'INTENTION — une serif pour les titres, une sans
 // pour le texte — avec des familles présentes partout.
@@ -113,9 +124,24 @@ export interface Contexte {
   location: string;
 }
 
+/**
+ * Les deux destinations, dans tous les gabarits.
+ *
+ * Un seul {{lien}} obligeait à deviner où il menait — le planning ici,
+ * l'accueil là — et le libellé du bouton avec lui. Les deux sont désormais
+ * nommés et disponibles partout : Isabelle place celui qui convient au message
+ * qu'elle écrit. {{lien}} reste servi, en synonyme, pour ne pas casser un
+ * gabarit déjà enregistré.
+ */
+const LIENS = {
+  lien_planning: LIEN_PLANNING,
+  lien_espace: LIEN_ESPACE,
+};
+
 /** Valeurs des gabarits qui parlent d'UNE séance. */
 export function variablesSeance(c: Contexte): Valeurs {
   return {
+    ...LIENS,
     prenom: c.prenom,
     date: dateLongue.format(new Date(c.starts_at)),
     heure_debut: heure.format(new Date(c.starts_at)),
@@ -145,6 +171,7 @@ export function variablesAccueil(o: {
   solde: number;
 }): Valeurs {
   return {
+    ...LIENS,
     prenom: o.prenom,
     creneau: o.creneau ?? 'aucun créneau attitré',
     nombre_seances: String(o.seances.length),
@@ -194,32 +221,51 @@ const URL_SEULE = /^https?:\/\/\S+$/;
  * est un message raté.
  */
 export function enHtml(sujet: string, texte: string): string {
-  const blocs = texte.trim().split(/\n{2,}/).map((bloc) => {
+  // Normalisation des fins de ligne AVANT tout découpage. Un <textarea> renvoie
+  // du CRLF — la norme HTML l'impose — et « \r\n\r\n » ne contient pas deux \n
+  // adjacents : sans cette ligne, tout message enregistré depuis l'écran
+  // d'édition perdait ses paragraphes et repartait en un seul bloc.
+  const blocs = texte.replace(/\r\n?/g, '\n').trim().split(/\n{2,}/).map((bloc) => {
     const lignes = bloc.split('\n').map((l) => l.trim()).filter(Boolean);
-
-    // Un bloc qui n'est qu'une adresse : bouton.
-    if (lignes.length === 1 && URL_SEULE.test(lignes[0])) {
-      const url = echapper(lignes[0]);
-      return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
-  <tr><td style="border-radius:10px;background:${COULEURS.accent};">
-    <a href="${url}" style="display:inline-block;padding:13px 26px;font-family:${SANS};font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;">Ouvrir mon espace</a>
-  </td></tr>
-</table>`;
-    }
 
     // Un bloc de lignes « - … » : liste.
     if (lignes.length > 0 && lignes.every((l) => l.startsWith('- '))) {
       const items = lignes
         .map((l) => `<li style="margin:0 0 8px;">${lienDansTexte(l.slice(2))}</li>`)
         .join('\n      ');
-      return `<ul style="margin:0 0 16px;padding-left:20px;font-family:${SANS};font-size:16px;line-height:1.6;color:${COULEURS.texte};">
+      return `<ul class="e-texte" style="margin:0 0 16px;padding-left:20px;font-family:${SANS};font-size:16px;line-height:1.6;color:${COULEURS.texte};">
       ${items}
     </ul>`;
     }
 
-    return `<p style="margin:0 0 16px;font-family:${SANS};font-size:16px;line-height:1.6;color:${COULEURS.texte};">${
-      lignes.map(lienDansTexte).join('<br />')
-    }</p>`;
+    // Une ligne réduite à une adresse devient un bouton, où qu'elle se trouve —
+    // y compris collée au paragraphe qui la précède. Ne la reconnaître qu'en
+    // bloc isolé ferait dépendre le bouton d'une ligne vide qu'Isabelle doit
+    // penser à laisser ; oubliée, l'adresse repart en lien nu au fil du texte.
+    const morceaux: string[] = [];
+    let courant: string[] = [];
+
+    const viderParagraphe = () => {
+      if (!courant.length) return;
+      morceaux.push(
+        `<p class="e-texte" style="margin:0 0 16px;font-family:${SANS};font-size:16px;line-height:1.6;color:${COULEURS.texte};">${
+          courant.map(lienDansTexte).join('<br />')
+        }</p>`,
+      );
+      courant = [];
+    };
+
+    for (const ligne of lignes) {
+      if (URL_SEULE.test(ligne)) {
+        viderParagraphe();
+        morceaux.push(bouton(ligne));
+      } else {
+        courant.push(ligne);
+      }
+    }
+    viderParagraphe();
+
+    return morceaux.join('\n        ');
   });
 
   return `<!doctype html>
@@ -227,20 +273,34 @@ export function enHtml(sujet: string, texte: string): string {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<meta name="supported-color-schemes" content="light dark" />
 <title>${echapper(sujet)}</title>
+<style>
+  :root { color-scheme: light dark; supported-color-schemes: light dark; }
+  @media (prefers-color-scheme: dark) {
+    .e-fond   { background:${SOMBRE.fond} !important; }
+    .e-carte  { background:${SOMBRE.carte} !important; }
+    .e-entete { border-bottom-color:${SOMBRE.trait} !important; }
+    .e-marque { color:${SOMBRE.titre} !important; }
+    .e-texte  { color:${SOMBRE.texte} !important; }
+    .e-pied   { color:${SOMBRE.discret} !important; }
+    .e-lien   { color:${SOMBRE.accent} !important; }
+  }
+</style>
 </head>
-<body style="margin:0;padding:0;background:${COULEURS.fond};">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${COULEURS.fond};">
+<body class="e-fond" style="margin:0;padding:0;background:${COULEURS.fond};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="e-fond" style="background:${COULEURS.fond};">
   <tr><td align="center" style="padding:32px 16px;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:${COULEURS.carte};border-radius:16px;">
-      <tr><td style="padding:28px 32px 18px;border-bottom:1px solid ${COULEURS.trait};">
-        <span style="font-family:${SERIF};font-size:21px;color:${COULEURS.titre};">L’Atelier des Cousettes</span>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="e-carte" style="max-width:560px;background:${COULEURS.carte};border-radius:16px;">
+      <tr><td class="e-entete" align="center" style="padding:28px 32px 18px;border-bottom:1px solid ${COULEURS.trait};text-align:center;">
+        <span class="e-marque" style="font-family:${SERIF};font-size:21px;color:${COULEURS.titre};">L’Atelier des Cousettes</span>
       </td></tr>
       <tr><td style="padding:28px 32px 8px;">
         ${blocs.join('\n        ')}
       </td></tr>
     </table>
-    <p style="margin:20px 0 0;max-width:560px;font-family:${SANS};font-size:13px;line-height:1.5;color:${COULEURS.discret};">
+    <p class="e-pied" style="margin:20px 0 0;max-width:560px;font-family:${SANS};font-size:13px;line-height:1.5;color:${COULEURS.discret};">
       Vous recevez ce message parce que vous participez aux ateliers.
       Vous pouvez répondre directement à cet e-mail.
     </p>
@@ -250,10 +310,27 @@ export function enHtml(sujet: string, texte: string): string {
 </html>`;
 }
 
+/**
+ * Bouton, avec un libellé tiré de la destination.
+ *
+ * Le libellé se déduit de l'adresse plutôt que de se saisir : le gabarit ne
+ * contient qu'une variable, et le texte du bouton ne peut donc pas contredire
+ * l'endroit où il mène.
+ */
+function bouton(url: string): string {
+  const cible = echapper(url);
+  const libelle = url.includes('/planning/') ? 'Voir le planning' : 'Ouvrir mon espace';
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+  <tr><td class="e-bouton" style="border-radius:10px;background:${COULEURS.accent};">
+    <a href="${cible}" style="display:inline-block;padding:13px 26px;font-family:${SANS};font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;">${libelle}</a>
+  </td></tr>
+</table>`;
+}
+
 const lienDansTexte = (ligne: string) =>
   echapper(ligne).replace(
     /(https?:\/\/[^\s<]+)/g,
-    `<a href="$1" style="color:${COULEURS.accent};">$1</a>`,
+    `<a class="e-lien" href="$1" style="color:${COULEURS.accent};">$1</a>`,
   );
 
 /** Charge un gabarit et le remplit. Renvoie null si le gabarit a disparu. */

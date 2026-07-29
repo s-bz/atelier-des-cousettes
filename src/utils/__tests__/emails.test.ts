@@ -55,8 +55,15 @@ describe('variables disponibles', () => {
 
   it('expose exactement ce que l’écran d’édition annonce', () => {
     expect(Object.keys(v).sort()).toEqual(
-      ['date', 'heure_debut', 'heure_fin', 'lien', 'lieu', 'prenom'].sort(),
+      ['date', 'heure_debut', 'heure_fin', 'lien', 'lien_espace', 'lien_planning', 'lieu', 'prenom'].sort(),
     );
+  });
+
+  it('sert les deux destinations, et garde {{lien}} en synonyme', () => {
+    // {{lien}} reste servi pour ne pas casser un gabarit déjà enregistré.
+    expect(v.lien_planning).toContain('/espace-membre/planning/');
+    expect(v.lien_espace).toBe('https://atelier-des-cousettes.fr/espace-membre/');
+    expect(v.lien).toBe(v.lien_planning);
   });
 
   it('formate les heures en 24 h, à Paris', () => {
@@ -84,7 +91,7 @@ describe('variables du message d’accueil', () => {
 
   it('expose exactement ce que l’écran d’édition annonce', () => {
     expect(Object.keys(v).sort()).toEqual(
-      ['creneau', 'lien', 'nombre_seances', 'prenom', 'seances', 'solde'].sort(),
+      ['creneau', 'lien', 'lien_espace', 'lien_planning', 'nombre_seances', 'prenom', 'seances', 'solde'].sort(),
     );
   });
 
@@ -139,7 +146,7 @@ describe('habillage HTML', () => {
 
   it('sépare les paragraphes sur les lignes vides', () => {
     const html = enHtml('Objet', 'Premier.\n\nSecond.');
-    expect(html.match(/<p style/g)?.length).toBe(3); // deux blocs + le pied
+    expect(html.match(/<p class="e-(texte|pied)"/g)?.length).toBe(3); // deux blocs + le pied
   });
 
   it('porte les couleurs du site', () => {
@@ -148,5 +155,56 @@ describe('habillage HTML', () => {
     expect(html).toContain('#faf9f5');  // carte
     expect(html).toContain('#c96442');  // corail du bouton
     expect(html).toContain('L’Atelier des Cousettes');
+  });
+
+  it('suit le thème sombre du lecteur', () => {
+    const html = enHtml('Objet', 'Bonjour');
+
+    // Les deux métas disent au client de messagerie : « je gère les deux
+    // thèmes ». Sans elles, Apple Mail et Outlook.com inversent d'autorité les
+    // couleurs, et le résultat n'est plus celui qu'on a dessiné.
+    expect(html).toContain('name="color-scheme" content="light dark"');
+    expect(html).toContain('name="supported-color-schemes" content="light dark"');
+    expect(html).toContain('@media (prefers-color-scheme: dark)');
+    expect(html).toContain('#141413');  // fond sombre du site
+  });
+
+  it('force les surcharges sombres au-dessus des styles en ligne', () => {
+    // Un style en ligne l'emporte toujours sur une règle de feuille : sans
+    // !important, le bloc sombre serait présent et sans effet — un thème
+    // sombre qui ne s'applique jamais est pire qu'aucun, on croit l'avoir.
+    const sombre = enHtml('Objet', 'Bonjour').split('prefers-color-scheme: dark')[1];
+    const regles = sombre.split('}').filter((l) => l.includes('.e-'));
+    expect(regles.length).toBeGreaterThan(0);
+    for (const regle of regles) expect(regle).toContain('!important');
+  });
+
+  it('découpe les paragraphes même en CRLF', () => {
+    // Un <textarea> renvoie du CRLF : la norme HTML l'impose. « \r\n\r\n » ne
+    // contient pas deux \n adjacents, et sans normalisation tout message
+    // enregistré depuis l'écran d'édition repartait en un seul bloc — les
+    // paragraphes et les listes aplatis, sans que rien ne le signale.
+    const crlf = enHtml('Objet', 'Premier.\r\n\r\nSecond.\r\n\r\n- une date\r\n- une autre');
+    expect(crlf.match(/<p class="e-texte"/g)?.length).toBe(2);
+    expect(crlf).toContain('<ul');
+    expect(crlf.match(/<li/g)?.length).toBe(2);
+    expect(crlf).not.toContain('\r');
+  });
+
+  it('fait un bouton d’une adresse collée au paragraphe précédent', () => {
+    // Sans ligne vide au-dessus : le bouton ne doit pas dépendre d'une
+    // convention de saisie qu'Isabelle doit penser à respecter.
+    const html = enHtml('Objet', 'Un empêchement ?\nhttps://exemple.fr/planning/\nÀ bientôt');
+    expect(html).toContain('Voir le planning');
+    expect(html.match(/<p class="e-texte"/g)?.length).toBe(2); // avant et après
+  });
+
+  it('nomme le bouton d’après sa destination', () => {
+    expect(enHtml('O', 'https://x.fr/espace-membre/')).toContain('Ouvrir mon espace');
+    expect(enHtml('O', 'https://x.fr/espace-membre/planning/')).toContain('Voir le planning');
+  });
+
+  it('centre la marque', () => {
+    expect(enHtml('Objet', 'Bonjour')).toMatch(/align="center"[^>]*text-align:center/);
   });
 });
