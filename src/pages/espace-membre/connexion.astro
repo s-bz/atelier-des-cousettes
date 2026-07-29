@@ -3,6 +3,18 @@ export const prerender = false;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getRequestClient, getAdminClient } from '../../utils/supabase';
+import { lienWhatsApp } from '../../utils/contact';
+
+// Reprises de src/content/site-settings.yaml. Le mobile est celui qui porte
+// WhatsApp ; le fixe de l'atelier n'y répondrait pas.
+const MOBILE_ET_MAIL = {
+  email: 'info@atelier-des-cousettes.fr',
+  mobile: '06 95 78 36 34',
+};
+
+// null si le numéro n'est pas reconnaissable : un bouton qui ouvre une
+// conversation avec un inconnu est pire qu'un bouton absent.
+const whatsapp = lienWhatsApp(MOBILE_ET_MAIL.mobile);
 
 // Déjà connecté : rien à faire ici.
 if (Astro.locals.account) {
@@ -135,106 +147,219 @@ if (Astro.request.method === 'POST') {
 }
 ---
 
-<BaseLayout title="Connexion" description="Accès à votre espace adhérent." noIndex={true}>
-  <section class="py-16 md:py-20">
-    <div class="max-w-md mx-auto px-4">
-      <h1 class="text-2xl md:text-3xl font-bold text-center text-[var(--color-heading)] mb-2"
-          style="font-family: var(--font-heading)">
-        Votre espace
-      </h1>
-      <p class="text-center text-[var(--color-text-light)] mb-8">
-        {etape === 'email'
-          ? 'Indiquez votre adresse e-mail : un code de connexion vous sera envoyé.'
-          : 'Saisissez le code reçu par e-mail.'}
-      </p>
+{/*
+  Cette page est aussi la « page d'accueil de l'application » déclarée à Google
+  pour la validation de l'écran de consentement OAuth.
 
-      {erreur && (
-        <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">
-          {erreur}
-        </p>
-      )}
-      {info && (
-        <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">
-          {info}
-        </p>
-      )}
+  Son examinateur la charge sans être connecté et y cherche deux choses : ce que
+  fait l'application, et un lien accessible vers la politique de
+  confidentialité, hébergée sur le même domaine. Une page réduite à un
+  formulaire de connexion est refusée.
 
-      {etape === 'email' && (
-        <>
-          {/*
-            Google d'abord : c'est le chemin le plus court — un clic, aucun
-            aller-retour vers la boîte aux lettres. Le code par e-mail reste
-            juste en dessous, et non replié derrière un lien : une part
-            importante des adhérents est sur orange.fr, free.fr ou wanadoo.fr,
-            pour qui ce bouton ne sert à rien. Les deux chemins restent donc
-            visibles d'emblée, Google seulement en premier.
-          */}
-          <form method="post">
-            <input type="hidden" name="provider" value="google" />
-            <button
-              type="submit"
-              class="flex w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border-2 border-[var(--color-border)] bg-[var(--color-card-bg)] px-6 py-3 font-medium text-[var(--color-heading)] transition-colors hover:bg-[var(--color-bg-accent)]"
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-                <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z"/>
-                <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.34A9 9 0 0 0 9 18Z"/>
-                <path fill="#FBBC05" d="M3.97 10.72a5.41 5.41 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.01-2.34Z"/>
-                <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.94l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58Z"/>
-              </svg>
-              Continuer avec Google
-            </button>
-          </form>
+  Le détail des données reçues de Google appartient à la politique de
+  confidentialité, pas à cette page : c'est là que Google l'exige, et l'y
+  recopier encombrait l'écran de quelqu'un qui vient simplement se connecter.
 
-          <div class="my-6 flex items-center gap-4" aria-hidden="true">
-            <span class="h-px flex-1 bg-[var(--color-bg-accent)]"></span>
-            <span class="text-sm text-[var(--color-text-light)]">ou</span>
-            <span class="h-px flex-1 bg-[var(--color-bg-accent)]"></span>
-          </div>
-        </>
-      )}
+  Ce n'est pas seulement une exigence administrative : quelqu'un qui arrive ici
+  depuis un e-mail doit pouvoir comprendre où il est avant de cliquer sur un
+  bouton qui partage son identité.
 
-      <form method="post" class="space-y-4">
-        <div>
-          <label for="email" class="block text-sm font-medium mb-1">Adresse e-mail</label>
-          <input
-            id="email" name="email" type="email" required autocomplete="email"
-            value={email} readonly={etape === 'code'}
-            class="champ"
-          />
+  noIndex reste posé : l'exigence est d'être ACCESSIBLE publiquement, pas
+  indexée, et cette page n'a rien à faire dans les résultats de recherche.
+*/}
+<BaseLayout
+  title="Espace adhérent"
+  description="Réservez et libérez vos séances de couture à L’Atelier des Cousettes."
+  noIndex={true}
+>
+  <section class="py-12 md:py-16">
+    <div class="mx-auto max-w-4xl px-4">
+
+      <div class="flex flex-col items-center text-center">
+        <img src="/logo-oauth-120.png" alt="" width="64" height="64" class="h-16 w-16" />
+        <h1 class="mt-5 text-2xl md:text-3xl font-bold text-[var(--color-heading)]"
+            style="font-family: var(--font-heading)">
+          Espace adhérent
+        </h1>
+        <p class="mt-2 text-[var(--color-text-light)]">L’Atelier des Cousettes — Verdalle, Tarn</p>
+      </div>
+
+      <div class="mt-12 grid items-start gap-10 lg:grid-cols-2">
+
+        {/* Ce que fait l'application — exigé par Google, utile à tout le monde. */}
+        <div class="order-last lg:order-none">
+          <h2 class="text-lg font-bold text-[var(--color-heading)]"
+              style="font-family: var(--font-heading)">
+            Ce que vous pouvez y faire
+          </h2>
+          <ul class="mt-4 space-y-4">
+            {[
+              ['Voir vos séances', 'Les dates déjà retenues pour vous, et le nombre de séances qu’il vous reste.'],
+              ['Libérer une place', 'Un empêchement ? La séance vous reste acquise et la place profite à quelqu’un d’autre.'],
+              ['Choisir une autre date', 'Y compris sur un autre créneau, selon les places disponibles.'],
+            ].map(([titre, texte]) => (
+              <li>
+                <h3 class="font-medium text-[var(--color-heading)]">{titre}</h3>
+                <p class="mt-0.5 text-sm text-[var(--color-text)]">{texte}</p>
+              </li>
+            ))}
+          </ul>
+
         </div>
 
-        {etape === 'code' && (
-          <div>
-            <label for="code" class="block text-sm font-medium mb-1">Code reçu par e-mail</label>
+        {/*
+          La connexion, dans un panneau détaché du fond.
+          Elle est la seule chose actionnable de la page ; tout le reste
+          explique. Lui donner sa propre surface la désigne sans avoir à
+          l'annoncer, et évite qu'elle se lise comme la suite de la colonne
+          de gauche sur un écran étroit.
+        */}
+        <div class="mx-auto w-full max-w-md">
+          <div class="rounded-xl bg-[var(--color-card-bg)] p-6 shadow-md md:p-7">
+
             {/*
-              La longueur du code N'EST PAS figée. Elle est réglable côté
-              Supabase et vaut 8 sur ce projet, alors que la valeur par défaut
-              documentée est 6. Un maxlength="6" tronquait silencieusement la
-              saisie : le formulaire acceptait l'envoi, et le code partait
-              amputé de ses deux derniers chiffres. Le message d'erreur — « code
-              incorrect ou expiré » — désignait alors une cause inexistante.
-              On accepte donc l'intervalle, plutôt que de dupliquer ici un
-              réglage qui vit ailleurs.
+              Rien à dire à l'étape de l'adresse : le champ porte son
+              marque-page, le bouton annonce « Recevoir mon code ». À l'étape
+              suivante en revanche, le code vient d'arriver ailleurs — là, un
+              mot aide.
             */}
-            <input
-              id="code" name="code" type="text" required autocomplete="one-time-code"
-              inputmode="numeric" pattern="[0-9]{6,8}" maxlength="8" autofocus
-              class="champ tracking-[0.5em] text-center text-lg"
-            />
+            {etape === 'code' && (
+              <p class="mb-5 text-[var(--color-text-light)]">Saisissez le code reçu par e-mail.</p>
+            )}
+
+            {erreur && (
+              <p role="alert" class="mb-5 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-button)]">
+                {erreur}
+              </p>
+            )}
+            {info && (
+              <p class="mb-5 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">
+                {info}
+              </p>
+            )}
+
+            {etape === 'email' && (
+              <>
+                {/*
+                  Google d'abord : c'est le chemin le plus court — un clic,
+                  aucun aller-retour vers la boîte aux lettres. Le code par
+                  e-mail reste juste en dessous, et non replié derrière un
+                  lien : une part importante des adhérents est sur orange.fr,
+                  free.fr ou wanadoo.fr, pour qui ce bouton ne sert à rien.
+                */}
+                <form method="post">
+                  <input type="hidden" name="provider" value="google" />
+                  <button
+                    type="submit"
+                    class="flex w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] bg-[var(--color-bg-accent)] px-6 py-3 font-medium text-[var(--color-heading)] transition-colors hover:bg-[var(--color-bg)]"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                      <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z"/>
+                      <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.34A9 9 0 0 0 9 18Z"/>
+                      <path fill="#FBBC05" d="M3.97 10.72a5.41 5.41 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.01-2.34Z"/>
+                      <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.94l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58Z"/>
+                    </svg>
+                    Continuer avec Google
+                  </button>
+                </form>
+
+                <div class="my-5 flex items-center gap-4" aria-hidden="true">
+                  <span class="h-px flex-1 bg-[var(--color-border-prominent)]"></span>
+                  <span class="text-sm text-[var(--color-text-light)]">ou</span>
+                  <span class="h-px flex-1 bg-[var(--color-border-prominent)]"></span>
+                </div>
+              </>
+            )}
+
+            <form method="post" class="space-y-4">
+              <div>
+                {/*
+                  L'étiquette passe en sr-only plutôt que de disparaître : un
+                  marque-page n'est pas une étiquette. Il s'efface dès qu'on
+                  tape, et un lecteur d'écran ne l'annonce pas de façon fiable
+                  — le champ deviendrait anonyme pour qui en dépend.
+                */}
+                <label for="email" class="sr-only">Adresse e-mail</label>
+                <input
+                  id="email" name="email" type="email" required autocomplete="email"
+                  placeholder="Votre adresse e-mail"
+                  value={email} readonly={etape === 'code'}
+                  class="champ"
+                />
+              </div>
+
+              {etape === 'code' && (
+                <div>
+                  <label for="code" class="block text-sm font-medium mb-1">Code reçu par e-mail</label>
+                  {/*
+                    La longueur du code N'EST PAS figée. Elle est réglable côté
+                    Supabase et vaut 8 sur ce projet, alors que la valeur par
+                    défaut documentée est 6. Un maxlength="6" tronquait
+                    silencieusement la saisie : le formulaire acceptait l'envoi,
+                    et le code partait amputé de ses deux derniers chiffres. Le
+                    message d'erreur — « code incorrect ou expiré » — désignait
+                    alors une cause inexistante. On accepte donc l'intervalle,
+                    plutôt que de dupliquer ici un réglage qui vit ailleurs.
+                  */}
+                  <input
+                    id="code" name="code" type="text" required autocomplete="one-time-code"
+                    inputmode="numeric" pattern="[0-9]{6,8}" maxlength="8" autofocus
+                    class="champ tracking-[0.5em] text-center text-lg"
+                  />
+                </div>
+              )}
+
+              <button
+                type="submit"
+                class="w-full rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white transition-opacity hover:opacity-90"
+              >
+                {etape === 'email' ? 'Recevoir mon code' : 'Me connecter'}
+              </button>
+            </form>
           </div>
-        )}
 
-        <button
-          type="submit"
-          class="w-full rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white transition-opacity hover:opacity-90"
-        >
-          {etape === 'email' ? 'Recevoir mon code' : 'Me connecter'}
-        </button>
-      </form>
+        </div>
+      </div>
 
-      <p class="mt-8 text-center text-sm text-[var(--color-text-light)]">
-        Pas encore d’accès ? Demandez-le à Isabelle.
+      {/*
+        Sous les deux colonnes, et non collé au panneau de connexion : ce n'est
+        pas une commande mais un recours, et il s'adresse à qui ne trouve pas
+        sa place dans l'un ou l'autre côté de la page.
+      */}
+      <p class="mt-10 text-center text-sm text-[var(--color-text-light)]">
+        L’accès est réservé aux personnes inscrites aux ateliers.
+        Pas encore d’accès ? Demandez-le à Isabelle par
+        {' '}<a href={`mailto:${MOBILE_ET_MAIL.email}`}
+                class="text-[var(--color-button)] underline">e-mail</a>
+        {whatsapp ? (
+          <>{' '}ou <a href={whatsapp} target="_blank" rel="noopener noreferrer"
+                       class="text-[var(--color-button)] underline">WhatsApp</a>.</>
+        ) : '.'}
       </p>
+
+      {/*
+        Pied de page dédié : Google exige un lien accessible vers la politique
+        de confidentialité depuis la page d'accueil de l'application, sans avoir
+        à faire défiler jusqu'au pied de page général du site.
+      */}
+      <footer class="mt-14 border-t border-[var(--color-border-prominent)] pt-6">
+        <nav class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-[var(--color-text-light)]"
+             aria-label="Informations légales">
+          <a href="/" class="underline hover:text-[var(--color-text)]">
+            Site de L’Atelier des Cousettes
+          </a>
+          <a href="/confidentialite/" class="underline hover:text-[var(--color-text)]">
+            Confidentialité
+          </a>
+          <a href="/mentions-legales/" class="underline hover:text-[var(--color-text)]">
+            Mentions légales
+          </a>
+        </nav>
+        <p class="mt-4 text-center text-xs text-[var(--color-text-light)]">
+          L’Atelier des Cousettes — 118 lieu-dit En Rivals, 81110 Verdalle, France
+        </p>
+      </footer>
+
     </div>
   </section>
 </BaseLayout>
