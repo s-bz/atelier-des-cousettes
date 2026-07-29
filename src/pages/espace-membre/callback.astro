@@ -9,9 +9,31 @@ import { getRequestClient, getAdminClient } from '../../utils/supabase';
  *
  * Cette page ne rend rien — elle redirige toujours.
  */
+// Supabase peut revenir SANS code : c'est ce qu'il fait quand l'inscription
+// libre est désactivée et que le compte Google est inconnu. Il renvoie alors
+// error / error_code / error_description.
+//
+// Sans ce traitement, on retombait sur la page de connexion sans le moindre
+// message : l'adhérente venait d'accepter le partage d'informations chez
+// Google et se retrouvait au point de départ, sans savoir pourquoi. Un renvoi
+// muet est le pire des retours.
+const erreurOAuth =
+  Astro.url.searchParams.get('error') ??
+  Astro.url.searchParams.get('error_code');
+
+if (erreurOAuth) {
+  console.error('[callback] retour OAuth en erreur :', {
+    error: Astro.url.searchParams.get('error'),
+    code: Astro.url.searchParams.get('error_code'),
+    description: Astro.url.searchParams.get('error_description'),
+  });
+  return Astro.redirect('/espace-membre/connexion/?inconnu=1');
+}
+
 const code = Astro.url.searchParams.get('code');
 if (!code) {
-  return Astro.redirect('/espace-membre/connexion/');
+  console.error('[callback] retour sans code ni erreur :', Astro.url.search);
+  return Astro.redirect('/espace-membre/connexion/?inconnu=1');
 }
 
 const supabase = getRequestClient(Astro.request, Astro.cookies);

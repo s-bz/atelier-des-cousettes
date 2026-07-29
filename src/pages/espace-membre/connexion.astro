@@ -17,7 +17,10 @@ let info: string | null = null;
 // Renvoyé par /espace-membre/callback/ quand l'identité Google n'a pas de
 // compte correspondant.
 if (Astro.url.searchParams.has('inconnu')) {
-  erreur = 'Compte non reconnu. Contactez Isabelle pour obtenir un accès.';
+  erreur =
+    'Ce compte n’est pas encore relié à un accès adhérent. Si vous participez aux ateliers, ' +
+    'demandez à Isabelle de vous ouvrir l’accès — en lui indiquant l’adresse que vous venez ' +
+    'd’utiliser, afin qu’elle enregistre la bonne.';
 }
 
 if (Astro.request.method === 'POST') {
