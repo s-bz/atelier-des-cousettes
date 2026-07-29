@@ -12,7 +12,7 @@ const supabase = getAdminClient();
 
 const { data: personnes } = await supabase
   .from('participants')
-  .select('id, first_name, last_name, account_id, accounts(email), subscriptions(id)')
+  .select('id, first_name, last_name, phone, account_id, accounts(email), subscriptions(id)')
   .order('last_name');
 
 const soldes = new Map<string, number>();
@@ -80,8 +80,10 @@ const libelleSolde = (s: number) =>
                 {p.last_name} {p.first_name}
               </span>
               {!famille && !p.account_id && (
+                /* Sans accès, le téléphone est le seul moyen de joindre :
+                   on l'affiche à la place de l'adresse absente. */
                 <span class="text-xs text-[var(--color-text-light)]">
-                  sans accès — ne recevra aucun e-mail
+                  {p.phone ? `sans accès · ${p.phone}` : 'sans accès — ne recevra aucun e-mail'}
                 </span>
               )}
               {!famille && p.account_id && (

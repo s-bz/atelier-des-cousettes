@@ -35,7 +35,7 @@ const { data: creneaux } = await supabase
   .order('label');
 
 const champs = {
-  prenom: '', nom: '', email: '', notes: '',
+  prenom: '', nom: '', telephone: '', email: '', notes: '',
   creneau: '', credits: '2', debut: '', fin: '',
 };
 let erreur: string | null = null;
@@ -89,6 +89,7 @@ if (Astro.request.method === 'POST') {
           account_id: accountId,
           first_name: champs.prenom,
           last_name: champs.nom,
+          phone: champs.telephone || null,
           notes: champs.notes || null,
         })
         .select('id').single();
@@ -145,6 +146,13 @@ if (Astro.request.method === 'POST') {
         <div>
           <label for="nom" class="block text-sm font-medium mb-1">Nom</label>
           <input id="nom" name="nom" required value={champs.nom} class="champ" />
+        </div>
+        <div>
+          <label for="telephone" class="block text-sm font-medium mb-1">
+            Téléphone <span class="text-[var(--color-text-light)]">— facultatif</span>
+          </label>
+          <input id="telephone" name="telephone" type="tel" autocomplete="tel"
+                 value={champs.telephone} class="champ" />
         </div>
         {!emailCompteExistant && (
           <div>
