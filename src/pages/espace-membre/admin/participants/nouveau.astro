@@ -32,6 +32,7 @@ if (compteExistant) {
 const { data: creneaux } = await supabase
   .from('creneaux')
   .select('id, label')
+  .is('archived_at', null)   // un créneau archivé n'est plus proposé
   .order('label');
 
 const champs = {

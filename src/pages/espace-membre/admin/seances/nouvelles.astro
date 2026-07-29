@@ -13,6 +13,7 @@ const supabase = getAdminClient();
 const { data: creneaux } = await supabase
   .from('creneaux')
   .select('id, label, default_start_time, default_end_time, default_location, default_capacity')
+  .is('archived_at', null)   // un créneau archivé n'est plus proposé
   .order('label');
 
 /**
