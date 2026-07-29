@@ -24,3 +24,5 @@ dist/
 # Supabase CLI
 supabase/.branches
 supabase/.temp
+.vercel
+.env*
