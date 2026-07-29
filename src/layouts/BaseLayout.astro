@@ -4,6 +4,12 @@ import Footer from '../components/Footer.astro';
 import Analytics from '@vercel/analytics/astro';
 import '../styles/global.css';
 
+// Mesure d'audience PostHog. Le préfixe PUBLIC_ est nécessaire ici — contrairement
+// aux clés Supabase — parce que ce script s'exécute dans le navigateur. Une clé de
+// projet PostHog est conçue pour être publique ; elle n'ouvre aucun accès en lecture.
+const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
+const posthogHost = import.meta.env.PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com';
+
 interface Props {
   title: string;
   description?: string;
@@ -61,14 +67,36 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
 
     <script async src="https://tally.so/widgets/embed.js"></script>
 
-    <!-- GA4 -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-S5FPS810M8"></script>
-    <script is:inline>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-S5FPS810M8');
-    </script>
+    {/*
+      PostHog, cloud UE, sans cookie.
+
+      `persistence: 'memory'` supprime tout stockage persistant : aucun cookie,
+      rien dans localStorage. Sans cookie ni identifiant durable, la mesure
+      d'audience n'exige pas de bandeau de consentement — ce qui évite d'en
+      construire un, et rend la politique de confidentialité exacte.
+
+      Le compromis est réel et assumé : un même visiteur revenant demain est
+      compté comme nouveau. À l'échelle de ce site, connaître les pages
+      consultées suffit ; distinguer les visiteurs uniques ne vaut pas un
+      bandeau que personne ne veut voir.
+
+      L'enregistrement de session est coupé : il capterait le contenu saisi
+      dans l'espace membre.
+
+      Le bloc ne s'affiche que si la clé est définie, pour que rien ne casse
+      tant que le projet PostHog n'existe pas.
+    */}
+    {posthogKey && (
+      <script is:inline define:vars={{ posthogKey, posthogHost }}>
+        !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug getPageViewId captureTraceFeedback captureTraceMetric".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+        posthog.init(posthogKey, {
+          api_host: posthogHost,
+          persistence: 'memory',
+          disable_session_recording: true,
+          autocapture: false,
+        });
+      </script>
+    )}
 
     <Analytics />
   </head>

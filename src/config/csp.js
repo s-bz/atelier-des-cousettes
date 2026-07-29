@@ -38,7 +38,7 @@ export const CSP_DIRECTIVES = {
     'https://va.vercel-scripts.com', // Vercel Analytics
     'https://vercel.live', // Vercel toolbar / live preview
     'https://tally.so', // Tally contact form script
-    'https://www.googletagmanager.com', // Google Analytics 4 loader
+    'https://eu-assets.i.posthog.com', // PostHog loader (cloud UE)
   ],
 
   'style-src': [
@@ -54,7 +54,6 @@ export const CSP_DIRECTIVES = {
     'https://img.youtube.com', // YouTube thumbnails (hqdefault.jpg)
     'https://*.ytimg.com', // YouTube thumbnails (alternate CDN)
     'https://*.githubusercontent.com', // Keystatic image previews in admin
-    'https://www.googletagmanager.com', // GA4 tracking pixel
   ],
 
   'frame-src': [
@@ -71,9 +70,8 @@ export const CSP_DIRECTIVES = {
     'https://va.vercel-scripts.com', // Vercel Analytics beacon
     'https://vercel.live', // Vercel toolbar
     'https://tally.so', // Tally API fallbacks
-    'https://www.google-analytics.com', // GA4 beacon
-    'https://*.google-analytics.com', // GA4 beacon (regional endpoints)
-    'https://*.analytics.google.com', // GA4 beacon (regional endpoints)
+    'https://eu.i.posthog.com', // PostHog ingestion (cloud UE)
+    'https://eu-assets.i.posthog.com', // PostHog assets / configuration distante
   ],
 
   'font-src': [
