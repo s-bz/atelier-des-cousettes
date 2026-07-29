@@ -1,0 +1,208 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SelecteurParticipant from '../../components/SelecteurParticipant.astro';
+import { getAdminClient } from '../../utils/supabase';
+import { participantsDuCompte, soldeDe, dateLongue, heure } from '../../utils/membre';
+
+const { session, account } = Astro.locals;
+if (!session) return Astro.redirect('/espace-membre/connexion/');
+if (!account) return Astro.redirect('/espace-membre/connexion/?inconnu=1');
+
+const { personnes, choisie } = await participantsDuCompte(
+  account.id,
+  Astro.url.searchParams.get('personne'),
+);
+
+const supabase = getAdminClient();
+let message: string | null = null;
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST' && choisie) {
+  const form = await Astro.request.formData();
+  const action = String(form.get('action') ?? '');
+
+  // La personne visée vient de la session, JAMAIS du formulaire : sans cela,
+  // n'importe qui pourrait réserver au nom d'un autre en modifiant un champ
+  // caché. Les fonctions SQL vérifient déjà l'appartenance, ceci évite même
+  // d'avoir à s'y fier.
+  if (action === 'reserver') {
+    const { error } = await supabase.rpc('book_participant', {
+      p_session: String(form.get('seance')),
+      p_participant: choisie.id,
+      p_source: 'member',
+    });
+    if (error) erreur = error.message;
+    else message = 'Place réservée.';
+  }
+
+  if (action === 'liberer') {
+    const reservation = String(form.get('reservation'));
+
+    // L'appartenance est vérifiée ICI, et non déléguée à release_booking.
+    //
+    // Cette page appelle la base avec la clé secrète, laquelle contourne le
+    // RLS — et donc aussi la vérification interne de la fonction, qui ne se
+    // déclenche que pour le rôle « authenticated ». Sans ce contrôle, publier
+    // un identifiant de réservation quelconque libérerait la place de
+    // n'importe qui.
+    const { data: cible } = await supabase
+      .from('bookings')
+      .select('participant_id')
+      .eq('id', reservation)
+      .maybeSingle();
+
+    if (!cible || cible.participant_id !== choisie.id) {
+      erreur = 'Cette réservation ne vous appartient pas.';
+    } else {
+      const { error } = await supabase.rpc('release_booking', { p_booking: reservation });
+      if (error) erreur = error.message;
+      else message = 'Place libérée. La séance revient à votre solde.';
+    }
+  }
+}
+
+let solde = 0;
+let seances: any[] = [];
+let mesReservations = new Map<string, string>();
+
+if (choisie) {
+  ({ solde } = await soldeDe(choisie.id));
+
+  const debutDuJour = new Date();
+  debutDuJour.setHours(0, 0, 0, 0);
+
+  const { data } = await supabase
+    .from('sessions')
+    .select('id, starts_at, ends_at, location, capacity, status, creneaux(label), bookings(id, participant_id, status)')
+    .gte('starts_at', debutDuJour.toISOString())
+    .eq('status', 'scheduled')
+    .order('starts_at')
+    .limit(60);
+
+  seances = data ?? [];
+
+  for (const s of seances) {
+    const mienne = (s.bookings ?? []).find(
+      (b: any) => b.participant_id === choisie.id && b.status === 'booked',
+    );
+    if (mienne) mesReservations.set(s.id, mienne.id);
+  }
+}
+
+const occupees = (s: any) =>
+  (s.bookings ?? []).filter((b: any) => b.status === 'booked').length;
+
+const moisFr = new Intl.DateTimeFormat('fr-FR', {
+  month: 'long', year: 'numeric', timeZone: 'Europe/Paris',
+});
+
+const parMois = new Map<string, any[]>();
+for (const s of seances) {
+  const cle = moisFr.format(new Date(s.starts_at));
+  parMois.set(cle, [...(parMois.get(cle) ?? []), s]);
+}
+
+const lien = personnes.length > 1 && choisie ? `?personne=${choisie.id}` : '';
+---
+
+<BaseLayout title="Planning" description="Les séances à venir." noIndex={true}>
+  <section class="py-12 md:py-16">
+    <div class="max-w-2xl mx-auto px-4">
+
+      <div class="mb-6 flex flex-wrap items-baseline gap-x-4">
+        <h1 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)]"
+            style="font-family: var(--font-heading)">
+          Planning
+        </h1>
+        <a href={`/espace-membre/${lien}`} class="ml-auto text-sm text-[var(--color-button)] underline">
+          Mon espace
+        </a>
+      </div>
+
+      <SelecteurParticipant personnes={personnes} choisie={choisie} base="/espace-membre/planning/" />
+
+      {message && (
+        <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">{message}</p>
+      )}
+      {erreur && (
+        <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>
+      )}
+
+      {!choisie ? (
+        <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
+          Aucune inscription n’est rattachée à ce compte. Contactez Isabelle.
+        </p>
+      ) : (
+        <>
+          <p class="mb-6 text-[var(--color-text)]">
+            {solde > 0
+              ? `${solde} séance${solde > 1 ? 's' : ''} disponible${solde > 1 ? 's' : ''}.`
+              : solde === 0
+                ? 'Vos séances du moment sont toutes réservées. Réserver au-delà sera facturé en supplément.'
+                : `${-solde} séance${-solde < -1 ? 's' : ''} déjà au-delà de votre forfait.`}
+          </p>
+
+          {seances.length === 0 && (
+            <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
+              Aucune séance programmée pour l’instant.
+            </p>
+          )}
+
+          {[...parMois.entries()].map(([mois, liste]) => (
+            <div class="mb-8">
+              <h2 class="mb-3 text-lg font-bold text-[var(--color-heading)] first-letter:uppercase">{mois}</h2>
+              <ul class="space-y-2">
+                {liste.map((s) => {
+                  const reservationId = mesReservations.get(s.id);
+                  const prises = occupees(s);
+                  const complet = prises >= s.capacity;
+                  return (
+                    <li class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
+                      <div class="min-w-[12rem] flex-1">
+                        <p class="font-medium text-[var(--color-heading)] first-letter:uppercase">
+                          {dateLongue.format(new Date(s.starts_at))}
+                        </p>
+                        <p class="text-sm text-[var(--color-text-light)]">
+                          {heure.format(new Date(s.starts_at))} – {heure.format(new Date(s.ends_at))}
+                          {' · '}{(s.creneaux as any)?.label}
+                          {' · '}{s.location}
+                        </p>
+                      </div>
+
+                      {reservationId ? (
+                        <form method="post" class="flex items-center gap-3">
+                          <input type="hidden" name="action" value="liberer" />
+                          <input type="hidden" name="reservation" value={reservationId} />
+                          <span class="text-sm font-medium text-[var(--color-heading)]">Inscrit</span>
+                          <button type="submit" class="text-sm text-[var(--color-button)] underline">
+                            Libérer
+                          </button>
+                        </form>
+                      ) : complet ? (
+                        <span class="text-sm text-[var(--color-text-light)]">Complet</span>
+                      ) : (
+                        <form method="post" class="flex items-center gap-3">
+                          <input type="hidden" name="action" value="reserver" />
+                          <input type="hidden" name="seance" value={s.id} />
+                          <span class="text-sm text-[var(--color-text-light)]">
+                            {s.capacity - prises} place{s.capacity - prises > 1 ? 's' : ''}
+                          </span>
+                          <button type="submit"
+                                  class="rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-4 py-1.5 text-sm font-medium text-[var(--color-button)] transition-colors hover:bg-[var(--color-button)] hover:text-white">
+                            {solde > 0 ? 'Réserver' : 'Réserver en plus'}
+                          </button>
+                        </form>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  </section>
+</BaseLayout>

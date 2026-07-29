@@ -2,92 +2,123 @@
 export const prerender = false;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import SelecteurParticipant from '../../components/SelecteurParticipant.astro';
 import { getAdminClient } from '../../utils/supabase';
+import { participantsDuCompte, soldeDe, dateLongue, heure } from '../../utils/membre';
 
 const { session, account, isAdmin } = Astro.locals;
 
-if (!session) {
-  return Astro.redirect('/espace-membre/connexion/');
-}
+if (!session) return Astro.redirect('/espace-membre/connexion/');
+if (!account) return Astro.redirect('/espace-membre/connexion/?inconnu=1');
 
-// Session valide mais aucun compte correspondant : on ne crée rien, on le dit.
-if (!account) {
-  return Astro.redirect('/espace-membre/connexion/?inconnu=1');
+const { personnes, choisie } = await participantsDuCompte(
+  account.id,
+  Astro.url.searchParams.get('personne'),
+);
+
+// Isabelle administre, elle ne vient pas consommer de crédits : son compte n'a
+// aucune personne rattachée. Lui montrer un solde vide n'aurait pas de sens.
+if (isAdmin && personnes.length === 0) {
+  return Astro.redirect('/espace-membre/admin/seances/', 302);
 }
 
 const supabase = getAdminClient();
-const { data: participants } = await supabase
-  .from('participants')
-  .select('id, first_name, last_name')
-  .eq('account_id', account.id);
 
-const personnes = participants ?? [];
+let solde = 0, octroye = 0, consomme = 0;
+let prochaines: any[] = [];
 
-/**
- * Isabelle administre, elle ne vient pas consommer des crédits : son compte n'a
- * aucune personne rattachée. Lui présenter un tableau de bord d'adhérent — un
- * solde vide, des réservations inexistantes — n'aurait aucun sens. On l'envoie
- * directement là où est son travail.
- *
- * Un administrateur qui serait AUSSI adhérent garde son espace personnel, avec
- * un lien vers l'administration : c'est le cas rare, mais le priver de sa propre
- * fiche serait absurde.
- */
-if (isAdmin && personnes.length === 0) {
-  return Astro.redirect('/espace-membre/admin/seances/', 302);
+if (choisie) {
+  ({ solde, octroye, consomme } = await soldeDe(choisie.id));
+
+  const { data } = await supabase
+    .from('bookings')
+    .select('id, sessions(id, starts_at, ends_at, location, status, creneaux(label))')
+    .eq('participant_id', choisie.id)
+    .eq('status', 'booked');
+
+  prochaines = (data ?? [])
+    .filter((r: any) => r.sessions && new Date(r.sessions.starts_at) >= new Date())
+    .sort((a: any, b: any) => a.sessions.starts_at.localeCompare(b.sessions.starts_at));
 }
 ---
 
 <BaseLayout title="Mon espace" description="Votre espace adhérent." noIndex={true}>
-  <section class="py-16 md:py-20">
+  <section class="py-12 md:py-16">
     <div class="max-w-2xl mx-auto px-4">
 
-      <h1 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] mb-2"
-          style="font-family: var(--font-heading)">
-        Bonjour
-      </h1>
-      <p class="text-[var(--color-text-light)] mb-8">{account.email}</p>
+      <div class="mb-8 flex flex-wrap items-baseline gap-x-4">
+        <h1 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)]"
+            style="font-family: var(--font-heading)">
+          Mon espace
+        </h1>
+        {isAdmin && (
+          <a href="/espace-membre/admin/seances/"
+             class="text-sm text-[var(--color-button)] underline">Administration</a>
+        )}
+        <form method="post" action="/espace-membre/deconnexion/" class="ml-auto">
+          <button type="submit" class="text-sm text-[var(--color-text-light)] underline">
+            Me déconnecter
+          </button>
+        </form>
+      </div>
 
-      {isAdmin && (
-        <a href="/espace-membre/admin/seances/"
-           class="mb-8 inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
-          Administration
-        </a>
-      )}
+      <SelecteurParticipant personnes={personnes} choisie={choisie} base="/espace-membre/" />
 
-      <div class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
-        {personnes.length === 0 ? (
-          <p class="text-sm text-[var(--color-text)]">
-            Aucune inscription rattachée à ce compte pour l’instant.
-          </p>
-        ) : (
-          <>
+      {!choisie ? (
+        <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
+          Aucune inscription n’est rattachée à ce compte. Contactez Isabelle.
+        </p>
+      ) : (
+        <>
+          <div class="mb-8 rounded-xl bg-[var(--color-card-bg)] p-6 shadow-md">
             <p class="text-sm text-[var(--color-text-light)]">
-              {personnes.length > 1 ? 'Personnes inscrites' : 'Inscription'}
+              {personnes.length > 1 ? `Séances de ${choisie.first_name}` : 'Vos séances'}
             </p>
-            <ul class="mt-2 space-y-1">
-              {personnes.map((p) => (
-                <li class="font-medium text-[var(--color-heading)]">
-                  {p.first_name} {p.last_name}
+            <p class={`mt-1 text-4xl font-bold ${solde < 0 ? 'text-[var(--color-button)]' : 'text-[var(--color-heading)]'}`}>
+              {solde}
+            </p>
+            <p class="mt-2 text-sm text-[var(--color-text)]">
+              {solde > 0 && `${solde} séance${solde > 1 ? 's' : ''} disponible${solde > 1 ? 's' : ''} à réserver.`}
+              {solde === 0 && 'Toutes vos séances du moment sont réservées.'}
+              {solde < 0 && `${-solde} séance${-solde < -1 ? 's' : ''} au-delà de votre forfait, à régler avec Isabelle.`}
+            </p>
+            <p class="mt-1 text-sm text-[var(--color-text-light)]">
+              {octroye} acquise{octroye > 1 ? 's' : ''} depuis le début, {consomme} utilisée{consomme > 1 ? 's' : ''}.
+            </p>
+          </div>
+
+          <div class="mb-6 flex flex-wrap items-baseline gap-x-4">
+            <h2 class="text-lg font-bold text-[var(--color-heading)]">Prochaines séances</h2>
+            <a href={`/espace-membre/planning/${personnes.length > 1 ? `?personne=${choisie.id}` : ''}`}
+               class="ml-auto text-sm text-[var(--color-button)] underline">
+              Voir le planning
+            </a>
+          </div>
+
+          {prochaines.length === 0 ? (
+            <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
+              Aucune séance réservée pour l’instant.
+            </p>
+          ) : (
+            <ul class="space-y-2">
+              {prochaines.map((r: any) => (
+                <li class={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md ${r.sessions.status === 'cancelled' ? 'opacity-60' : ''}`}>
+                  <span class="font-medium text-[var(--color-heading)] first-letter:uppercase">
+                    {dateLongue.format(new Date(r.sessions.starts_at))}
+                  </span>
+                  <span class="text-sm text-[var(--color-text-light)]">
+                    {heure.format(new Date(r.sessions.starts_at))} – {heure.format(new Date(r.sessions.ends_at))}
+                  </span>
+                  <span class="text-sm text-[var(--color-text-light)]">{r.sessions.location}</span>
+                  {r.sessions.status === 'cancelled' && (
+                    <span class="text-sm font-medium text-[var(--color-button)]">Annulée</span>
+                  )}
                 </li>
               ))}
             </ul>
-            <p class="mt-4 text-sm text-[var(--color-text-light)]">
-              Votre solde de séances et vos réservations apparaîtront ici prochainement.
-              D’ici là, contactez Isabelle pour toute modification.
-            </p>
-          </>
-        )}
-      </div>
-
-      <form method="post" action="/espace-membre/deconnexion/" class="mt-8">
-        <button
-          type="submit"
-          class="rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-6 py-2 text-sm font-medium text-[var(--color-button)] transition-colors hover:bg-[var(--color-button)] hover:text-white"
-        >
-          Me déconnecter
-        </button>
-      </form>
+          )}
+        </>
+      )}
     </div>
   </section>
 </BaseLayout>
