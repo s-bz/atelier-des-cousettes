@@ -205,7 +205,20 @@ Deux fournisseurs distincts, à ne pas confondre : **Vercel** héberge et décle
 
 **Aucune de ces limites n'est atteignable ici.** Avec une vingtaine d'adhérents, le pire jour imaginable — inviter tout le monde le même soir — produit une vingtaine de codes, soit un cinquième du plafond quotidien. Le volume courant tourne autour de 70 e-mails par mois. Il n'y a donc **ni échelonnement des envois ni garde-fou de quota à écrire** : ce serait de la complexité pour un problème qui ne se posera pas.
 
-Le seul point de configuration réel est le domaine unique autorisé, `atelier-des-cousettes.fr`, avec SPF/DKIM — indispensable pour que les codes de connexion n'atterrissent pas en indésirables.
+### Expéditeur
+
+Le domaine authentifié chez Resend est **`portail.atelier-des-cousettes.fr`** (sous-domaine), et l'expéditeur est donc **`no_reply@portail.atelier-des-cousettes.fr`**. La même adresse doit être déclarée comme expéditeur du SMTP personnalisé dans Supabase Auth, sans quoi les codes de connexion partiront d'une adresse non authentifiée et finiront en indésirables.
+
+Passer par un sous-domaine est le bon choix : la réputation d'envoi de l'application est isolée de celle du domaine racine. Si un jour les e-mails transactionnels sont mal classés, le courrier d'Isabelle depuis `atelier-des-cousettes.fr` n'en souffre pas.
+
+**Mais une adresse « no reply » perd des messages.** Sur une vingtaine d'adhérentes, souvent peu à l'aise avec le numérique, certaines répondront au rappel J-2 pour dire « je ne peux pas venir jeudi » au lieu d'aller sur le site — c'est quasi certain. Sans traitement, ces réponses disparaissent, et Isabelle croira la personne présente.
+
+Deux mesures, à prendre dès M3 :
+
+- **`Reply-To: info@atelier-des-cousettes.fr`** sur tous les envois. L'expéditeur reste le sous-domaine authentifié, mais une réponse arrive chez Isabelle. Coût : un en-tête.
+- **Le dire dans le corps de l'e-mail** : « Pour libérer votre place, utilisez le lien ci-dessous — vous pouvez aussi simplement répondre à ce message. » Assumer le canal plutôt que le combattre.
+
+À noter au passage : la convention usuelle est `no-reply` avec un trait d'union ; `no_reply` avec un tiret bas est licite mais inhabituel, et quelques filtres naïfs le traitent mal. Modifiable tant que rien n'est envoyé.
 
 > **Réserve à surveiller :** le palier Hobby de Vercel est destiné à un usage non commercial. Le site est celui d'une association à but non lucratif et aucun paiement n'y transite (tout se passe chez HelloAsso), ce qui plaide pour sa conformité. Si Vercel imposait un jour le passage en Pro (~20 $/mois), le budget de 5 €/mois serait dépassé à lui seul — c'est le principal risque financier de tout ce projet, et il ne vient pas de la base de données.
 
