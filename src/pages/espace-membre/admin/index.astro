@@ -1,0 +1,18 @@
+---
+export const prerender = false;
+
+import { requireAdmin } from '../../../utils/guards';
+
+/**
+ * /espace-membre/admin/ n'a pas de contenu propre : c'est un dossier, pas un
+ * écran. On renvoie vers les séances, qui est le point d'entrée réel du travail
+ * d'Isabelle — le calendrier avant les personnes.
+ *
+ * La garde reste appliquée : sans elle, l'URL révélerait par sa redirection
+ * qu'une administration existe à cet endroit.
+ */
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+return Astro.redirect('/espace-membre/admin/seances/', 302);
+---

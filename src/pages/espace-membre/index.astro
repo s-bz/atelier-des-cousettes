@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getAdminClient } from '../../utils/supabase';
 
 const { session, account, isAdmin } = Astro.locals;
 
@@ -13,11 +14,34 @@ if (!session) {
 if (!account) {
   return Astro.redirect('/espace-membre/connexion/?inconnu=1');
 }
+
+const supabase = getAdminClient();
+const { data: participants } = await supabase
+  .from('participants')
+  .select('id, first_name, last_name')
+  .eq('account_id', account.id);
+
+const personnes = participants ?? [];
+
+/**
+ * Isabelle administre, elle ne vient pas consommer des crédits : son compte n'a
+ * aucune personne rattachée. Lui présenter un tableau de bord d'adhérent — un
+ * solde vide, des réservations inexistantes — n'aurait aucun sens. On l'envoie
+ * directement là où est son travail.
+ *
+ * Un administrateur qui serait AUSSI adhérent garde son espace personnel, avec
+ * un lien vers l'administration : c'est le cas rare, mais le priver de sa propre
+ * fiche serait absurde.
+ */
+if (isAdmin && personnes.length === 0) {
+  return Astro.redirect('/espace-membre/admin/seances/', 302);
+}
 ---
 
 <BaseLayout title="Mon espace" description="Votre espace adhérent." noIndex={true}>
   <section class="py-16 md:py-20">
     <div class="max-w-2xl mx-auto px-4">
+
       <h1 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] mb-2"
           style="font-family: var(--font-heading)">
         Bonjour
@@ -25,18 +49,35 @@ if (!account) {
       <p class="text-[var(--color-text-light)] mb-8">{account.email}</p>
 
       {isAdmin && (
-        <div class="mb-8 rounded-xl bg-[var(--color-bg-accent)] p-5">
-          <p class="font-medium text-[var(--color-heading)]">Accès administration</p>
-          <p class="mt-1 text-sm text-[var(--color-text)]">
-            Les écrans de gestion des séances et des participants arrivent au jalon suivant.
-          </p>
-        </div>
+        <a href="/espace-membre/admin/seances/"
+           class="mb-8 inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
+          Administration
+        </a>
       )}
 
       <div class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
-        <p class="text-sm text-[var(--color-text)]">
-          Votre solde de séances et vos réservations apparaîtront ici.
-        </p>
+        {personnes.length === 0 ? (
+          <p class="text-sm text-[var(--color-text)]">
+            Aucune inscription rattachée à ce compte pour l’instant.
+          </p>
+        ) : (
+          <>
+            <p class="text-sm text-[var(--color-text-light)]">
+              {personnes.length > 1 ? 'Personnes inscrites' : 'Inscription'}
+            </p>
+            <ul class="mt-2 space-y-1">
+              {personnes.map((p) => (
+                <li class="font-medium text-[var(--color-heading)]">
+                  {p.first_name} {p.last_name}
+                </li>
+              ))}
+            </ul>
+            <p class="mt-4 text-sm text-[var(--color-text-light)]">
+              Votre solde de séances et vos réservations apparaîtront ici prochainement.
+              D’ici là, contactez Isabelle pour toute modification.
+            </p>
+          </>
+        )}
       </div>
 
       <form method="post" action="/espace-membre/deconnexion/" class="mt-8">
