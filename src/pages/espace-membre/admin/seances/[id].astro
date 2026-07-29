@@ -57,7 +57,8 @@ if (Astro.request.method === 'POST') {
         p_date: String(form.get('date')),
         p_start: debut,
         p_end: fin,
-        p_location: String(form.get('lieu') ?? '').trim(),
+        p_location: String(form.get('lieu_autre') ?? '').trim()
+                    || String(form.get('lieu') ?? '').trim(),
       });
       if (error) erreur = error.message;
       else message = 'Séance déplacée. Les inscrits gardent leur place.';
@@ -90,6 +91,13 @@ const { data: seance } = await supabase
   .maybeSingle();
 
 if (!seance) return new Response('Séance introuvable', { status: 404 });
+
+const { data: lieuxCreneaux } = await supabase
+  .from('creneaux').select('default_location');
+const lieux = [...new Set([
+  ...(lieuxCreneaux ?? []).map((c) => c.default_location),
+  seance.location,   // le lieu actuel, même s'il ne vient d'aucun créneau
+])].sort();
 
 const { data: reservations } = await supabase
   .from('bookings')
@@ -211,7 +219,10 @@ const debut = new Date(seance.starts_at);
         </div>
         <div>
           <label for="lieu" class="block text-sm font-medium mb-1">Lieu</label>
-          <input id="lieu" name="lieu" required value={seance.location} class="champ" />
+          <select id="lieu" name="lieu" class="champ">
+            {lieux.map((l) => <option value={l} selected={l === seance.location}>{l}</option>)}
+          </select>
+          <input name="lieu_autre" class="champ mt-2" placeholder="ou un nouveau lieu" />
         </div>
       </div>
 

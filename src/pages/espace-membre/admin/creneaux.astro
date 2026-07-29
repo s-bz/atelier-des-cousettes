@@ -66,7 +66,11 @@ if (Astro.request.method === 'POST') {
       const valeurs = {
         default_start_time: debut,
         default_end_time: fin,
-        default_location: String(form.get('lieu') ?? '').trim(),
+        // Le champ libre l'emporte quand il est rempli : c'est ainsi qu'un
+        // nouveau lieu entre dans la liste, sans quoi le menu serait une
+        // impasse le jour où l'atelier s'installe ailleurs.
+        default_location: String(form.get('lieu_autre') ?? '').trim()
+                          || String(form.get('lieu') ?? '').trim(),
         default_capacity: Number(form.get('places')),
         default_unit_price_cents: Math.round(Number(form.get('prix')) * 100),
       };
@@ -105,6 +109,7 @@ const { data: tous } = await supabase
   .select('id, label, group_id, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, archived_at, sessions(id)')
   .order('label');
 
+const lieux = [...new Set((tous ?? []).map((c) => c.default_location))].sort();
 const actifs = (tous ?? []).filter((c) => !c.archived_at);
 const archives = (tous ?? []).filter((c) => c.archived_at);
 ---
@@ -158,7 +163,10 @@ const archives = (tous ?? []).filter((c) => c.archived_at);
         </div>
         <div>
           <label for="n-lieu" class="block text-sm font-medium mb-1">Lieu</label>
-          <input id="n-lieu" name="lieu" required value="Revel" class="champ" />
+          <select id="n-lieu" name="lieu" class="champ">
+            {lieux.map((l) => <option value={l}>{l}</option>)}
+          </select>
+          <input name="lieu_autre" class="champ mt-2" placeholder="ou un nouveau lieu" />
         </div>
         <div>
           <label for="n-places" class="block text-sm font-medium mb-1">Places</label>
@@ -207,7 +215,12 @@ const archives = (tous ?? []).filter((c) => c.archived_at);
               </div>
               <div>
                 <label for={`lieu-${c.id}`} class="block text-sm font-medium mb-1">Lieu</label>
-                <input id={`lieu-${c.id}`} name="lieu" required value={c.default_location} class="champ" />
+                <select id={`lieu-${c.id}`} name="lieu" class="champ">
+                  {lieux.map((l) => (
+                    <option value={l} selected={l === c.default_location}>{l}</option>
+                  ))}
+                </select>
+                <input name="lieu_autre" class="champ mt-2" placeholder="ou un nouveau lieu" />
               </div>
               <div>
                 <label for={`places-${c.id}`} class="block text-sm font-medium mb-1">Places</label>
