@@ -15,7 +15,7 @@ Le modèle de contenu actuel ne peut même pas exprimer le problème : un créne
 
 ### Ce qui a été écarté, et pourquoi
 
-Les logiciels de réservation de cours font tout cela nativement, mais aucun ne passe la double contrainte **français + budget**. Le moins cher correctement localisé est SimplyBook.me à 29,90 €/mois ; les outils métier français (Deciplus 69 €, Bsport ~150 €) sont conçus et tarifés pour des salles de sport. Les outils anglo bon marché (TeamUp ~$26, Momoyoga) ne sont pas localisés — rédhibitoire pour des adhérentes rurales, souvent âgées. Budget disponible : **5 €/mois maximum**.
+Les logiciels de réservation de cours font tout cela nativement, mais aucun ne passe la double contrainte **français + budget**. Le moins cher correctement localisé est SimplyBook.me à 29,90 €/mois ; les outils métier français (Deciplus 69 €, Bsport ~150 €) sont conçus et tarifés pour des salles de sport. Les outils anglo bon marché (TeamUp ~$26, Momoyoga) ne sont pas localisés — rédhibitoire pour des adhérents ruraux, souvent âgés. Budget disponible : **5 €/mois maximum**.
 
 À ce volume — **une vingtaine d'adhérents**, environ 35 réservations et 70 e-mails par mois — une application sur mesure coûte **0 €/mois** d'infrastructure : les paliers gratuits de Supabase et Resend sont dépassés de plusieurs ordres de grandeur. Le coût est le temps de développement, pas l'abonnement.
 
@@ -71,9 +71,9 @@ L'auto-inscription respecte le droit mensuel : pour chaque mois, on réserve les
 
 **« Continuer avec Google »** — le chemin rapide, via le fournisseur OAuth de Supabase. Flux PKCE : la route Astro génère l'URL d'autorisation, redirige, et échange le `code` du retour contre une session **côté serveur**. Aucun jeton ne transite par du JavaScript client.
 
-C'est un **ajout, pas un remplacement**. Une part importante des adhérentes rurales est sur `orange.fr`, `free.fr` ou `wanadoo.fr`, pour qui le bouton Google ne sert à rien. Les deux moyens restent proposés côte à côte, sans hiérarchie visuelle marquée.
+C'est un **ajout, pas un remplacement**. Une part importante des adhérents ruraux est sur `orange.fr`, `free.fr` ou `wanadoo.fr`, pour qui le bouton Google ne sert à rien. Les deux moyens restent proposés côte à côte, sans hiérarchie visuelle marquée.
 
-**Rattachement du compte.** L'identité d'authentification (Google ou e-mail) est reliée à la ligne `accounts` en comparant l'adresse e-mail lors de la première connexion. Google fournit des e-mails vérifiés, donc le rattachement automatique est sûr. Si aucune ligne `accounts` ne correspond — typiquement une adhérente dont le compte Google porte une autre adresse que celle donnée à Isabelle — l'application **ne crée ni compte ni participant** : elle affiche « Compte non reconnu, contactez Isabelle » et l'écran d'admin permet de rattacher l'identité au bon compte. C'est le cas d'erreur le plus probable en septembre ; il est traité explicitement, pas laissé au hasard.
+**Rattachement du compte.** L'identité d'authentification (Google ou e-mail) est reliée à la ligne `accounts` en comparant l'adresse e-mail lors de la première connexion. Google fournit des e-mails vérifiés, donc le rattachement automatique est sûr. Si aucune ligne `accounts` ne correspond — typiquement un adhérent dont le compte Google porte une autre adresse que celle donnée à Isabelle — l'application **ne crée ni compte ni participant** : elle affiche « Compte non reconnu, contactez Isabelle » et l'écran d'admin permet de rattacher l'identité au bon compte. C'est le cas d'erreur le plus probable en septembre ; il est traité explicitement, pas laissé au hasard.
 
 Une fois connecté, le compte accède à **tous ses participants** et à eux seuls — garanti par une politique RLS sur `participants.account_id`, pas uniquement par la logique applicative.
 
@@ -99,9 +99,9 @@ Pas d'écran de gestion des rôles en v1 : deux adresses, une migration. Le jour
 
 ```sql
 accounts      (id, auth_user_id, email unique, phone, notes)
-participants  (id, account_id NULLABLE, first_name, last_name, birthdate, notes)
+participants  (id, account_id NULLABLE, first_name, last_name, notes)
 subscriptions (id, participant_id, season, credits_per_month, home_creneau_id,
-               monthly_price_cents, starts_on, ends_on, helloasso_order_id)
+               starts_on, ends_on, helloasso_order_id)
 creneaux      (id text pk, label, group_id,
                default_start_time, default_end_time, default_location,
                default_capacity, default_unit_price_cents)
@@ -112,12 +112,12 @@ bookings      (id, session_id, participant_id, source, status,
 ```
 
 - **Le compte se connecte, le participant vient à l'atelier.** Un adulte ordinaire = un compte, un participant, et l'interface ne montre jamais la distinction. Une mère et ses deux filles = un compte, deux ou trois participants, chacun avec son abonnement et son solde. Cette séparation est faite dès la v1 parce que l'introduire après coup imposerait de scinder chaque ligne et de réaffecter tous les abonnements et réservations d'une saison en cours. Détail complet dans `SPEC-abonnements-credits.md` §1 bis.
-- **`participants.account_id` est nullable.** Une adhérente qui ne veut pas de compte existe quand même : Isabelle la crée, l'abonne et réserve pour elle. Aucune adresse e-mail n'est requise pour participer. Isabelle crée donc les participants **indépendamment** des comptes, et peut rattacher l'un à l'autre plus tard sans rien perdre. Conséquence directe : **M1 fonctionne avec la table `accounts` vide.**
+- **`participants.account_id` est nullable.** Un adhérent qui ne veut pas de compte existe quand même : Isabelle le crée, l'abonne et réserve pour lui. Aucune adresse e-mail n'est requise pour participer. Isabelle crée donc les participants **indépendamment** des comptes, et peut rattacher l'un à l'autre plus tard sans rien perdre. Conséquence directe : **M1 fonctionne avec la table `accounts` vide.**
 - `bookings.source` : `auto` | `member` | `admin` — permet de distinguer une auto-inscription d'un choix délibéré.
 - Index unique partiel sur `(session_id, participant_id) WHERE status = 'booked'` : la double réservation est impossible **au niveau du schéma**, pas seulement dans le code. Deux sœurs sur la même séance restent deux lignes valides et occupent deux places.
 - `subscriptions.starts_on` : un participant qui arrive en janvier ne reçoit pas les crédits de septembre.
 - `subscriptions.helloasso_order_id` est **nullable**. Un abonnement créé à la main par Isabelle n'en a pas, et n'en aura peut-être jamais. Rien dans le modèle ne dépend de HelloAsso.
-- `subscriptions.monthly_price_cents` : le montant mensuel dû, saisi à la création. Purement indicatif — l'application n'encaisse rien — mais tant que HelloAsso n'est pas en place, c'est ce qui permet à Isabelle de savoir qui doit combien.
+- **Aucun montant n'est stocké sur l'abonnement.** Un `monthly_price_cents` avait été prévu, puis retiré : aucun calcul ne s'en servait — les séances supplémentaires se facturent au prix de leur propre séance — et il fallait le ressaisir pour chaque personne. Un tarif est d'ailleurs une propriété de la **formule**, pas de l'individu : le dupliquer par abonnement, c'est autant d'occasions de faute de frappe et autant de lignes à reprendre au moindre changement. L'argent réel vit chez HelloAsso ou dans la comptabilité d'Isabelle.
 
 ### Provisionnement
 
@@ -221,7 +221,7 @@ Le domaine authentifié chez Resend est **`portail.atelier-des-cousettes.fr`** (
 
 Passer par un sous-domaine est le bon choix : la réputation d'envoi de l'application est isolée de celle du domaine racine. Si un jour les e-mails transactionnels sont mal classés, le courrier d'Isabelle depuis `atelier-des-cousettes.fr` n'en souffre pas.
 
-**Mais une adresse « no reply » perd des messages.** Sur une vingtaine d'adhérentes, souvent peu à l'aise avec le numérique, certaines répondront au rappel J-2 pour dire « je ne peux pas venir jeudi » au lieu d'aller sur le site — c'est quasi certain. Sans traitement, ces réponses disparaissent, et Isabelle croira la personne présente.
+**Mais une adresse « no reply » perd des messages.** Sur une vingtaine d'adhérents, souvent peu à l'aise avec le numérique, certaines répondront au rappel J-2 pour dire « je ne peux pas venir jeudi » au lieu d'aller sur le site — c'est quasi certain. Sans traitement, ces réponses disparaissent, et Isabelle croira la personne présente.
 
 Deux mesures, **obligatoires dès le premier envoi** :
 
@@ -244,7 +244,7 @@ Le périmètre v1 demandé (adhérents + admin + e-mails) correspond à **M0 →
 
 Séparation stricte : **HelloAsso encaisse, l'application réserve.** Aucune synchronisation automatique, et surtout **aucune dépendance** : le compte HelloAsso de l'association n'est pas encore vérifié, et rien dans ce document ne l'attend.
 
-**L'application est la source de vérité des comptes, des participants et des abonnements.** Isabelle crée un compte et son ou ses participants à la main, affecte à chacun son créneau d'origine et son nombre de séances mensuelles, et la saison fonctionne. Si HelloAsso n'existe jamais, tout continue de marcher ; elle encaisse comme elle le fait aujourd'hui et se sert de `monthly_price_cents` pour savoir qui doit quoi.
+**L'application est la source de vérité des comptes, des participants et des abonnements.** Isabelle crée un compte et son ou ses participants à la main, affecte à chacun son créneau d'origine et son nombre de séances mensuelles, et la saison fonctionne. Si HelloAsso n'existe jamais, tout continue de marcher ; elle encaisse comme elle le fait aujourd'hui, avec ses propres tarifs.
 
 Quand la campagne HelloAsso sera en place, elle ajoutera deux choses :
 
@@ -259,12 +259,12 @@ C'est la voie normale une fois HelloAsso en service, et elle remplace l'import C
 
 #### Ce que la campagne HelloAsso doit obligatoirement collecter
 
-C'est le point à trancher **avant** de créer la campagne, pas après. Une campagne construite sans ces champs rend la création automatique impossible, et la refaire en cours de saison signifie redemander à chaque adhérente de se réinscrire.
+C'est le point à trancher **avant** de créer la campagne, pas après. Une campagne construite sans ces champs rend la création automatique impossible, et la refaire en cours de saison signifie redemander à chaque adhérent de se réinscrire.
 
 - **Le nom et le prénom du participant**, en champ complémentaire distinct du payeur. Sans cela, la fille inscrite par sa mère est créée sous le nom de sa mère. Le payeur alimente `accounts`, le champ complémentaire alimente `participants`.
-- **Un tarif par formule**, et non un tarif par créneau. Le tarif choisi est ce qui détermine `home_creneau_id`, `credits_per_month` et `monthly_price_cents` — « Jeudi après-midi, 2 ateliers/mois, 55 € » est une formule ; « Jeudi après-midi » seul ne dit pas combien de séances sont incluses.
+- **Un tarif par formule**, et non un tarif par créneau. Le tarif choisi est ce qui détermine `home_creneau_id` et `credits_per_month` — « Jeudi après-midi, 2 ateliers/mois, 55 € » est une formule ; « Jeudi après-midi » seul ne dit pas combien de séances sont incluses.
 
-Une table de correspondance `helloasso_tiers (tier_id → creneau_id, credits_per_month, monthly_price_cents)`, éditable depuis l'admin, fait la traduction. Elle doit être remplie avant l'ouverture des inscriptions.
+Une table de correspondance `helloasso_tiers (tier_id → creneau_id, credits_per_month)`, éditable depuis l'admin, fait la traduction. C'est là que vivront les tarifs le jour où l'application devra les connaître : au niveau de la formule, jamais de la personne. Elle doit être remplie avant l'ouverture des inscriptions.
 
 #### Règles de robustesse
 
@@ -275,9 +275,9 @@ Une table de correspondance `helloasso_tiers (tier_id → creneau_id, credits_pe
 
 ### Échec d'un prélèvement mensuel
 
-HelloAsso émet une notification dédiée (`Paiement par échéance refusé`) et **gère lui-même la relance** : l'adhérente reçoit un e-mail contenant un lien de régularisation valable 30 jours. Cette application ne doit donc surtout pas construire sa propre relance — elle doit seulement savoir.
+HelloAsso émet une notification dédiée (`Paiement par échéance refusé`) et **gère lui-même la relance** : l'adhérent reçoit un e-mail contenant un lien de régularisation valable 30 jours. Cette application ne doit donc surtout pas construire sa propre relance — elle doit seulement savoir.
 
-**Signaler, jamais sanctionner.** Un prélèvement échoué **ne bloque rien** : ni l'octroi des crédits, ni les réservations en cours, ni les réservations futures. Une carte expirée est l'explication la plus fréquente, et couper automatiquement l'accès d'une adhérente dans une association d'une vingtaine de personnes qui se connaissent toutes serait socialement désastreux — et systématiquement annulé à la main par Isabelle. C'est la même logique que le découvert de crédits (`SPEC-abonnements-credits.md` §5, règle 3) : on rend visible, on laisse décider.
+**Signaler, jamais sanctionner.** Un prélèvement échoué **ne bloque rien** : ni l'octroi des crédits, ni les réservations en cours, ni les réservations futures. Une carte expirée est l'explication la plus fréquente, et couper automatiquement l'accès d'un adhérent dans une association d'une vingtaine de personnes qui se connaissent toutes serait socialement désastreux — et systématiquement annulé à la main par Isabelle. C'est la même logique que le découvert de crédits (`SPEC-abonnements-credits.md` §5, règle 3) : on rend visible, on laisse décider.
 
 Concrètement :
 
@@ -288,9 +288,9 @@ Concrètement :
 
 #### Le levier, quand il faut vraiment agir
 
-Il n'existe **aucune notion de « suspension »** dans le modèle, et il n'en faut pas : pour arrêter les droits d'une adhérente qui ne paie plus, Isabelle **avance sa date de fin d'abonnement** (`ends_on`). L'octroi cesse à cette date, mécaniquement, par la même arithmétique que tout le reste.
+Il n'existe **aucune notion de « suspension »** dans le modèle, et il n'en faut pas : pour arrêter les droits d'un adhérent qui ne paie plus, Isabelle **avance sa date de fin d'abonnement** (`ends_on`). L'octroi cesse à cette date, mécaniquement, par la même arithmétique que tout le reste.
 
-Conséquence à comprendre avant de s'en servir : réduire `ends_on` diminue l'octroi **rétroactivement**. Si l'adhérente a cessé de payer en janvier mais est venue en février et mars, ces séances deviennent des séances supplémentaires et apparaissent en facturation. C'est arithmétiquement juste, et c'est exactement le montant à réclamer — mais il faut le savoir plutôt que le découvrir.
+Conséquence à comprendre avant de s'en servir : réduire `ends_on` diminue l'octroi **rétroactivement**. Si l'adhérent a cessé de payer en janvier mais est venue en février et mars, ces séances deviennent des séances supplémentaires et apparaissent en facturation. C'est arithmétiquement juste, et c'est exactement le montant à réclamer — mais il faut le savoir plutôt que le découvrir.
 
 Les phases 0 à 2 du plan HelloAsso (campagne d'adhésion, prélèvement mensuel, champs Keystatic, client API) restent valables, mais deviennent un chantier **parallèle et non bloquant**. Sa phase 3 — le badge « places restantes » alimenté par HelloAsso — est annulée : la disponibilité vient de la table `sessions`.
 
@@ -298,14 +298,14 @@ Les registres officiels de l'association (adhésion, obligations SIRET) resteron
 
 ### Question ouverte : le suivi des paiements
 
-Sans HelloAsso, personne ne sait dans le système qui a payé son mois. `monthly_price_cents` dit ce qui est *dû*, pas ce qui est *reçu*. Deux options, à trancher avant M1 :
+Sans HelloAsso, personne ne sait dans le système qui a payé son mois, et plus rien n'y indique même ce qui est dû. Deux options :
 
 - **Ne rien suivre** — Isabelle continue avec sa méthode actuelle (carnet, tableur). Zéro développement, mais l'application affichera des soldes de séances à des gens qui ne paient plus.
 - **Un marqueur mensuel payé/non payé** par abonnement, saisi à la main. Une table et un écran de plus, et une saisie mensuelle pour elle.
 
 Recommandation : **ne rien suivre en M1**. Ajouter de la comptabilité manuelle juste avant de brancher un système qui l'automatise serait du travail jetable — les notifications `Payment` de M5 répondent à la question sans aucune saisie (voir « Échec d'un prélèvement mensuel » ci-dessous).
 
-À assumer d'ici là : entre M1 et M5, l'application affichera des crédits à des personnes qui ont peut-être cessé de payer. Sur une vingtaine d'adhérentes qu'Isabelle connaît toutes, un impayé se remarque sans logiciel.
+À assumer d'ici là : entre M1 et M5, l'application affichera des crédits à des personnes qui ont peut-être cessé de payer. Sur une vingtaine d'adhérents qu'Isabelle connaît toutes, un impayé se remarque sans logiciel.
 
 ## 7. Risques
 

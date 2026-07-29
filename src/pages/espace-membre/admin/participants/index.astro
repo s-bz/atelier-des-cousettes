@@ -27,7 +27,7 @@ type Personne = NonNullable<typeof personnes>[number];
  * On ne regroupe QUE lorsqu'un compte porte plusieurs personnes.
  *
  * La notion de famille n'existe que dans ce cas ; l'immense majorité des
- * adhérentes sont des adultes seules. Imposer un niveau d'imbrication à tout
+ * adhérents sont des adultes venant seuls. Imposer un niveau d'imbrication à tout
  * le monde pour accommoder deux ou trois familles ferait payer le cas rare par
  * le cas courant.
  */
@@ -54,7 +54,7 @@ const libelleSolde = (s: number) =>
     : `${s} séance${s > 1 ? 's' : ''}`;
 ---
 
-<AdminLayout title="Adhérentes" soustitre="Les personnes qui viennent à l’atelier.">
+<AdminLayout title="Adhérents" soustitre="Les personnes qui viennent à l’atelier.">
 
   <a href="/espace-membre/admin/participants/nouveau/"
      class="mb-8 inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">

@@ -36,7 +36,7 @@ Séparer plus tard suppose de scinder chaque ligne existante, de réaffecter tou
 
 ```text
 accounts     (id, auth_user_id, email unique, phone, created_at)
-participants (id, account_id NULLABLE, first_name, last_name, birthdate, notes)
+participants (id, account_id NULLABLE, first_name, last_name, notes)
 ```
 
 - L'**authentification** (code à 6 chiffres ou Google) porte sur `accounts.email`. Un participant n'a ni adresse e-mail ni mot de passe.
@@ -48,13 +48,13 @@ participants (id, account_id NULLABLE, first_name, last_name, birthdate, notes)
 
 **Un participant peut exister sans aucun compte.** C'est le cas de toute personne qui ne se servira jamais du site : Isabelle la crée, lui affecte un abonnement, réserve et libère ses places à sa place. Elle vient à l'atelier exactement comme les autres, avec son solde et ses crédits, sans jamais avoir donné d'adresse e-mail.
 
-Ce n'est pas un cas marginal. Une part des adhérentes ne voudra pas d'un compte, et exiger une adresse e-mail pour exister dans le système forcerait à inventer des adresses factices — précisément le défaut que la séparation compte/participant sert à éviter.
+Ce n'est pas un cas marginal. Une part des adhérents ne voudra pas d'un compte, et exiger une adresse e-mail pour exister dans le système forcerait à inventer des adresses factices — précisément le défaut que la séparation compte/participant sert à éviter.
 
 Conséquences directes :
 
 - **Isabelle crée des participants indépendamment des comptes.** Trois gestes distincts à l'admin : créer un participant seul, créer un compte seul, rattacher un participant existant à un compte.
 - **Aucun e-mail** n'est envoyé pour un participant sans compte — ni confirmation, ni rappel J-2. Isabelle le sait et prévient ces personnes comme elle le fait aujourd'hui. L'écran d'admin **signale visiblement** les participants sans compte, pour qu'un silence ne passe pas pour un oubli du système.
-- **Le rattachement ultérieur ne perd rien.** Le jour où une adhérente veut un accès, on crée un compte et on lui rattache le participant existant : historique, abonnements, réservations et solde sont conservés, puisque tout est déjà porté par le participant.
+- **Le rattachement ultérieur ne perd rien.** Le jour où un adhérent veut un accès, on crée un compte et on lui rattache le participant existant : historique, abonnements, réservations et solde sont conservés, puisque tout est déjà porté par le participant.
 - **M1 ne nécessite aucun compte.** Isabelle peut mener une saison entière avec la table `accounts` vide. L'authentification des adhérents (M2) devient un ajout, jamais un prérequis.
 
 Les **e-mails** (confirmation, rappel J-2) partent vers `accounts.email` quand il y en a un, en nommant le participant concerné : « Rappel : Léa a séance jeudi 9 octobre à 10h ».
@@ -69,7 +69,6 @@ subscriptions (
   season               -- '2026-2027'
   home_creneau_id      -- créneau d'origine, pour l'auto-inscription
   credits_per_month    -- 1 ou 2 (0 possible : voir §8)
-  monthly_price_cents  -- ce qui est dû chaque mois, indicatif
   starts_on, ends_on   -- fenêtre de droits
   helloasso_order_id   -- nullable, purement traçabilité
 )
@@ -83,7 +82,6 @@ Un abonnement appartient à un **participant**, jamais à un compte. Deux sœurs
 
 Il n'existe ni table de grand-livre, ni colonne `balance`, ni tâche mensuelle d'attribution. Le solde est une fonction de deux faits déjà en base :
 
-```text
 Le solde se calcule **par participant**, jamais par compte.
 
 ```text
@@ -140,7 +138,7 @@ Deux enseignements lisibles dans ce tableau :
 
 Ne pas venir sans prévenir **consomme quand même le crédit.** La place était tenue, personne d'autre n'a pu la prendre.
 
-C'est la règle la plus importante à expliquer aux adhérentes, et la seule qui rende la capacité signifiante : sans elle, une séance affiche complet pendant que la salle est à moitié vide. Elle crée la bonne incitation — libérer sa place, ce qui la rend disponible et met le crédit de côté.
+C'est la règle la plus importante à expliquer aux adhérents, et la seule qui rende la capacité signifiante : sans elle, une séance affiche complet pendant que la salle est à moitié vide. Elle crée la bonne incitation — libérer sa place, ce qui la rend disponible et met le crédit de côté.
 
 Isabelle peut toujours passer outre : libérer a posteriori une réservation passée rend le crédit (§9).
 
@@ -227,7 +225,7 @@ Le solde est un nombre agrégé : il dit *combien* de séances dépassent, jamai
 
 **Les crédits se consomment dans l'ordre chronologique des séances.** On parcourt les réservations actives du participant par date de séance croissante, en maintenant un solde courant : à chaque réservation, l'octroi acquis à la date de cette séance moins les réservations déjà parcourues. Une réservation qui ferait passer ce solde courant sous zéro est une **séance supplémentaire**, facturée au `unit_price_cents` de sa propre séance.
 
-C'est la seule règle à la fois explicable à une adhérente — « vos crédits couvrent vos séances dans l'ordre, au-delà c'est payant » — et stable : elle ne dépend ni de l'ordre de saisie, ni de la date à laquelle on regarde.
+C'est la seule règle à la fois explicable à un adhérent — « vos crédits couvrent vos séances dans l'ordre, au-delà c'est payant » — et stable : elle ne dépend ni de l'ordre de saisie, ni de la date à laquelle on regarde.
 
 Elle tient compte du report : une séance du 9 octobre ne peut pas être couverte par un crédit octroyé en mars. C'est l'octroi **à la date de la séance** qui compte, pas l'octroi total de la saison.
 
@@ -255,11 +253,11 @@ Cela couvre trois situations avec un seul mécanisme : l'adhérent abonné qui v
 
 **Arrivée en cours de mois** — `starts_on` au 12 novembre octroie le crédit de novembre en entier. Volontairement généreux, et sans fraction à gérer.
 
-**Fin de saison** — après `ends_on`, l'octroi cesse. Les crédits non consommés **expirent au 30 juin** et ne passent pas à la saison suivante. Une nouvelle saison est un nouvel abonnement, solde reparti de zéro. À dire explicitement aux adhérentes en début d'année.
+**Fin de saison** — après `ends_on`, l'octroi cesse. Les crédits non consommés **expirent au 30 juin** et ne passent pas à la saison suivante. Une nouvelle saison est un nouvel abonnement, solde reparti de zéro. À dire explicitement aux adhérents en début d'année.
 
 **Les enfants** — le créneau enfants du samedi n'a besoin d'aucun traitement spécifique : l'enfant est un **participant**, rattaché au compte d'un parent (§1 bis). Deux sœurs sur un même compte ont deux abonnements, deux soldes et deux jeux de réservations indépendants. Le parent se connecte une fois et bascule de l'une à l'autre.
 
-Un mineur n'a ni compte ni adresse e-mail : toute la correspondance passe par `accounts.email`, en nommant l'enfant concerné. `participants.birthdate` est renseignée pour les mineurs — utile pour vérifier l'éligibilité au créneau enfants et pour les besoins de l'association ; facultative pour les adultes.
+Un mineur n'a ni compte ni adresse e-mail : toute la correspondance passe par `accounts.email`, en nommant l'enfant concerné. Aucune date de naissance n'est conservée : elle n'était interrogée par rien, et il s'agissait de données de mineurs.
 
 ## 9. L'auto-inscription
 
@@ -290,7 +288,7 @@ Un adhérent auto-inscrit à ses deux jeudis qui réserve ensuite un samedi pass
 
 **La présence effective.** Réserver vaut consommation ; il n'y a pas d'état « venu / pas venu ». Isabelle coche une feuille de présence si elle le souhaite, mais le système ne s'en sert pas. Ajouter un état `attended` viendra si le besoin s'en fait sentir — et ce sera additif.
 
-**Les paiements.** `monthly_price_cents` dit ce qui est **dû**, jamais ce qui est **reçu**. Tant que HelloAsso n'encaisse pas, personne dans le système ne sait qui est à jour. Décision assumée, argumentée dans `DOCS/PRD-espace-membre.md` §6.
+**Les paiements.** Ni ce qui est dû, ni ce qui est reçu : aucun montant n'est stocké sur l'abonnement, et aucun règlement n'est suivi. Seules les séances supplémentaires ont un prix, celui de la séance concernée. Décision assumée, argumentée dans `DOCS/PRD-espace-membre.md` §6.
 
 **La liste d'attente.** Une séance complète n'est pas réservable, et rien ne prévient quand une place se libère.
 

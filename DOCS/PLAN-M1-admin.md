@@ -227,7 +227,7 @@ supabase db query --linked "select email, role from accounts order by email;"
 
 **Fichiers :** `src/middleware.ts`, `src/utils/auth.ts`, `src/pages/espace-membre/connexion.astro`, `src/pages/espace-membre/deconnexion.ts`, `src/env.d.ts`
 
-**Pourquoi un code et non un lien magique :** les scanners antivirus de certains fournisseurs préchargent les liens des e-mails et consomment le lien avant l'adhérente. Un code fonctionne aussi quand l'e-mail est ouvert sur le téléphone et le site sur l'ordinateur.
+**Pourquoi un code et non un lien magique :** les scanners antivirus de certains fournisseurs préchargent les liens des e-mails et consomment le lien avant l'adhérent. Un code fonctionne aussi quand l'e-mail est ouvert sur le téléphone et le site sur l'ordinateur.
 
 - [ ] **Étape 1 — Installer**
 

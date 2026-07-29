@@ -6,7 +6,7 @@ export const prerender = false;
 /**
  * Déconnexion. En POST uniquement : une déconnexion en GET peut être
  * déclenchée par une simple image ou un lien préchargé, et déconnecterait
- * l'adhérente sans qu'elle l'ait demandé.
+ * l'adhérent sans qu'il l'ait demandé.
  */
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const supabase = getRequestClient(request, cookies);

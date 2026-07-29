@@ -16,7 +16,7 @@ const supabase = getAdminClient();
  * La version précédente créait d'abord une « personne », puis obligeait à
  * ouvrir une autre page et à déplier un panneau pour lui donner un abonnement.
  * C'était le modèle de données exposé tel quel : or une personne sans
- * abonnement n'a aucun crédit, n'est jamais auto-inscrite, et ne sert donc à
+ * abonnement n'a aucun crédit, n'est jamais auto-inscrit, et ne sert donc à
  * rien. Les deux ne se séparent pas dans le travail réel d'Isabelle.
  */
 
@@ -153,8 +153,8 @@ if (Astro.request.method === 'POST') {
             </label>
             <input id="email" name="email" type="email" value={champs.email} class="champ" />
             <p class="mt-1 text-sm text-[var(--color-text-light)]">
-              Pour qu’elle puisse réserver en ligne. Sans adresse, vous gérez ses réservations
-              et elle ne reçoit aucun e-mail.
+              Pour permettre la réservation en ligne. Sans adresse, vous gérez les réservations
+              et aucun e-mail n’est envoyé.
             </p>
           </div>
         )}
@@ -174,7 +174,7 @@ if (Astro.request.method === 'POST') {
             ))}
           </select>
           <p class="mt-1 text-sm text-[var(--color-text-light)]">
-            Celui où elle sera inscrite d’office. Elle pourra venir à n’importe quel autre.
+            Celui où l’inscription est automatique. Venir à un autre créneau reste possible.
           </p>
         </div>
 
@@ -182,7 +182,7 @@ if (Astro.request.method === 'POST') {
           <label for="credits" class="block text-sm font-medium mb-1">Séances par mois</label>
           <input id="credits" name="credits" type="number" min="0" required
                  value={champs.credits} class="champ" />
-          <p class="mt-1 text-sm text-[var(--color-text-light)]">0 si elle paie à la séance.</p>
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">0 en cas de paiement à la séance.</p>
         </div>
 
         <div>

@@ -25,11 +25,11 @@ Valeurs propres à ce projet :
   - `openid` (à ajouter à la main, il n'est pas proposé par défaut)
   - `.../auth/userinfo.email`
   - `.../auth/userinfo.profile`
-- **Publier l'application** plutôt que de la laisser en « Testing ». En mode test, chaque adhérente devrait être inscrite individuellement comme utilisateur de test — ingérable, et cassé dès qu'une nouvelle arrive en cours d'année.
+- **Publier l'application** plutôt que de la laisser en « Testing ». En mode test, chaque adhérent devrait être inscrit individuellement comme utilisateur de test — ingérable, et cassé dès qu'une nouvelle personne arrive en cours d'année.
 
 > Ces trois portées sont **non sensibles** : publier ne déclenche aucune procédure de vérification par Google. La vérification (plusieurs jours ouvrés) n'est requise que pour des portées sensibles, qu'on n'utilise pas. Ne pas s'en inquiéter.
 
-Renseigner le nom de l'application et le logo : c'est ce que les adhérentes verront sur l'écran Google. « Atelier des Cousettes » inspire plus confiance qu'un identifiant technique.
+Renseigner le nom de l'application et le logo : c'est ce que les adhérents verront sur l'écran Google. « Atelier des Cousettes » inspire plus confiance qu'un identifiant technique.
 
 ### 1.2 Identifiants OAuth
 

@@ -72,7 +72,7 @@ if (Astro.request.method === 'POST') {
         if (error.status === 429 || error.code === 'over_email_send_rate_limit') {
           // Distingué du reste À DESSEIN. Supabase n'autorise qu'une demande
           // par minute ; confondre cette attente avec « compte inconnu »
-          // enverrait vers Isabelle des adhérentes qui ont simplement cliqué
+          // enverrait vers Isabelle des adhérents qui ont simplement cliqué
           // deux fois. Le message reste sans information sur l'appartenance.
           erreur =
             'Un code vient déjà d’être envoyé. Attendez une minute avant d’en demander un nouveau, ' +
@@ -202,7 +202,7 @@ if (Astro.request.method === 'POST') {
         <>
           {/*
             Google est proposé SANS hiérarchie visuelle marquée face au code
-            par e-mail. Une part importante des adhérentes est sur orange.fr,
+            par e-mail. Une part importante des adhérents est sur orange.fr,
             free.fr ou wanadoo.fr, pour qui ce bouton ne sert à rien : en faire
             le chemin principal les enverrait dans une impasse.
           */}

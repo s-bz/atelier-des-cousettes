@@ -24,7 +24,7 @@ export function requireAdmin(astro: AstroGlobal): Response | null {
     return astro.redirect('/espace-membre/connexion/');
   }
   if (!isAdmin) {
-    // 403 plutôt qu'une redirection : la personne est bien connectée, elle
+    // 403 plutôt qu'une redirection : la personne est bien connectée, mais
     // n'a simplement pas ce droit. La renvoyer vers la connexion laisserait
     // croire à un problème de session et ferait boucler.
     return new Response('Accès réservé à l’administration.', {
