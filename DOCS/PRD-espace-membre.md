@@ -213,10 +213,12 @@ Passer par un sous-domaine est le bon choix : la réputation d'envoi de l'applic
 
 **Mais une adresse « no reply » perd des messages.** Sur une vingtaine d'adhérentes, souvent peu à l'aise avec le numérique, certaines répondront au rappel J-2 pour dire « je ne peux pas venir jeudi » au lieu d'aller sur le site — c'est quasi certain. Sans traitement, ces réponses disparaissent, et Isabelle croira la personne présente.
 
-Deux mesures, à prendre dès M3 :
+Deux mesures, **obligatoires dès le premier envoi** :
 
-- **`Reply-To: info@atelier-des-cousettes.fr`** sur tous les envois. L'expéditeur reste le sous-domaine authentifié, mais une réponse arrive chez Isabelle. Coût : un en-tête.
+- **`Reply-To: info@atelier-des-cousettes.fr` sur TOUS les envois, sans exception** — codes de connexion, confirmations, rappels, annulations. L'expéditeur reste le sous-domaine authentifié, mais une réponse arrive chez Isabelle. Coût : un en-tête. À poser dans la fonction d'envoi unique, jamais message par message : un en-tête recopié à cinq endroits finit par manquer au sixième.
 - **Le dire dans le corps de l'e-mail** : « Pour libérer votre place, utilisez le lien ci-dessous — vous pouvez aussi simplement répondre à ce message. » Assumer le canal plutôt que le combattre.
+
+Le `Reply-To` s'applique aussi aux e-mails émis par **Supabase Auth** (codes de connexion), qui passent par le SMTP Resend : il se configure dans le gabarit d'e-mail Supabase, pas dans le code applicatif. C'est l'envoi le plus facile à oublier, parce que c'est le seul que l'application n'écrit pas elle-même.
 
 À noter au passage : la convention usuelle est `no-reply` avec un trait d'union ; `no_reply` avec un tiret bas est licite mais inhabituel, et quelques filtres naïfs le traitent mal. Modifiable tant que rien n'est envoyé.
 
@@ -328,6 +330,13 @@ Recommandation : **ne rien suivre en M1**. Ajouter de la comptabilité manuelle 
 - Double moyen de connexion : se connecter par code puis, plus tard, par Google avec la même adresse doit aboutir au **même** compte, pas à un doublon.
 - Compte à un seul participant : aucun sélecteur de participant ne doit apparaître dans l'interface.
 - CSP : `pnpm test` doit passer sans modification de `src/config/csp.js`, connexion Google comprise.
+
+### E-mails (M3)
+
+- **Chaque** type d'envoi porte `Reply-To: info@atelier-des-cousettes.fr` — vérifié par un test sur la fonction d'envoi, et **de visu sur un code de connexion réel**, puisque celui-ci est produit par Supabase Auth et non par le code applicatif.
+- Répondre à un rappel J-2 depuis une vraie boîte doit arriver chez Isabelle, pas rebondir.
+- L'expéditeur est `no_reply@portail.atelier-des-cousettes.fr` et le message passe SPF et DKIM — contrôler les en-têtes d'un message reçu, pas seulement le tableau de bord Resend.
+- Aucun e-mail n'est produit pour un participant sans compte.
 
 ### Provisionnement automatique (M5)
 
