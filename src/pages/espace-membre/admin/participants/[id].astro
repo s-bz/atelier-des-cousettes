@@ -50,6 +50,41 @@ if (Astro.request.method === 'POST') {
     }
   }
 
+  // Corriger un abonnement saisi de travers.
+  //
+  // À distinguer du changement de formule en cours de saison (§6), qui se fait
+  // en clôturant puis en ouvrant : là, on RÉÉCRIT une ligne existante, ce qui
+  // modifie rétroactivement l'octroi de tous ses mois. C'est exactement ce
+  // qu'il faut pour réparer une faute de frappe, et exactement ce qu'il ne faut
+  // pas pour acter une évolution réelle — l'écran le dit.
+  if (action === 'corriger-abonnement') {
+    const debut = String(form.get('debut') ?? '');
+    const fin = String(form.get('fin') ?? '');
+
+    if (debut > fin) {
+      erreur = 'Le dernier mois ne peut pas précéder le premier.';
+    } else {
+      const { error } = await supabase
+        .from('subscriptions')
+        .update({
+          home_creneau_id: String(form.get('creneau') ?? '') || null,
+          credits_per_month: Number(form.get('credits')),
+          starts_on: debut,
+          ends_on: fin,
+        })
+        .eq('id', String(form.get('abonnement')));
+      if (error) erreur = `Correction impossible : ${error.message}`;
+      else message = 'Abonnement corrigé. Le solde a été recalculé.';
+    }
+  }
+
+  if (action === 'supprimer-abonnement') {
+    const { error } = await supabase
+      .from('subscriptions').delete().eq('id', String(form.get('abonnement')));
+    if (error) erreur = `Suppression impossible : ${error.message}`;
+    else message = 'Abonnement supprimé. Les réservations existantes sont conservées.';
+  }
+
   // Corriger une identité. Sans cet écran, une faute de frappe dans un nom
   // n'était réparable qu'en SQL.
   if (action === 'identite') {
@@ -196,6 +231,71 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
           {!a.helloasso_order_id && (
             <p class="mt-1 text-xs text-[var(--color-text-light)]">Saisi à la main</p>
           )}
+
+          <details class="mt-3">
+            <summary class="cursor-pointer text-sm text-[var(--color-text-light)]">
+              Corriger cet abonnement
+            </summary>
+
+            <p class="mt-2 max-w-xl text-sm text-[var(--color-text)]">
+              À n’utiliser que pour <strong>réparer une saisie fautive</strong>. Corriger ici
+              réécrit l’octroi de tous les mois déjà passés, et le solde change aussitôt.
+              Pour acter un vrai changement de formule en cours de saison, n’y touchez pas :
+              utilisez « Ajouter un abonnement » ci-dessous, qui clôture celui-ci à la
+              veille du nouveau et conserve l’historique.
+            </p>
+
+            <form method="post" class="mt-3">
+              <input type="hidden" name="action" value="corriger-abonnement" />
+              <input type="hidden" name="abonnement" value={a.id} />
+
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label for={`c-creneau-${a.id}`} class="block text-sm font-medium mb-1">Créneau habituel</label>
+                  <select id={`c-creneau-${a.id}`} name="creneau" class="champ">
+                    <option value="">Aucun</option>
+                    {(creneaux ?? []).map((c) => (
+                      <option value={c.id} selected={c.id === a.home_creneau_id}>
+                        {c.label} — {c.audience}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label for={`c-credits-${a.id}`} class="block text-sm font-medium mb-1">Séances par mois</label>
+                  <input id={`c-credits-${a.id}`} name="credits" type="number" min="0" required
+                         value={a.credits_per_month} class="champ" />
+                </div>
+                <div>
+                  <label for={`c-debut-${a.id}`} class="block text-sm font-medium mb-1">Premier mois</label>
+                  <input id={`c-debut-${a.id}`} name="debut" type="date" required
+                         value={a.starts_on} class="champ" />
+                </div>
+                <div>
+                  <label for={`c-fin-${a.id}`} class="block text-sm font-medium mb-1">Dernier mois</label>
+                  <input id={`c-fin-${a.id}`} name="fin" type="date" required
+                         value={a.ends_on} class="champ" />
+                </div>
+              </div>
+
+              <button type="submit"
+                      class="mt-3 rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)]">
+                Corriger
+              </button>
+            </form>
+
+            <form method="post" class="mt-3 border-t border-[var(--color-border)] pt-3">
+              <input type="hidden" name="action" value="supprimer-abonnement" />
+              <input type="hidden" name="abonnement" value={a.id} />
+              <button type="submit" class="text-sm text-[var(--color-button)] underline">
+                Supprimer cet abonnement
+              </button>
+              <span class="ml-3 text-sm text-[var(--color-text-light)]">
+                Les réservations déjà posées restent : elles deviendront des séances
+                supplémentaires, à facturer.
+              </span>
+            </form>
+          </details>
         </li>
       ))}
     </ul>
