@@ -1,0 +1,137 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../utils/guards';
+import { getAdminClient } from '../../../utils/supabase';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const supabase = getAdminClient();
+
+const { data: personnes } = await supabase
+  .from('participants')
+  .select('id, first_name, last_name, account_id, accounts(email)')
+  .order('last_name');
+
+type Extra = {
+  booking_id: string;
+  starts_at: string;
+  creneau_label: string;
+  unit_price_cents: number;
+};
+
+type Ligne = {
+  personne: NonNullable<typeof personnes>[number];
+  extras: Extra[];
+  total: number;
+};
+
+const lignes: Ligne[] = [];
+for (const p of personnes ?? []) {
+  const { data } = await supabase.rpc('extra_sessions', { p_participant: p.id });
+  const extras = (data as Extra[]) ?? [];
+  if (extras.length === 0) continue;
+  lignes.push({
+    personne: p,
+    extras,
+    total: extras.reduce((somme, e) => somme + e.unit_price_cents, 0),
+  });
+}
+
+/**
+ * Regroupement par compte : c'est le parent qui règle pour ses deux filles.
+ *
+ * Les soldes ne sont JAMAIS additionnés entre personnes — seulement les
+ * montants dus. Un solde positif de l'une masquerait le découvert de l'autre,
+ * et le total réclamé serait faux.
+ */
+type Foyer = { email: string | null; lignes: Ligne[]; total: number };
+
+const foyers = new Map<string, Foyer>();
+for (const ligne of lignes) {
+  const cle = ligne.personne.account_id ?? `seul:${ligne.personne.id}`;
+  const foyer: Foyer = foyers.get(cle) ?? {
+    email: (ligne.personne.accounts as any)?.email ?? null,
+    lignes: [],
+    total: 0,
+  };
+  foyer.lignes.push(ligne);
+  foyer.total += ligne.total;
+  foyers.set(cle, foyer);
+}
+
+const totalGeneral = lignes.reduce((s, l) => s + l.total, 0);
+
+const euros = (cents: number) => (cents / 100).toFixed(2).replace('.', ',') + ' €';
+const dateFr = new Intl.DateTimeFormat('fr-FR', {
+  day: 'numeric', month: 'long', timeZone: 'Europe/Paris',
+});
+---
+
+<AdminLayout
+  title="À facturer"
+  soustitre="Les séances venues au-delà des crédits inclus."
+>
+  {foyers.size === 0 ? (
+    <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
+      Rien à facturer : personne n’a dépassé ses crédits.
+    </p>
+  ) : (
+    <>
+      <p class="mb-6 text-[var(--color-text)]">
+        <strong class="text-[var(--color-heading)]">{euros(totalGeneral)}</strong> au total,
+        sur {foyers.size} {foyers.size > 1 ? 'comptes' : 'compte'}.
+      </p>
+
+      <div class="space-y-4">
+        {[...foyers.values()].map((foyer) => (
+          <div class="rounded-xl bg-[var(--color-card-bg)] shadow-md">
+            <div class="flex flex-wrap items-baseline gap-x-4 border-b border-[var(--color-border)] px-5 py-3">
+              <span class="font-medium text-[var(--color-heading)]">
+                {foyer.email ?? 'Sans compte'}
+              </span>
+              <span class="ml-auto font-bold text-[var(--color-button)]">
+                {euros(foyer.total)}
+              </span>
+            </div>
+
+            {foyer.lignes.map((ligne) => (
+              <div class="px-5 py-3">
+                <div class="flex flex-wrap items-baseline gap-x-3">
+                  <a href={`/espace-membre/admin/participants/${ligne.personne.id}/`}
+                     class="font-medium text-[var(--color-heading)] underline">
+                    {ligne.personne.first_name} {ligne.personne.last_name}
+                  </a>
+                  <span class="text-sm text-[var(--color-text-light)]">
+                    {ligne.extras.length} séance{ligne.extras.length > 1 ? 's' : ''}
+                  </span>
+                  <span class="ml-auto text-sm font-medium text-[var(--color-text)]">
+                    {euros(ligne.total)}
+                  </span>
+                </div>
+
+                <ul class="mt-1 space-y-0.5">
+                  {ligne.extras.map((e) => (
+                    <li class="flex flex-wrap gap-x-3 text-sm text-[var(--color-text-light)]">
+                      <span>{dateFr.format(new Date(e.starts_at))}</span>
+                      <span>{e.creneau_label}</span>
+                      <span class="ml-auto">{euros(e.unit_price_cents)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <p class="mt-8 text-sm text-[var(--color-text-light)]">
+        Les crédits couvrent les séances dans l’ordre chronologique ; celles listées ici
+        sont venues au-delà. Chacune est comptée au tarif de sa propre séance.
+        L’application n’encaisse rien et ne sait pas ce qui a été réglé.
+      </p>
+    </>
+  )}
+</AdminLayout>
