@@ -205,6 +205,16 @@ Deux fournisseurs distincts, à ne pas confondre : **Vercel** héberge et décle
 
 **Aucune de ces limites n'est atteignable ici.** Avec une vingtaine d'adhérents, le pire jour imaginable — inviter tout le monde le même soir — produit une vingtaine de codes, soit un cinquième du plafond quotidien. Le volume courant tourne autour de 70 e-mails par mois. Il n'y a donc **ni échelonnement des envois ni garde-fou de quota à écrire** : ce serait de la complexité pour un problème qui ne se posera pas.
 
+### Gabarits d'e-mails — à reprendre
+
+Les gabarits par défaut de Supabase sont en anglais, génériques et sans identité (« Your sign-in link »). Tous doivent être repris en français, aux couleurs du site.
+
+**Le gabarit de connexion est le plus urgent, et pas seulement pour l'esthétique** : le modèle par défaut utilise `{{ .ConfirmationURL }}` et envoie donc un **lien**, alors que l'application attend un **code à six chiffres**. Tant qu'il n'est pas remplacé par un gabarit contenant `{{ .Token }}`, la connexion ne fonctionne pas. Le gabarit est écrit et relu dans `supabase/templates/magic-link.html` ; son installation se fait à la main dans le tableau de bord.
+
+**Ne pas installer les gabarits par `supabase config push`.** La commande pousse le `config.toml` entier et écraserait au passage `site_url`, `enable_signup`, la limite d'envoi, le SMTP personnalisé et le fournisseur Google — tous réglés à la main dans le tableau de bord. Le rapport bénéfice/risque est mauvais pour un changement de gabarit.
+
+Restent à reprendre, au jalon M3 : confirmation de réservation, rappel J-2, annulation d'une séance. Tous doivent porter le `Reply-To` décrit ci-dessous et être lisibles sur un téléphone.
+
 ### Expéditeur
 
 Le domaine authentifié chez Resend est **`portail.atelier-des-cousettes.fr`** (sous-domaine), et l'expéditeur est donc **`no_reply@portail.atelier-des-cousettes.fr`**. La même adresse doit être déclarée comme expéditeur du SMTP personnalisé dans Supabase Auth, sans quoi les codes de connexion partiront d'une adresse non authentifiée et finiront en indésirables.
