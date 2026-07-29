@@ -110,6 +110,44 @@ if (Astro.request.method === 'POST') {
     else message = 'Abonnement supprimé. Les réservations existantes sont conservées.';
   }
 
+  // Retirer quelqu'un d'une séance.
+  //
+  // Isabelle apprend souvent les empêchements par téléphone ou de vive voix :
+  // sans ce bouton, il fallait ouvrir la séance concernée et y chercher la
+  // personne, ou la laisser occuper une place qu'elle ne prendra pas.
+  //
+  // La conséquence n'est pas la même selon la date, et le message le dit :
+  // sur une séance à venir la place se libère, sur une séance passée c'est un
+  // crédit déjà consommé qu'on rend — un geste, pas une correction d'agenda.
+  if (action === 'liberer') {
+    const reservation = String(form.get('reservation') ?? '');
+
+    // L'identifiant vient du formulaire : on vérifie qu'il appartient bien à
+    // la personne affichée. L'écran est réservé aux administrateurs, mais un
+    // identifiant périmé — page laissée ouverte, retour arrière — libérerait
+    // sinon la place de quelqu'un d'autre sans que rien ne le signale.
+    const { data: cible } = await supabase
+      .from('bookings')
+      .select('participant_id, sessions(starts_at)')
+      .eq('id', reservation)
+      .maybeSingle();
+
+    if (!cible || cible.participant_id !== id) {
+      erreur = 'Cette réservation n’appartient pas à cette personne.';
+    } else {
+      const { error } = await supabase.rpc('release_booking', { p_booking: reservation });
+      if (error) {
+        erreur = `Retrait impossible : ${error.message}`;
+      } else {
+        const passee = new Date((cible as any).sessions.starts_at) < new Date();
+        message = (passee
+          ? 'Séance retirée, et le crédit rendu au solde. '
+          : 'Place libérée : elle est de nouveau proposée aux autres adhérents. ')
+          + 'Aucun message n’a été envoyé — prévenez la personne vous-même.';
+      }
+    }
+  }
+
   // Corriger une identité. Sans cet écran, une faute de frappe dans un nom
   // n'était réparable qu'en SQL.
   if (action === 'identite') {
@@ -205,9 +243,14 @@ const { data: creneaux } = await supabase
 
 const { data: reservations } = await supabase
   .from('bookings')
-  .select('id, source, status, sessions(starts_at, status, creneaux(label))')
+  .select('id, source, status, attendance, sessions(starts_at, status, creneaux(label))')
   .eq('participant_id', id)
-  .eq('status', 'booked');
+  .eq('status', 'booked')
+  .order('starts_at', { referencedTable: 'sessions' });
+
+// Les absences notées, comptées ici plutôt que laissées à repérer à l'œil dans
+// une liste de vingt lignes : c'est le chiffre qui déclenche un coup de fil.
+const absences = (reservations ?? []).filter((r: any) => r.attendance === 'absent').length;
 
 const enCours = (abonnements ?? []).filter((a) => a.ends_on >= new Date().toISOString().slice(0, 10));
 const dateFr = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
@@ -424,22 +467,58 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
     </form>
   </details>
 
-  <h2 class="mt-10 mb-3 text-lg font-bold text-[var(--color-heading)]">Séances réservées</h2>
+  <h2 class="mt-10 mb-3 text-lg font-bold text-[var(--color-heading)]">
+    Séances réservées
+    {absences > 0 && (
+      <span class="ml-2 text-sm font-normal text-[var(--color-button)]">
+        {absences} absence{absences > 1 ? 's' : ''} notée{absences > 1 ? 's' : ''}
+      </span>
+    )}
+  </h2>
   {(reservations ?? []).length === 0 ? (
     <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">Aucune réservation.</p>
   ) : (
     <ul class="space-y-2">
-      {(reservations ?? []).map((r: any) => (
-        <li class="flex flex-wrap items-center gap-x-4 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
-          <span class="font-medium text-[var(--color-heading)]">
-            {dateFr.format(new Date(r.sessions.starts_at))}
-          </span>
-          <span class="text-sm text-[var(--color-text-light)]">{r.sessions.creneaux?.label}</span>
-          {r.sessions.status === 'cancelled' && (
-            <span class="text-sm text-[var(--color-button)]">séance annulée</span>
-          )}
-        </li>
-      ))}
+      {(reservations ?? []).map((r: any) => {
+        const passee = new Date(r.sessions.starts_at) < new Date();
+        return (
+          <li class={`flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md ${passee ? 'opacity-60' : ''}`}>
+            <span class="font-medium text-[var(--color-heading)]">
+              {dateFr.format(new Date(r.sessions.starts_at))}
+            </span>
+            <span class="text-sm text-[var(--color-text-light)]">{r.sessions.creneaux?.label}</span>
+            {/*
+              « Non noté » n'est pas « absent » : la feuille de présence ne sera
+              pas remplie tous les jours, et afficher un silence comme une
+              absence accuserait quelqu'un qui était là.
+            */}
+            {passee && (
+              r.attendance === 'absent'
+                ? <span class="text-sm font-medium text-[var(--color-button)]">absent</span>
+                : r.attendance === 'present'
+                  ? <span class="text-sm text-[var(--color-text-light)]">présent</span>
+                  : <span class="text-sm text-[var(--color-text-light)]">présence non notée</span>
+            )}
+            {r.sessions.status === 'cancelled' && (
+              <span class="text-sm text-[var(--color-button)]">séance annulée</span>
+            )}
+
+            {/*
+              Le libellé dit ce qui va se passer, et ce n'est pas la même chose
+              des deux côtés d'aujourd'hui : à venir, on libère une place ;
+              passée, on rend un crédit déjà consommé.
+            */}
+            <form method="post" class="ml-auto">
+              <input type="hidden" name="action" value="liberer" />
+              <input type="hidden" name="reservation" value={r.id} />
+              <button type="submit"
+                      class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-1.5 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-bg-accent)]">
+                {passee ? 'Rendre la séance' : 'Retirer de la séance'}
+              </button>
+            </form>
+          </li>
+        );
+      })}
     </ul>
   )}
 

@@ -103,6 +103,34 @@ if (Astro.request.method === 'POST') {
     else message = 'Place libérée, le crédit est rendu.';
   }
 
+  // Noter la présence.
+  //
+  // Ce geste ne touche PAS au solde : une place gardée est décomptée qu'on
+  // vienne ou non. Noter une absence constate un fait ; rendre la séance est
+  // une décision, prise depuis la fiche de la personne. L'écran le rappelle,
+  // parce que la confusion serait naturelle.
+  //
+  // Un second clic sur le même bouton dénote — sans quoi une erreur de doigt
+  // ne serait réparable que par une valeur qu'on ne voulait pas non plus.
+  if (action === 'presence') {
+    const booking = String(form.get('booking') ?? '');
+    const valeur = String(form.get('valeur') ?? '');
+    const actuelle = String(form.get('actuelle') ?? '');
+    const nouvelle = actuelle === valeur ? null : valeur;
+
+    const { error } = await supabase
+      .from('bookings')
+      .update({
+        attendance: nouvelle,
+        attendance_at: nouvelle ? new Date().toISOString() : null,
+      })
+      .eq('id', booking)
+      .eq('session_id', id);   // la réservation doit appartenir à CETTE séance
+
+    if (error) erreur = `Présence non enregistrée : ${error.message}`;
+    else message = nouvelle === null ? 'Présence effacée.' : 'Présence notée.';
+  }
+
   if (action === 'inscrire') {
     const { error } = await supabase.rpc('book_participant', {
       p_session: id,
@@ -131,9 +159,14 @@ const lieux = [...new Set([
 
 const { data: reservations } = await supabase
   .from('bookings')
-  .select('id, source, status, participants(id, first_name, last_name)')
+  .select('id, source, status, attendance, participants(id, first_name, last_name)')
   .eq('session_id', id)
   .eq('status', 'booked');
+
+// La feuille de présence n'apparaît qu'une fois la séance commencée : la
+// proposer trois semaines à l'avance inviterait à noter des présences que
+// personne n'a encore constatées.
+const commencee = new Date(seance.starts_at) <= new Date();
 
 // Participants non encore inscrits à cette séance, pour le sélecteur.
 const dejaInscrits = new Set((reservations ?? []).map((r: any) => r.participants?.id));
@@ -177,22 +210,58 @@ const debut = new Date(seance.starts_at);
   )}
 
   <h2 class="mb-3 text-lg font-bold text-[var(--color-heading)]">
-    Inscrits — {prises} / {seance.capacity}
+    {commencee && !annulee ? 'Feuille de présence' : 'Inscrits'} — {prises} / {seance.capacity}
   </h2>
+
+  {commencee && !annulee && prises > 0 && (
+    <p class="mb-3 text-sm text-[var(--color-text-light)]">
+      Noter une absence ne rend pas la séance : une place gardée est décomptée qu’on vienne
+      ou non. Pour rendre la séance à quelqu’un, passez par sa fiche.
+    </p>
+  )}
 
   {prises === 0 ? (
     <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">Personne pour l’instant.</p>
   ) : (
     <ul class="space-y-2">
       {(reservations ?? []).map((r: any) => (
-        <li class="flex items-center gap-4 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
+        <li class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
           <span class="font-medium text-[var(--color-heading)]">
             {r.participants?.first_name} {r.participants?.last_name}
           </span>
           <span class="text-sm text-[var(--color-text-light)]">
             {r.source === 'auto' ? 'inscription automatique' : r.source === 'admin' ? 'inscrit par vous' : 'réservé en ligne'}
           </span>
-          <form method="post" class="ml-auto">
+
+          {/*
+            Deux boutons plutôt qu'une case à cocher : « non noté » doit rester
+            distinct d'« absent ». Une case décochée par défaut fabriquerait des
+            absents qui étaient là — et la feuille ne sera pas remplie tous les
+            jours. Recliquer sur l'état courant l'efface.
+          */}
+          {commencee && !annulee && (
+            <div class="ml-auto flex gap-2">
+              {[['present', 'Présent'], ['absent', 'Absent']].map(([valeur, libelle]) => (
+                <form method="post">
+                  <input type="hidden" name="action" value="presence" />
+                  <input type="hidden" name="booking" value={r.id} />
+                  <input type="hidden" name="valeur" value={valeur} />
+                  <input type="hidden" name="actuelle" value={r.attendance ?? ''} />
+                  <button type="submit"
+                          aria-pressed={r.attendance === valeur}
+                          class={`rounded-[var(--radius-button)] px-4 py-1.5 text-sm font-medium transition-colors ${
+                            r.attendance === valeur
+                              ? 'bg-[var(--color-button)] text-white'
+                              : 'border border-[var(--color-border-prominent)] text-[var(--color-text)] hover:bg-[var(--color-bg-accent)]'
+                          }`}>
+                    {libelle}
+                  </button>
+                </form>
+              ))}
+            </div>
+          )}
+
+          <form method="post" class={commencee && !annulee ? '' : 'ml-auto'}>
             <input type="hidden" name="action" value="liberer" />
             <input type="hidden" name="booking" value={r.id} />
             <button type="submit" class="text-sm text-[var(--color-button)] underline">Libérer la place</button>
