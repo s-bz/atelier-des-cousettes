@@ -318,19 +318,24 @@ if (Astro.request.method === 'POST') {
             </form>
           </div>
 
-          {/* Hors du panneau : ce n'est pas une commande, c'est un recours. */}
-          <p class="mt-4 text-center text-sm text-[var(--color-text-light)]">
-            L’accès est réservé aux personnes inscrites aux ateliers.
-            Pas encore d’accès ? Demandez-le à Isabelle par
-            {' '}<a href={`mailto:${MOBILE_ET_MAIL.email}`}
-                    class="text-[var(--color-button)] underline">e-mail</a>
-            {whatsapp ? (
-              <>{' '}ou <a href={whatsapp} target="_blank" rel="noopener noreferrer"
-                           class="text-[var(--color-button)] underline">WhatsApp</a>.</>
-            ) : '.'}
-          </p>
         </div>
       </div>
+
+      {/*
+        Sous les deux colonnes, et non collé au panneau de connexion : ce n'est
+        pas une commande mais un recours, et il s'adresse à qui ne trouve pas
+        sa place dans l'un ou l'autre côté de la page.
+      */}
+      <p class="mt-10 text-center text-sm text-[var(--color-text-light)]">
+        L’accès est réservé aux personnes inscrites aux ateliers.
+        Pas encore d’accès ? Demandez-le à Isabelle par
+        {' '}<a href={`mailto:${MOBILE_ET_MAIL.email}`}
+                class="text-[var(--color-button)] underline">e-mail</a>
+        {whatsapp ? (
+          <>{' '}ou <a href={whatsapp} target="_blank" rel="noopener noreferrer"
+                       class="text-[var(--color-button)] underline">WhatsApp</a>.</>
+        ) : '.'}
+      </p>
 
       {/*
         Pied de page dédié : Google exige un lien accessible vers la politique
