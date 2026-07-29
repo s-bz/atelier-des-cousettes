@@ -1,0 +1,112 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../utils/guards';
+import { getAdminClient } from '../../../utils/supabase';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const supabase = getAdminClient();
+
+let message: string | null = null;
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const id = String(form.get('creneau') ?? '');
+
+  const debut = String(form.get('debut') ?? '');
+  const fin = String(form.get('fin') ?? '');
+
+  if (debut >= fin) {
+    erreur = 'L’heure de fin doit suivre l’heure de début.';
+  } else {
+    const { error } = await supabase
+      .from('creneaux')
+      .update({
+        default_start_time: debut,
+        default_end_time: fin,
+        default_location: String(form.get('lieu') ?? '').trim(),
+        default_capacity: Number(form.get('places')),
+        default_unit_price_cents: Math.round(Number(form.get('prix')) * 100),
+      })
+      .eq('id', id);
+
+    if (error) erreur = `Modification impossible : ${error.message}`;
+    else message = 'Créneau modifié. Les séances déjà créées ne changent pas.';
+  }
+}
+
+const { data: creneaux } = await supabase
+  .from('creneaux')
+  .select('id, label, group_id, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, sessions(id)')
+  .order('label');
+---
+
+<AdminLayout
+  title="Créneaux"
+  soustitre="Les valeurs reprises automatiquement à la création d’une séance."
+>
+  {message && (
+    <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">{message}</p>
+  )}
+  {erreur && (
+    <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>
+  )}
+
+  <p class="mb-8 max-w-2xl text-[var(--color-text)]">
+    Ces valeurs ne sont qu’un point de départ : modifier un créneau n’affecte
+    <strong> aucune séance déjà créée</strong>, seulement celles à venir. Pour corriger
+    une séance existante, ouvrez-la depuis l’onglet Séances.
+  </p>
+
+  <div class="space-y-4">
+    {(creneaux ?? []).map((c) => (
+      <form method="post" class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+        <input type="hidden" name="creneau" value={c.id} />
+
+        <div class="mb-4 flex flex-wrap items-baseline gap-x-3">
+          <h2 class="font-bold text-[var(--color-heading)]">{c.label}</h2>
+          <span class="text-sm text-[var(--color-text-light)]">
+            {(c.sessions ?? []).length} séance{(c.sessions ?? []).length > 1 ? 's' : ''} créée{(c.sessions ?? []).length > 1 ? 's' : ''}
+          </span>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div>
+            <label for={`debut-${c.id}`} class="block text-sm font-medium mb-1">Début</label>
+            <input id={`debut-${c.id}`} name="debut" type="time" required
+                   value={c.default_start_time.slice(0, 5)} class="champ" />
+          </div>
+          <div>
+            <label for={`fin-${c.id}`} class="block text-sm font-medium mb-1">Fin</label>
+            <input id={`fin-${c.id}`} name="fin" type="time" required
+                   value={c.default_end_time.slice(0, 5)} class="champ" />
+          </div>
+          <div>
+            <label for={`lieu-${c.id}`} class="block text-sm font-medium mb-1">Lieu</label>
+            <input id={`lieu-${c.id}`} name="lieu" required
+                   value={c.default_location} class="champ" />
+          </div>
+          <div>
+            <label for={`places-${c.id}`} class="block text-sm font-medium mb-1">Places</label>
+            <input id={`places-${c.id}`} name="places" type="number" min="1" required
+                   value={c.default_capacity} class="champ" />
+          </div>
+          <div>
+            <label for={`prix-${c.id}`} class="block text-sm font-medium mb-1">Séance seule (€)</label>
+            <input id={`prix-${c.id}`} name="prix" type="number" min="0" step="0.01" required
+                   value={(c.default_unit_price_cents / 100).toFixed(2)} class="champ" />
+          </div>
+        </div>
+
+        <button type="submit"
+                class="mt-4 rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)]">
+          Enregistrer
+        </button>
+      </form>
+    ))}
+  </div>
+</AdminLayout>

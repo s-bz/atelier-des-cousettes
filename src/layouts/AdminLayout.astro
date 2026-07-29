@@ -12,6 +12,7 @@ const chemin = Astro.url.pathname;
 
 const onglets = [
   { href: '/espace-membre/admin/seances/', label: 'Séances' },
+  { href: '/espace-membre/admin/creneaux/', label: 'Créneaux' },
   { href: '/espace-membre/admin/participants/', label: 'Adhérents' },
   { href: '/espace-membre/admin/a-facturer/', label: 'À facturer' },
 ];
@@ -38,12 +39,19 @@ const onglets = [
             </a>
           );
         })}
-        <a
-          href="/espace-membre/"
-          class="ml-auto self-center text-sm text-[var(--color-text-light)] underline"
-        >
-          Mon espace
-        </a>
+        {/*
+          « Mon espace » figurait ici : inutile pour Isabelle, qui n'a aucune
+          personne rattachée et se retrouvait donc renvoyée immédiatement à
+          l'administration. Un lien qui ramène où l'on est n'est pas un lien.
+        */}
+        <form method="post" action="/espace-membre/deconnexion/" class="ml-auto self-center">
+          <button
+            type="submit"
+            class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-1.5 text-sm text-[var(--color-text)] transition-colors hover:border-[var(--color-button)] hover:text-[var(--color-button)]"
+          >
+            Se déconnecter
+          </button>
+        </form>
       </nav>
 
       <h1 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)]"
