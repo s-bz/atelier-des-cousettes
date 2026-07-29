@@ -31,12 +31,12 @@ if (compteExistant) {
 
 const { data: creneaux } = await supabase
   .from('creneaux')
-  .select('id, label')
+  .select('id, label, audience')
   .is('archived_at', null)   // un créneau archivé n'est plus proposé
   .order('label');
 
 const champs = {
-  prenom: '', nom: '', telephone: '', email: '', notes: '',
+  prenom: '', nom: '', telephone: '', email: '', notes: '', audience: 'adulte',
   creneau: '', credits: '2', debut: '', fin: '',
 };
 let erreur: string | null = null;
@@ -91,6 +91,7 @@ if (Astro.request.method === 'POST') {
           first_name: champs.prenom,
           last_name: champs.nom,
           phone: champs.telephone || null,
+          audience: champs.audience,
           notes: champs.notes || null,
         })
         .select('id').single();
@@ -149,6 +150,18 @@ if (Astro.request.method === 'POST') {
           <input id="nom" name="nom" required value={champs.nom} class="champ" />
         </div>
         <div>
+          <label for="audience" class="block text-sm font-medium mb-1">Public</label>
+          <select id="audience" name="audience" required class="champ">
+            <option value="adulte" selected={champs.audience === 'adulte'}>Adulte</option>
+            <option value="enfant" selected={champs.audience === 'enfant'}>Enfant</option>
+          </select>
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Les séances enfants durent 2 h, les séances adultes 2 h 30 ou 3 h.
+            Chacun ne peut s’inscrire qu’aux séances de son public.
+          </p>
+        </div>
+
+        <div>
           <label for="telephone" class="block text-sm font-medium mb-1">
             Téléphone <span class="text-[var(--color-text-light)]">— facultatif</span>
           </label>
@@ -179,7 +192,7 @@ if (Astro.request.method === 'POST') {
           <select id="creneau" name="creneau" class="champ">
             <option value="">Aucun créneau attitré</option>
             {(creneaux ?? []).map((c) => (
-              <option value={c.id} selected={c.id === champs.creneau}>{c.label}</option>
+              <option value={c.id} selected={c.id === champs.creneau}>{c.label} — {c.audience}</option>
             ))}
           </select>
           <p class="mt-1 text-sm text-[var(--color-text-light)]">

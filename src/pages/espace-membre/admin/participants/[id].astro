@@ -62,6 +62,7 @@ if (Astro.request.method === 'POST') {
         .from('participants')
         .update({ first_name: prenom, last_name: nom,
                   phone: String(form.get('telephone') ?? '').trim() || null,
+                  audience: String(form.get('audience') ?? 'adulte'),
                   notes: String(form.get('notes') ?? '').trim() || null })
         .eq('id', id);
       if (error) erreur = `Modification impossible : ${error.message}`;
@@ -119,7 +120,7 @@ if (Astro.request.method === 'POST') {
 
 const { data: participant } = await supabase
   .from('participants')
-  .select('id, first_name, last_name, phone, notes, account_id, accounts(email)')
+  .select('id, first_name, last_name, phone, audience, notes, account_id, accounts(email)')
   .eq('id', id)
   .maybeSingle();
 
@@ -139,7 +140,7 @@ const { data: consomme } = await supabase.rpc('consumed_credits', { p_participan
 
 const { data: creneaux } = await supabase
   .from('creneaux')
-  .select('id, label')
+  .select('id, label, audience')
   .order('label');
 
 const { data: reservations } = await supabase
@@ -236,7 +237,7 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
           <select id="creneau" name="creneau"
                   class="champ">
             <option value="">Aucun</option>
-            {(creneaux ?? []).map((c) => <option value={c.id}>{c.label}</option>)}
+            {(creneaux ?? []).map((c) => <option value={c.id}>{c.label} — {c.audience}</option>)}
           </select>
         </div>
         <div>
@@ -304,6 +305,14 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
           <label for="nom" class="block text-sm font-medium mb-1">Nom</label>
           <input id="nom" name="nom" required value={participant.last_name} class="champ" />
         </div>
+      </div>
+
+      <div class="mt-3">
+        <label for="audience" class="block text-sm font-medium mb-1">Public</label>
+        <select id="audience" name="audience" class="champ">
+          <option value="adulte" selected={participant.audience === 'adulte'}>Adulte</option>
+          <option value="enfant" selected={participant.audience === 'enfant'}>Enfant</option>
+        </select>
       </div>
 
       <div class="mt-3">

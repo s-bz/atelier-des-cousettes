@@ -75,9 +75,12 @@ if (choisie) {
 
   const { data } = await supabase
     .from('sessions')
-    .select('id, starts_at, ends_at, location, capacity, status, creneaux(label), bookings(id, participant_id, status)')
+    .select('id, starts_at, ends_at, location, capacity, status, creneaux!inner(label, audience), bookings(id, participant_id, status)')
     .gte('starts_at', debutDuJour.toISOString())
     .eq('status', 'scheduled')
+    // Les séances d'un autre public ne sont pas seulement irréservables :
+    // les montrer ferait espérer une place qui n'existe pas.
+    .eq('creneaux.audience', `${choisie.audience}s`)
     .order('starts_at')
     .limit(60);
 

@@ -17,7 +17,7 @@ export async function participantsDuCompte(accountId: string, demande?: string |
 
   const { data } = await supabase
     .from('participants')
-    .select('id, first_name, last_name')
+    .select('id, first_name, last_name, audience')
     .eq('account_id', accountId)
     .order('first_name');
 

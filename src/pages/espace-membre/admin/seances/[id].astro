@@ -86,7 +86,7 @@ if (Astro.request.method === 'POST') {
 
 const { data: seance } = await supabase
   .from('sessions')
-  .select('id, starts_at, ends_at, location, capacity, unit_price_cents, status, creneaux(label)')
+  .select('id, starts_at, ends_at, location, capacity, unit_price_cents, status, creneaux(label, audience)')
   .eq('id', id)
   .maybeSingle();
 
@@ -107,9 +107,13 @@ const { data: reservations } = await supabase
 
 // Participants non encore inscrits à cette séance, pour le sélecteur.
 const dejaInscrits = new Set((reservations ?? []).map((r: any) => r.participants?.id));
+// Seules les personnes du public de la séance : proposer les autres serait
+// proposer un geste que la base refusera.
+const publicSeance = (seance.creneaux as any)?.audience ?? 'adultes';
 const { data: tousParticipants } = await supabase
   .from('participants')
   .select('id, first_name, last_name')
+  .eq('audience', publicSeance === 'enfants' ? 'enfant' : 'adulte')
   .order('last_name');
 const inscriptibles = (tousParticipants ?? []).filter((p) => !dejaInscrits.has(p.id));
 
