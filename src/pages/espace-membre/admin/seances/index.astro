@@ -10,6 +10,23 @@ if (garde) return garde;
 
 const supabase = getAdminClient();
 
+let message: string | null = null;
+
+// Lancement manuel : l'auto-inscription tourne chaque nuit et à chaque nouvel
+// abonnement, mais après avoir ajouté des séances il est utile de la
+// déclencher sans attendre — et de VOIR qu'elle a tourné.
+if (Astro.request.method === 'POST') {
+  const { data, error } = await supabase.rpc('run_auto_enrolment', { p_horizon_days: 60 });
+  if (error) {
+    message = `Auto-inscription impossible : ${error.message}`;
+  } else {
+    const n = (data as number) ?? 0;
+    message = n > 0
+      ? `${n} place${n > 1 ? 's réservées' : ' réservée'} d’office.`
+      : 'Rien à inscrire : tout le monde est déjà placé sur les séances à venir.';
+  }
+}
+
 /**
  * À venir par défaut, passé sur demande.
  *
@@ -67,11 +84,22 @@ for (const s of seances ?? []) {
 
 <AdminLayout title="Séances" soustitre="Le calendrier de la saison.">
 
+  {message && (
+    <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">{message}</p>
+  )}
+
   <div class="mb-8 flex flex-wrap items-center gap-3">
     <a href="/espace-membre/admin/seances/nouvelles/"
        class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
       Créer des séances
     </a>
+
+    <form method="post">
+      <button type="submit"
+              class="rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-3 text-sm font-medium text-[var(--color-button)]">
+        Inscrire d’office
+      </button>
+    </form>
 
     <nav class="ml-auto flex gap-2" aria-label="Période">
       <a href="/espace-membre/admin/seances/"

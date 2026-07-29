@@ -11,7 +11,9 @@ if (garde) return garde;
 const { id } = Astro.params;
 const supabase = getAdminClient();
 
-let message: string | null = null;
+let message: string | null = Astro.url.searchParams.has('inscrit')
+  ? 'Adhérent créé, et inscrit d’office aux prochaines séances de son créneau.'
+  : null;
 let erreur: string | null = null;
 
 if (Astro.request.method === 'POST') {
@@ -45,8 +47,23 @@ if (Astro.request.method === 'POST') {
         starts_on: debut,
         ends_on: fin,
       });
-      if (error) erreur = `Abonnement impossible : ${error.message}`;
-      else message = 'Abonnement enregistré.';
+      if (error) {
+        erreur = `Abonnement impossible : ${error.message}`;
+      } else {
+        // Même raison qu'à la création : le résultat doit être visible
+        // immédiatement, pas le lendemain matin.
+        const { data: posees, error: e3 } =
+          await supabase.rpc('run_auto_enrolment', { p_horizon_days: 60 });
+        if (e3) {
+          console.error('[abonnement] auto-inscription :', e3);
+          message = 'Abonnement enregistré.';
+        } else {
+          const n = (posees as number) ?? 0;
+          message = n > 0
+            ? `Abonnement enregistré. ${n} place${n > 1 ? 's ont été réservées' : ' a été réservée'} d’office.`
+            : 'Abonnement enregistré. Aucune séance à venir sur ce créneau pour l’instant.';
+        }
+      }
     }
   }
 

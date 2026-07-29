@@ -115,8 +115,18 @@ if (Astro.request.method === 'POST') {
           ends_on: champs.fin,
         });
 
-        if (e2) erreur = `Personne créée, mais abonnement impossible : ${e2.message}`;
-        else return Astro.redirect(`/espace-membre/admin/participants/${personne.id}/`);
+        if (e2) {
+          erreur = `Personne créée, mais abonnement impossible : ${e2.message}`;
+        } else {
+          // Inscrire d'office TOUT DE SUITE, sans attendre le cron du
+          // lendemain. Sans cela, Isabelle crée quelqu'un, ouvre la feuille de
+          // présence, n'y voit personne, et conclut que ça ne marche pas.
+          // La fonction est idempotente : l'appeler ici ne fait pas double
+          // emploi avec la tâche quotidienne.
+          const { error: e3 } = await supabase.rpc('run_auto_enrolment', { p_horizon_days: 60 });
+          if (e3) console.error('[inscription] auto-inscription :', e3);
+          return Astro.redirect(`/espace-membre/admin/participants/${personne.id}/?inscrit=1`);
+        }
       }
     }
   }
