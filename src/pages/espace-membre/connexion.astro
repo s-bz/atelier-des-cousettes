@@ -94,6 +94,13 @@ if (Astro.request.method === 'POST') {
     });
 
     if (error || !data.user) {
+      console.error('[connexion] verifyOtp a échoué :', {
+        status: error?.status,
+        code: error?.code,
+        message: error?.message,
+        emailFourni: Boolean(email),
+        longueurCode: code.length,
+      });
       etape = 'code';
       erreur = 'Code incorrect ou expiré. Demandez-en un nouveau si besoin.';
     } else {
