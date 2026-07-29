@@ -75,10 +75,17 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
       d'audience n'exige pas de bandeau de consentement — ce qui évite d'en
       construire un, et rend la politique de confidentialité exacte.
 
-      Le compromis est réel et assumé : un même visiteur revenant demain est
-      compté comme nouveau. À l'échelle de ce site, connaître les pages
-      consultées suffit ; distinguer les visiteurs uniques ne vaut pas un
-      bandeau que personne ne veut voir.
+      Le compromis est réel et assumé, et plus fort qu'il n'y paraît : sur un
+      site multi-pages, la mémoire est vidée à chaque navigation, donc CHAQUE
+      page vue repart d'un identifiant neuf. Le nombre de pages vues reste
+      juste — c'est ce qu'on veut savoir — mais toute métrique de « visiteurs
+      uniques » est dénuée de sens et ne doit pas être lue. Distinguer les
+      visiteurs ne vaut pas un bandeau que personne ne veut voir.
+
+      `person_profiles: 'identified_only'` est la conséquence indispensable de
+      ce choix : sans lui, PostHog créerait un profil de personne par page vue,
+      soit des milliers de profils fantômes qui gonfleraient la facturation
+      pour rien. Personne n'étant jamais identifié ici, aucun profil n'est créé.
 
       L'enregistrement de session est coupé : il capterait le contenu saisi
       dans l'espace membre.
@@ -92,6 +99,7 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
         posthog.init(posthogKey, {
           api_host: posthogHost,
           persistence: 'memory',
+          person_profiles: 'identified_only',
           disable_session_recording: true,
           autocapture: false,
         });
