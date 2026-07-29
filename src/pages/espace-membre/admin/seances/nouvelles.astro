@@ -105,7 +105,7 @@ if (Astro.request.method === 'POST') {
   )}
 
   {illisibles.length > 0 && (
-    <div role="alert" class="mb-8 rounded-xl bg-white p-5 shadow-md">
+    <div role="alert" class="mb-8 rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
       <p class="font-medium text-[var(--color-button)]">
         {illisibles.length} ligne{illisibles.length > 1 ? 's' : ''} non comprise{illisibles.length > 1 ? 's' : ''}, donc ignorée{illisibles.length > 1 ? 's' : ''} :
       </p>
@@ -116,7 +116,7 @@ if (Astro.request.method === 'POST') {
   )}
 
   {erreur && (
-    <p role="alert" class="mb-6 rounded-xl bg-white p-4 text-sm text-[var(--color-button)] shadow-md">
+    <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">
       {erreur}
     </p>
   )}
@@ -126,7 +126,7 @@ if (Astro.request.method === 'POST') {
       <label for="creneau" class="block text-sm font-medium mb-1">Créneau</label>
       <select
         id="creneau" name="creneau" required
-        class="w-full rounded-xl border border-[var(--color-bg-accent)] bg-white px-4 py-3"
+        class="champ"
       >
         <option value="">Choisir…</option>
         {(creneaux ?? []).map((c) => (
@@ -146,7 +146,7 @@ if (Astro.request.method === 'POST') {
       <textarea
         id="dates" name="dates" rows="10" required
         placeholder={'09/10/2026\n23/10/2026\n06/11/2026'}
-        class="w-full rounded-xl border border-[var(--color-bg-accent)] bg-white px-4 py-3 font-mono text-sm"
+        class="champ font-mono text-sm"
       >{saisie}</textarea>
       <p class="mt-1 text-sm text-[var(--color-text-light)]">
         Formats acceptés : 09/10/2026 ou 2026-10-09. Une date déjà enregistrée est ignorée,

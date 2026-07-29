@@ -32,7 +32,7 @@ for (const p of participants ?? []) {
   </a>
 
   {(participants ?? []).length === 0 ? (
-    <p class="rounded-xl bg-white p-5 text-[var(--color-text)] shadow-md">
+    <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
       Aucun participant pour l’instant.
     </p>
   ) : (
@@ -43,7 +43,7 @@ for (const p of participants ?? []) {
         return (
           <li>
             <a href={`/espace-membre/admin/participants/${p.id}/`}
-               class="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-white p-4 shadow-md transition-opacity hover:opacity-80">
+               class="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md transition-opacity hover:opacity-80">
               <span class="font-medium text-[var(--color-heading)]">
                 {p.last_name} {p.first_name}
               </span>

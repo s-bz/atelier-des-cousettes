@@ -88,7 +88,7 @@ if (Astro.request.method === 'POST') {
 
 <AdminLayout title="Nouveau participant" soustitre="L’accès au site est facultatif.">
   {erreur && (
-    <p role="alert" class="mb-6 rounded-xl bg-white p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>
+    <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>
   )}
 
   <form method="post" class="max-w-lg space-y-5">
@@ -96,12 +96,12 @@ if (Astro.request.method === 'POST') {
       <div>
         <label for="prenom" class="block text-sm font-medium mb-1">Prénom</label>
         <input id="prenom" name="prenom" required value={prenom}
-               class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+               class="champ" />
       </div>
       <div>
         <label for="nom" class="block text-sm font-medium mb-1">Nom</label>
         <input id="nom" name="nom" required value={nom}
-               class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+               class="champ" />
       </div>
     </div>
 
@@ -110,7 +110,7 @@ if (Astro.request.method === 'POST') {
         Date de naissance <span class="text-[var(--color-text-light)]">(pour les enfants)</span>
       </label>
       <input id="naissance" name="naissance" type="date" value={naissance}
-             class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+             class="champ" />
     </div>
 
     <div>
@@ -118,7 +118,7 @@ if (Astro.request.method === 'POST') {
         Notes <span class="text-[var(--color-text-light)]">(facultatif)</span>
       </label>
       <textarea id="notes" name="notes" rows="2"
-                class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2">{notes}</textarea>
+                class="champ">{notes}</textarea>
     </div>
 
     <div class="rounded-xl bg-[var(--color-bg-accent)] p-5">
@@ -126,7 +126,7 @@ if (Astro.request.method === 'POST') {
         Adresse e-mail pour l’accès au site <span class="text-[var(--color-text-light)]">(facultatif)</span>
       </label>
       <input id="email" name="email" type="email" value={emailCompte}
-             class="w-full rounded-xl border border-white bg-white px-4 py-2" />
+             class="champ" />
       <p class="mt-2 text-sm text-[var(--color-text)]">
         Laissez vide si la personne ne souhaite pas de compte : vous gérerez ses réservations
         vous-même, et elle ne recevra aucun e-mail. Un accès pourra toujours être ajouté plus tard,

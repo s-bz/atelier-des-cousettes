@@ -149,7 +149,7 @@ if (Astro.request.method === 'POST') {
       </p>
 
       {erreur && (
-        <p role="alert" class="mb-6 rounded-xl bg-white p-4 text-sm text-[var(--color-button)] shadow-md">
+        <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">
           {erreur}
         </p>
       )}
@@ -165,7 +165,7 @@ if (Astro.request.method === 'POST') {
           <input
             id="email" name="email" type="email" required autocomplete="email"
             value={email} readonly={etape === 'code'}
-            class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-3"
+            class="champ"
           />
         </div>
 
@@ -185,7 +185,7 @@ if (Astro.request.method === 'POST') {
             <input
               id="code" name="code" type="text" required autocomplete="one-time-code"
               inputmode="numeric" pattern="[0-9]{6,8}" maxlength="8" autofocus
-              class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-3 tracking-[0.5em] text-center text-lg"
+              class="champ tracking-[0.5em] text-center text-lg"
             />
           </div>
         )}
@@ -216,7 +216,7 @@ if (Astro.request.method === 'POST') {
             <input type="hidden" name="provider" value="google" />
             <button
               type="submit"
-              class="flex w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border-2 border-[var(--color-bg-accent)] bg-white px-6 py-3 font-medium text-[var(--color-heading)] transition-colors hover:bg-[var(--color-bg-accent)]"
+              class="flex w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border-2 border-[var(--color-border)] bg-[var(--color-card-bg)] px-6 py-3 font-medium text-[var(--color-heading)] transition-colors hover:bg-[var(--color-bg-accent)]"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
                 <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z"/>

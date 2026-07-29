@@ -51,7 +51,7 @@ const heureFr = new Intl.DateTimeFormat('fr-FR', {
   </a>
 
   {(seances ?? []).length === 0 && (
-    <p class="rounded-xl bg-white p-5 text-[var(--color-text)] shadow-md">
+    <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
       Aucune séance pour l’instant. Commencez par en créer pour un créneau.
     </p>
   )}
@@ -71,7 +71,7 @@ const heureFr = new Intl.DateTimeFormat('fr-FR', {
               <li>
                 <a
                   href={`/espace-membre/admin/seances/${s.id}/`}
-                  class={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-white p-4 shadow-md transition-opacity hover:opacity-80 ${annulee ? 'opacity-50' : ''}`}
+                  class={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md transition-opacity hover:opacity-80 ${annulee ? 'opacity-50' : ''}`}
                 >
                   <span class="font-medium text-[var(--color-heading)]">
                     {dateFr.format(new Date(s.starts_at))}

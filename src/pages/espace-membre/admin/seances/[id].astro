@@ -105,11 +105,11 @@ const debut = new Date(seance.starts_at);
     <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">{message}</p>
   )}
   {erreur && (
-    <p role="alert" class="mb-6 rounded-xl bg-white p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>
+    <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>
   )}
 
   {annulee && (
-    <p class="mb-6 rounded-xl bg-white p-4 font-medium text-[var(--color-button)] shadow-md">
+    <p class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 font-medium text-[var(--color-button)] shadow-md">
       Séance annulée. Les crédits ont été rendus ; aucune inscription n’est possible.
     </p>
   )}
@@ -119,11 +119,11 @@ const debut = new Date(seance.starts_at);
   </h2>
 
   {prises === 0 ? (
-    <p class="rounded-xl bg-white p-5 text-[var(--color-text)] shadow-md">Personne pour l’instant.</p>
+    <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">Personne pour l’instant.</p>
   ) : (
     <ul class="space-y-2">
       {(reservations ?? []).map((r: any) => (
-        <li class="flex items-center gap-4 rounded-xl bg-white p-4 shadow-md">
+        <li class="flex items-center gap-4 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
           <span class="font-medium text-[var(--color-heading)]">
             {r.participants?.first_name} {r.participants?.last_name}
           </span>
@@ -146,7 +146,7 @@ const debut = new Date(seance.starts_at);
       <div class="min-w-[240px] flex-1">
         <label for="participant" class="block text-sm font-medium mb-1">Inscrire quelqu’un</label>
         <select id="participant" name="participant" required
-                class="w-full rounded-xl border border-[var(--color-bg-accent)] bg-white px-4 py-2">
+                class="champ">
           <option value="">Choisir…</option>
           {inscriptibles.map((p) => (
             <option value={p.id}>{p.last_name} {p.first_name}</option>
@@ -164,14 +164,14 @@ const debut = new Date(seance.starts_at);
     </form>
   )}
 
-  <hr class="my-10 border-[var(--color-bg-accent)]" />
+  <hr class="my-10 border-[var(--color-border)]" />
 
   <div class="grid gap-6 md:grid-cols-2">
-    <form method="post" class="rounded-xl bg-white p-5 shadow-md">
+    <form method="post" class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
       <input type="hidden" name="action" value="capacite" />
       <label for="capacite" class="block text-sm font-medium mb-1">Nombre de places</label>
       <input id="capacite" name="capacite" type="number" min="1" required value={seance.capacity}
-             class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+             class="champ" />
       <p class="mt-1 text-sm text-[var(--color-text-light)]">
         Impossible de descendre sous le nombre d’inscrits : libérez d’abord une place.
       </p>
@@ -181,7 +181,7 @@ const debut = new Date(seance.starts_at);
     </form>
 
     {!annulee && !confirmationAnnulation && (
-      <form method="post" class="rounded-xl bg-white p-5 shadow-md">
+      <form method="post" class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
         <input type="hidden" name="action" value="annuler-demande" />
         <p class="font-medium text-[var(--color-heading)]">Annuler la séance</p>
         <p class="mt-1 text-sm text-[var(--color-text)]">
@@ -196,7 +196,7 @@ const debut = new Date(seance.starts_at);
     )}
 
     {!annulee && confirmationAnnulation && (
-      <div class="rounded-xl border-2 border-[var(--color-button)] bg-white p-5 shadow-md">
+      <div class="rounded-xl border-2 border-[var(--color-button)] bg-[var(--color-card-bg)] p-5 shadow-md">
         <p class="font-medium text-[var(--color-button)]">Confirmer l’annulation</p>
 
         <p class="mt-2 text-sm text-[var(--color-text)]">

@@ -96,9 +96,9 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
     : 'Sans accès au site — ne recevra aucun e-mail'}
 >
   {message && <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm">{message}</p>}
-  {erreur && <p role="alert" class="mb-6 rounded-xl bg-white p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>}
+  {erreur && <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>}
 
-  <div class="mb-8 rounded-xl bg-white p-5 shadow-md">
+  <div class="mb-8 rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
     <p class="text-sm text-[var(--color-text-light)]">Solde de séances</p>
     <p class={`text-3xl font-bold ${(solde as number) < 0 ? 'text-[var(--color-button)]' : 'text-[var(--color-heading)]'}`}>
       {solde}
@@ -111,11 +111,11 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
 
   <h2 class="mb-3 text-lg font-bold text-[var(--color-heading)]">Abonnements</h2>
   {(abonnements ?? []).length === 0 ? (
-    <p class="rounded-xl bg-white p-5 text-[var(--color-text)] shadow-md">Aucun abonnement.</p>
+    <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">Aucun abonnement.</p>
   ) : (
     <ul class="space-y-2">
       {(abonnements ?? []).map((a) => (
-        <li class="rounded-xl bg-white p-4 shadow-md">
+        <li class="rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
           <div class="flex flex-wrap items-center gap-x-4">
             <span class="font-medium text-[var(--color-heading)]">
               {a.credits_per_month} séance{a.credits_per_month > 1 ? 's' : ''}/mois
@@ -138,7 +138,7 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
     </ul>
   )}
 
-  <details class="mt-6 rounded-xl bg-white p-5 shadow-md">
+  <details class="mt-6 rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
     <summary class="cursor-pointer font-medium text-[var(--color-heading)]">
       Ajouter un abonnement
     </summary>
@@ -157,7 +157,7 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
             Clôturer un abonnement en cours ?
           </label>
           <select id="cloturer" name="cloturer"
-                  class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2">
+                  class="champ">
             <option value="">Non, c’est un abonnement supplémentaire</option>
             {enCours.map((a) => (
               <option value={a.id}>
@@ -172,7 +172,7 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
         <div>
           <label for="creneau" class="block text-sm font-medium mb-1">Créneau d’origine</label>
           <select id="creneau" name="creneau"
-                  class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2">
+                  class="champ">
             <option value="">Aucun</option>
             {(creneaux ?? []).map((c) => <option value={c.id}>{c.label}</option>)}
           </select>
@@ -180,28 +180,28 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
         <div>
           <label for="credits" class="block text-sm font-medium mb-1">Séances incluses par mois</label>
           <input id="credits" name="credits" type="number" min="0" required value="2"
-                 class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+                 class="champ" />
           <p class="mt-1 text-xs text-[var(--color-text-light)]">0 pour un créneau payé à la séance.</p>
         </div>
         <div>
           <label for="prix" class="block text-sm font-medium mb-1">Montant mensuel (€)</label>
           <input id="prix" name="prix" type="number" min="0" step="0.01" required value="55"
-                 class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+                 class="champ" />
         </div>
         <div>
           <label for="saison" class="block text-sm font-medium mb-1">Saison</label>
           <input id="saison" name="saison" required value={saisonDefaut}
-                 class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+                 class="champ" />
         </div>
         <div>
           <label for="debut" class="block text-sm font-medium mb-1">Premier mois</label>
           <input id="debut" name="debut" type="date" required
-                 class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+                 class="champ" />
         </div>
         <div>
           <label for="fin" class="block text-sm font-medium mb-1">Dernier mois</label>
           <input id="fin" name="fin" type="date" required
-                 class="w-full rounded-xl border border-[var(--color-bg-accent)] px-4 py-2" />
+                 class="champ" />
         </div>
       </div>
 
@@ -213,11 +213,11 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
 
   <h2 class="mt-10 mb-3 text-lg font-bold text-[var(--color-heading)]">Séances réservées</h2>
   {(reservations ?? []).length === 0 ? (
-    <p class="rounded-xl bg-white p-5 text-[var(--color-text)] shadow-md">Aucune réservation.</p>
+    <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">Aucune réservation.</p>
   ) : (
     <ul class="space-y-2">
       {(reservations ?? []).map((r: any) => (
-        <li class="flex flex-wrap items-center gap-x-4 rounded-xl bg-white p-4 shadow-md">
+        <li class="flex flex-wrap items-center gap-x-4 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
           <span class="font-medium text-[var(--color-heading)]">
             {dateFr.format(new Date(r.sessions.starts_at))}
           </span>
