@@ -10,136 +10,215 @@ if (garde) return garde;
 
 const supabase = getAdminClient();
 
-let prenom = '';
-let nom = '';
-let naissance = '';
-let notes = '';
-let emailCompte = '';
+/**
+ * Un seul écran pour une seule action : inscrire quelqu'un aux ateliers.
+ *
+ * La version précédente créait d'abord une « personne », puis obligeait à
+ * ouvrir une autre page et à déplier un panneau pour lui donner un abonnement.
+ * C'était le modèle de données exposé tel quel : or une personne sans
+ * abonnement n'a aucun crédit, n'est jamais auto-inscrite, et ne sert donc à
+ * rien. Les deux ne se séparent pas dans le travail réel d'Isabelle.
+ */
+
+// Ajout d'une personne sur un compte existant (une deuxième fille).
+const compteExistant = Astro.url.searchParams.get('compte');
+let emailCompteExistant: string | null = null;
+if (compteExistant) {
+  const { data } = await supabase
+    .from('accounts').select('email').eq('id', compteExistant).maybeSingle();
+  emailCompteExistant = data?.email ?? null;
+}
+
+const { data: creneaux } = await supabase
+  .from('creneaux')
+  .select('id, label')
+  .order('label');
+
+const champs = {
+  prenom: '', nom: '', naissance: '', email: '', notes: '',
+  creneau: '', credits: '2', prix: '55', debut: '', fin: '',
+};
 let erreur: string | null = null;
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  prenom = String(form.get('prenom') ?? '').trim();
-  nom = String(form.get('nom') ?? '').trim();
-  naissance = String(form.get('naissance') ?? '').trim();
-  notes = String(form.get('notes') ?? '').trim();
-  emailCompte = String(form.get('email') ?? '').trim().toLowerCase();
+  for (const cle of Object.keys(champs) as (keyof typeof champs)[]) {
+    champs[cle] = String(form.get(cle) ?? '').trim();
+  }
 
-  if (!prenom || !nom) {
+  const email = champs.email.toLowerCase();
+
+  if (!champs.prenom || !champs.nom) {
     erreur = 'Le prénom et le nom sont nécessaires.';
+  } else if (!champs.debut || !champs.fin) {
+    erreur = 'Indiquez le premier et le dernier mois.';
+  } else if (champs.debut > champs.fin) {
+    erreur = 'Le dernier mois ne peut pas précéder le premier.';
   } else {
-    let accountId: string | null = null;
+    let accountId: string | null = compteExistant;
 
-    // Un accès est FACULTATIF. Sans adresse, le participant existe quand même :
-    // c'est le cas de toute personne qui ne se servira jamais du site, et
-    // exiger une adresse obligerait à en inventer.
-    if (emailCompte) {
+    if (!accountId && email) {
       const { data: existant } = await supabase
-        .from('accounts')
-        .select('id')
-        .eq('email', emailCompte)
-        .maybeSingle();
+        .from('accounts').select('id').eq('email', email).maybeSingle();
 
       if (existant) {
-        // Rattachement à un compte déjà là : c'est ainsi qu'une mère inscrit
-        // une deuxième fille.
         accountId = existant.id;
       } else {
-        // Créer l'utilisateur d'authentification ET la ligne accounts. Omettre
-        // le premier produirait un compte impossible à utiliser : la connexion
-        // emploie shouldCreateUser: false, l'envoi du code échouerait, et
-        // l'écran afficherait « Compte non reconnu » alors que le compte existe.
+        // L'utilisateur d'authentification ET la ligne accounts, ensemble.
+        // Sans le premier, la connexion échouerait et l'écran afficherait
+        // « Compte non reconnu » alors que le compte existe.
         const { data: authUser, error: authError } =
-          await supabase.auth.admin.createUser({ email: emailCompte, email_confirm: true });
-
+          await supabase.auth.admin.createUser({ email, email_confirm: true });
         if (authError || !authUser?.user) {
           erreur = `Création de l’accès impossible : ${authError?.message ?? 'erreur inconnue'}`;
         } else {
-          const { data: compte, error: compteError } = await supabase
+          const { data: compte, error: e } = await supabase
             .from('accounts')
-            .insert({ email: emailCompte, auth_user_id: authUser.user.id, role: 'member' })
-            .select('id')
-            .single();
-          if (compteError) erreur = `Création du compte impossible : ${compteError.message}`;
+            .insert({ email, auth_user_id: authUser.user.id, role: 'member' })
+            .select('id').single();
+          if (e) erreur = `Création du compte impossible : ${e.message}`;
           else accountId = compte.id;
         }
       }
     }
 
     if (!erreur) {
-      const { data: participant, error } = await supabase
+      const { data: personne, error: e1 } = await supabase
         .from('participants')
         .insert({
           account_id: accountId,
-          first_name: prenom,
-          last_name: nom,
-          birthdate: naissance || null,
-          notes: notes || null,
+          first_name: champs.prenom,
+          last_name: champs.nom,
+          birthdate: champs.naissance || null,
+          notes: champs.notes || null,
         })
-        .select('id')
-        .single();
+        .select('id').single();
 
-      if (error) erreur = `Création impossible : ${error.message}`;
-      else return Astro.redirect(`/espace-membre/admin/participants/${participant.id}/`);
+      if (e1) {
+        erreur = `Création impossible : ${e1.message}`;
+      } else {
+        // La saison court de septembre à juin : un début en janvier appartient
+        // à la saison ouverte l'automne précédent.
+        const debut = new Date(champs.debut);
+        const anneeSaison = debut.getUTCMonth() >= 7
+          ? debut.getUTCFullYear()
+          : debut.getUTCFullYear() - 1;
+
+        const { error: e2 } = await supabase.from('subscriptions').insert({
+          participant_id: personne.id,
+          season: `${anneeSaison}-${anneeSaison + 1}`,
+          home_creneau_id: champs.creneau || null,
+          credits_per_month: Number(champs.credits),
+          monthly_price_cents: Math.round(Number(champs.prix) * 100),
+          starts_on: champs.debut,
+          ends_on: champs.fin,
+        });
+
+        if (e2) erreur = `Personne créée, mais abonnement impossible : ${e2.message}`;
+        else return Astro.redirect(`/espace-membre/admin/participants/${personne.id}/`);
+      }
     }
   }
 }
 ---
 
-<AdminLayout title="Nouveau participant" soustitre="L’accès au site est facultatif.">
+<AdminLayout
+  title={emailCompteExistant ? 'Ajouter une personne' : 'Inscrire quelqu’un'}
+  soustitre={emailCompteExistant
+    ? `Sur le compte ${emailCompteExistant}`
+    : 'Son identité, et la formule choisie.'}
+>
   {erreur && (
-    <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>
+    <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">
+      {erreur}
+    </p>
   )}
 
-  <form method="post" class="max-w-lg space-y-5">
-    <div class="grid gap-4 sm:grid-cols-2">
-      <div>
-        <label for="prenom" class="block text-sm font-medium mb-1">Prénom</label>
-        <input id="prenom" name="prenom" required value={prenom}
-               class="champ" />
-      </div>
-      <div>
-        <label for="nom" class="block text-sm font-medium mb-1">Nom</label>
-        <input id="nom" name="nom" required value={nom}
-               class="champ" />
-      </div>
-    </div>
+  <form method="post" class="max-w-2xl space-y-8">
 
-    <div>
-      <label for="naissance" class="block text-sm font-medium mb-1">
-        Date de naissance <span class="text-[var(--color-text-light)]">(pour les enfants)</span>
-      </label>
-      <input id="naissance" name="naissance" type="date" value={naissance}
-             class="champ" />
-    </div>
+    <fieldset class="space-y-4">
+      <legend class="mb-2 text-lg font-bold text-[var(--color-heading)]">Qui</legend>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="prenom" class="block text-sm font-medium mb-1">Prénom</label>
+          <input id="prenom" name="prenom" required value={champs.prenom} class="champ" />
+        </div>
+        <div>
+          <label for="nom" class="block text-sm font-medium mb-1">Nom</label>
+          <input id="nom" name="nom" required value={champs.nom} class="champ" />
+        </div>
+        <div>
+          <label for="naissance" class="block text-sm font-medium mb-1">
+            Date de naissance <span class="text-[var(--color-text-light)]">— pour les enfants</span>
+          </label>
+          <input id="naissance" name="naissance" type="date" value={champs.naissance} class="champ" />
+        </div>
+        {!emailCompteExistant && (
+          <div>
+            <label for="email" class="block text-sm font-medium mb-1">
+              Adresse e-mail <span class="text-[var(--color-text-light)]">— facultatif</span>
+            </label>
+            <input id="email" name="email" type="email" value={champs.email} class="champ" />
+            <p class="mt-1 text-sm text-[var(--color-text-light)]">
+              Pour qu’elle puisse réserver en ligne. Sans adresse, vous gérez ses réservations
+              et elle ne reçoit aucun e-mail.
+            </p>
+          </div>
+        )}
+      </div>
+    </fieldset>
+
+    <fieldset class="space-y-4">
+      <legend class="mb-2 text-lg font-bold text-[var(--color-heading)]">Sa formule</legend>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div class="sm:col-span-2">
+          <label for="creneau" class="block text-sm font-medium mb-1">Créneau habituel</label>
+          <select id="creneau" name="creneau" class="champ">
+            <option value="">Aucun créneau attitré</option>
+            {(creneaux ?? []).map((c) => (
+              <option value={c.id} selected={c.id === champs.creneau}>{c.label}</option>
+            ))}
+          </select>
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Celui où elle sera inscrite d’office. Elle pourra venir à n’importe quel autre.
+          </p>
+        </div>
+
+        <div>
+          <label for="credits" class="block text-sm font-medium mb-1">Séances par mois</label>
+          <input id="credits" name="credits" type="number" min="0" required
+                 value={champs.credits} class="champ" />
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">0 si elle paie à la séance.</p>
+        </div>
+        <div>
+          <label for="prix" class="block text-sm font-medium mb-1">Montant mensuel (€)</label>
+          <input id="prix" name="prix" type="number" min="0" step="0.01" required
+                 value={champs.prix} class="champ" />
+        </div>
+
+        <div>
+          <label for="debut" class="block text-sm font-medium mb-1">Premier mois</label>
+          <input id="debut" name="debut" type="date" required value={champs.debut} class="champ" />
+        </div>
+        <div>
+          <label for="fin" class="block text-sm font-medium mb-1">Dernier mois</label>
+          <input id="fin" name="fin" type="date" required value={champs.fin} class="champ" />
+        </div>
+      </div>
+    </fieldset>
 
     <div>
       <label for="notes" class="block text-sm font-medium mb-1">
-        Notes <span class="text-[var(--color-text-light)]">(facultatif)</span>
+        Notes <span class="text-[var(--color-text-light)]">— facultatif</span>
       </label>
-      <textarea id="notes" name="notes" rows="2"
-                class="champ">{notes}</textarea>
+      <textarea id="notes" name="notes" rows="2" class="champ">{champs.notes}</textarea>
     </div>
 
-    <div class="rounded-xl bg-[var(--color-bg-accent)] p-5">
-      <label for="email" class="block text-sm font-medium mb-1">
-        Adresse e-mail pour l’accès au site <span class="text-[var(--color-text-light)]">(facultatif)</span>
-      </label>
-      <input id="email" name="email" type="email" value={emailCompte}
-             class="champ" />
-      <p class="mt-2 text-sm text-[var(--color-text)]">
-        Laissez vide si la personne ne souhaite pas de compte : vous gérerez ses réservations
-        vous-même, et elle ne recevra aucun e-mail. Un accès pourra toujours être ajouté plus tard,
-        sans rien perdre.
-      </p>
-      <p class="mt-2 text-sm text-[var(--color-text)]">
-        Pour un enfant, indiquez l’adresse d’un parent. Si cette adresse a déjà un compte,
-        le participant y sera rattaché — c’est ainsi qu’on inscrit une deuxième fille.
-      </p>
-    </div>
-
-    <button type="submit" class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
-      Créer le participant
+    <button type="submit"
+            class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
+      Inscrire
     </button>
   </form>
 </AdminLayout>

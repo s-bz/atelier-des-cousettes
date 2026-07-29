@@ -10,69 +10,130 @@ if (garde) return garde;
 
 const supabase = getAdminClient();
 
-const { data: participants } = await supabase
+const { data: personnes } = await supabase
   .from('participants')
-  .select('id, first_name, last_name, account_id, accounts(email), subscriptions(id)')
+  .select('id, first_name, last_name, birthdate, account_id, accounts(email), subscriptions(id)')
   .order('last_name');
 
-// Le solde est une fonction SQL, jamais une colonne : il se recalcule à chaque
-// affichage depuis les abonnements et les réservations actives.
 const soldes = new Map<string, number>();
-for (const p of participants ?? []) {
+for (const p of personnes ?? []) {
   const { data } = await supabase.rpc('balance', { p_participant: p.id });
   soldes.set(p.id, (data as number) ?? 0);
 }
+
+type Personne = NonNullable<typeof personnes>[number];
+
+/**
+ * On ne regroupe QUE lorsqu'un compte porte plusieurs personnes.
+ *
+ * La notion de famille n'existe que dans ce cas ; l'immense majorité des
+ * adhérentes sont des adultes seules. Imposer un niveau d'imbrication à tout
+ * le monde pour accommoder deux ou trois familles ferait payer le cas rare par
+ * le cas courant.
+ */
+const foyers: { compte: string | null; email: string | null; membres: Personne[] }[] = [];
+const parCompte = new Map<string, Personne[]>();
+
+for (const p of personnes ?? []) {
+  if (!p.account_id) {
+    foyers.push({ compte: null, email: null, membres: [p] });
+    continue;
+  }
+  parCompte.set(p.account_id, [...(parCompte.get(p.account_id) ?? []), p]);
+}
+
+for (const [compte, membres] of parCompte) {
+  foyers.push({ compte, email: (membres[0].accounts as any)?.email ?? null, membres });
+}
+
+foyers.sort((a, b) => a.membres[0].last_name.localeCompare(b.membres[0].last_name, 'fr'));
+
+const age = (naissance: string | null) => {
+  if (!naissance) return null;
+  const n = new Date(naissance);
+  const maintenant = new Date();
+  let a = maintenant.getFullYear() - n.getFullYear();
+  const m = maintenant.getMonth() - n.getMonth();
+  if (m < 0 || (m === 0 && maintenant.getDate() < n.getDate())) a--;
+  return a;
+};
+
+const libelleSolde = (s: number) =>
+  s < 0
+    ? `${-s} à facturer`
+    : `${s} séance${s > 1 ? 's' : ''}`;
 ---
 
-<AdminLayout title="Participants" soustitre="Les personnes qui viennent à l’atelier.">
+<AdminLayout title="Adhérentes" soustitre="Les personnes qui viennent à l’atelier.">
 
   <a href="/espace-membre/admin/participants/nouveau/"
      class="mb-8 inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
-    Nouveau participant
+    Inscrire quelqu’un
   </a>
 
-  {(participants ?? []).length === 0 ? (
+  {foyers.length === 0 ? (
     <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
-      Aucun participant pour l’instant.
+      Personne pour l’instant.
     </p>
   ) : (
-    <ul class="space-y-2">
-      {(participants ?? []).map((p) => {
-        const solde = soldes.get(p.id) ?? 0;
-        const sansAbonnement = (p.subscriptions ?? []).length === 0;
-        return (
-          <li>
+    <div class="space-y-3">
+      {foyers.map((foyer) => {
+        const famille = foyer.membres.length > 1;
+
+        const ligne = (p: Personne) => {
+          const ans = age(p.birthdate);
+          const solde = soldes.get(p.id) ?? 0;
+          const sansAbonnement = (p.subscriptions ?? []).length === 0;
+          return (
             <a href={`/espace-membre/admin/participants/${p.id}/`}
-               class="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md transition-opacity hover:opacity-80">
+               class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-4 py-3 transition-opacity hover:opacity-70">
               <span class="font-medium text-[var(--color-heading)]">
                 {p.last_name} {p.first_name}
               </span>
-
-              {p.account_id ? (
-                <span class="text-sm text-[var(--color-text-light)]">
-                  {(p.accounts as any)?.email}
-                </span>
-              ) : (
-                // Signalé visiblement : sans compte, aucun e-mail ne partira.
-                // Un silence pourrait passer pour une panne du système.
-                <span class="rounded-full bg-[var(--color-bg-accent)] px-3 py-0.5 text-xs text-[var(--color-text)]">
+              {ans !== null && (
+                <span class="text-sm text-[var(--color-text-light)]">{ans} ans</span>
+              )}
+              {!famille && !p.account_id && (
+                <span class="text-xs text-[var(--color-text-light)]">
                   sans accès — ne recevra aucun e-mail
                 </span>
               )}
-
+              {!famille && p.account_id && (
+                <span class="text-sm text-[var(--color-text-light)]">
+                  {(p.accounts as any)?.email}
+                </span>
+              )}
               {sansAbonnement && (
                 <span class="text-xs text-[var(--color-button)]">aucun abonnement</span>
               )}
-
               <span class={`ml-auto text-sm font-medium ${solde < 0 ? 'text-[var(--color-button)]' : 'text-[var(--color-text-light)]'}`}>
-                {solde < 0
-                  ? `${-solde} séance${-solde > 1 ? 's' : ''} à facturer`
-                  : `${solde} séance${solde > 1 ? 's' : ''}`}
+                {libelleSolde(solde)}
               </span>
             </a>
-          </li>
+          );
+        };
+
+        if (!famille) {
+          return (
+            <div class="rounded-xl bg-[var(--color-card-bg)] shadow-md">{ligne(foyer.membres[0])}</div>
+          );
+        }
+
+        return (
+          <div class="rounded-xl border border-[var(--color-border-prominent)] bg-[var(--color-card-bg)] shadow-md">
+            <p class="border-b border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-light)]">
+              Même compte · {foyer.email}
+            </p>
+            <div class="divide-y divide-[var(--color-border)]">
+              {foyer.membres.map(ligne)}
+            </div>
+            <a href={`/espace-membre/admin/participants/nouveau/?compte=${foyer.compte}`}
+               class="block border-t border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-button)] underline">
+              Ajouter une personne sur ce compte
+            </a>
+          </div>
         );
       })}
-    </ul>
+    </div>
   )}
 </AdminLayout>
