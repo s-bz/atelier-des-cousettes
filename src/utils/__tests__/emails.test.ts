@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { remplir, variables } from '../emails';
+import { remplir, enHtml, variablesSeance, variablesAccueil } from '../emails';
 
 const source = readFileSync('src/utils/emails.ts', 'utf8');
 
@@ -46,7 +46,7 @@ describe('remplissage des gabarits', () => {
 });
 
 describe('variables disponibles', () => {
-  const v = variables({
+  const v = variablesSeance({
     prenom: 'Léa',
     starts_at: '2026-10-09T12:00:00Z',
     ends_at: '2026-10-09T15:00:00Z',
@@ -68,5 +68,85 @@ describe('variables disponibles', () => {
 
   it('écrit la date en français', () => {
     expect(v.date).toBe('vendredi 9 octobre');
+  });
+});
+
+describe('variables du message d’accueil', () => {
+  const v = variablesAccueil({
+    prenom: 'Léa',
+    creneau: 'Atelier du jeudi après-midi',
+    solde: 20,
+    seances: [
+      { starts_at: '2026-10-08T12:00:00Z', ends_at: '2026-10-08T15:00:00Z', location: 'Revel' },
+      { starts_at: '2026-10-22T12:00:00Z', ends_at: '2026-10-22T15:00:00Z', location: 'Revel' },
+    ],
+  });
+
+  it('expose exactement ce que l’écran d’édition annonce', () => {
+    expect(Object.keys(v).sort()).toEqual(
+      ['creneau', 'lien', 'nombre_seances', 'prenom', 'seances', 'solde'].sort(),
+    );
+  });
+
+  it('compte les séances plutôt que de faire confiance au solde', () => {
+    // Le solde est ce qui a été acheté ; la liste est ce qui a effectivement
+    // pu être réservé. Les deux diffèrent dès qu'une séance manque au
+    // calendrier, et annoncer 20 dates pour n'en montrer que 2 se voit.
+    expect(v.nombre_seances).toBe('2');
+    expect(v.solde).toBe('20');
+  });
+
+  it('rend la liste sous une forme que l’habillage sait reconnaître', () => {
+    expect(v.seances).toBe(
+      '- jeudi 8 octobre, 14:00 – 17:00, Revel\n' +
+      '- jeudi 22 octobre, 14:00 – 17:00, Revel',
+    );
+  });
+
+  it('reste lisible sans créneau attitré et sans aucune date', () => {
+    const vide = variablesAccueil({ prenom: 'Léa', creneau: null, solde: 0, seances: [] });
+    expect(vide.creneau).toBe('aucun créneau attitré');
+    expect(vide.seances).toBe('- aucune séance encore programmée');
+  });
+});
+
+describe('habillage HTML', () => {
+  it('part en même temps que le texte', () => {
+    // Les deux versions ensemble : lisible pour qui bloque le HTML, et la
+    // présence du texte améliore la délivrabilité.
+    expect(source).toMatch(/text:\s*message\.corps/);
+    expect(source).toMatch(/html:\s*message\.html/);
+  });
+
+  it('échappe ce qu’Isabelle écrit', () => {
+    // Le texte vient d'un champ libre en base : sans échappement, un « < »
+    // suffirait à casser la mise en page du message reçu.
+    const html = enHtml('Objet', 'Bonjour <b>vous</b> & compagnie');
+    expect(html).toContain('Bonjour &lt;b&gt;vous&lt;/b&gt; &amp; compagnie');
+  });
+
+  it('fait un bouton d’un bloc réduit à une adresse', () => {
+    const html = enHtml('Objet', 'Bonjour\n\nhttps://exemple.fr/espace/\n\nÀ bientôt');
+    expect(html).toContain('href="https://exemple.fr/espace/"');
+    expect(html).toContain('Ouvrir mon espace');
+  });
+
+  it('fait une liste des lignes commençant par un tiret', () => {
+    const html = enHtml('Objet', '- jeudi 8 octobre\n- jeudi 22 octobre');
+    expect(html).toContain('<ul');
+    expect(html.match(/<li/g)?.length).toBe(2);
+  });
+
+  it('sépare les paragraphes sur les lignes vides', () => {
+    const html = enHtml('Objet', 'Premier.\n\nSecond.');
+    expect(html.match(/<p style/g)?.length).toBe(3); // deux blocs + le pied
+  });
+
+  it('porte les couleurs du site', () => {
+    const html = enHtml('Objet', 'Bonjour\n\nhttps://exemple.fr/');
+    expect(html).toContain('#f5f4ed');  // fond beige
+    expect(html).toContain('#faf9f5');  // carte
+    expect(html).toContain('#c96442');  // corail du bouton
+    expect(html).toContain('L’Atelier des Cousettes');
   });
 });

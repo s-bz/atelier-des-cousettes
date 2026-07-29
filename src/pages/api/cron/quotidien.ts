@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getAdminClient } from '../../../utils/supabase';
-import { notifier } from '../../../utils/emails';
+import { notifier, variablesSeance } from '../../../utils/emails';
 
 export const prerender = false;
 
@@ -72,12 +72,12 @@ export const GET: APIRoute = async ({ request }) => {
     // Sans compte, personne à prévenir. On marque quand même : sinon la
     // requête reprendrait cette ligne à chaque exécution, indéfiniment.
     if (email) {
-      const parti = await notifier('rappel', email, {
+      const parti = await notifier('rappel', email, variablesSeance({
         prenom: reservation.participants.first_name,
         starts_at: reservation.sessions.starts_at,
         ends_at: reservation.sessions.ends_at,
         location: reservation.sessions.location,
-      });
+      }));
       if (parti) bilan.rappels++;
       else bilan.echecs++;
     }

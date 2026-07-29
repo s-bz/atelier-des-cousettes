@@ -11,8 +11,14 @@ if (garde) return garde;
 const { id } = Astro.params;
 const supabase = getAdminClient();
 
+// Le sort du message d'accueil est dit explicitement : sans adresse e-mail,
+// personne n'a été prévenu, et Isabelle doit savoir qu'elle a ce relais à
+// faire elle-même plutôt que de le découvrir à la première séance.
 let message: string | null = Astro.url.searchParams.has('inscrit')
-  ? 'Adhérent créé, et inscrit d’office aux prochaines séances de son créneau.'
+  ? 'Adhérent créé, et inscrit d’office aux prochaines séances de son créneau. '
+    + (Astro.url.searchParams.has('accueil')
+        ? 'Un message de bienvenue lui a été envoyé, avec la liste de ses dates.'
+        : 'Sans adresse e-mail, aucun message n’a pu partir : prévenez-le vous-même.')
   : null;
 let erreur: string | null = null;
 

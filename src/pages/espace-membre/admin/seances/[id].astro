@@ -4,7 +4,7 @@ export const prerender = false;
 import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
-import { notifier } from '../../../../utils/emails';
+import { notifier, variablesSeance } from '../../../../utils/emails';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -44,12 +44,12 @@ if (Astro.request.method === 'POST') {
     } else {
       let prevenus = 0;
       for (const r of (aPrevenir ?? []) as any[]) {
-        const envoye = await notifier('annulation', r.participants?.accounts?.email, {
+        const envoye = await notifier('annulation', r.participants?.accounts?.email, variablesSeance({
           prenom: r.participants?.first_name ?? '',
           starts_at: r.sessions.starts_at,
           ends_at: r.sessions.ends_at,
           location: r.sessions.location,
-        });
+        }));
         if (envoye) prevenus++;
       }
 

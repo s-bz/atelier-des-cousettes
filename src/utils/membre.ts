@@ -1,4 +1,5 @@
 import { getAdminClient } from './supabase';
+import { notifier, variablesSeance } from './emails';
 
 /**
  * Personnes rattachées à un compte, et personne sélectionnée.
@@ -62,6 +63,12 @@ export async function soldeDe(participantId: string) {
  * Fonction partagée plutôt que recopiée dans chaque écran : un contrôle
  * d'appartenance dupliqué est un contrôle qu'on oubliera dans la deuxième
  * copie.
+ *
+ * L'ACCUSÉ DE RÉCEPTION EST ICI, pour la même raison. Réserver envoyait une
+ * confirmation, libérer n'envoyait rien : on cliquait « je n'y vais pas » et
+ * plus rien ne venait le confirmer. Or c'est précisément le geste qu'on veut
+ * voir confirmé — celui après lequel on se demande si on a bien prévenu.
+ * Le message part depuis la fonction partagée, donc depuis les deux écrans.
  */
 export async function libererPlace(
   reservationId: string,
@@ -69,9 +76,16 @@ export async function libererPlace(
 ): Promise<{ ok: boolean; message: string }> {
   const supabase = getAdminClient();
 
+  // Les détails sont lus AVANT la libération : release_booking pose une pierre
+  // tombale sur la réservation, et relire ensuite donnerait une ligne libérée
+  // dont on ne saurait plus décrire la séance.
   const { data: cible } = await supabase
     .from('bookings')
-    .select('participant_id')
+    .select(`
+      participant_id,
+      participants(first_name, accounts(email)),
+      sessions(starts_at, ends_at, location)
+    `)
     .eq('id', reservationId)
     .maybeSingle();
 
@@ -81,6 +95,17 @@ export async function libererPlace(
 
   const { error } = await supabase.rpc('release_booking', { p_booking: reservationId });
   if (error) return { ok: false, message: error.message };
+
+  const personne = (cible as any).participants;
+  const seance = (cible as any).sessions;
+  if (seance) {
+    await notifier('liberation', personne?.accounts?.email, variablesSeance({
+      prenom: personne?.first_name ?? '',
+      starts_at: seance.starts_at,
+      ends_at: seance.ends_at,
+      location: seance.location,
+    }));
+  }
 
   return { ok: true, message: 'Place libérée. La séance revient à votre solde.' };
 }

@@ -4,6 +4,7 @@ export const prerender = false;
 import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
+import { notifier, variablesAccueil } from '../../../../utils/emails';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -128,7 +129,39 @@ if (Astro.request.method === 'POST') {
           // emploi avec la tâche quotidienne.
           const { error: e3 } = await supabase.rpc('run_auto_enrolment', { p_horizon_days: 60 });
           if (e3) console.error('[inscription] auto-inscription :', e3);
-          return Astro.redirect(`/espace-membre/admin/participants/${personne.id}/?inscrit=1`);
+
+          // Message d'accueil, APRÈS l'auto-inscription : il porte la liste des
+          // séances retenues, et l'envoyer avant donnerait une liste vide.
+          //
+          // Sans adresse e-mail, rien ne part — c'est le cas normal d'une
+          // personne inscrite au téléphone, pas un échec. L'écran suivant le
+          // dit, pour qu'Isabelle sache qu'elle a ce relais à faire.
+          // Sur un compte existant, l'adresse n'est pas dans le formulaire —
+          // le champ n'y figure même pas : elle vient du compte.
+          const destinataire = email || emailCompteExistant;
+
+          if (accountId && destinataire) {
+            const { data: retenues } = await supabase
+              .from('bookings')
+              .select('sessions!inner(starts_at, ends_at, location)')
+              .eq('participant_id', personne.id)
+              .eq('status', 'booked')
+              .order('starts_at', { referencedTable: 'sessions' });
+
+            const creneauChoisi = (creneaux ?? []).find((c) => c.id === champs.creneau);
+
+            await notifier('bienvenue', destinataire, variablesAccueil({
+              prenom: champs.prenom,
+              creneau: creneauChoisi?.label ?? null,
+              seances: (retenues ?? []).map((r: any) => r.sessions),
+              solde: Number(champs.credits),
+            }));
+          }
+
+          return Astro.redirect(
+            `/espace-membre/admin/participants/${personne.id}/?inscrit=1`
+            + (accountId && destinataire ? '&accueil=1' : ''),
+          );
         }
       }
     }

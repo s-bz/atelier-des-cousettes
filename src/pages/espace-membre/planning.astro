@@ -5,7 +5,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import SelecteurParticipant from '../../components/SelecteurParticipant.astro';
 import { getAdminClient } from '../../utils/supabase';
 import { participantsDuCompte, soldeDe, libererPlace, dateLongue, heure } from '../../utils/membre';
-import { notifier } from '../../utils/emails';
+import { notifier, variablesSeance } from '../../utils/emails';
 
 const { session, account } = Astro.locals;
 if (!session) return Astro.redirect('/espace-membre/connexion/');
@@ -44,12 +44,12 @@ if (Astro.request.method === 'POST' && choisie) {
         .eq('id', String(form.get('seance')))
         .maybeSingle();
       if (s) {
-        await notifier('confirmation', account.email, {
+        await notifier('confirmation', account.email, variablesSeance({
           prenom: choisie.first_name,
           starts_at: s.starts_at,
           ends_at: s.ends_at,
           location: s.location,
-        });
+        }));
       }
     }
   }
