@@ -74,16 +74,28 @@ if (choisie) {
             <p class="text-sm text-[var(--color-text-light)]">
               {personnes.length > 1 ? `Séances de ${choisie.first_name}` : 'Vos séances'}
             </p>
-            <p class={`mt-1 text-4xl font-bold ${solde < 0 ? 'text-[var(--color-button)]' : 'text-[var(--color-heading)]'}`}>
-              {solde}
-            </p>
-            <p class="mt-2 text-sm text-[var(--color-text)]">
-              {solde > 0 && `${solde} séance${solde > 1 ? 's' : ''} disponible${solde > 1 ? 's' : ''} à réserver.`}
-              {solde === 0 && 'Toutes vos séances du moment sont réservées.'}
+
+            <div class="mt-2 flex flex-wrap items-end gap-x-8 gap-y-3">
+              <div>
+                <p class="text-xs text-[var(--color-text-light)]">Acquises</p>
+                <p class="text-2xl font-bold text-[var(--color-heading)]">{octroye}</p>
+              </div>
+              <div>
+                <p class="text-xs text-[var(--color-text-light)]">Réservées</p>
+                <p class="text-2xl font-bold text-[var(--color-heading)]">{consomme}</p>
+              </div>
+              <div>
+                <p class="text-xs text-[var(--color-text-light)]">Disponibles</p>
+                <p class={`text-2xl font-bold ${solde < 0 ? 'text-[var(--color-button)]' : 'text-[var(--color-heading)]'}`}>
+                  {solde}
+                </p>
+              </div>
+            </div>
+
+            <p class="mt-3 text-sm text-[var(--color-text)]">
+              {solde > 0 && `Vous pouvez réserver ${solde} séance${solde > 1 ? 's' : ''} de plus dès maintenant.`}
+              {solde === 0 && 'Vos séances acquises sont toutes réservées. D’autres s’ajouteront au début du mois prochain.'}
               {solde < 0 && `${-solde} séance${-solde < -1 ? 's' : ''} au-delà de votre forfait, à régler avec Isabelle.`}
-            </p>
-            <p class="mt-1 text-sm text-[var(--color-text-light)]">
-              {octroye} acquise{octroye > 1 ? 's' : ''} depuis le début, {consomme} utilisée{consomme > 1 ? 's' : ''}.
             </p>
           </div>
 

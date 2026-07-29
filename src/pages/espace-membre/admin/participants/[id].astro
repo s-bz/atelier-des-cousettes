@@ -199,14 +199,34 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
   {message && <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm">{message}</p>}
   {erreur && <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>}
 
+  {/*
+    Les trois quantités sont montrées séparément. « Solde : 1 » ne disait pas
+    laquelle : acquises, réservées ou restantes ? La réponse importe, car
+    réserver une séance lointaine diminue le disponible AUJOURD'HUI, avant que
+    les crédits de ce mois-là ne soient acquis.
+  */}
   <div class="mb-8 rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
-    <p class="text-sm text-[var(--color-text-light)]">Solde de séances</p>
-    <p class={`text-3xl font-bold ${(solde as number) < 0 ? 'text-[var(--color-button)]' : 'text-[var(--color-heading)]'}`}>
-      {solde}
-    </p>
-    <p class="mt-1 text-sm text-[var(--color-text-light)]">
-      {octroye} octroyée{(octroye as number) > 1 ? 's' : ''} à ce jour, {consomme} consommée{(consomme as number) > 1 ? 's' : ''}.
-      {(solde as number) < 0 && ' Le solde négatif correspond à des séances supplémentaires à facturer.'}
+    <div class="flex flex-wrap items-end gap-x-8 gap-y-4">
+      <div>
+        <p class="text-sm text-[var(--color-text-light)]">Acquises à ce jour</p>
+        <p class="text-3xl font-bold text-[var(--color-heading)]">{octroye}</p>
+      </div>
+      <div>
+        <p class="text-sm text-[var(--color-text-light)]">Déjà réservées</p>
+        <p class="text-3xl font-bold text-[var(--color-heading)]">{consomme}</p>
+      </div>
+      <div>
+        <p class="text-sm text-[var(--color-text-light)]">Disponibles</p>
+        <p class={`text-3xl font-bold ${(solde as number) < 0 ? 'text-[var(--color-button)]' : 'text-[var(--color-heading)]'}`}>
+          {solde}
+        </p>
+      </div>
+    </div>
+
+    <p class="mt-3 text-sm text-[var(--color-text-light)]">
+      {(solde as number) < 0
+        ? `${-(solde as number)} séance${-(solde as number) > 1 ? 's' : ''} au-delà du forfait, à facturer.`
+        : 'Les séances s’acquièrent au premier de chaque mois et se reportent jusqu’en juin. Une réservation lointaine est décomptée dès maintenant.'}
     </p>
   </div>
 
