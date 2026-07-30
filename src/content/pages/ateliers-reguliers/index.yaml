@@ -13,11 +13,38 @@ introduction: >-
 creneauxSectionTitle: Nos créneaux
 calendarLabel: 'Calendrier :'
 faqSectionTitle: Questions fréquentes
+tarifsTitle: Tarifs
+tarifsLienLabel: Voir les tarifs
+tarifsIntro: >-
+  Un forfait s'achète pour la saison, de septembre à juin, et se pose sur les
+  dates de votre choix, dans le créneau qui vous convient. L'adhésion à
+  l'association est comprise : il n'y a rien à régler en plus.
+tarifsUniteQuestion: Vous préférez venir une seule fois, sans vous engager ?
+tarifsNote: Le tissu et les fournitures restent à votre charge.
+tarifs:
+  - audience: adultes
+    dureeSeance: Séances de 3 h
+    formules:
+      - seances: 10 séances
+        mensuel: 36 € par mois
+        detail: environ une fois par mois sur la saison, ou 360 € réglés en une fois
+      - seances: 20 séances
+        mensuel: 58 € par mois
+        detail: environ deux fois par mois sur la saison, ou 580 € réglés en une fois
+  - audience: enfants
+    dureeSeance: Séances de 2 h
+    formules:
+      - seances: 10 séances
+        mensuel: 28 € par mois
+        detail: environ une fois par mois sur la saison, ou 280 € réglés en une fois
+      - seances: 20 séances
+        mensuel: 45 € par mois
+        detail: environ deux fois par mois sur la saison, ou 450 € réglés en une fois
 creneaux:
   - name: Atelier de Verdalle
     location: Verdalle
     day: '1 fois par mois le jeudi '
-    time: de 9h30 à 12h
+    time: de 9h30 à 12h30
     group: verdalle
     price: 25 €/mois
     priceDetails: Paiement mensuel de 50 € pour 2 ateliers de 2h30 par mois.
@@ -61,11 +88,11 @@ creneaux:
       Avril : 2 et 16
       Mai : 7 et 21
       Juin : 4 et 18
-  - name: Atelier du jeudi fin de journée
+  - name: Atelier enfants du jeudi
     location: Revel
     day: 1 à 2 fois par mois, le jeudi
     time: 17h30 à 19h30
-    group: revel-adultes
+    group: revel-enfants
     price: 25 € la séance
     priceDetails: >-
       Paiement de 25 € pour 2h d'atelier. Selon la demande du groupe : une ou
@@ -123,7 +150,7 @@ creneaux:
       Avril : 11 et 18
       Mai : 9 et 30
       Juin : 6 et 27
-  - name: Ateliers enfants samedi
+  - name: Atelier enfants du samedi
     location: Revel
     day: 1 à 2 fois par mois, le samedi
     time: 10h à 12h
@@ -144,9 +171,15 @@ creneaux:
 faqItems:
   - question: Quels sont les tarifs des ateliers réguliers ?
     answer: >-
-      Les tarifs vont de 25 € à 55 € par mois selon la formule choisie. Le tissu
-      et les fournitures ne sont pas compris. Pour les ateliers réguliers,
-      l'adhésion annuelle à l'association Les P'tits Piafs est de 15 €.
+      Pour les adultes, 36 € par mois pour 10 séances de 3 h sur la saison, ou
+      58 € par mois pour 20 séances. Pour les enfants, 28 € par mois pour
+      10 séances de 2 h, ou 45 € par mois pour 20 séances. L'adhésion à
+      l'association Les P'tits Piafs est comprise dans ces montants. Le tissu et
+      les fournitures restent à votre charge.
+  - question: Que se passe-t-il si je viens plus souvent que mon forfait ?
+    answer: >-
+      Les séances en plus se règlent à l'unité, au même tarif qu'une séance sans
+      engagement : 45 € pour les adultes, 35 € pour les enfants.
   - question: Faut-il apporter son matériel ?
     answer: >-
       Chaque participant vient avec sa propre machine à coudre, ses accessoires
@@ -176,12 +209,16 @@ crossLinksText: >-
   Envie de découvrir une technique précise ? Consultez nos stages thématiques.
   Vous pouvez aussi venir ponctuellement lors d'un après-midi couture.
 schemaOffers:
-  - name: Atelier 2h (une séance)
-    price: '25'
-  - name: Forfait mensuel 1 atelier/mois
-    price: '33'
-  - name: Forfait mensuel 2 ateliers/mois
-    price: '55'
-  - name: Ateliers enfants (mensuel)
-    price: '30'
+  - name: Forfait 10 séances — adultes
+    price: '360'
+  - name: Forfait 20 séances — adultes
+    price: '580'
+  - name: Séance sans engagement — adultes
+    price: '45'
+  - name: Forfait 10 séances — enfants
+    price: '280'
+  - name: Forfait 20 séances — enfants
+    price: '450'
+  - name: Séance sans engagement — enfants
+    price: '35'
 ctaLabel: Demande d'information

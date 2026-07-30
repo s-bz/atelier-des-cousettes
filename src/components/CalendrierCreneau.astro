@@ -18,8 +18,28 @@ interface Seance {
    */
 }
 
+import LigneSeance from './LigneSeance.astro';
+
 interface Props {
   seances: Seance[];
+  /**
+   * Nombre de dates montrées d'emblée ; les suivantes se replient.
+   *
+   * Vingt dates par créneau, sept créneaux : la page devenait un rouleau où
+   * l'on ne trouvait plus les créneaux eux-mêmes. Les trois prochaines suffisent
+   * à savoir si l'on peut venir ; les autres restent à un clic, sans JavaScript.
+   */
+  limite?: number;
+  /**
+   * L'horaire figure déjà au-dessus de la liste : ne pas le répéter sur chaque
+   * date.
+   *
+   * N'a d'effet que si TOUTES les séances partagent le même horaire. Une seule
+   * qui s'en écarte et les heures reviennent sur toutes les lignes : mieux vaut
+   * une répétition qu'une personne devant une porte close à 14 h parce que
+   * l'entête annonçait 14 h et que cette séance-là commençait à 10 h.
+   */
+  heuresEnTete?: boolean;
   /** Message affiché quand aucune date n'est programmée. */
   vide?: string;
   /** La base n'a pas répondu. À distinguer d'un calendrier réellement vide. */
@@ -39,6 +59,8 @@ const {
   vide = 'Aucune date programmée pour l’instant.',
   erreur = false,
   contact = true,
+  limite,
+  heuresEnTete = false,
 } = Astro.props;
 
 /**
@@ -51,18 +73,6 @@ const {
  * On ne publie AUCUN nom, aucune adresse : ces pages sont publiques, et la liste
  * des personnes inscrites n'y a rien à faire.
  */
-/**
- * L'ANNÉE EST AFFICHÉE, et ce n'est pas du zèle : une saison court de septembre
- * à juin, donc chaque liste enjambe deux années. « samedi 10 avril » sans année,
- * lu en octobre, se comprend comme dans six mois ou dans dix-huit.
- */
-const dateFr = new Intl.DateTimeFormat('fr-FR', {
-  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris',
-});
-const heureFr = new Intl.DateTimeFormat('fr-FR', {
-  hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris',
-});
-
 /**
  * Ce qu'il y a à dire d'une séance — et rien de plus.
  *
@@ -88,6 +98,20 @@ function etatDe(s: Seance) {
 const lignes = [...seances]
   .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
   .map((s) => ({ ...s, etat: etatDe(s) }));
+
+const visibles = limite ? lignes.slice(0, limite) : lignes;
+const repliees = limite ? lignes.slice(limite) : [];
+
+// Horaires comparés sur leur rendu à Paris, non sur l'instant : deux séances
+// séparées par un changement d'heure commencent au même moment de la journée
+// tout en différant d'une heure en UTC.
+const heureFr = new Intl.DateTimeFormat('fr-FR', {
+  hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris',
+});
+const creneauxHoraires = new Set(
+  lignes.map((s) => `${heureFr.format(new Date(s.starts_at))}${heureFr.format(new Date(s.ends_at))}`),
+);
+const heures = !(heuresEnTete && creneauxHoraires.size === 1);
 ---
 
 {/*
@@ -127,24 +151,26 @@ const lignes = [...seances]
     )}
   </p>
 ) : (
-  <ul class="space-y-1.5 text-sm">
-    {lignes.map((s) => (
-      <li class="flex flex-wrap items-baseline gap-x-3">
-        <span class="text-[var(--color-text)] first-letter:uppercase">
-          {dateFr.format(new Date(s.starts_at))}
-        </span>
-        <span class="text-[var(--color-text-light)]">
-          {heureFr.format(new Date(s.starts_at))} – {heureFr.format(new Date(s.ends_at))}
-        </span>
-        {s.etat && (
-          <span class={`ml-auto shrink-0 text-xs font-medium ${
-            s.etat.ton === 'sourd' ? 'text-[var(--color-text-light)]'
-            : 'text-[var(--color-heading)]'
-          }`}>
-            {s.etat.libelle}
-          </span>
-        )}
-      </li>
-    ))}
-  </ul>
+  <Fragment>
+    <ul class="space-y-1.5 text-sm">
+      {visibles.map((s) => <LigneSeance {...s} heures={heures} />)}
+    </ul>
+
+    {/*
+      Un <details> plutôt qu'un bouton : le repli fonctionne sans JavaScript, et
+      le contenu reste dans la page — donc lisible par un lecteur d'écran et
+      trouvable par la recherche du navigateur, ce qu'un affichage différé
+      n'offrirait pas.
+    */}
+    {repliees.length > 0 && (
+      <details class="mt-2 text-sm">
+        <summary class="cursor-pointer font-medium text-[var(--color-button)]">
+          Voir les {repliees.length} autres dates
+        </summary>
+        <ul class="mt-2 space-y-1.5">
+          {repliees.map((s) => <LigneSeance {...s} heures={heures} />)}
+        </ul>
+      </details>
+    )}
+  </Fragment>
 )}

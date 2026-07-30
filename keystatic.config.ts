@@ -177,6 +177,78 @@ export default config({
         creneauxSectionTitle: fields.text({ label: 'Titre section créneaux' }),
         calendarLabel: fields.text({ label: 'Libellé « Calendrier : »' }),
         faqSectionTitle: fields.text({ label: 'Titre section FAQ' }),
+
+        /*
+         * LES TARIFS SE DÉCLARENT PAR PUBLIC, ET NON PAR CRÉNEAU.
+         *
+         * Un forfait s'achète pour la saison et se pose sur les dates de son
+         * choix, quel que soit le créneau : le prix ne dépend donc pas du jour
+         * mais du public. Le déclarer sept fois, une par créneau, ne le rendait
+         * pas plus juste — cela offrait sept occasions de se contredire, et
+         * Verdalle en profitait déjà pour annoncer 25 € sur sa carte et 50 €
+         * dans son détail.
+         *
+         * Le prix d'une séance sans engagement ne figure PAS ici : il vit en
+         * base, où il sert à facturer les séances hors forfait. Recopié dans le
+         * CMS, il aurait dérivé en une saison, et la page aurait promis un
+         * montant que l'écran « à facturer » aurait démenti.
+         */
+        tarifsTitle: fields.text({ label: 'Titre section tarifs' }),
+        tarifsLienLabel: fields.text({
+          label: 'Lien vers les tarifs, sous l’introduction (ex : Voir les tarifs)',
+        }),
+        tarifsIntro: fields.text({
+          label: 'Phrase au-dessus des tarifs (saison, souplesse, adhésion)',
+          multiline: true,
+        }),
+        tarifsUniteQuestion: fields.text({
+          label: 'Amorce de la séance à l’unité (les prix sont ajoutés depuis la base)',
+        }),
+        tarifsNote: fields.text({ label: 'Note sous les tarifs', multiline: true }),
+        tarifs: fields.array(
+          fields.object({
+            audience: fields.select({
+              label: 'Public',
+              options: [
+                { label: 'Adultes', value: 'adultes' },
+                { label: 'Enfants', value: 'enfants' },
+              ],
+              defaultValue: 'adultes',
+            }),
+            dureeSeance: fields.text({ label: 'Durée d’une séance (ex : Séances de 3 h)' }),
+            formules: fields.array(
+              fields.object({
+                /*
+                 * CE QU'ON ACHÈTE, ET CE QUE ÇA COÛTE — sur la même ligne.
+                 *
+                 * Le nombre de séances est le produit : c'est lui qu'on compare,
+                 * lui qui figure sur le bulletin d'adhésion. L'avoir relégué en
+                 * gris sous le prix le rendait introuvable.
+                 *
+                 * Le rythme reste, mais en glose : « environ une fois par mois »
+                 * traduit ce que dix séances veulent dire dans une vie, sans
+                 * prétendre à un engagement de calendrier — le forfait se pose
+                 * sur les dates de son choix. Le prix comptant l'accompagne :
+                 * l'escamoter reviendrait à cacher le total.
+                 */
+                seances: fields.text({ label: 'Ce qu’on achète (ex : 10 séances)' }),
+                mensuel: fields.text({ label: 'Prix mis en avant (ex : 36 € par mois)' }),
+                detail: fields.text({
+                  label: 'Glose (ex : environ une fois par mois, ou 360 € réglés en une fois)',
+                }),
+              }),
+              {
+                label: 'Formules',
+                itemLabel: (props) =>
+                  `${props.fields.seances.value || 'Formule'} — ${props.fields.mensuel.value || '?'}`,
+              },
+            ),
+          }),
+          {
+            label: 'Tarifs par public',
+            itemLabel: (props) => (props.fields.audience.value === 'enfants' ? 'Enfants' : 'Adultes'),
+          },
+        ),
         creneaux: fields.array(
           fields.object({
             name: fields.text({ label: 'Nom du créneau' }),

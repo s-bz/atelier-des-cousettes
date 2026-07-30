@@ -4,15 +4,27 @@ import ContactCTA from './ContactCTA.astro';
 interface Props {
   text: string;
   ctaLabel?: string;
+  /**
+   * Afficher le bouton de contact sous l'introduction. Vrai par défaut.
+   *
+   * À mettre à faux quand la page en propose déjà plus bas : un bouton avant
+   * d'avoir rien lu ne sert personne, et répété six fois il cesse de se voir.
+   */
+  cta?: boolean;
 }
 
-const { text, ctaLabel } = Astro.props;
+const { text, ctaLabel, cta = true } = Astro.props;
 ---
 
-<section class="py-16 md:py-20">
+{/*
+  Sans bouton, la marge basse ne sert plus à rien : elle s'ajoutait à celle de
+  la section suivante, et le paragraphe flottait au-dessus de cent soixante
+  pixels de vide. La section qui suit apporte alors seule la respiration.
+*/}
+<section class={`pt-16 md:pt-20 ${cta ? 'pb-16 md:pb-20' : ''}`}>
   <div class="max-w-3xl mx-auto px-4 text-center">
     <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{text}</p>
     <slot />
-    <ContactCTA label={ctaLabel} />
+    {cta && <ContactCTA label={ctaLabel} />}
   </div>
 </section>

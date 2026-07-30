@@ -3,7 +3,6 @@ export const prerender = false;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Hero from '../../components/Hero.astro';
-import DetailCard from '../../components/DetailCard.astro';
 import IntroSection from '../../components/IntroSection.astro';
 import CrossLinksSection from '../../components/CrossLinksSection.astro';
 import CalendrierCreneau from '../../components/CalendrierCreneau.astro';
@@ -11,10 +10,10 @@ import ContactCTA from '../../components/ContactCTA.astro';
 import FaqSection from '../../components/FaqSection.astro';
 import { getPageContext, reader } from '../../utils/reader';
 import { resolveImage, resolveImageUrl } from '../../utils/images';
-import { toSlug, splitParagraphs } from '../../utils/strings';
+import { toSlug } from '../../utils/strings';
 import { buildServicePageSchemas } from '../../utils/schema';
 import { getAdminClient } from '../../utils/supabase';
-import { ATELIER_GROUPS, ATELIER_GROUP_LABELS } from '../../utils/ateliers';
+import { ATELIER_GROUPS } from '../../utils/ateliers';
 
 /**
  * Aperçu : la page des ateliers réguliers, ses dates lues en base.
@@ -30,10 +29,10 @@ import { ATELIER_GROUPS, ATELIER_GROUP_LABELS } from '../../utils/ateliers';
  * il ne prouverait rien sinon qu'on peut faire plus court.
  *
  * Ce qui reste au contenu, et pourquoi : les tarifs mensuels n'existent pas en
- * base. `default_unit_price_cents` est le prix d'une séance HORS forfait — 40 €
- * pour un adulte — et non les « 33 € ou 55 €/mois » d'un abonnement. Afficher
- * l'un à la place de l'autre ne serait pas une simplification mais une erreur
- * de prix.
+ * base. `default_unit_price_cents` est le prix d'une séance HORS forfait — 45 €
+ * pour un adulte, 35 € pour un enfant — et non le forfait d'une saison.
+ * Afficher l'un à la place de l'autre ne serait pas une simplification mais
+ * une erreur de prix.
  *
  * noIndex, et exclue du plan du site (voir astro.config.mjs) : deux pages au même
  * contenu se feraient concurrence, et celle-ci pourrait sortir avant l'autre.
@@ -73,6 +72,7 @@ const { data: enBase, error } = await supabase
   .from('creneaux')
   .select(`
     label, audience, default_location, default_start_time, default_end_time,
+    default_unit_price_cents,
     sessions(starts_at, ends_at, capacity, places_attente, status, bookings(status))
   `)
   .eq('kind', 'atelier')
@@ -167,6 +167,25 @@ const ecartsDe = (c: { name: string; time: string; location: string; group: stri
 
   return ecarts;
 };
+/**
+ * Le prix d'une séance sans engagement, par public — LU EN BASE.
+ *
+ * C'est le même montant qui facture une séance dépassant le forfait. Le
+ * recopier dans le CMS en aurait fait deux, promis d'un côté et facturé de
+ * l'autre, et ils auraient divergé en une saison.
+ */
+const prixSeanceDe = (audience: string) => {
+  const c = (enBase ?? []).find((x) => x.audience === audience);
+  return c ? `${(c.default_unit_price_cents / 100).toFixed(0)} €` : null;
+};
+
+const tarifs = (page.tarifs ?? []).map((t) => ({
+  ...t,
+  titre: t.audience === 'enfants' ? 'Pour les enfants' : 'Pour les adultes',
+  // « adultes » / « enfants » seuls, pour la phrase de la séance à l'unité.
+  public: t.audience === 'enfants' ? 'enfants' : 'adultes',
+  prixSeance: prixSeanceDe(t.audience),
+}));
 ---
 
 <BaseLayout title={`${page.title} — aperçu`} description={page.seoDescription}
@@ -190,18 +209,33 @@ const ecartsDe = (c: { name: string; time: string; location: string; group: stri
     </p>
   </div>
 
-  {page.introduction && (
-    <IntroSection text={page.introduction} ctaLabel={page.ctaLabel} />
-  )}
+  {/*
+    Pas de bouton sous l'introduction : la page en compte déjà cinq plus bas, un
+    par lieu puis sous les tarifs et la FAQ. Celui-ci arrivait avant qu'on ait lu
+    de quoi décider — et un bouton répété six fois cesse d'être remarqué.
+  */}
+  {page.introduction && <IntroSection text={page.introduction} cta={false} />}
 
   {groupes.length > 0 && (
-    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+    <section class="py-16 md:py-20">
       <div class="mx-auto max-w-4xl px-4">
         <h2 class="mb-6 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
           {page.creneauxSectionTitle}
         </h2>
 
-        <nav class="mb-10 flex flex-wrap justify-center gap-3">
+        {/*
+          UNE SEULE LISTE, en cartes, découpée par lieu et par public.
+
+          Il y a eu un temps deux sections : une grille de cartes, puis les mêmes
+          créneaux détaillés en dessous. Mêmes noms, mêmes horaires, mêmes titres
+          de groupe à quelques centimètres d'écart — la grille se justifiait tant
+          qu'elle portait les tarifs, partis depuis en tête de page.
+
+          Le calendrier entre donc dans la carte, replié au-delà des trois
+          prochaines dates. Sept créneaux à vingt dates faisaient un rouleau où
+          l'on ne trouvait plus les créneaux eux-mêmes.
+        */}
+        <nav class="mb-12 flex flex-wrap justify-center gap-3">
           {groupes.map((g) => (
             <a
               href={`#${g.id}`}
@@ -213,79 +247,170 @@ const ecartsDe = (c: { name: string; time: string; location: string; group: stri
         </nav>
 
         {groupes.map((g) => (
-          <div id={g.id} class="mb-12 scroll-mt-24 last:mb-0">
-            <h3 class="mb-6 text-xl font-bold text-[var(--color-heading)]">{g.label}</h3>
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div id={g.id} class="mb-14 scroll-mt-24 last:mb-0">
+            <h3 class="mb-6 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
+              {g.label}
+            </h3>
+
+            {/* Deux colonnes au plus : une liste de dates a besoin de sa largeur. */}
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
               {g.items.map((c) => (
-                <DetailCard
-                  name={c.name}
-                  anchorId={`detail-${toSlug(c.name)}`}
-                  primaryBadge={c.price}
-                  details={[
-                    // La durée vient de la base et non du texte : elle se lisait
-                    // jusqu'ici au détour d'une phrase de tarif — « 2 ateliers de
-                    // 3h » — où elle passait pour un élément du prix.
-                    [`${c.day} · ${c.time}`, dureeDe(c.name)].filter(Boolean).join(' · '),
-                    c.location,
-                  ]}
-                  note={c.note || undefined}
-                />
+                <div
+                  id={`detail-${toSlug(c.name)}`}
+                  class="scroll-mt-24 rounded-xl bg-white p-5 shadow-md dark:bg-[var(--color-card-bg)]"
+                >
+                  <h4 class="text-lg font-bold text-[var(--color-heading)]">{c.name}</h4>
+                  <p class="text-sm text-[var(--color-text-light)]">{c.day}</p>
+                  {/*
+                    L'horaire monte en évidence : il ne se répète plus sur chaque
+                    date, c'est donc ici qu'on le lit — une seule fois, mais
+                    lisiblement.
+                  */}
+                  <p class="mb-4 font-medium text-[var(--color-heading)]">
+                    {c.time}
+                    {dureeDe(c.name) && ` · ${dureeDe(c.name)} par séance`}
+                    {c.note && (
+                      <span class="block text-sm font-normal text-[var(--color-text-light)]">
+                        {c.note}
+                      </span>
+                    )}
+                  </p>
+
+                  {ecartsDe(c).length > 0 && (
+                    <div class="mb-4 rounded-xl border border-[var(--color-button)] p-3 text-sm">
+                      <p class="font-semibold text-[var(--color-button)]">
+                        Écart entre cette page et la base
+                      </p>
+                      <ul class="mt-1 list-disc space-y-0.5 pl-5 text-[var(--color-text)]">
+                        {ecartsDe(c).map((e) => <li>{e}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
+                    <p class="mb-2 text-sm font-semibold text-[var(--color-heading)]">
+                      {page.calendarLabel}
+                    </p>
+                    <CalendrierCreneau
+                      seances={datesDe(c.name)}
+                      erreur={Boolean(error)}
+                      limite={3}
+                      heuresEnTete={true}
+                      contact={!inconnuEnBase(c.name)}
+                      vide={inconnuEnBase(c.name)
+                        ? 'Ce créneau n’existe pas encore en base — à créer avant la bascule.'
+                        : 'Aucune date programmée pour l’instant.'}
+                    />
+                  </div>
+                </div>
               ))}
             </div>
+
+            {/*
+              Un bouton par groupe, au pied de ses cartes. Celui qui a trouvé son
+              créneau à Revel n'a plus à traverser Verdalle pour trouver de quoi
+              écrire — et l'on écrit au sujet d'un atelier précis, pas de la page.
+            */}
+            <ContactCTA label={page.ctaLabel} />
+            {page.tarifsLienLabel && tarifs.length > 0 && (
+              <p class="-mt-6 text-center">
+                <a href="#tarifs" class="text-sm font-medium text-[var(--color-button)] underline">
+                  {page.tarifsLienLabel}
+                </a>
+              </p>
+            )}
           </div>
         ))}
       </div>
     </section>
   )}
 
-  {creneaux.length > 0 && (
-    <section class="py-16 md:py-20">
-      <div class="mx-auto max-w-3xl space-y-16 px-4">
-        {creneaux.map((c) => (
-          <div id={`detail-${toSlug(c.name)}`} class="scroll-mt-24">
-            <h2 class="mb-2 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
-              {c.name}
-              <span class="ml-2 text-base font-medium text-[var(--color-button)]">
-                {c.day} &middot; {c.time}
-              </span>
-            </h2>
-            <p class="mb-4 text-sm text-[var(--color-text-light)]">
-              {/* Keystatic type c.group en string ; le cast est sûr, les options
-                  du champ étant dérivées d'ATELIER_GROUPS. */}
-              {ATELIER_GROUP_LABELS[c.group as keyof typeof ATELIER_GROUP_LABELS] || c.location}
-              {dureeDe(c.name) && ` · ${dureeDe(c.name)} par séance`}
-            </p>
+  {tarifs.length > 0 && (
+    <section id="tarifs" class="scroll-mt-24 bg-[var(--color-bg-accent)] py-16 md:py-20">
+      <div class="mx-auto max-w-2xl px-4">
+        <h2 class="mb-4 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+          {page.tarifsTitle}
+        </h2>
 
-            {ecartsDe(c).length > 0 && (
-              <div class="mb-4 rounded-xl border border-[var(--color-button)] p-3 text-sm">
-                <p class="font-semibold text-[var(--color-button)]">
-                  Écart entre cette page et la base
-                </p>
-                <ul class="mt-1 list-disc space-y-0.5 pl-5 text-[var(--color-text)]">
-                  {ecartsDe(c).map((e) => <li>{e}</li>)}
-                </ul>
-              </div>
-            )}
-            {c.priceDetails && (
-              <div class="prose mb-4">
-                {splitParagraphs(c.priceDetails).map((para) => <p>{para}</p>)}
-              </div>
-            )}
-            <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
-              <p class="mb-2 text-sm font-semibold text-[var(--color-heading)]">
-                {page.calendarLabel}
-              </p>
-              <CalendrierCreneau
-                seances={datesDe(c.name)}
-                erreur={Boolean(error)}
-                contact={!inconnuEnBase(c.name)}
-                vide={inconnuEnBase(c.name)
-                  ? 'Ce créneau n’existe pas encore en base — à créer avant la bascule.'
-                  : 'Aucune date programmée pour l’instant.'}
-              />
+        {/*
+          La souplesse avant les chiffres. « Suis-je tenue de venir tel jour ? »
+          est la première inquiétude de qui lit une grille d'abonnement ; y
+          répondre d'abord retire l'objection avant qu'un prix ne l'installe.
+        */}
+        {page.tarifsIntro && (
+          <p class="mx-auto mb-10 max-w-xl text-center text-[var(--color-text)]">
+            {page.tarifsIntro}
+          </p>
+        )}
+
+        {/*
+          UNE SEULE COLONNE, adultes puis enfants. Côte à côte, les deux cartes
+          invitaient à une comparaison que personne ne fait : on sait pour qui
+          l'on vient. L'ordre suffit à hiérarchiser, à l'identique sur téléphone
+          et sur écran, sans dépliant ni bouton à découvrir.
+        */}
+        <div class="space-y-6">
+          {tarifs.map((t) => (
+            <div class="rounded-xl bg-white p-5 shadow-md dark:bg-[var(--color-card-bg)]">
+              <h3 class="text-lg font-bold text-[var(--color-heading)]">{t.titre}</h3>
+              {t.dureeSeance && (
+                <p class="mb-4 text-sm text-[var(--color-text-light)]">{t.dureeSeance}</p>
+              )}
+              <ul class="space-y-4">
+                {(t.formules ?? []).map((f) => (
+                  <li>
+                    {/*
+                      Ce qu'on achète et ce que ça coûte, côte à côte : le nombre
+                      de séances est le produit, le prix mensuel la façon de le
+                      régler. Séparés, on lisait un prix sans savoir de quoi.
+                      Un seul chiffre en couleur — six accents de même force ne
+                      donnaient à l'œil aucun endroit où se poser.
+                    */}
+                    <p class="flex flex-wrap items-baseline gap-x-3">
+                      <span class="text-lg font-semibold text-[var(--color-heading)]">
+                        {f.seances}
+                      </span>
+                      <span class="text-lg font-semibold text-[var(--color-button)]">
+                        {f.mensuel}
+                      </span>
+                    </p>
+                    {f.detail && (
+                      <p class="text-sm text-[var(--color-text-light)]">{f.detail}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+
+        {/*
+          La séance à l'unité sort des cartes : c'est l'essai de qui hésite
+          encore, non une troisième formule à comparer aux deux autres. Les
+          montants viennent de la base, où ils facturent aussi les séances
+          au-delà du forfait.
+        */}
+        {page.tarifsUniteQuestion && tarifs.some((t) => t.prixSeance) && (
+          <p class="mt-8 text-center text-[var(--color-text)]">
+            {page.tarifsUniteQuestion}{' '}
+            La séance est à{' '}
+            {tarifs.filter((t) => t.prixSeance).map((t, i, liste) => (
+              <Fragment>
+                {i > 0 && (i === liste.length - 1 ? ' et ' : ', ')}
+                <span class="font-semibold text-[var(--color-button)]">{t.prixSeance}</span>
+                {' '}pour les {t.public}
+              </Fragment>
+            ))}.
+          </p>
+        )}
+
+        {page.tarifsNote && (
+          <p class="mt-4 text-center text-sm text-[var(--color-text-light)]">
+            {page.tarifsNote}
+          </p>
+        )}
+
+        {/* Agir sans avoir à repartir chercher un bouton plus bas. */}
         <ContactCTA label={page.ctaLabel} />
       </div>
     </section>
