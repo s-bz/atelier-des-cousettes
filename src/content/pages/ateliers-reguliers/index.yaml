@@ -25,8 +25,8 @@ tarifs:
     dureeSeance: Séances de 3 h
     formules:
       - rythme: Environ une fois par mois
-        mensuel: 35,50 € par mois
-        detail: 10 séances sur la saison, ou 355 € réglés en une fois
+        mensuel: 36 € par mois
+        detail: 10 séances sur la saison, ou 360 € réglés en une fois
       - rythme: Environ deux fois par mois
         mensuel: 58 € par mois
         detail: 20 séances sur la saison, ou 580 € réglés en une fois
@@ -34,11 +34,11 @@ tarifs:
     dureeSeance: Séances de 2 h
     formules:
       - rythme: Environ une fois par mois
-        mensuel: 27,50 € par mois
-        detail: 10 séances sur la saison, ou 275 € réglés en une fois
+        mensuel: 28 € par mois
+        detail: 10 séances sur la saison, ou 280 € réglés en une fois
       - rythme: Environ deux fois par mois
-        mensuel: 44,50 € par mois
-        detail: 20 séances sur la saison, ou 445 € réglés en une fois
+        mensuel: 45 € par mois
+        detail: 20 séances sur la saison, ou 450 € réglés en une fois
 creneaux:
   - name: Atelier de Verdalle
     location: Verdalle
@@ -170,9 +170,9 @@ creneaux:
 faqItems:
   - question: Quels sont les tarifs des ateliers réguliers ?
     answer: >-
-      Pour les adultes, 35,50 € par mois pour 10 séances de 3 h sur la saison, ou
-      58 € par mois pour 20 séances. Pour les enfants, 27,50 € par mois pour
-      10 séances de 2 h, ou 44,50 € par mois pour 20 séances. L'adhésion à
+      Pour les adultes, 36 € par mois pour 10 séances de 3 h sur la saison, ou
+      58 € par mois pour 20 séances. Pour les enfants, 28 € par mois pour
+      10 séances de 2 h, ou 45 € par mois pour 20 séances. L'adhésion à
       l'association Les P'tits Piafs est comprise dans ces montants. Le tissu et
       les fournitures restent à votre charge.
   - question: Que se passe-t-il si je viens plus souvent que mon forfait ?
