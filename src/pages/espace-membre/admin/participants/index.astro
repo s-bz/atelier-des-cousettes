@@ -58,9 +58,9 @@ foyers.sort((a, b) => a.membres[0].last_name.localeCompare(b.membres[0].last_nam
  * écran : qui n'a pas encore choisi ses dates.
  *
  * Trois états, et non le nombre nu :
- *   • à placer     — des séances acquises sans date choisie ;
- *   • tout placé   — rien à faire, et c'est le cas normal ;
- *   • à facturer   — plus de séances prises que d'acquises.
+ *   • à placer                 — des séances acquises sans date choisie ;
+ *   • séances toutes réservées — rien à faire, et c'est le cas normal ;
+ *   • à facturer               — plus de séances prises que d'acquises.
  */
 function etatDe(solde: number, sansAbonnement: boolean) {
   if (sansAbonnement) {
@@ -70,7 +70,7 @@ function etatDe(solde: number, sansAbonnement: boolean) {
     return { texte: `${-solde} à facturer`, urgent: true, discret: false };
   }
   if (solde === 0) {
-    return { texte: 'tout est placé', urgent: false, discret: true };
+    return { texte: 'Séances toutes réservées', urgent: false, discret: true };
   }
   return { texte: `${solde} à placer`, urgent: false, discret: false };
 }
@@ -159,7 +159,7 @@ const aFacturer = (personnes ?? []).filter((p) => (soldes.get(p.id) ?? 0) < 0).l
               {(() => {
                 const etat = etatDe(solde, sansAbonnement);
                 return (
-                  <span class={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
+                  <span class={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${
                     etat.urgent
                       ? 'bg-[var(--color-button)] text-white'
                       : etat.discret
@@ -171,7 +171,13 @@ const aFacturer = (personnes ?? []).filter((p) => (soldes.get(p.id) ?? 0) < 0).l
                 );
               })()}
 
-              <span class="flex items-center gap-1">
+              {/*
+                Largeur fixe, même quand il n'y a qu'une icône. Sans elle, la
+                colonne rétrécissait et la pastille d'état changeait de place
+                d'une ligne à l'autre — précisément ce qu'on veut lire en
+                balayant la liste du regard.
+              */}
+              <span class="flex w-18 shrink-0 items-center justify-end gap-1">
                 {email && (
                   <a href={email}
                      title={`Écrire à ${p.first_name}`}
