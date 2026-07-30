@@ -70,6 +70,42 @@ export async function soldeDe(participantId: string) {
  * voir confirmé — celui après lequel on se demande si on a bien prévenu.
  * Le message part depuis la fonction partagée, donc depuis les deux écrans.
  */
+/**
+ * Annonce une place libre à toute la liste d'attente.
+ *
+ * Partagée parce que la place peut être rendue de deux endroits — l'espace
+ * adhérent et la feuille de présence d'Isabelle — et que l'annonce ne dépend
+ * pas de qui a rendu la place. Recopiée, elle finirait par ne partir que d'un
+ * des deux.
+ *
+ * Les envois sont séquentiels : une vingtaine d'adhérents au plus, et paralléliser
+ * exposerait à la limite de débit de Resend pour ne gagner qu'une seconde.
+ */
+export async function previenLaListe(
+  participants: string[],
+  seance: { starts_at: string; ends_at: string; location: string },
+): Promise<number> {
+  if (participants.length === 0) return 0;
+
+  const supabase = getAdminClient();
+  const { data: gens } = await supabase
+    .from('participants')
+    .select('id, first_name, accounts(email)')
+    .in('id', participants);
+
+  let partis = 0;
+  for (const p of (gens ?? []) as any[]) {
+    const ok = await notifier('promotion_attente', p.accounts?.email, variablesSeance({
+      prenom: p.first_name ?? '',
+      starts_at: seance.starts_at,
+      ends_at: seance.ends_at,
+      location: seance.location,
+    }));
+    if (ok) partis++;
+  }
+  return partis;
+}
+
 export async function libererPlace(
   reservationId: string,
   participantId: string,
@@ -97,7 +133,7 @@ export async function libererPlace(
   if (error) return { ok: false, message: error.message };
 
   const tardif = Boolean((issue as any)?.tardif);
-  const promu = (issue as any)?.promu as string | null;
+  const attente = ((issue as any)?.attente ?? []) as string[];
 
   const personne = (cible as any).participants;
   const seance = (cible as any).sessions;
@@ -131,22 +167,13 @@ export async function libererPlace(
     }));
   }
 
-  // La place rendue revient au premier de la file. Le prévenir est le seul
-  // moyen qu'il l'apprenne : il n'a rien à faire, et sans message il
-  // découvrirait son inscription en consultant son espace par hasard.
-  if (promu && seance) {
-    const { data: suivant } = await supabase
-      .from('participants')
-      .select('first_name, accounts(email)')
-      .eq('id', promu)
-      .maybeSingle();
-
-    await notifier('promotion_attente', (suivant as any)?.accounts?.email, variablesSeance({
-      prenom: (suivant as any)?.first_name ?? '',
-      starts_at: seance.starts_at,
-      ends_at: seance.ends_at,
-      location: seance.location,
-    }));
+  // TOUTE la liste d'attente est prévenue, et personne n'est inscrit d'office.
+  // Promouvoir le premier présumerait de sa réponse : trois semaines après
+  // s'être mis en attente, on peut avoir pris un autre engagement — et se
+  // retrouver inscrit, donc décompté, à une séance qu'on ne peut plus faire.
+  // La place part ainsi à qui la veut, plutôt qu'à qui s'est inscrit le plus tôt.
+  if (attente.length > 0 && seance) {
+    await previenLaListe(attente, seance);
   }
 
   return {

@@ -322,9 +322,16 @@ const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (�
         <label for="attente" class="block text-sm font-medium mb-1">Liste d’attente</label>
         <input id="attente" name="attente" type="number" min="0" required
                value={creneau.places_attente} class="champ" />
+        {/*
+          Le nombre de places suit le champ voisin, sans attendre
+          l'enregistrement : porter la valeur en base pendant qu'on en saisit
+          une autre à côté ferait mentir la phrase au moment précis où on la
+          lit. Sans JavaScript elle affiche la valeur enregistrée, qui reste
+          vraie tant qu'on n'a rien changé.
+        */}
         <p class="mt-1 text-sm text-[var(--color-text-light)]">
-          Inscriptions acceptées au-delà des {creneau.default_capacity} places. La première
-          en attente prend la place dès qu’une se libère, et reçoit un e-mail.
+          Inscriptions acceptées au-delà des <span data-echo-places>{creneau.default_capacity}</span> places.
+          La première en attente prend la place dès qu’une se libère, et reçoit un e-mail.
         </p>
       </div>
       <div>
@@ -416,5 +423,15 @@ const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (�
         if (montant) prix.value = montant;
       });
     });
+
+    // La phrase sur la liste d'attente suit le nombre de places pendant qu'on
+    // le change, plutôt que d'annoncer la valeur enregistrée.
+    const places = document.querySelector<HTMLInputElement>('input[name="places"]');
+    const echo = document.querySelector<HTMLElement>('[data-echo-places]');
+    if (places && echo) {
+      places.addEventListener('input', () => {
+        echo.textContent = places.value || '0';
+      });
+    }
   </script>
 </AdminLayout>

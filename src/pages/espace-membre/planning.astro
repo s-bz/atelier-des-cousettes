@@ -299,7 +299,35 @@ const lien = personnes.length > 1 && choisie ? `?personne=${choisie.id}` : '';
                         </p>
                       </div>
 
-                      {reservationId ? (
+                      {jAttends && etat === 'libre' ? (
+                        /*
+                          En attente, et une place s'est libérée : c'est le
+                          moment décisif. Le bouton principal prend la place —
+                          personne n'ayant été inscrit d'office, elle part au
+                          premier qui la réclame.
+                        */
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <form method="post">
+                            <input type="hidden" name="action" value="reserver" />
+                            <input type="hidden" name="seance" value={s.id} />
+                            <button type="submit"
+                                    class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-4 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90">
+                              Prendre la place
+                            </button>
+                          </form>
+                          <form method="post">
+                            <input type="hidden" name="action" value="liberer" />
+                            <input type="hidden" name="reservation" value={reservationId} />
+                            <button type="submit" class="text-sm text-[var(--color-button)] underline">
+                              Me retirer
+                            </button>
+                          </form>
+                          <span class="w-full text-xs text-[var(--color-text-light)]">
+                            Une place s’est libérée. Elle n’est réservée à personne : la première
+                            personne qui la prend l’obtient.
+                          </span>
+                        </div>
+                      ) : reservationId ? (
                         <form method="post" class="flex flex-wrap items-center gap-x-3 gap-y-1">
                           <input type="hidden" name="action" value="liberer" />
                           <input type="hidden" name="reservation" value={reservationId} />
