@@ -91,7 +91,7 @@ stages:
       Choisissez vos matières, vos tissus, votre style pour créer un accessoire qui vous accompagne au quotidien !
     dates: |-
       Mardi 28 avril de 14h à 18h
-    prerequisite: ''
+    prerequisite: Connaissance de base de la machine à coudre recommandée.
   - name: Stage sac et tote bag
     price: 45 €
     duration: 3h
@@ -103,7 +103,7 @@ stages:
     dates: |-
       Samedi 16 mai de 9h30 à 12h30
       Samedi 20 juin de 9h30 à 12h30
-    prerequisite: Savoir utiliser une machine à coudre.
+    prerequisite: Connaissance de base de la machine à coudre recommandée.
 faqItems:
   - question: Quels sont les tarifs des stages de couture ?
     answer: >-
