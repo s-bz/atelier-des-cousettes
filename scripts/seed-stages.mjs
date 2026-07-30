@@ -40,6 +40,7 @@ const STAGES = [
     audience: 'adultes',
     capacite: 6,
     forfait: '90 € pour les trois demi-journées',
+    prixForfaitCents: 9000,
     consecutif: true,
     seances: [
       { date: '2025-10-22', debut: '10:00', fin: '12:00', prix: 0 },
@@ -47,16 +48,29 @@ const STAGES = [
       { date: '2025-10-24', debut: '10:00', fin: '13:00', prix: 0 },
     ],
   },
-  // La « formule courte » du stage découverte n'est pas reconduite : les deux
-  // dates d'avril figurant dans le contenu 2025-2026 ne sont pas reprises.
-  // Le tarif annoncé — 40 € pour 3 h — ne correspondait d'ailleurs pas à ces
-  // séances de 2 h 30.
+  // La formule courte annonçait deux tarifs : « 40 € pour 3 h » et « 65 € pour
+  // 5 h ». Seul le second a des dates — deux demi-journées de 2 h 30, soit les
+  // 5 h. La variante à 3 h n'est pas reconduite, faute de dates.
+  {
+    id: 'stage-decouverte-couture-courte',
+    label: 'Stage découverte de la couture — formule courte',
+    audience: 'adultes',
+    capacite: 6,
+    forfait: '65 € pour les deux demi-journées',
+    prixForfaitCents: 6500,
+    consecutif: true,
+    seances: [
+      { date: '2026-04-23', debut: '14:30', fin: '17:00', prix: 0 },
+      { date: '2026-04-24', debut: '14:30', fin: '17:00', prix: 0 },
+    ],
+  },
   {
     id: 'stage-surjeteuse',
     label: 'Stage surjeteuse',
     audience: 'adultes',
     capacite: 6,
     forfait: '65 € pour les deux demi-journées',
+    prixForfaitCents: 6500,
     consecutif: true,
     seances: [
       { date: '2025-10-30', debut: '14:00', fin: '16:30', prix: 0 },
@@ -225,7 +239,11 @@ for (const stage of STAGES) {
     default_end_time: `${premiere.fin}:00`,
     default_location: LIEU,
     default_capacity: stage.capacite,
-    default_unit_price_cents: premiere.prix,
+    // Pour un stage au forfait, le PRIX DU FORFAIT sur le créneau : c'est le
+    // seul endroit qui puisse le porter, les séances valant 0 € chacune pour ne
+    // pas se cumuler. Sans lui, l'information disparaissait — un stage à 90 €
+    // s'affichait « 0 € » partout, y compris dans la liste d'Isabelle.
+    default_unit_price_cents: stage.prixForfaitCents ?? premiere.prix,
   });
   if (eC) { console.error(`    ✗ créneau : ${eC.message}`); continue; }
 
