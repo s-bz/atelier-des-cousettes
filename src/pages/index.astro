@@ -10,7 +10,7 @@ import ContactCTA from '../components/ContactCTA.astro';
 import { reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { filterPublishedPosts } from '../utils/blog';
-import { renderMarkdoc } from '../utils/markdoc-components';
+import { forfaitLePlusBas, lireTarifs, remplacerFourchette } from '../utils/tarifs';
 
 const homepage = await reader.singletons.homepage.read();
 const settings = await reader.singletons.siteSettings.read();
@@ -22,6 +22,44 @@ const [ateliers, stages, apresMidi] = await Promise.all([
 
 if (!homepage) throw new Error('Homepage content not found');
 if (!settings) throw new Error('Site settings not found');
+
+/*
+ * LES PRIX DE L'ACCUEIL VIENNENT DE LA BASE ET DU CMS, PLUS DU PRESSE-PAPIERS.
+ *
+ * Cette page est prérendue, et le reste : elle est la plus visitée du site, ses
+ * prix bougent une fois l'an, et une reconstruction quotidienne suffit
+ * largement à les tenir à jour. `lireTarifs` renvoie null si la base ne répond
+ * pas — la construction ne doit jamais échouer pour un montant — auquel cas les
+ * textes du CMS s'affichent tels quels.
+ */
+const tarifs = await lireTarifs();
+const forfaitMin = forfaitLePlusBas(ateliers?.tarifs);
+
+/**
+ * Du forfait le plus bas au stage le plus cher — la fourchette de tout ce que
+ * propose l'atelier. C'est elle qui remplace les nombres des phrases qui
+ * l'annoncent : « Tarifs accessibles » et la description SEO.
+ */
+const fourchetteToutesFormules =
+  forfaitMin && tarifs?.stages ? `De ${forfaitMin} € à ${tarifs.stages.max} €` : null;
+
+/**
+ * Le prix mis en avant sur chaque carte, par destination.
+ *
+ * « Dès » et le montant le plus bas, partout : une carte se parcourt du coin de
+ * l'œil, et le seul chiffre qu'on y cherche est celui à partir duquel on entre.
+ * Une fourchette y demande de lire deux nombres pour n'en retenir qu'un ; le
+ * détail — les deux publics, les deux formules — attend sur la page, à un clic.
+ */
+const prixParPage: Record<string, string | null> = {
+  '/ateliers-reguliers/': forfaitMin ? `Dès ${forfaitMin} €/mois` : null,
+  '/stages-thematiques/': tarifs?.stages ? `Dès ${tarifs.stages.min} €` : null,
+  '/seances-sans-engagement/': (() => {
+    // Le tarif enfant est le plus bas des deux : c'est lui qui ouvre la porte.
+    const prix = [tarifs?.seance.adultes, tarifs?.seance.enfants].filter((n): n is number => !!n);
+    return prix.length ? `Dès ${Math.min(...prix)} € la séance` : null;
+  })(),
+};
 
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
 const resolvedCover = await resolveImage(homepage.coverImage, coverGlob);
@@ -41,10 +79,6 @@ const resolvedCards = await Promise.all(
 // Animatrice image
 const resolvedAnimatriceImg = await resolveImage(homepage.animatriceImage, homepageGlob);
 
-// Actualités markdoc
-const actualitesNode = homepage.actualitesContent ? await homepage.actualitesContent() : null;
-const actualitesHtml = renderMarkdoc(actualitesNode?.node);
-
 // Latest blog posts
 const blogIndex = await reader.singletons.blogIndex.read();
 const posts = await reader.collections.blog.all();
@@ -58,7 +92,7 @@ const phoneIntl = phone ? `+33${phone.slice(1)}` : undefined;
 const siteUrl = Astro.site?.origin;
 ---
 
-<BaseLayout title={homepage.seoTitle || homepage.title} description={homepage.seoDescription} ogImage={ogImage}>
+<BaseLayout title={homepage.seoTitle || homepage.title} description={remplacerFourchette(homepage.seoDescription ?? "", fourchetteToutesFormules)} ogImage={ogImage}>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify([
       {
@@ -89,7 +123,7 @@ const siteUrl = Astro.site?.origin;
           { "@type": "City", "name": "Revel" },
           { "@type": "AdministrativeArea", "name": "Tarn" }
         ],
-        "priceRange": "25€–90€",
+        "priceRange": forfaitMin && tarifs?.stages ? `${forfaitMin}€–${tarifs.stages.max}€` : undefined,
         "sameAs": [settings?.facebookUrl, settings?.googleBusinessUrl].filter(Boolean),
         "founder": {
           "@type": "Person",
@@ -110,7 +144,7 @@ const siteUrl = Astro.site?.origin;
           "itemListElement": [
             { "@type": "Offer", "itemOffered": { "@type": "Service", "name": ateliers?.title, "url": `${siteUrl}/ateliers-reguliers/` } },
             { "@type": "Offer", "itemOffered": { "@type": "Service", "name": stages?.title, "url": `${siteUrl}/stages-thematiques/` } },
-            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": apresMidi?.title, "url": `${siteUrl}/un-apres-midi-couture/` } }
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": apresMidi?.title, "url": `${siteUrl}/seances-sans-engagement/` } }
           ]
         }
       },
@@ -154,7 +188,7 @@ const siteUrl = Astro.site?.origin;
               href={card.href}
               resolvedImage={card.resolvedImage ?? undefined}
               imageAlt={card.imageAlt}
-              priceRange={card.priceRange}
+              priceRange={prixParPage[card.href ?? ""] ?? card.priceRange}
               shortDescription={card.shortDescription}
             />
           ))}
@@ -170,7 +204,10 @@ const siteUrl = Astro.site?.origin;
     <section class="py-16 md:py-20">
       <ValueProposition
         title={homepage.valuePropositionsTitle || ''}
-        items={homepage.valuePropositions}
+        items={(homepage.valuePropositions ?? []).map((v) => ({
+          ...v,
+          description: remplacerFourchette(v.description ?? '', fourchetteToutesFormules),
+        }))}
       />
     </section>
   )}
@@ -215,18 +252,13 @@ const siteUrl = Astro.site?.origin;
   )}
 
   <!-- 6. Actualités + Latest Blog Posts -->
-  {(actualitesHtml || latestPosts.length > 0) && (
+  {latestPosts.length > 0 && (
     <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
       <div class="max-w-3xl mx-auto px-4">
         {homepage.actualitesTitle && (
           <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10">
             {homepage.actualitesTitle}
           </h2>
-        )}
-        {actualitesHtml && (
-          <div class="prose max-w-none mb-12">
-            <Fragment set:html={actualitesHtml} />
-          </div>
         )}
         {latestPosts.length > 0 && (
           <div class="space-y-4">

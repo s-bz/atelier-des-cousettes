@@ -25,8 +25,8 @@ serviceCards:
     imageAlt: Stages thématiques
     priceRange: De 45 € à 95 €
     shortDescription: 'Apprenez une technique précise : machine à coudre, surjeteuse, patronage.'
-  - label: Un après-midi couture
-    href: /un-apres-midi-couture/
+  - label: Séances sans engagement
+    href: /seances-sans-engagement/
     image: /src/assets/images/homepage/serviceCards/2/image.jpg
     imageAlt: Un après-midi couture
     priceRange: 40 € les 3 h

@@ -64,6 +64,46 @@
       "source": "/sitemap.xml",
       "destination": "/sitemap-index.xml",
       "permanent": true
+    },
+    {
+      "source": "/un-apres-midi-couture",
+      "destination": "/seances-sans-engagement/",
+      "permanent": true
+    },
+    {
+      "source": "/un-apres-midi-couture/",
+      "destination": "/seances-sans-engagement/",
+      "permanent": true
+    },
+    {
+      "source": "/apercu/un-apres-midi-couture",
+      "destination": "/seances-sans-engagement/",
+      "permanent": true
+    },
+    {
+      "source": "/apercu/un-apres-midi-couture/",
+      "destination": "/seances-sans-engagement/",
+      "permanent": true
+    },
+    {
+      "source": "/apercu/ateliers-reguliers",
+      "destination": "/ateliers-reguliers/",
+      "permanent": true
+    },
+    {
+      "source": "/apercu/ateliers-reguliers/",
+      "destination": "/ateliers-reguliers/",
+      "permanent": true
+    },
+    {
+      "source": "/apercu/stages-thematiques",
+      "destination": "/stages-thematiques/",
+      "permanent": true
+    },
+    {
+      "source": "/apercu/stages-thematiques/",
+      "destination": "/stages-thematiques/",
+      "permanent": true
     }
   ],
   "trailingSlash": true,

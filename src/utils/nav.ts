@@ -5,7 +5,7 @@
 export const SERVICE_LINKS = [
   { href: '/ateliers-reguliers/', label: 'Ateliers réguliers' },
   { href: '/stages-thematiques/', label: 'Stages thématiques' },
-  { href: '/un-apres-midi-couture/', label: 'Un après-midi couture' },
+  { href: '/seances-sans-engagement/', label: 'Séances sans engagement' },
 ] as const;
 
 /** Return service links excluding the current page's href. */
