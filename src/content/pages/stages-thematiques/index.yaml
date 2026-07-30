@@ -15,8 +15,8 @@ datesLabel: 'Prochaines dates :'
 faqSectionTitle: Questions fréquentes
 stages:
   - name: Initiation machine à coudre
-    price: 45 €
-    duration: 3h
+    price: 38 € ou 45 €
+    duration: 2h30 ou 3h
     shortDescription: >-
       Découvrez les possibilités de votre machine grâce à des exercices
       pratiques : boutonnières, fermeture éclair, points décoratifs.
@@ -140,7 +140,9 @@ crossLinksText: >-
   d'une séance ponctuelle sans thème imposé ? Essayez nos après-midi couture
   ouverts à tous.
 schemaOffers:
-  - name: Initiation machine à coudre
+  - name: Initiation machine à coudre — séance de 2 h 30
+    price: '38'
+  - name: Initiation machine à coudre — séance de 3 h
     price: '45'
   - name: Stage découverte de la couture
     price: '95'
