@@ -28,7 +28,7 @@ serviceCards:
   - label: Séances sans engagement
     href: /seances-sans-engagement/
     image: /src/assets/images/homepage/serviceCards/2/image.jpg
-    imageAlt: Un après-midi couture
+    imageAlt: Une séance de couture sans engagement
     priceRange: 40 € les 3 h
     shortDescription: >-
       Sans engagement, avancez sur votre projet personnel avec l'aide
@@ -47,7 +47,7 @@ valuePropositions:
   - title: Des formules pour tous
     description: >-
       Ateliers réguliers hebdomadaires, stages thématiques ponctuels ou
-      après-midi couture sans engagement. Il y a forcément une formule qui vous
+      séances de couture sans engagement. Il y a forcément une formule qui vous
       correspond.
   - title: Tarifs accessibles
     description: De 25 € à 95 € selon la formule choisie, tissu et fournitures non compris.
@@ -76,7 +76,7 @@ youtubeDescription: >-
   des élèves et le plaisir de coudre ensemble à Revel et Verdalle dans le Tarn.
   Isabelle Bultez, couturière diplômée CAP couture flou, vous accueille en
   petits groupes pour des ateliers réguliers, des stages thématiques et des
-  après-midi couture ouverts à tous.
+  séances sans engagement ouvertes à tous.
 youtubeCredit: Un grand merci à Yan Kwai Maurel pour sa vidéo !
 actualitesTitle: Actualités de l'atelier
 blogSectionTitle: Derniers articles du blog
