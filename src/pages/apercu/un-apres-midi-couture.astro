@@ -79,6 +79,7 @@ const PROPOSITION = {
     'ouvert à tous les niveaux.',
   descriptionTitle: 'Comment se déroule une séance ?',
   lienDates: 'Voir les dates',
+  lienDeroulement: 'Comment ça se passe',
   seoDescription:
     'Séance de couture sans engagement à Revel et Verdalle (Tarn), près de ' +
     'Castres : le matin, l’après-midi ou en fin de journée, 45 € pour les ' +
@@ -277,13 +278,6 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
   <Hero title={PROPOSITION.title} subtitle={PROPOSITION.subtitle}
         coverImage={couverture ?? undefined} altText={PROPOSITION.coverImageAlt} />
 
-  <div class="bg-[var(--color-bg-accent)] py-3">
-    <p class="mx-auto max-w-4xl px-4 text-sm text-[var(--color-text)]">
-      <strong class="text-[var(--color-button)]">Aperçu.</strong> Seules les dates changent : ce
-      sont celles des ateliers, lues en base. La version publiée reste
-      {' '}<a href="/un-apres-midi-couture/" class="text-[var(--color-button)] underline">ici</a>.
-    </p>
-  </div>
 
   {page.introduction && (
     <section class="py-16 md:py-20">
@@ -311,25 +305,46 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
             )}
           </div>
         )}
-        <ContactCTA label={page.ctaLabel} />
-
         {/*
-          « Quand ? » vient avant « à qui écrire » : les dates décident, et elles
-          sont trois écrans plus bas. Un lien sous le bouton plutôt qu'à côté —
-          à poids égal, il faudrait comparer deux formes pour trouver l'action
-          principale.
+          LES DATES EN PREMIER, ET EN BOUTON. Sur cette page, ce sont elles qui
+          décident : qui ne peut se libérer aucun de ces jours n'écrira pas, et
+          lui proposer d'abord d'écrire lui fait franchir une étape qu'il devra
+          défaire. Les tarifs et le lieu se lisent au-dessus ; les dates sont
+          trois écrans plus bas.
+
+          Le contact passe en lien, sans disparaître : celui qui a une question
+          plutôt qu'une date à choisir le trouve encore.
         */}
-        <p class="-mt-6">
-          <a href="#dates" class="text-sm font-medium text-[var(--color-button)] underline">
+        {/*
+          DEUX BOUTONS, ET AUCUN QUI DEMANDE D'ÉCRIRE. Les deux questions de qui
+          arrive ici sont « quand ? » et « comment ça se passe ? » — écrire vient
+          après, et la page l'offre cinq fois plus bas, au pied de chaque lieu et
+          dans la FAQ. Le proposer ici faisait franchir une étape avant d'avoir
+          de quoi la décider.
+
+          Le plein pour les dates, le contour pour le déroulement : à l'œil, l'un
+          est l'action, l'autre le complément.
+        */}
+        <div class="mt-8 mb-8 flex flex-wrap justify-center gap-3 not-prose">
+          <a
+            href="#dates"
+            class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 text-sm font-medium text-white no-underline transition-all hover:scale-[1.02] hover:bg-[var(--color-button-hover)]"
+          >
             {PROPOSITION.lienDates}
           </a>
-        </p>
+          <a
+            href="#deroulement"
+            class="inline-block rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-8 py-3 text-sm font-medium text-[var(--color-button)] no-underline transition-colors hover:bg-[var(--color-button)] hover:text-white"
+          >
+            {PROPOSITION.lienDeroulement}
+          </a>
+        </div>
       </div>
     </section>
   )}
 
   {(page.description || audienceItems.length > 0) && (
-    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+    <section id="deroulement" class="scroll-mt-24 bg-[var(--color-bg-accent)] py-16 md:py-20">
       <div class="mx-auto max-w-3xl px-4">
         {page.description && (
           <div class="mb-12">

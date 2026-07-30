@@ -280,13 +280,6 @@ const stagesGroupes = familles.map((f) => {
   <Hero title={page.title} subtitle={page.subtitle}
         coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
 
-  <div class="bg-[var(--color-bg-accent)] py-3">
-    <p class="mx-auto max-w-4xl px-4 text-sm text-[var(--color-text)]">
-      <strong class="text-[var(--color-button)]">Aperçu.</strong> Les stages, leurs dates, leurs
-      tarifs et leur disponibilité sont lus en base. La version publiée reste
-      {' '}<a href="/stages-thematiques/" class="text-[var(--color-button)] underline">ici</a>.
-    </p>
-  </div>
 
   {page.introduction && (
     <IntroSection text={page.introduction} cta={false} />
