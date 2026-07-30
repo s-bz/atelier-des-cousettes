@@ -255,39 +255,51 @@ const absences = (reservations ?? []).filter((r: any) => r.attendance === 'absen
 const enCours = (abonnements ?? []).filter((a) => a.ends_on >= new Date().toISOString().slice(0, 10));
 
 /**
- * Un forfait tient-il dans les dates de son créneau attitré ?
+ * Ce qui reste à placer tient-il encore sur le créneau attitré ?
  *
- * Vingt séances sur un créneau qui n'en compte que dix dans la saison ne
- * peuvent pas toutes s'y placer, quoi que fasse l'inscription d'office. Le
- * dépassement se découvrait alors en mars, sous la forme d'un solde qui ne
- * descendait plus — la cause étant à deux écrans de là.
+ * La question ne porte PAS sur le forfait acheté mais sur le SOLDE, et pas sur
+ * les dates du créneau mais sur celles qui y sont encore prenables. Une première
+ * version comparait 20 séances aux 10 dates du mardi : l'avertissement restait
+ * affiché une fois les 20 placées — dix sur le mardi, dix ailleurs — et
+ * annonçait un travail déjà fait.
  *
- * On compte les dates PROGRAMMÉES sur la fenêtre de l'abonnement, y compris
- * celles déjà réservées : la question n'est pas ce qu'il reste à prendre, mais
- * ce que ce créneau peut porter en tout.
+ * Une date n'est prenable que si elle est à venir, non annulée, pas complète, et
+ * pas déjà RÉSERVÉE par cette personne.
+ *
+ * Une date qu'elle a LIBÉRÉE compte comme prenable, elle. C'est l'inscription
+ * d'office qui ne repasse jamais sur une place rendue — pour qu'un désistement
+ * ne soit pas défait la nuit suivante — mais rien n'empêche de la reprendre à la
+ * main, et cet avertissement parle précisément de placement à la main. L'exclure
+ * annoncerait « à placer ailleurs » des dates encore libres sur son créneau.
  */
-const plafonds = await Promise.all(
+const dispoParCreneau = await Promise.all(
   enCours
-    .filter((a) => a.total_credits !== null && a.home_creneau_id)
+    .filter((a) => a.home_creneau_id)
     .map(async (a) => {
-      const { count } = await supabase
+      const { data } = await supabase
         .from('sessions')
-        .select('id', { count: 'exact', head: true })
+        .select('id, capacity, bookings(participant_id, status)')
         .eq('creneau_id', a.home_creneau_id)
         .eq('status', 'scheduled')
-        .gte('starts_at', a.starts_on)
+        .gt('starts_at', new Date().toISOString())
         .lte('starts_at', `${a.ends_on}T23:59:59`);
 
-      return {
-        creneau: (a.creneaux as any)?.label ?? a.home_creneau_id,
-        forfait: a.total_credits as number,
-        dates: count ?? 0,
-        ailleurs: (a.total_credits as number) - (count ?? 0),
-      };
+      const libres = (data ?? []).filter((s: any) => {
+        const lignes = s.bookings ?? [];
+        const dejaPrise = lignes.some(
+          (b: any) => b.participant_id === id && b.status === 'booked',
+        );
+        const prises = lignes.filter((b: any) => b.status === 'booked').length;
+        return !dejaPrise && prises < s.capacity;
+      }).length;
+
+      return { creneau: (a.creneaux as any)?.label ?? a.home_creneau_id, libres };
     }),
 );
 
-const debordements = plafonds.filter((p) => p.ailleurs > 0);
+const placesAttitrees = dispoParCreneau.reduce((n, d) => n + d.libres, 0);
+const resteAPlacer = Math.max(0, (solde as number) ?? 0);
+const ailleurs = resteAPlacer - placesAttitrees;
 const dateFr = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
 const anneeCourante = new Date().getFullYear();
 const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
@@ -303,21 +315,21 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
   {erreur && <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>}
 
   {/*
-    Le forfait dépasse ce que son créneau peut porter.
-    Dit ici, à la création comme à chaque visite, plutôt que découvert en mars
-    sous la forme d'un solde qui ne descend plus — la cause étant alors à deux
-    écrans de là.
+    Ce qui reste à placer ne tient plus sur le créneau attitré.
+    Recalculé à chaque visite : l'avertissement disparaît de lui-même dès que les
+    dates sont posées, au lieu d'annoncer un travail déjà fait.
   */}
-  {debordements.map((d) => (
+  {ailleurs > 0 && (
     <p class="mb-6 rounded-xl border border-[var(--color-button)] bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-text)] shadow-md">
       <strong class="text-[var(--color-button)]">
-        {d.ailleurs} séance{d.ailleurs > 1 ? 's' : ''} à placer sur d’autres créneaux.
+        {ailleurs} séance{ailleurs > 1 ? 's' : ''} à placer sur un autre créneau.
       </strong>
-      {' '}Le forfait en compte {d.forfait}, et « {d.creneau} » n’a que {d.dates} date
-      {d.dates > 1 ? 's' : ''} sur la période. L’inscription d’office remplira ce créneau,
-      le reste demande un choix.
+      {' '}Il reste {resteAPlacer} séance{resteAPlacer > 1 ? 's' : ''} à poser, et
+      {placesAttitrees === 0
+        ? ` « ${dispoParCreneau.map((d) => d.creneau).join(' », « ')} » n’a plus de date libre.`
+        : ` seulement ${placesAttitrees} date${placesAttitrees > 1 ? 's' : ''} libre${placesAttitrees > 1 ? 's' : ''} sur son créneau habituel.`}
     </p>
-  ))}
+  )}
 
   {/*
     Une seule quantité en grand : celle qui répond à une question.
