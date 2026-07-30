@@ -30,9 +30,21 @@ const settings = await reader.singletons.siteSettings.read();
 // Le dossier n'existe pas tant qu'aucun témoignage n'est saisi.
 const tous = await reader.collections.temoignages.all().catch(() => []);
 
+/*
+ * LES PLUS LONGS D'ABORD.
+ *
+ * Un avis détaillé emporte davantage qu'un « super ! », et c'est la première
+ * carte qu'on lit — les suivantes demandent un geste. L'ordre alphabétique des
+ * fichiers, lui, ne voulait rien dire.
+ *
+ * Accessoirement les cartes s'alignent sur la plus haute : mettre la plus
+ * longue en tête évite qu'une carte de deux lignes ouvre le carrousel en
+ * paraissant vide.
+ */
 const retenus = tous
   .filter((t) => (t.entry.pages ?? []).includes(page))
-  .filter((t) => t.entry.texte?.trim());
+  .filter((t) => t.entry.texte?.trim())
+  .sort((a, b) => (b.entry.texte?.length ?? 0) - (a.entry.texte?.length ?? 0));
 
 const note = settings?.googleNote?.trim();
 const lienAvis = settings?.googleBusinessUrl;
@@ -94,6 +106,18 @@ const defilable = retenus.length > 1;
           >
             {retenus.map((t) => (
               <figure class="flex w-[85%] shrink-0 snap-start flex-col rounded-xl bg-white p-5 shadow-md sm:w-[48%] md:w-[31.5%] dark:bg-[var(--color-card-bg)]">
+                {/*
+                  ICI LES ÉTOILES PORTENT L'INFORMATION, et non plus la
+                  décoration : aucun chiffre ne les accompagne. Elles sont donc
+                  annoncées aux lecteurs d'écran, contrairement à celles du
+                  bandeau où la note est écrite juste à côté.
+                */}
+                {t.entry.note && (
+                  <p class="mb-3 text-sm tracking-wide text-[var(--color-button)]">
+                    <span aria-hidden="true">{'★'.repeat(Number(t.entry.note))}</span>
+                    <span class="sr-only">{t.entry.note} étoiles sur 5</span>
+                  </p>
+                )}
                 <blockquote class="text-sm leading-relaxed text-[var(--color-text)]">
                   « {t.entry.texte} »
                 </blockquote>
