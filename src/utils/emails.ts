@@ -261,6 +261,7 @@ export function variablesAccueil(o: {
  */
 export function variablesAdmin(o: {
   participant: string;
+  participant_id?: string;
   starts_at: string;
   ends_at: string;
   location: string;
@@ -270,6 +271,12 @@ export function variablesAdmin(o: {
 }): Valeurs {
   return {
     ...LIENS,
+    // Le lien vers la fiche : c'est de là qu'Isabelle agit — dispenser d'une
+    // séance due, appeler quelqu'un. Sans lui, l'avis se termine sur un constat
+    // et laisse retrouver la personne à la main.
+    lien_fiche: o.participant_id
+      ? `https://atelier-des-cousettes.fr/espace-membre/admin/participants/${o.participant_id}/`
+      : 'https://atelier-des-cousettes.fr/espace-membre/admin/participants/',
     participant: o.participant,
     date: dateLongue.format(new Date(o.starts_at)),
     heure_debut: heure.format(new Date(o.starts_at)),

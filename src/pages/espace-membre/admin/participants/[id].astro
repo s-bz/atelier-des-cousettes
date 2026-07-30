@@ -4,6 +4,7 @@ export const prerender = false;
 import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
+import { notifier, variablesSeance } from '../../../../utils/emails';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -116,13 +117,44 @@ if (Astro.request.method === 'POST') {
   // renoncer — une hospitalisation n'est pas un oubli. Sans ce geste, la seule
   // issue serait de ne pas appliquer la règle du tout.
   if (action === 'rendre-quand-meme') {
+    const reservation = String(form.get('reservation') ?? '');
+
+    // Les détails AVANT la mise à jour : le message annonce quelle séance a été
+    // rendue, et il faut donc encore pouvoir la décrire.
+    const { data: cible } = await supabase
+      .from('bookings')
+      .select('participants(first_name, accounts(email)), sessions(starts_at, ends_at, location)')
+      .eq('id', reservation)
+      .eq('participant_id', id)
+      .maybeSingle();
+
     const { error } = await supabase
       .from('bookings')
       .update({ credit_retenu: false })
-      .eq('id', String(form.get('reservation') ?? ''))
+      .eq('id', reservation)
       .eq('participant_id', id);
-    if (error) erreur = `Impossible : ${error.message}`;
-    else message = 'Séance rendue : elle revient au solde malgré le délai.';
+
+    if (error) {
+      erreur = `Impossible : ${error.message}`;
+    } else {
+      // Sans ce message, le geste resterait invisible : l'adhérent avait lu
+      // « la séance reste due », et rien ne lui disait le contraire. Il l'aurait
+      // découvert en consultant son solde, si l'idée lui venait — une générosité
+      // qu'on ne remarque pas est une générosité perdue.
+      const s = (cible as any)?.sessions;
+      const prevenu = s
+        ? await notifier('retenue_levee', (cible as any)?.participants?.accounts?.email,
+            variablesSeance({
+              prenom: (cible as any)?.participants?.first_name ?? '',
+              starts_at: s.starts_at, ends_at: s.ends_at, location: s.location,
+            }))
+        : false;
+
+      message = 'Séance rendue : elle revient au solde malgré le délai.'
+        + (prevenu
+            ? ' L’adhérent en a été prévenu par e-mail.'
+            : ' Sans adresse e-mail, prévenez-le vous-même.');
+    }
   }
 
   // Retirer quelqu'un d'une séance.
@@ -614,9 +646,15 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
               rend, une séance à venir se retire.
             */}
             {r.credit_retenu ? (
-              <form method="post" class="ml-auto">
+              <form method="post" class="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
                 <input type="hidden" name="action" value="rendre-quand-meme" />
                 <input type="hidden" name="reservation" value={r.id} />
+                {/* Dire que le message part : c'est ce qui distingue ce bouton
+                    d'une correction discrète, et Isabelle doit le savoir avant
+                    de cliquer, pas après. */}
+                <span class="text-xs text-[var(--color-text-light)]">
+                  un e-mail préviendra la personne
+                </span>
                 <button type="submit"
                         class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-1.5 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-bg-accent)]">
                   Rendre malgré le délai

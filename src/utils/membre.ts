@@ -161,8 +161,14 @@ export async function libererPlace(
       .eq('session_id', seance.id)
       .eq('status', 'booked');
 
-    await notifierAdmin('admin_liberation', variablesAdmin({
+    // Deux avis, comme pour l'adhérent : celui d'un désistement dans les temps
+    // annonce le retour au solde, celui d'un désistement tardif annonce que la
+    // séance reste due. Envoyer le premier dans les deux cas ferait croire à
+    // Isabelle que personne n'est décompté.
+    await notifierAdmin(tardif ? 'admin_liberation_tardive' : 'admin_liberation',
+      variablesAdmin({
       participant: `${personne?.first_name ?? ''} ${personne?.last_name ?? ''}`.trim(),
+      participant_id: participantId,
       starts_at: seance.starts_at,
       ends_at: seance.ends_at,
       location: seance.location,
