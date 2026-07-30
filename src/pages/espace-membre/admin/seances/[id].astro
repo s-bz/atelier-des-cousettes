@@ -227,6 +227,16 @@ if (Astro.request.method === 'POST') {
       if (error) erreur = error.message;
       else message = `${data} date${(data as number) > 1 ? 's' : ''} libérée${(data as number) > 1 ? 's' : ''} sur ce stage.`;
 
+    } else if (action === 'inscrire' && form.get('forcer') === 'on') {
+      // Dépassement volontaire : Isabelle seule sait si une personne de plus
+      // tient dans sa salle. Le drapeau est refusé côté base à quiconque n'est
+      // pas administrateur.
+      const { error } = await supabase.rpc('book_participant', {
+        p_session: id, p_participant: participant, p_source: 'admin', p_forcer: true,
+      });
+      if (error) erreur = error.message;
+      else message = 'Inscrit au-delà des places. La séance affiche désormais un dépassement.';
+
     } else if (forfait) {
       // Tout ou rien : la fonction refuse en bloc si une date est complète.
       const { data, error } = await supabase.rpc('book_stage', {
@@ -236,11 +246,20 @@ if (Astro.request.method === 'POST') {
       else message = `Inscrit sur ${data} date${(data as number) > 1 ? 's' : ''} du stage.`;
 
     } else {
-      const { error } = await supabase.rpc('book_participant', {
+      const { data: ligne, error } = await supabase.rpc('book_participant', {
         p_session: id, p_participant: participant, p_source: 'admin',
       });
-      if (error) erreur = error.message;
-      else message = 'Participant inscrit.';
+      if (error) {
+        erreur = error.message;
+      } else {
+        // Dire lequel des deux états a été posé : « inscrit » sur une séance
+        // pleine laisserait croire à une place obtenue.
+        const { data: pose } = await supabase
+          .from('bookings').select('status').eq('id', ligne).maybeSingle();
+        message = pose?.status === 'waiting'
+          ? 'Ajouté à la liste d’attente. La personne sera prévenue dès qu’une place se libère, et restera libre de la prendre ou non.'
+          : 'Participant inscrit.';
+      }
     }
   }
 }
@@ -275,6 +294,7 @@ const commencee = new Date(seance.starts_at) <= new Date();
 // Forfait sur plusieurs jours : l'inscription porte sur toutes les dates.
 const groupees = ((seance.creneaux as any)?.seances_par_stage ?? 1) > 1;
 const creneauAttente = (seance.creneaux as any)?.places_attente ?? 0;
+
 
 /**
  * Qui est déjà pris, et sur quel périmètre.
@@ -322,6 +342,18 @@ const { count: datesAVenir } = groupees
 const inscrits = (reservations ?? []).filter((r: any) => r.status === 'booked');
 const attente = (reservations ?? []).filter((r: any) => r.status === 'waiting');
 const prises = inscrits.length;
+/**
+ * Ce que l'inscription va réellement produire.
+ *
+ * Trois issues, et le bouton doit les nommer : une place, un rang dans la file,
+ * ou un dépassement assumé. « Inscrire » sur une séance pleine laisserait croire
+ * à une place obtenue, et l'échec — ou pire, la mise en attente silencieuse —
+ * se découvrirait après coup.
+ */
+const etatInscription: 'libre' | 'attente' | 'complet' =
+  prises < seance.capacity ? 'libre'
+  : attente.length < seance.places_attente ? 'attente'
+  : 'complet';
 const annulee = seance.status === 'cancelled';
 
 const dateFr = new Intl.DateTimeFormat('fr-FR', {
@@ -488,13 +520,48 @@ const debut = new Date(seance.starts_at);
           ))}
         </select>
       </div>
-      <button type="submit" class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-5 py-2 font-medium text-white">
-        {groupees ? `Inscrire aux ${datesAVenir} dates` : 'Inscrire'}
+      {/*
+        Le bouton nomme ce qui va se produire. « Inscrire » sur une séance
+        pleine laisserait croire à une place obtenue : on découvrirait après coup
+        soit un refus, soit — pire — une mise en attente silencieuse.
+        Sur une séance saturée, on n'inscrit qu'en dépassant sciemment : le
+        drapeau part alors avec le formulaire.
+      */}
+      {!groupees && etatInscription === 'complet' && (
+        <input type="hidden" name="forcer" value="on" />
+      )}
+
+      <button type="submit"
+              class={`rounded-[var(--radius-button)] px-5 py-2 font-medium ${
+                !groupees && etatInscription !== 'libre'
+                  ? 'border-2 border-[var(--color-button)] text-[var(--color-button)]'
+                  : 'bg-[var(--color-button)] text-white'
+              }`}>
+        {groupees ? `Inscrire aux ${datesAVenir} dates`
+          : etatInscription === 'attente' ? 'Mettre en liste d’attente'
+          : etatInscription === 'complet' ? 'Inscrire au-delà des places'
+          : 'Inscrire'}
       </button>
+
       {groupees && (
         <p class="w-full text-sm text-[var(--color-text-light)]">
           Ce stage est un forfait : l’inscription porte sur toutes ses dates à venir, et
           échoue en bloc si l’une est complète.
+        </p>
+      )}
+
+      {!groupees && etatInscription === 'attente' && (
+        <p class="w-full text-sm text-[var(--color-text-light)]">
+          La séance est complète ({prises} / {seance.capacity}). La personne rejoindra la
+          liste d’attente : rien ne lui sera décompté, elle sera prévenue par e-mail dès
+          qu’une place se libère, et restera libre de la prendre ou non.
+        </p>
+      )}
+
+      {!groupees && etatInscription === 'complet' && (
+        <p class="w-full text-sm text-[var(--color-button)]">
+          La séance et sa liste d’attente sont pleines. Inscrire ici ajoute une place
+          au-delà de la capacité — à vous de juger si la salle le permet.
         </p>
       )}
       {inscriptibles.length === 0 && (
