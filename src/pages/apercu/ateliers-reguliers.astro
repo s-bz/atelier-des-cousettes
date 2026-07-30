@@ -248,10 +248,21 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
               <ul class="space-y-4">
                 {(t.formules ?? []).map((f) => (
                   <li>
-                    <p class="font-semibold text-[var(--color-heading)]">{f.rythme}</p>
-                    {/* Un seul chiffre en couleur par ligne : six accents de même
-                        force ne donnaient à l'œil aucun endroit où se poser. */}
-                    <p class="text-xl font-semibold text-[var(--color-button)]">{f.mensuel}</p>
+                    {/*
+                      Ce qu'on achète et ce que ça coûte, côte à côte : le nombre
+                      de séances est le produit, le prix mensuel la façon de le
+                      régler. Séparés, on lisait un prix sans savoir de quoi.
+                      Un seul chiffre en couleur — six accents de même force ne
+                      donnaient à l'œil aucun endroit où se poser.
+                    */}
+                    <p class="flex flex-wrap items-baseline gap-x-3">
+                      <span class="text-lg font-semibold text-[var(--color-heading)]">
+                        {f.seances}
+                      </span>
+                      <span class="text-lg font-semibold text-[var(--color-button)]">
+                        {f.mensuel}
+                      </span>
+                    </p>
                     {f.detail && (
                       <p class="text-sm text-[var(--color-text-light)]">{f.detail}</p>
                     )}

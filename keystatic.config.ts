@@ -216,25 +216,28 @@ export default config({
             formules: fields.array(
               fields.object({
                 /*
-                 * LE RYTHME D'ABORD, LE PRIX ENSUITE.
+                 * CE QU'ON ACHÈTE, ET CE QUE ÇA COÛTE — sur la même ligne.
                  *
-                 * « 10 séances » oblige à convertir : combien de fois par mois,
-                 * sur quelle période ? « Environ une fois par mois » est une
-                 * question à laquelle on sait déjà répondre — on choisit un
-                 * rythme de vie, pas un volume. Le nombre de séances et le prix
-                 * comptant restent visibles en dessous, en retrait : les
-                 * escamoter reviendrait à cacher le total.
+                 * Le nombre de séances est le produit : c'est lui qu'on compare,
+                 * lui qui figure sur le bulletin d'adhésion. L'avoir relégué en
+                 * gris sous le prix le rendait introuvable.
+                 *
+                 * Le rythme reste, mais en glose : « environ une fois par mois »
+                 * traduit ce que dix séances veulent dire dans une vie, sans
+                 * prétendre à un engagement de calendrier — le forfait se pose
+                 * sur les dates de son choix. Le prix comptant l'accompagne :
+                 * l'escamoter reviendrait à cacher le total.
                  */
-                rythme: fields.text({ label: 'Rythme (ex : Environ une fois par mois)' }),
-                mensuel: fields.text({ label: 'Prix mis en avant (ex : 35,50 € par mois)' }),
+                seances: fields.text({ label: 'Ce qu’on achète (ex : 10 séances)' }),
+                mensuel: fields.text({ label: 'Prix mis en avant (ex : 36 € par mois)' }),
                 detail: fields.text({
-                  label: 'Précision (ex : 10 séances sur la saison, ou 355 € réglés en une fois)',
+                  label: 'Glose (ex : environ une fois par mois, ou 360 € réglés en une fois)',
                 }),
               }),
               {
                 label: 'Formules',
                 itemLabel: (props) =>
-                  `${props.fields.rythme.value || 'Formule'} — ${props.fields.mensuel.value || '?'}`,
+                  `${props.fields.seances.value || 'Formule'} — ${props.fields.mensuel.value || '?'}`,
               },
             ),
           }),

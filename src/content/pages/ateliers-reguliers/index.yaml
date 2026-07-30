@@ -24,21 +24,21 @@ tarifs:
   - audience: adultes
     dureeSeance: Séances de 3 h
     formules:
-      - rythme: Environ une fois par mois
+      - seances: 10 séances
         mensuel: 36 € par mois
-        detail: 10 séances sur la saison, ou 360 € réglés en une fois
-      - rythme: Environ deux fois par mois
+        detail: environ une fois par mois sur la saison, ou 360 € réglés en une fois
+      - seances: 20 séances
         mensuel: 58 € par mois
-        detail: 20 séances sur la saison, ou 580 € réglés en une fois
+        detail: environ deux fois par mois sur la saison, ou 580 € réglés en une fois
   - audience: enfants
     dureeSeance: Séances de 2 h
     formules:
-      - rythme: Environ une fois par mois
+      - seances: 10 séances
         mensuel: 28 € par mois
-        detail: 10 séances sur la saison, ou 280 € réglés en une fois
-      - rythme: Environ deux fois par mois
+        detail: environ une fois par mois sur la saison, ou 280 € réglés en une fois
+      - seances: 20 séances
         mensuel: 45 € par mois
-        detail: 20 séances sur la saison, ou 450 € réglés en une fois
+        detail: environ deux fois par mois sur la saison, ou 450 € réglés en une fois
 creneaux:
   - name: Atelier de Verdalle
     location: Verdalle
