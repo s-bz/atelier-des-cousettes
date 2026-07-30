@@ -1,0 +1,35 @@
+---
+/**
+ * L'avertissement en tête des trois pages de formules.
+ *
+ * AU-DESSUS DU HÉROS, à dessein. Ces pages annoncent des prix dès leur premier
+ * écran ; un avis placé plus bas serait lu après la décision qu'il devait
+ * nuancer. Il précède donc l'image de couverture, là où l'on ne peut que le
+ * voir.
+ *
+ * Le texte vient d'un champ unique des réglages du site : c'est un avis daté,
+ * qui doit disparaître des trois pages d'un seul geste. Vide, le bandeau ne
+ * s'affiche pas — la ligne du dessous s'en charge, et c'est tout ce qu'Isabelle
+ * a à faire pour le retirer.
+ */
+interface Props {
+  texte?: string | null;
+}
+
+const { texte } = Astro.props;
+const contenu = texte?.trim();
+---
+
+{contenu && (
+  <aside class="border-b border-[var(--color-button)]/20 bg-[var(--color-bg-accent)]">
+    <p class="mx-auto flex max-w-4xl items-start gap-2 px-4 py-3 text-sm leading-relaxed text-[var(--color-text)]">
+      {/*
+        Le pictogramme est décoratif : le sens est tout entier dans la phrase,
+        et un lecteur d'écran qui annoncerait « point d'exclamation » avant
+        elle ne ferait qu'ajouter du bruit.
+      */}
+      <span aria-hidden="true" class="mt-px shrink-0 font-bold text-[var(--color-button)]">!</span>
+      <span>{contenu}</span>
+    </p>
+  </aside>
+)}

@@ -8,13 +8,13 @@ const currentPath = Astro.url.pathname;
   Aller au contenu
 </a>
 <header class="sticky top-0 z-50 bg-[var(--color-bg)] border-b border-[var(--color-border)]">
-  <nav class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+  <nav class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
     <a href="/" class="heading-font text-xl font-medium text-[var(--color-heading)] hover:opacity-80 transition-opacity">
       L'Atelier des Cousettes
     </a>
 
     <!-- Desktop nav -->
-    <ul class="hidden lg:flex items-center gap-8 text-sm font-medium">
+    <ul class="hidden xl:flex items-center gap-6 text-sm font-medium whitespace-nowrap">
       {navLinks.map((link) => (
         <li>
           <a
@@ -35,7 +35,7 @@ const currentPath = Astro.url.pathname;
     <!-- Mobile hamburger -->
     <button
       id="menu-toggle"
-      class="lg:hidden p-2 -mr-2 text-[var(--color-heading)]"
+      class="xl:hidden p-2 -mr-2 text-[var(--color-heading)]"
       aria-label="Menu"
       aria-expanded="false"
     >
@@ -46,7 +46,7 @@ const currentPath = Astro.url.pathname;
   </nav>
 
   <!-- Mobile menu -->
-  <div id="mobile-menu" class="lg:hidden border-t border-[var(--color-border)] bg-[var(--color-bg)] overflow-hidden transition-[max-height] duration-300 ease-in-out max-h-0">
+  <div id="mobile-menu" class="xl:hidden border-t border-[var(--color-border)] bg-[var(--color-bg)] overflow-hidden transition-[max-height] duration-300 ease-in-out max-h-0">
     <ul class="px-4 py-2 space-y-1">
       {navLinks.map((link) => (
         <li>

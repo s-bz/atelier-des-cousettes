@@ -1,25 +1,31 @@
 ---
 export const prerender = false;
 
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import Hero from '../../components/Hero.astro';
-import CrossLinksSection from '../../components/CrossLinksSection.astro';
-import CalendrierCreneau from '../../components/CalendrierCreneau.astro';
-import ContactCTA from '../../components/ContactCTA.astro';
-import FaqSection from '../../components/FaqSection.astro';
-import { getPageContext, reader } from '../../utils/reader';
-import { resolveImage, resolveImageUrl } from '../../utils/images';
-import { splitParagraphs, toSlug } from '../../utils/strings';
-import { buildServicePageSchemas } from '../../utils/schema';
-import { getAdminClient } from '../../utils/supabase';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import AvisProvisoire from '../components/AvisProvisoire.astro';
+import CrossLinksSection from '../components/CrossLinksSection.astro';
+import CalendrierCreneau from '../components/CalendrierCreneau.astro';
+import ContactCTA from '../components/ContactCTA.astro';
+import FaqSection from '../components/FaqSection.astro';
+import { getPageContext, reader } from '../utils/reader';
+import { resolveImage, resolveImageUrl } from '../utils/images';
+import { splitParagraphs, toSlug } from '../utils/strings';
+import { buildServicePageSchemas } from '../utils/schema';
+import { getAdminClient } from '../utils/supabase';
 
 /**
- * Aperçu : un après-midi couture, ses dates lues en base.
+ * Une séance sans engagement : ses dates lues en base.
+ *
+ * LA PAGE S'APPELAIT « Un après-midi couture » et listait pourtant près de la
+ * moitié de ses séances le matin ou en fin de journée. Elle a été renommée ; son
+ * adresse, elle, ne bouge pas — onze articles, l'accueil et le menu y renvoient,
+ * et une URL est une adresse, pas une promesse.
  *
  * CETTE FORMULE N'A PAS DE CRÉNEAU PROPRE, et n'en a pas besoin : venir une
  * fois, c'est prendre une place dans un atelier existant. Ses dates sont donc
  * exactement celles des ateliers réguliers, et son prix est celui d'une séance
- * hors forfait — 40 € pour un adulte, 30 € pour un enfant. C'est le même
+ * hors forfait — 45 € pour un adulte, 35 € pour un enfant. C'est le même
  * montant, parce que c'est la même chose : une séance que rien ne couvre.
  *
  * Les dates sont présentées CHRONOLOGIQUEMENT et non par créneau : celui qui
@@ -36,9 +42,7 @@ import { getAdminClient } from '../../utils/supabase';
  *
  * Tout le reste — l'introduction, le bloc d'informations, la description, la
  * liste « pour qui », la FAQ, les liens croisés, le JSON-LD — est rendu comme
- * sur la page publiée.
- *
- * noIndex, et exclue du plan du site.
+ * attendu d'une page de formule.
  */
 
 const page = await reader.singletons.apresMidiCouture.read();
@@ -52,81 +56,6 @@ const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
 
 const faqItems = page.faqItems ?? [];
 
-/**
- * PROPOSITION DE RENOMMAGE — à ne pas confondre avec le contenu.
- *
- * La page s'intitule « Un après-midi couture » et liste pourtant 26 séances le
- * matin et 19 en fin de journée sur 94 : près de la moitié dément son titre.
- * Elle n'a plus rien d'exclusivement après-midi depuis qu'elle tire ses dates
- * de tous les ateliers.
- *
- * CES LIBELLÉS VIVENT ICI ET NON DANS LE CMS, à dessein. Le contenu est partagé
- * avec la page publiée : le modifier renommerait le site en production avant
- * qu'Isabelle ait vu la proposition. Ils rejoindront Keystatic le jour de la
- * bascule — trancher cela est précisément l'office de cette page.
- *
- * L'URL ne change pas et n'a pas à changer : onze articles de blog, l'accueil,
- * le menu et les liens croisés y renvoient, et c'est une adresse, pas une
- * promesse.
- */
-const PROPOSITION = {
-  title: 'Une séance sans engagement',
-  subtitle: 'Cousez en toute liberté, à l’heure qui vous convient',
-  introduction:
-    'Une séance ponctuelle pour coudre à votre rythme, avec l’accompagnement ' +
-    'd’Isabelle — 3 heures pour les adultes, 2 heures pour les enfants. Le matin, ' +
-    'l’après-midi ou en fin de journée, selon les créneaux. Sans engagement, ' +
-    'ouvert à tous les niveaux.',
-  descriptionTitle: 'Comment se déroule une séance ?',
-  lienDates: 'Voir les dates',
-  lienDeroulement: 'Comment ça se passe',
-  seoDescription:
-    'Séance de couture sans engagement à Revel et Verdalle (Tarn), près de ' +
-    'Castres : le matin, l’après-midi ou en fin de journée, 45 € pour les ' +
-    'adultes et 35 € pour les enfants, adhésion comprise. Ouvert à tous.',
-  coverImageAlt: 'Séance de couture ponctuelle à l’Atelier des Cousettes',
-  // Deux questions nommaient l'après-midi ; leurs réponses, elles, restent vraies.
-  questions: {
-    "Quel est le tarif d'un après-midi couture ?": 'Quel est le tarif d’une séance ?',
-    'Où ont lieu les après-midi couture ?': 'Où ont lieu les séances ?',
-    // Une séance dure 3 h pour un adulte et 2 h pour un enfant : la question
-    // n'en annonçait qu'une, et le parent d'un enfant y lisait une durée qu'il
-    // n'aurait pas.
-    'Quels projets peut-on réaliser en 3 heures ?':
-      'Quels projets peut-on réaliser en 2 à 3 heures ?',
-  } as Record<string, string>,
-
-  /**
-   * Deux réponses décrivaient un fonctionnement qui n'existe plus.
-   *
-   * L'annulation renvoyait à « prévenez Isabelle le plus tôt possible », sans
-   * dire ce qu'il en coûte. Depuis, la règle est écrite dans le code et dans
-   * les e-mails : 48 h — vérifié des deux côtés, `interval '48 hours'` dans la
-   * base et « jusqu'à 48 h avant la séance » dans les gabarits.
-   *
-   * L'inscription annonçait un délai d'une semaine que rien n'applique, et
-   * ignorait l'espace adhérent où les dates se choisissent désormais.
-   */
-  reponses: {
-    "Quelle est la politique d'annulation ?":
-      'Vous pouvez libérer votre place jusqu’à 48 h avant la séance : elle ne ' +
-      'vous est pas comptée. Passé ce délai, la séance reste due. Prévenez ' +
-      'Isabelle dès que vous le savez — votre place profite alors à quelqu’un ' +
-      'd’autre, prévenu par e-mail. Les séances ont lieu sous réserve d’un ' +
-      'nombre suffisant d’inscriptions.',
-    "Comment s'inscrire ?":
-      'Pour une première venue, écrivez à Isabelle par le formulaire de contact ' +
-      'ou appelez-la. Elle vous inscrit et vous ouvre l’accès à votre espace ' +
-      'adhérent, où vous choisissez ensuite vos dates et les libérez si besoin. ' +
-      'Les places étant limitées, mieux vaut s’y prendre à l’avance.',
-  } as Record<string, string>,
-};
-
-const faqProposee = faqItems.map((q) => ({
-  ...q,
-  question: PROPOSITION.questions[q.question] ?? q.question,
-  answer: PROPOSITION.reponses[q.question] ?? q.answer,
-}));
 
 
 const audienceItems = page.audienceItems ?? [];
@@ -226,12 +155,12 @@ const parPublic = PUBLICS.map(({ cle, titre }) => {
  *
  * Celles du CMS annonçaient encore « Après-midi couture (3h) » à 40 € : le nom
  * d'avant et le prix d'avant, tandis que la page affiche 45 € et 35 €. C'est ce
- * que Google lit — et la page publiée les émet toujours, faute d'avoir touché
- * au contenu partagé.
+ * que Google lit ; le champ a donc été retiré du contenu plutôt que corrigé,
+ * pour qu'il n'ait plus l'occasion de dériver.
  */
 const schemas = buildServicePageSchemas({
-  title: PROPOSITION.title,
-  seoDescription: PROPOSITION.seoDescription,
+  title: page.title,
+  seoDescription: page.seoDescription,
   pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
   siteUrl,
   settings,
@@ -239,7 +168,7 @@ const schemas = buildServicePageSchemas({
     name: `Séance sans engagement — ${p.titre.toLowerCase()}`,
     price: p.prix,
   })),
-  faqItems: faqProposee,
+  faqItems: faqItems,
 });
 
 const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location))]
@@ -269,22 +198,24 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
 
 ---
 
-<BaseLayout title={`${PROPOSITION.title} — aperçu`} description={PROPOSITION.seoDescription}
-            ogImage={ogImage} noIndex={true}>
+<BaseLayout title={page.title} description={page.seoDescription}
+            ogImage={ogImage}>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
   </Fragment>
 
+  <AvisProvisoire texte={settings?.avisProvisoire} />
+
   {/* `flush` : la marge basse du héros doublait celle de l'introduction. */}
-  <Hero flush title={PROPOSITION.title} subtitle={PROPOSITION.subtitle}
-        coverImage={couverture ?? undefined} altText={PROPOSITION.coverImageAlt} />
+  <Hero flush title={page.title} subtitle={page.subtitle}
+        coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
 
 
   {page.introduction && (
     <section class="bg-[var(--color-bg-accent)] pt-12 pb-10 md:pt-16 md:pb-12">
       <div class="mx-auto max-w-3xl px-4 text-center">
         <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">
-          {PROPOSITION.introduction}
+          {page.introduction}
         </p>
         {(parPublic.length > 0 || page.location) && (
           <div class="mt-8 flex flex-wrap justify-center gap-4">
@@ -331,13 +262,13 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
             href="#dates"
             class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 text-sm font-medium text-white no-underline transition-all hover:scale-[1.02] hover:bg-[var(--color-button-hover)]"
           >
-            {PROPOSITION.lienDates}
+            {page.lienDates}
           </a>
           <a
             href="#deroulement"
             class="inline-block rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-8 py-3 text-sm font-medium text-[var(--color-button)] no-underline transition-colors hover:bg-[var(--color-button)] hover:text-white"
           >
-            {PROPOSITION.lienDeroulement}
+            {page.lienDeroulement}
           </a>
         </div>
       </div>
@@ -351,7 +282,7 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
           <div class="mb-12">
             {page.descriptionTitle && (
               <h2 class="mb-6 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
-                {PROPOSITION.descriptionTitle}
+                {page.descriptionTitle}
               </h2>
             )}
             <div class="prose max-w-none">
@@ -492,9 +423,9 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
     </div>
   </section>
 
-  <FaqSection title={page.faqSectionTitle} items={faqProposee} ctaLabel={page.ctaLabel} fond={false} />
+  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} fond={false} />
 
   {page.crossLinksText && (
-    <CrossLinksSection text={page.crossLinksText} excludeHref="/un-apres-midi-couture/" class="bg-[var(--color-bg-accent)]" />
+    <CrossLinksSection text={page.crossLinksText} excludeHref="/seances-sans-engagement/" class="bg-[var(--color-bg-accent)]" />
   )}
 </BaseLayout>

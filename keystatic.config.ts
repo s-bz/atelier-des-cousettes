@@ -54,6 +54,23 @@ export default config({
         postalCode: fields.text({ label: 'Code postal (schema)' }),
         addressRegion: fields.text({ label: 'Région (schema)' }),
         defaultCtaLabel: fields.text({ label: 'Libellé CTA par défaut' }),
+
+        /*
+         * LE BANDEAU D'AVERTISSEMENT DES TROIS PAGES DE FORMULES.
+         *
+         * Un seul champ pour les trois : c'est un avis daté, qui doit
+         * disparaître d'un coup. Recopié en trois endroits, il en resterait un
+         * en ligne des mois après que les tarifs sont arrêtés.
+         *
+         * Vider le champ retire le bandeau — pas de case à cocher qui puisse
+         * rester cochée sur un texte devenu faux.
+         */
+        avisProvisoire: fields.text({
+          label: 'Bandeau d’avertissement (ateliers, stages, séances)',
+          description:
+            'Affiché en haut des trois pages de formules. Videz ce champ pour le faire disparaître partout.',
+          multiline: true,
+        }),
       },
     }),
     homepage: singleton({
@@ -114,7 +131,6 @@ export default config({
         youtubeDescription: fields.text({ label: 'Texte d\'accompagnement vidéo', multiline: true }),
         youtubeCredit: fields.text({ label: 'Crédit vidéo' }),
         actualitesTitle: fields.text({ label: 'Titre section actualités' }),
-        actualitesContent: fields.markdoc({ label: 'Contenu actualités', components: markdocComponents }),
         blogSectionTitle: fields.text({ label: 'Titre section derniers articles' }),
         actualitesBlogLabel: fields.text({ label: 'Libellé lien vers le blog' }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
@@ -133,20 +149,32 @@ export default config({
         stagesSectionTitle: fields.text({ label: 'Titre section stages' }),
         datesLabel: fields.text({ label: 'Libellé « Prochaines dates : »' }),
         faqSectionTitle: fields.text({ label: 'Titre section FAQ' }),
+        /*
+         * LE CONTENU DÉCRIT LES STAGES ; LA BASE DIT COMBIEN ET QUAND.
+         *
+         * Prix, durées et dates ont quitté ce formulaire le jour où la page a
+         * commencé à les lire en base. Les laisser aurait été pire que les
+         * perdre : c'étaient des cases modifiables qui ne changeaient plus
+         * rien, et elles contenaient encore les tarifs et les dates de la
+         * saison passée. Qui les aurait corrigées y aurait perdu son temps sans
+         * jamais le savoir.
+         *
+         * Le nom fait la jointure avec le créneau en base — c'est le seul
+         * identifiant commun. Le renommer ici oblige à le renommer là-bas.
+         */
         stages: fields.array(
           fields.object({
-            name: fields.text({ label: 'Nom du stage' }),
-            price: fields.text({ label: 'Prix (ex: 40 € ou 40 €–90 €)' }),
-            duration: fields.text({ label: 'Durée (ex: 3h)' }),
+            name: fields.text({
+              label: 'Nom du stage',
+              description: 'Doit correspondre exactement au nom du créneau en base.',
+            }),
             shortDescription: fields.text({ label: 'Description courte (carte)', multiline: true }),
             fullDescription: fields.text({ label: 'Description complète', multiline: true }),
-            dates: fields.text({ label: 'Prochaines dates', multiline: true }),
             prerequisite: fields.text({ label: 'Pré-requis (optionnel)', multiline: true }),
           }),
           {
             label: 'Stages',
-            itemLabel: (props) =>
-              `${props.fields.name.value || 'Stage'} — ${props.fields.price.value || '?'}`,
+            itemLabel: (props) => props.fields.name.value || 'Stage',
           },
         ),
         faqItems: fields.array(
@@ -160,7 +188,6 @@ export default config({
           },
         ),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
-        schemaOffers: schemaOffersField(),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
     }),
@@ -260,9 +287,6 @@ export default config({
               options: ATELIER_GROUPS.map((g) => ({ label: g.label, value: g.id })),
               defaultValue: ATELIER_GROUPS[0].id,
             }),
-            price: fields.text({ label: 'Tarif résumé (ex: 55 €/mois)' }),
-            priceDetails: fields.text({ label: 'Détail tarifaire', multiline: true }),
-            dates: fields.text({ label: 'Calendrier de la saison', multiline: true }),
             note: fields.text({ label: 'Note (optionnel)', multiline: true }),
           }),
           {
@@ -288,18 +312,23 @@ export default config({
     }),
     apresMidiCouture: singleton({
       label: 'Un après-midi couture',
-      path: 'src/content/pages/un-apres-midi-couture/',
-      previewUrl: '/un-apres-midi-couture/',
+      path: 'src/content/pages/seances-sans-engagement/',
+      previewUrl: '/seances-sans-engagement/',
       schema: {
         title: fields.text({ label: 'Titre' }),
         subtitle: fields.text({ label: 'Sous-titre' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
-        ...coverImageFields('un-apres-midi-couture'),
+        ...coverImageFields('seances-sans-engagement'),
         introduction: fields.text({ label: 'Introduction', multiline: true }),
-        price: fields.text({ label: 'Tarif (ex: 40 €)' }),
+
+        /*
+         * Le tarif et la durée d'une séance viennent de la base : c'est le même
+         * montant qui sert à facturer une séance hors forfait, et les horaires
+         * du créneau donnent la durée. Les champs qui les recopiaient ici
+         * annonçaient encore 40 € et « 3h » pour tout le monde, quand la page
+         * affiche 45 € pour un adulte et 35 € pour deux heures d'enfant.
+         */
         priceLabel: fields.text({ label: 'Sous-libellé tarif (ex: la séance)' }),
-        duration: fields.text({ label: 'Durée (ex: 3h)' }),
-        durationLabel: fields.text({ label: 'Sous-libellé durée (ex: d\'accompagnement)' }),
         location: fields.text({ label: 'Lieu', multiline: true }),
         locationLabel: fields.text({ label: 'Sous-libellé lieu (ex: dans le Tarn)' }),
         descriptionTitle: fields.text({ label: 'Titre section description' }),
@@ -310,8 +339,11 @@ export default config({
           { label: 'À qui s\'adresse cette formule', itemLabel: (props) => props.value || 'Public' },
         ),
         datesTitle: fields.text({ label: 'Titre section dates' }),
-        dates: fields.text({ label: 'Prochaines dates', multiline: true }),
+        // Les dates elles-mêmes sont lues en base — elles changent trop souvent
+        // pour être recopiées, et une date périmée fait se déplacer pour rien.
         datesNote: fields.text({ label: 'Note dates (optionnel)' }),
+        lienDates: fields.text({ label: 'Bouton vers les dates (ex : Voir les dates)' }),
+        lienDeroulement: fields.text({ label: 'Bouton vers le déroulement (ex : Comment ça se passe)' }),
         faqSectionTitle: fields.text({ label: 'Titre section FAQ' }),
         faqItems: fields.array(
           fields.object({
@@ -324,7 +356,6 @@ export default config({
           },
         ),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
-        schemaOffers: schemaOffersField(),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
     }),

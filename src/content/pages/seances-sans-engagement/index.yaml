@@ -1,22 +1,20 @@
-title: Un après-midi couture
-subtitle: Cousez en toute liberté
+title: Une séance sans engagement
+subtitle: Cousez en toute liberté, à l’heure qui vous convient
 seoDescription: >-
-  Après-midi couture à Revel et Verdalle (Tarn), près de Castres :
-  accompagnement personnalisé, 45 € pour les adultes et 35 € pour les enfants,
-  adhésion comprise. Ouvert à tous, sur inscription ponctuelle.
-coverImage: /src/assets/images/covers/un-apres-midi-couture/coverImage.jpeg
-coverImageAlt: Séance d'un après-midi couture à l'Atelier des Cousettes
+  Séance de couture sans engagement à Revel et Verdalle (Tarn), près de
+  Castres : le matin, l'après-midi ou en fin de journée, 45 € pour les
+  adultes et 35 € pour les enfants, adhésion comprise. Ouvert à tous.
+coverImage: /src/assets/images/covers/seances-sans-engagement/coverImage.jpeg
+coverImageAlt: Séance de couture ponctuelle à l'Atelier des Cousettes
 introduction: >-
   Une séance ponctuelle pour coudre à votre rythme, avec l'accompagnement
-  d'Isabelle — 3 heures pour les adultes, 2 heures pour les enfants. Sans
+  d'Isabelle — 3 heures pour les adultes, 2 heures pour les enfants. Le
+  matin, l'après-midi ou en fin de journée, selon les créneaux. Sans
   engagement, ouvert à tous les niveaux.
-price: 40 €
 priceLabel: la séance
-duration: 3h
-durationLabel: d'accompagnement
 location: Revel et Verdalle
 locationLabel: dans le Tarn
-descriptionTitle: Comment se déroule un après-midi couture ?
+descriptionTitle: Comment se déroule une séance ?
 description: |
   Vous venez avec votre projet personnel — un vêtement à coudre, une retouche à faire, un accessoire à créer — et Isabelle vous accompagne pas à pas : choix du patron, coupe du tissu, assemblage, finitions. Si vous n'avez pas encore d'idée, elle peut vous proposer un petit projet adapté à votre niveau.
 
@@ -29,18 +27,12 @@ audienceItems:
   - Ceux qui n'ont pas la disponibilité pour un engagement hebdomadaire.
   - Les enfants accompagnés d'un parent souhaitant s'initier à la couture.
 datesTitle: Prochaines dates
-dates: |-
-  25 octobre
-  29 novembre
-  10 janvier
-  14 février
-  21 mars
-  16 mai
-  20 juin
+lienDates: Voir les dates
+lienDeroulement: Comment ça se passe
 datesNote: Sous réserve d'un nombre suffisant d'inscriptions.
 faqSectionTitle: Questions fréquentes
 faqItems:
-  - question: Quel est le tarif d'un après-midi couture ?
+  - question: Quel est le tarif d'une séance ?
     answer: >-
       45 € pour 3 heures d'atelier pour un adulte, 35 € pour 2 heures pour un
       enfant. L'adhésion ponctuelle à l'association Les P'tits Piafs est comprise
@@ -51,12 +43,12 @@ faqItems:
       accessoires et sa notice. Si vous n'avez pas de machine, Isabelle peut
       en prêter une sur demande préalable. Apportez également vos
       fournitures : tissu, fils, ciseaux, épingles.
-  - question: Où ont lieu les après-midi couture ?
+  - question: Où ont lieu les séances ?
     answer: >-
       À la maison des associations de Revel et à l'atelier privé d'Isabelle
       à Verdalle, dans le Tarn. Le lieu est précisé lors de l'inscription.
       Parking gratuit à proximité.
-  - question: Quels projets peut-on réaliser en 3 heures ?
+  - question: Quels projets peut-on réaliser en 2 à 3 heures ?
     answer: >-
       Selon votre niveau : une pochette, un tote bag, un ourlet, des
       retouches, ou commencer un projet plus ambitieux que vous poursuivrez
@@ -68,17 +60,19 @@ faqItems:
       C'est une excellente façon de découvrir la couture.
   - question: Quelle est la politique d'annulation ?
     answer: >-
-      L'inscription se fait au plus tard une semaine avant la date.
-      En cas d'empêchement, prévenez Isabelle le plus tôt possible.
-      Les ateliers ont lieu sous réserve d'un nombre suffisant d'inscriptions.
+      Vous pouvez libérer votre place jusqu'à 48 h avant la séance : elle ne
+      vous est pas comptée. Passé ce délai, la séance reste due. Prévenez
+      Isabelle dès que vous le savez — votre place profite alors à quelqu'un
+      d'autre, prévenu par e-mail. Les séances ont lieu sous réserve d'un
+      nombre suffisant d'inscriptions.
   - question: Comment s'inscrire ?
     answer: >-
-      Via le formulaire de contact ou par téléphone, au plus tard une semaine
-      avant la date. Les places sont limitées.
+      Pour une première venue, écrivez à Isabelle par le formulaire de
+      contact ou appelez-la. Elle vous inscrit et vous ouvre l'accès à votre
+      espace adhérent, où vous choisissez ensuite vos dates et les libérez
+      si besoin. Les places étant limitées, mieux vaut s'y prendre à
+      l'avance.
 crossLinksText: >-
   Envie d'un engagement régulier ? Découvrez nos ateliers réguliers. Pour
   apprendre une technique précise, consultez nos stages thématiques.
-schemaOffers:
-  - name: Après-midi couture (3h)
-    price: '40'
 ctaLabel: Demande d'information

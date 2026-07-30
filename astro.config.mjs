@@ -19,7 +19,7 @@ import { readFileSync, readdirSync } from 'node:fs';
  * Les pages prérendues ne s'en apercevaient pas : le lecteur n'y tourne qu'à la
  * construction. Mais toute page rendue à la requête récoltait `null`, avec deux
  * conséquences bien différentes selon la manière dont le code s'y attendait :
- * les pages /apercu/ levaient une erreur — 500 sans type de contenu, que le
+ * les pages lues en base levaient une erreur — 500 sans type de contenu, que le
  * navigateur mobile proposait de télécharger — tandis que Footer.astro et
  * ContactCTA.astro, qui écrivent `settings?.email`, se dégradaient en silence.
  * Le pied de page de tout l'espace membre avait ainsi perdu l'e-mail, les
@@ -63,12 +63,6 @@ export default defineConfig({
   site: SITE,
   adapter: vercel({ includeFiles: contenuKeystatic() }),
   integrations: [react(), markdoc(), keystatic(), sitemap({
-    // Les pages d'aperçu sont des doublons en cours de validation : elles
-    // affichent le même contenu que les pages publiées, à partir de la base.
-    // Les laisser dans le plan du site les ferait indexer comme du contenu
-    // dupliqué, et une page d'essai pourrait sortir en résultat de recherche
-    // avant la page réelle. Le noindex de chacune est la seconde barrière.
-    filter: (page) => !page.includes('/apercu/'),
     serialize(item) {
       const lastmod = blogLastmod.get(item.url);
       if (lastmod) item.lastmod = lastmod;
