@@ -75,6 +75,28 @@ const CALLOUT_DEFAULTS: Record<string, string> = {
 };
 
 const markdocConfig: Config = {
+  nodes: {
+    /*
+     * UN TABLEAU DÉFILE DANS SON PROPRE CADRE, JAMAIS LA PAGE.
+     *
+     * Markdoc rendait `<table>` nu. Tant qu'un seul article en portait un, de
+     * trois colonnes, cela ne se voyait pas ; à cinq colonnes sur un téléphone,
+     * le tableau pousse la largeur du document et c'est la PAGE ENTIÈRE qui se
+     * met à défiler de côté — titres et paragraphes compris.
+     *
+     * L'enveloppe règle cela sans toucher au tableau lui-même : elle porte le
+     * défilement horizontal, le tableau garde sa mise en page de tableau. Les
+     * bordures et l'alternance de fond, elles, sont dans `.prose table`.
+     */
+    table: {
+      ...Markdoc.nodes.table,
+      transform(node, config) {
+        return new Tag('div', { class: 'markdoc-table' }, [
+          new Tag('table', {}, node.transformChildren(config)),
+        ]);
+      },
+    },
+  },
   tags: {
     ctaButton: {
       selfClosing: true,

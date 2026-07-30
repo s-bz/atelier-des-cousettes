@@ -117,6 +117,55 @@
   margin-bottom: 0.25rem;
 }
 
+/*
+ * Les tableaux comparatifs des articles.
+ *
+ * `.markdoc-table` est l'enveloppe posée par le rendu Markdoc : c'est ELLE qui
+ * défile, pas la page. Sans elle, un tableau de cinq colonnes élargit le
+ * document sur un téléphone et met tout l'article de travers.
+ */
+.markdoc-table {
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+  /* Le filet indique qu'il reste quelque chose à droite quand ça déborde. */
+  border: 1px solid var(--color-border-prominent);
+  border-radius: var(--radius-xl);
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  /* Sous cette largeur les colonnes se compriment au point d'être illisibles ;
+     au-delà, l'enveloppe prend le relais et fait défiler. */
+  min-width: 34rem;
+}
+
+.prose thead th {
+  background-color: var(--color-bg-accent);
+  font-weight: 700;
+  text-align: left;
+  color: var(--color-heading);
+}
+
+.prose th,
+.prose td {
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+/* La première colonne porte l'entrée de lecture — un tissu, une mesure, une
+   machine. La détacher permet de balayer le tableau par la gauche. */
+.prose tbody td:first-child {
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.prose tbody tr:last-child td {
+  border-bottom: 0;
+}
+
 .prose em {
   font-style: italic;
 }
