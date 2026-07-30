@@ -193,9 +193,10 @@ const inconnuEnBase = (nom: string) => !parNom.has(nom.trim().toLowerCase());
               <CalendrierCreneau
                 seances={datesDe(c.name)}
                 erreur={Boolean(error)}
+                contact={!inconnuEnBase(c.name)}
                 vide={inconnuEnBase(c.name)
                   ? 'Ce créneau n’existe pas encore en base — à créer avant la bascule.'
-                  : 'Aucune date programmée pour l’instant — me contacter.'}
+                  : 'Aucune date programmée pour l’instant.'}
               />
             </div>
           </div>
