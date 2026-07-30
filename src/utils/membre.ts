@@ -138,7 +138,12 @@ export async function libererPlace(
   const personne = (cible as any).participants;
   const seance = (cible as any).sessions;
   if (seance) {
-    await notifier('liberation', personne?.accounts?.email, variablesSeance({
+    // Deux gabarits, parce que les deux issues ne se ressemblent pas : l'un
+    // annonce que la séance revient au solde, l'autre qu'elle reste due.
+    // Envoyer le premier après un désistement tardif serait un mensonge que la
+    // facturation démentirait.
+    await notifier(tardif ? 'liberation_tardive' : 'liberation',
+      personne?.accounts?.email, variablesSeance({
       prenom: personne?.first_name ?? '',
       starts_at: seance.starts_at,
       ends_at: seance.ends_at,

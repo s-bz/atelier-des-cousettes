@@ -365,7 +365,11 @@ const debut = new Date(seance.starts_at);
     <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">Personne pour l’instant.</p>
   ) : (
     <ul class="space-y-2">
-      {(reservations ?? []).map((r: any) => (
+      {/* `inscrits` et non `reservations` : depuis la liste d'attente, cette
+          dernière porte aussi les personnes en attente, qui ont leur propre
+          section plus bas. Les afficher ici les montrait deux fois, en
+          contredisant le compte affiché juste au-dessus. */}
+      {inscrits.map((r: any) => (
         <li class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
           <span class="font-medium text-[var(--color-heading)]">
             {r.participants?.first_name} {r.participants?.last_name}
