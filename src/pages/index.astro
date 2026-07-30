@@ -35,19 +35,30 @@ if (!settings) throw new Error('Site settings not found');
 const tarifs = await lireTarifs();
 const forfaitMin = forfaitLePlusBas(ateliers?.tarifs);
 
-/** Le prix mis en avant sur chaque carte, par destination. */
+/**
+ * Du forfait le plus bas au stage le plus cher — la fourchette de tout ce que
+ * propose l'atelier. C'est elle qui remplace les nombres des phrases qui
+ * l'annoncent : « Tarifs accessibles » et la description SEO.
+ */
 const fourchetteToutesFormules =
   forfaitMin && tarifs?.stages ? `De ${forfaitMin} € à ${tarifs.stages.max} €` : null;
 
+/**
+ * Le prix mis en avant sur chaque carte, par destination.
+ *
+ * « Dès » et le montant le plus bas, partout : une carte se parcourt du coin de
+ * l'œil, et le seul chiffre qu'on y cherche est celui à partir duquel on entre.
+ * Une fourchette y demande de lire deux nombres pour n'en retenir qu'un ; le
+ * détail — les deux publics, les deux formules — attend sur la page, à un clic.
+ */
 const prixParPage: Record<string, string | null> = {
   '/ateliers-reguliers/': forfaitMin ? `Dès ${forfaitMin} €/mois` : null,
-  '/stages-thematiques/': tarifs?.stages ? `De ${tarifs.stages.min} € à ${tarifs.stages.max} €` : null,
-  // Deux publics, deux prix : « dès » serait exact et pourtant trompeur pour
-  // l'adulte, qui n'aura jamais le tarif enfant.
-  '/seances-sans-engagement/':
-    tarifs?.seance.adultes && tarifs.seance.enfants
-      ? `${tarifs.seance.adultes} € ou ${tarifs.seance.enfants} € la séance`
-      : null,
+  '/stages-thematiques/': tarifs?.stages ? `Dès ${tarifs.stages.min} €` : null,
+  '/seances-sans-engagement/': (() => {
+    // Le tarif enfant est le plus bas des deux : c'est lui qui ouvre la porte.
+    const prix = [tarifs?.seance.adultes, tarifs?.seance.enfants].filter((n): n is number => !!n);
+    return prix.length ? `Dès ${Math.min(...prix)} € la séance` : null;
+  })(),
 };
 
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
