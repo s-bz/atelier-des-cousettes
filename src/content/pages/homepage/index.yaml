@@ -23,7 +23,7 @@ serviceCards:
     href: /stages-thematiques/
     image: /src/assets/images/homepage/serviceCards/1/image.jpg
     imageAlt: Stages thématiques
-    priceRange: De 40 € à 90 €
+    priceRange: De 45 € à 95 €
     shortDescription: 'Apprenez une technique précise : machine à coudre, surjeteuse, patronage.'
   - label: Un après-midi couture
     href: /un-apres-midi-couture/
@@ -50,7 +50,7 @@ valuePropositions:
       après-midi couture sans engagement. Il y a forcément une formule qui vous
       correspond.
   - title: Tarifs accessibles
-    description: De 25 € à 90 € selon la formule choisie, tissu et fournitures non compris.
+    description: De 25 € à 95 € selon la formule choisie, tissu et fournitures non compris.
   - title: Deux lieux de cours
     description: >-
       À la maison des associations de Revel et à l'atelier privé de Verdalle,
