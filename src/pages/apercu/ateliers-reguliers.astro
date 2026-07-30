@@ -209,9 +209,12 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
     </p>
   </div>
 
-  {page.introduction && (
-    <IntroSection text={page.introduction} ctaLabel={page.ctaLabel} />
-  )}
+  {/*
+    Pas de bouton sous l'introduction : la page en compte déjà cinq plus bas, un
+    par lieu puis sous les tarifs et la FAQ. Celui-ci arrivait avant qu'on ait lu
+    de quoi décider — et un bouton répété six fois cesse d'être remarqué.
+  */}
+  {page.introduction && <IntroSection text={page.introduction} cta={false} />}
 
   {groupes.length > 0 && (
     <section class="py-16 md:py-20">
