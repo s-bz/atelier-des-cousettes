@@ -186,13 +186,38 @@ Les `schemaOffers` restent Keystatic : les forfaits n'existent pas en base.
 | Affiché | Source |
 | --- | --- |
 | nom | `creneaux` où `kind = 'stage'` |
-| prix | `fourchetteDePrix` sur `unit_price_cents` |
-| durée | `fourchetteDeDurees` sur `ends_at − starts_at` |
+| prix, durée | voir la règle ci-dessous |
 | dates (« Samedi 10 janvier de 14h à 17h ») | vue |
 | description courte, description longue, prérequis | Keystatic |
 | FAQ, introduction, liens croisés | Keystatic |
 
-Les `schemaOffers` se déduisent des prix en base au lieu d'être retapés.
+**Le prix et la durée d'un stage se lisent à deux endroits différents selon
+`seances_par_stage`**, et c'est la subtilité principale de cette page.
+
+_Stage au forfait — `seances_par_stage > 1`._ Les dates se vendent ensemble. Le
+prix du forfait est porté par `creneaux.default_unit_price_cents` (90 €, 65 €,
+65 €) et **les séances valent 0 €**, pour qu'aucune addition ne facture deux
+fois le même stage. Lire le prix sur les séances afficherait donc « 0 € ».
+La durée est la somme des `seances_par_stage` **premières** dates — c'est le
+« 90 € pour 7 h » qu'annonce Isabelle — et non de toutes : un forfait proposé
+deux fois dans la saison ne dure pas le double. La logique existe déjà, sous le
+nom `heuresDuStage()`, dans `src/pages/espace-membre/admin/creneaux/index.astro` ;
+elle rejoint `catalogue.ts` plutôt que d'être recopiée.
+
+Les dates s'affichent par blocs de `seances_par_stage`, dans l'ordre, et jamais
+comme des dates indépendantes : les trois matinées du stage découverte forment
+une progression — prise en main, tote-bag, trousse — et proposer d'en choisir
+une seule serait faux.
+
+_Stage à l'unité — `seances_par_stage = 1`._ Chaque date est une offre à part
+entière, à `sessions.unit_price_cents`, et ce prix **varie d'une date à
+l'autre** : « Initiation machine à coudre » vaut 40 € pour 3 h le samedi, 33 €
+pour 2 h 30 les jeudis soir. Le badge de la carte porte la fourchette
+(« 33 €–40 € », « 2h30–3h ») et chaque date affiche son propre prix et sa
+propre durée. Les rabattre sur une valeur unique reviendrait à annoncer un
+tarif que le visiteur ne paiera pas.
+
+Les `schemaOffers` se déduisent de ces mêmes prix au lieu d'être retapés.
 
 ### Page 3 — Un après-midi couture
 
@@ -204,8 +229,8 @@ un enfant.
 
 | Affiché | Source |
 | --- | --- |
-| badge prix (« 30 €–40 € ») | `fourchetteDePrix` sur les séances d'atelier |
-| badge durée (« 2h–3h ») | `fourchetteDeDurees` |
+| badge prix (« 30 €–40 € ») | `fourchette` sur `unit_price_cents` des séances d'atelier |
+| badge durée (« 2h–3h ») | `fourchette` sur `ends_at − starts_at` |
 | badge lieu (« Revel et Verdalle ») | lieux distincts des séances |
 | dates adultes, à 40 € | séances des créneaux `kind='atelier'`, `audience='adultes'` |
 | dates enfants, à 30 € | séances des créneaux `kind='atelier'`, `audience='enfants'` |
@@ -252,10 +277,16 @@ différentes n'apporterait rien.
 
 - regroupement par mois, dans l'ordre chronologique et non alphabétique ;
 - effondrement d'une fourchette : une seule valeur donne « 40 € », plusieurs
-  donnent « 40 €–90 € » ;
+  donnent « 33 €–40 € » ;
 - formatage des prix, y compris un montant à centimes ;
 - formatage d'une séance à cheval sur le changement d'heure, pour vérifier que
-  `Europe/Paris` est bien appliqué et non l'heure du serveur.
+  `Europe/Paris` est bien appliqué et non l'heure du serveur ;
+- `prixDuStage` : un stage au forfait rend le prix du créneau et **jamais**
+  « 0 € », un stage à l'unité rend la fourchette de ses séances ;
+- `dureeDuStage` : un forfait de trois matinées proposé deux fois dans la saison
+  rend 7 h, et non 14 h ;
+- `blocsDeStage` : six dates et `seances_par_stage = 3` donnent deux blocs de
+  trois, chronologiques.
 
 L'assemblage `chargerCatalogue()` n'est pas testé contre une vraie base : la
 vérification passe par les pages d'aperçu, qui existent pour ça.
@@ -267,5 +298,14 @@ vérification passe par les pages d'aperçu, qui existent pour ça.
 | SSR plutôt que lecture au build | Isabelle voit ses modifications sans attendre le rebuild de 8 h. Le cache CDN absorbe le risque. |
 | Aucune donnée de disponibilité en public | Décidé après coup : ni compteur, ni « complet ». La vue ne lit donc jamais `bookings`. |
 | Pages d'aperçu non indexées | Isabelle valide sur des URL réelles sans exposer un état intermédiaire au référencement. |
-| Vue SQL plutôt que jointures dans le code | Un seul aller-retour, et le filtrage (futur, non annulé, non archivé) est écrit à un seul endroit. |
-| `creneauId` explicite | Un rapprochement par le nom casserait silencieusement au premier renommage. |
+| Vue SQL plutôt que jointures dans le code | Le filtrage (futur, non annulé, non archivé) est écrit à un seul endroit. |
+| `creneauIds` explicite, et une liste | Un rapprochement par le nom casserait au premier renommage ; « Stage découverte » est déjà un texte pour deux créneaux. |
+| Prix du stage lu selon `seances_par_stage` | Les séances d'un forfait valent 0 € en base pour ne pas se cumuler ; les lire afficherait « 0 € » au public. |
+
+## 11. Dépendance
+
+Cette spécification suppose acquis le travail en cours sur la branche
+`feat/stages-reservables` : la colonne `creneaux.seances_par_stage`
+(`20260730063312_seances_par_stage.sql`, non encore commitée à la rédaction de
+ce document) et le portage du prix de forfait sur le créneau par
+`scripts/seed-stages.mjs`. Le § 6 de la page 2 n'a pas de sens sans elles.
