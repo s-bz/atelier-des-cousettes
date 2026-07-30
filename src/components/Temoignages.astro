@@ -93,11 +93,17 @@ const defilable = retenus.length > 1;
             aria-label="Témoignages"
           >
             {retenus.map((t) => (
-              <figure class="w-[85%] shrink-0 snap-start rounded-xl bg-white p-5 shadow-md sm:w-[48%] md:w-[31.5%] dark:bg-[var(--color-card-bg)]">
+              <figure class="flex w-[85%] shrink-0 snap-start flex-col rounded-xl bg-white p-5 shadow-md sm:w-[48%] md:w-[31.5%] dark:bg-[var(--color-card-bg)]">
                 <blockquote class="text-sm leading-relaxed text-[var(--color-text)]">
                   « {t.entry.texte} »
                 </blockquote>
-                <figcaption class="mt-4 text-sm font-medium text-[var(--color-heading)]">
+                {/*
+                    Les cartes s'alignent sur la plus haute — c'est ce qui
+                    tient la ligne droite dans un carrousel. L'attribution
+                    descend donc en pied plutôt que de flotter au milieu d'un
+                    vide, sous un avis de deux lignes voisin d'un avis de dix.
+                  */}
+                <figcaption class="mt-auto pt-4 text-sm font-medium text-[var(--color-heading)]">
                   {t.entry.auteur}
                   {t.entry.lieu && (
                     <span class="font-normal text-[var(--color-text-light)]">, {t.entry.lieu}</span>
