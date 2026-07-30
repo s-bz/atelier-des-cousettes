@@ -250,7 +250,12 @@ const SECTIONS = [
             <div>
               <label for={`n-prix-${section.kind}`} class="block text-sm font-medium mb-1">{section.libellePrix}</label>
               <input id={`n-prix-${section.kind}`} name="prix" type="number" min="0" step="0.01" required
-                     value={section.kind === 'stage' ? '40.00' : '25.00'} class="champ" />
+                     value="40.00" class="champ" />
+              {section.kind === 'atelier' && (
+                <p class="mt-1 text-sm text-[var(--color-text-light)]">
+                  40 € pour un adulte, 30 € pour un enfant.
+                </p>
+              )}
             </div>
           </div>
 
