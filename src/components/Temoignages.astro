@@ -105,12 +105,21 @@ const defilable = retenus.length > 1;
             aria-label="Témoignages"
           >
             {retenus.map((t) => (
-              <figure class="flex w-[85%] shrink-0 snap-start flex-col rounded-xl bg-white p-5 shadow-md sm:w-[48%] md:w-[31.5%] dark:bg-[var(--color-card-bg)]">
+              <figure class="relative flex w-[85%] shrink-0 snap-start flex-col rounded-xl bg-white p-5 shadow-md sm:w-[48%] md:w-[31.5%] dark:bg-[var(--color-card-bg)]">
                 {/*
                   ICI LES ÉTOILES PORTENT L'INFORMATION, et non plus la
                   décoration : aucun chiffre ne les accompagne. Elles sont donc
                   annoncées aux lecteurs d'écran, contrairement à celles du
                   bandeau où la note est écrite juste à côté.
+
+                  LA CARTE EST `relative` À CAUSE DE CE `sr-only`. Le texte de
+                  substitution est en `position: absolute` ; sans repère sur la
+                  carte, son bloc conteneur devenait le cadre du carrousel — hors
+                  de la piste, donc hors de ce qu'elle découpe. Les six textes se
+                  posaient alors à l'abscisse de leur carte, y compris celles qui
+                  attendent à 1 800 px, et la PAGE ENTIÈRE prenait 558 px de large
+                  en trop. Un défilement horizontal parasite sur tout le site,
+                  pour six mots que personne ne voit.
                 */}
                 {t.entry.note && (
                   <p class="mb-3 text-sm tracking-wide text-[var(--color-button)]">
@@ -191,7 +200,25 @@ const defilable = retenus.length > 1;
   for (const groupe of document.querySelectorAll<HTMLElement>('.temoignages-fleches')) {
     const piste = groupe.parentElement?.querySelector<HTMLElement>('.temoignages-piste');
     if (!piste) continue;
-    groupe.classList.replace('hidden', 'flex');
+
+    /*
+     * ON N'AFFICHE LES FLÈCHES QUE SI LA PISTE DÉBORDE VRAIMENT.
+     *
+     * Et non « s'il y a plus de trois avis » : le compte ne décide de rien. Trois
+     * cartes tiennent côte à côte sur un écran large — les flèches n'y auraient
+     * rien à faire — mais une seule tient sur un téléphone, où elles servent.
+     * C'est donc une question de largeur, qui change quand on tourne l'appareil
+     * ou qu'on redimensionne la fenêtre : d'où le réexamen à chaque changement
+     * de taille plutôt qu'une décision prise une fois pour toutes au chargement.
+     */
+    const ajuster = () => {
+      const deborde = piste.scrollWidth > piste.clientWidth + 1;
+      groupe.classList.toggle('hidden', !deborde);
+      groupe.classList.toggle('flex', deborde);
+    };
+    ajuster();
+    new ResizeObserver(ajuster).observe(piste);
+
     for (const bouton of groupe.querySelectorAll<HTMLElement>('button')) {
       bouton.addEventListener('click', () => {
         const carte = piste.firstElementChild as HTMLElement | null;
