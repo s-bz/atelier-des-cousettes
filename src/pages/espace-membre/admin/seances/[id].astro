@@ -210,6 +210,22 @@ if (Astro.request.method === 'POST') {
   // ce n'est pas un autre écran qui le dit, c'est le libellé du bouton. Envoyer
   // Isabelle sur la fiche du stage l'obligeait à savoir de quel type de stage il
   // s'agissait avant de savoir quel écran ouvrir.
+  // Donner sa place à quelqu'un de la liste d'attente, sans attendre qu'une se
+  // libère. book_participant convertit sa ligne existante plutôt que d'en poser
+  // une seconde, que l'index unique refuserait.
+  if (action === 'promouvoir') {
+    const { error } = await supabase.rpc('book_participant', {
+      p_session: id,
+      p_participant: String(form.get('participant') ?? ''),
+      p_source: 'admin',
+      p_forcer: form.get('forcer') === 'on',
+    });
+    if (error) erreur = error.message;
+    else message = form.get('forcer') === 'on'
+      ? 'Inscrit au-delà des places, depuis la liste d’attente.'
+      : 'Inscrit : la place lui a été donnée.';
+  }
+
   if (action === 'inscrire' || action === 'retirer-stage') {
     const { data: type } = await supabase
       .from('sessions')
@@ -480,7 +496,23 @@ const debut = new Date(seance.starts_at);
             <span class="font-medium text-[var(--color-heading)]">
               {r.participants?.first_name} {r.participants?.last_name}
             </span>
-            <form method="post" class="ml-auto">
+            {/*
+              Donner la place directement, sans attendre qu'une se libère.
+              Sans ce geste, quelqu'un déjà en attente était hors de portée :
+              le sélecteur d'inscription l'exclut — il a déjà une ligne — et
+              « Inscrire au-delà des places » ne pouvait donc pas le viser.
+            */}
+            <form method="post" class="ml-auto flex flex-wrap items-center gap-x-3">
+              <input type="hidden" name="action" value="promouvoir" />
+              <input type="hidden" name="participant" value={r.participants?.id} />
+              {etatInscription !== 'libre' && <input type="hidden" name="forcer" value="on" />}
+              <button type="submit"
+                      class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-1.5 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-bg-accent)]">
+                {etatInscription === 'libre' ? 'Donner la place' : 'Donner la place au-delà'}
+              </button>
+            </form>
+
+            <form method="post">
               <input type="hidden" name="action" value="liberer" />
               <input type="hidden" name="booking" value={r.id} />
               <button type="submit" class="text-sm text-[var(--color-button)] underline">
