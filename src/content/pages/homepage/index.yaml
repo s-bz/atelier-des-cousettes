@@ -1,11 +1,12 @@
 title: L'Atelier des Cousettes
-subtitle: Cours de couture à Revel et Verdalle (Tarn)
+subtitle: Cours de couture en petits groupes à Revel et Verdalle, à 20 min de Castres
 seoTitle: Cours de couture à Revel et Verdalle, près de Castres
 seoDescription: >-
   Cours de couture, ateliers et stages à Revel et Verdalle (Tarn), à 20 minutes
   de Castres. Tous niveaux, petits groupes, de 25€ à 90€. Avec Isabelle,
   couturière diplômée CAP.
 coverImage: /src/assets/images/covers/homepage/coverImage.jpeg
+heroLinkLabel: Voir les formules
 introductionTitle: Le plaisir de coudre dans le Tarn
 introduction: >-
   Vous désirez créer vos propres vêtements, maîtriser votre machine à coudre ou
@@ -33,6 +34,10 @@ serviceCards:
     shortDescription: >-
       Sans engagement, avancez sur votre projet personnel avec l'aide
       d'Isabelle.
+orientationText: >-
+  Vous ne savez pas par où commencer ? Venez d'abord pour une séance sans
+  engagement, à 45 €. Si le courant passe, le forfait de la saison s'ouvre
+  ensuite.
 valuePropositionsTitle: Pourquoi choisir L'Atelier des Cousettes ?
 valuePropositions:
   - title: Petits groupes
@@ -46,9 +51,9 @@ valuePropositions:
       couturiers confirmés souhaitant se perfectionner, chacun trouve sa place.
   - title: Des formules pour tous
     description: >-
-      Ateliers réguliers hebdomadaires, stages thématiques ponctuels ou
-      séances de couture sans engagement. Il y a forcément une formule qui vous
-      correspond.
+      Ateliers réguliers une à deux fois par mois, stages thématiques ponctuels
+      ou séances de couture sans engagement. Il y a forcément une formule qui
+      vous correspond.
   - title: Tarifs accessibles
     description: De 25 € à 95 € selon la formule choisie, tissu et fournitures non compris.
   - title: Deux lieux de cours

@@ -2,6 +2,7 @@
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Analytics from '@vercel/analytics/astro';
+import { lienContact } from '../utils/origine';
 import '../styles/global.css';
 
 // Mesure d'audience PostHog. Le préfixe PUBLIC_ est nécessaire ici — contrairement
@@ -119,7 +120,7 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
 
     <!-- Floating contact button (links to /contact, upgraded to Tally popup if script loads) -->
     <a
-      href="/contact/"
+      href={lienContact(pathname)}
       data-tally-fallback
       aria-label="Nous contacter"
       class="floating-contact-btn fixed bottom-6 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-[var(--radius-button)] bg-[var(--color-button)] text-white font-medium text-sm shadow-lg transition-all hover:bg-[var(--color-button-hover)] hover:scale-105 hover:shadow-xl no-underline"

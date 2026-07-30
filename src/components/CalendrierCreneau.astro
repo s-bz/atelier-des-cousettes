@@ -1,4 +1,6 @@
 ---
+import { lienContact } from '../utils/origine';
+
 interface Seance {
   starts_at: string;
   ends_at: string;
@@ -149,7 +151,7 @@ const heures = !(heuresEnTete && creneauxHoraires.size === 1);
       <Fragment>
         {' '}
         <a
-          href="/contact/"
+          href={lienContact(Astro.url.pathname)}
           data-tally-fallback
           class="font-medium text-[var(--color-button)] underline"
         >

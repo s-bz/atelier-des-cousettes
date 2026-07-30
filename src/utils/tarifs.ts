@@ -90,6 +90,22 @@ export function remplacerFourchette(texte: string, nouvelle: string | null): str
 }
 
 /**
+ * Remplace un montant unique déjà écrit dans une phrase du CMS.
+ *
+ * Même principe que `remplacerFourchette`, pour les phrases qui n'annoncent
+ * qu'un prix — « venez d'abord pour une séance sans engagement (45 €) ». La
+ * phrase appartient à Isabelle, le nombre à la base.
+ *
+ * SEULE LA PREMIÈRE OCCURRENCE EST TOUCHÉE : une phrase d'orientation cite un
+ * tarif d'appel, pas une grille. Remplacer partout ferait de « 45 € la séance,
+ * 360 € la saison » deux fois le même montant.
+ */
+export function remplacerPrix(texte: string, prix: number | null | undefined): string {
+  if (!prix) return texte;
+  return texte.replace(/\d+(?:[.,]\d+)?\s*€/, `${prix} €`);
+}
+
+/**
  * La grille des forfaits, telle que le CMS la porte.
  *
  * On lit le nombre dans « 28 € par mois » plutôt que d'ajouter un champ : le
@@ -97,20 +113,48 @@ export function remplacerFourchette(texte: string, nouvelle: string | null): str
  * exactement ce que ce fichier cherche à supprimer.
  */
 type GrilleTarifs =
-  | readonly { readonly formules?: readonly { readonly mensuel?: string | null }[] | null }[]
+  | readonly {
+      readonly audience?: string | null;
+      readonly formules?: readonly { readonly mensuel?: string | null }[] | null;
+    }[]
   | null
   | undefined;
 
-function montantsMensuels(tarifs: GrilleTarifs): number[] {
+function montantsMensuels(tarifs: GrilleTarifs, audience?: string): number[] {
   return (tarifs ?? [])
+    .filter((t) => !audience || t.audience === audience)
     .flatMap((t) => t.formules ?? [])
     .map((f) => Number(f.mensuel?.match(/\d+/)?.[0]))
     .filter((n) => Number.isFinite(n) && n > 0);
 }
 
-export function forfaitLePlusBas(tarifs: GrilleTarifs): number | null {
-  const montants = montantsMensuels(tarifs);
+export function forfaitLePlusBas(tarifs: GrilleTarifs, audience?: string): number | null {
+  const montants = montantsMensuels(tarifs, audience);
   return montants.length ? Math.min(...montants) : null;
+}
+
+/**
+ * Le prix d'appel d'une carte, quand deux publics n'ont pas le même tarif.
+ *
+ * « DÈS 28 € » ÉTAIT UN PRIX D'ENFANT. Les cartes affichaient le plus bas des
+ * montants, tous publics confondus : 28 €/mois pour les ateliers, 35 € pour une
+ * séance. Un adulte qui cliquait découvrait 36 € et 45 €. L'écart n'est pas une
+ * variante de formule qu'on découvre à la lecture — c'est un autre public, et
+ * la carte ne disait pas lequel.
+ *
+ * L'ancrage bas est conservé, mais il annonce désormais à qui il s'adresse :
+ * le tarif adulte ouvre, le tarif enfant suit entre parenthèses. Si l'un des
+ * deux manque, la phrase se réduit à celui qui reste plutôt que d'inventer une
+ * parenthèse vide.
+ */
+export function prixDeuxPublics(
+  adultes: number | null | undefined,
+  enfants: number | null | undefined,
+  suffixe = '',
+): string | null {
+  if (!adultes) return enfants ? `Dès ${enfants} €${suffixe}` : null;
+  if (!enfants || enfants === adultes) return `Dès ${adultes} €${suffixe}`;
+  return `Dès ${adultes} €${suffixe} (${enfants} € enfant)`;
 }
 
 /** « De 28€ à 58€ » — du forfait le plus bas au plus élevé de la grille. */

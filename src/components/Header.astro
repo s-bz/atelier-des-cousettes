@@ -1,7 +1,31 @@
 ---
 import { navLinks } from '../utils/navLinks';
+import { reader } from '../utils/reader';
 
 const currentPath = Astro.url.pathname;
+
+/*
+ * DE QUOI AGIR SANS AVOIR À DÉROULER LA PAGE.
+ *
+ * La barre ne portait que des liens de rubrique : ni contact, ni téléphone. Le
+ * numéro vivait au pied de page et sous un seul bouton, celui de la FAQ — cinq
+ * écrans plus bas pour qui arrive de la fiche Google décidé à appeler.
+ *
+ * UN BOUTON, PAS UN SEPTIÈME LIEN. Les six existants saturent déjà la ligne au
+ * point que la navigation se replie dès `xl` ; en ajouter un de plus avancerait
+ * ce repli sans rien mettre en avant.
+ *
+ * L'ICÔNE DE TÉLÉPHONE NE PARAÎT QU'EN DESSOUS DE `xl`, à côté du menu replié.
+ * Au-delà, le bouton suffit : on ne compose pas un numéro depuis un ordinateur
+ * de bureau, et l'icône y prendrait la place sans servir.
+ */
+const settings = await reader.singletons.siteSettings.read();
+
+const ctaLabel = settings?.headerCtaLabel?.trim();
+// Le mobile d'abord — c'est le seul des deux numéros qu'on puisse appeler d'un doigt.
+const mobile = settings?.phones?.[0];
+const telHref = mobile ? `tel:${mobile.replace(/[-.\s]/g, '')}` : null;
+const telLabel = [settings?.headerPhoneLabel?.trim(), mobile].filter(Boolean).join(' ');
 ---
 
 <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-[var(--color-button)] focus:text-white focus:rounded-[var(--radius-button)] focus:text-sm focus:font-medium">
@@ -32,17 +56,40 @@ const currentPath = Astro.url.pathname;
       ))}
     </ul>
 
-    <!-- Mobile hamburger -->
-    <button
-      id="menu-toggle"
-      class="xl:hidden p-2 -mr-2 text-[var(--color-heading)]"
-      aria-label="Menu"
-      aria-expanded="false"
-    >
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path id="menu-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    </button>
+    <div class="flex items-center gap-1 sm:gap-2">
+      {ctaLabel && (
+        <a
+          href="/contact/"
+          class="header-cta hidden sm:inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-5 py-2 text-sm font-medium text-white no-underline transition-colors hover:bg-[var(--color-button-hover)]"
+        >
+          {ctaLabel}
+        </a>
+      )}
+
+      {telHref && (
+        <a
+          href={telHref}
+          class="xl:hidden rounded-[var(--radius-button)] p-2 text-[var(--color-button)] transition-colors hover:bg-[var(--color-bg-accent)]"
+          aria-label={telLabel}
+        >
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
+          </svg>
+        </a>
+      )}
+
+      <!-- Mobile hamburger -->
+      <button
+        id="menu-toggle"
+        class="xl:hidden p-2 -mr-2 text-[var(--color-heading)]"
+        aria-label="Menu"
+        aria-expanded="false"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path id="menu-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
   </nav>
 
   <!-- Mobile menu -->
@@ -63,6 +110,25 @@ const currentPath = Astro.url.pathname;
           </a>
         </li>
       ))}
+      {/*
+        Le contact ferme la liste plutôt que de l'ouvrir : on déroule le menu
+        pour aller quelque part, pas pour écrire. Il est là pour celui qui a
+        parcouru les six rubriques sans trouver sa réponse — et pour les écrans
+        les plus étroits, où le bouton de la barre s'efface.
+      */}
+      {ctaLabel && (
+        <li class="border-t border-[var(--color-border)] pt-2 mt-2">
+          <a
+            href="/contact/"
+            class:list={[
+              'block py-2.5 text-sm font-semibold transition-colors hover:text-[var(--color-heading)]',
+              currentPath === '/contact/' ? 'text-[var(--color-heading)]' : 'text-[var(--color-button)]',
+            ]}
+          >
+            {ctaLabel}
+          </a>
+        </li>
+      )}
     </ul>
   </div>
 </header>

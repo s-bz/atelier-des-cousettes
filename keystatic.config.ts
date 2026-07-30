@@ -89,6 +89,33 @@ export default config({
         defaultCtaLabel: fields.text({ label: 'Libellé CTA par défaut' }),
 
         /*
+         * LE BOUTON DE LA BARRE DE NAVIGATION, ET SON LIBELLÉ À PART.
+         *
+         * Court, parce qu'il partage une ligne avec six liens : « Demande
+         * d'information » y tiendrait sur deux lignes et pousserait la
+         * navigation au repli plus tôt qu'aujourd'hui. C'est la seule raison
+         * pour laquelle il ne réutilise pas le libellé par défaut.
+         *
+         * Vide, le bouton disparaît — de la barre comme du menu replié.
+         */
+        headerCtaLabel: fields.text({
+          label: 'Bouton de la barre de navigation — vide pour masquer',
+          description: 'Deux mots au plus : il partage sa ligne avec les liens du menu.',
+        }),
+
+        /*
+         * CE QU'ANNONCE L'ICÔNE DE TÉLÉPHONE aux lecteurs d'écran.
+         *
+         * L'icône ne porte aucun texte visible — il n'y a pas la place à côté du
+         * menu replié. Sans cette phrase, un lecteur d'écran n'annoncerait que
+         * le numéro, sans dire ce qu'on en fait.
+         */
+        headerPhoneLabel: fields.text({
+          label: 'Texte de l’icône téléphone (lecteurs d’écran)',
+          description: 'Le numéro est ajouté automatiquement à la suite.',
+        }),
+
+        /*
          * LA NOTE GOOGLE, RECOPIÉE ET NON LUE EN DIRECT.
          *
          * L'API Places la donnerait à la requête, au prix d'une clé, d'un quota
@@ -136,6 +163,20 @@ export default config({
         }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         ...coverImageFields('homepage'),
+        /*
+         * LE SEUL GESTE PROPOSÉ DANS L'IMAGE DE COUVERTURE.
+         *
+         * Le héros n'en offrait aucun : il fallait faire défiler deux écrans sur
+         * un téléphone avant de rencontrer le premier bouton. Ce lien-ci ne
+         * demande pas d'écrire — il descend aux formules — et ne concurrence
+         * donc pas les boutons de contact plus bas.
+         *
+         * Vide, il ne s'affiche pas.
+         */
+        heroLinkLabel: fields.text({
+          label: 'Lien dans l’image de couverture — vide pour masquer',
+          description: 'Descend jusqu’aux trois formules. Ex. : « Voir les formules ».',
+        }),
         introductionTitle: fields.text({ label: 'Titre section introduction' }),
         introduction: fields.text({ label: 'Introduction (paragraphe 1)', multiline: true }),
         introduction2: fields.text({ label: 'Introduction (paragraphe 2)', multiline: true }),
@@ -157,6 +198,27 @@ export default config({
             itemLabel: (props) => props.fields.label.value || 'Carte',
           },
         ),
+        /*
+         * LA PHRASE QUI DÉSIGNE UNE PORTE PARMI TROIS.
+         *
+         * Les trois cartes se valent, et c'est le problème : le débutant qui ne
+         * sait pas choisir entre elles ne choisit rien. « Il y a forcément une
+         * formule qui vous correspond » l'affirme sans l'aider ; cette ligne-ci
+         * nomme celle par où commencer, la moins engageante des trois.
+         *
+         * LE MONTANT QU'ELLE CONTIENT EST RELU EN BASE avant affichage, comme
+         * partout ailleurs sur cette page : une phrase d'orientation qui
+         * annoncerait un prix périmé enverrait vers une page qui la dément.
+         * Écrivez le tarif du jour, il sera corrigé tout seul s'il change.
+         *
+         * Vide, la ligne ne s'affiche pas.
+         */
+        orientationText: fields.text({
+          label: 'Ligne « par où commencer » — vide pour masquer',
+          description:
+            'Affichée sous les trois cartes. Le premier montant écrit est remplacé par le prix d’une séance adulte lu en base.',
+          multiline: true,
+        }),
         valuePropositionsTitle: fields.text({ label: 'Titre section « Pourquoi nous choisir »' }),
         valuePropositions: fields.array(
           fields.object({

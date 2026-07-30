@@ -11,7 +11,13 @@ import Temoignages from '../components/Temoignages.astro';
 import { reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { filterPublishedPosts } from '../utils/blog';
-import { forfaitLePlusBas, lireTarifs, remplacerFourchette } from '../utils/tarifs';
+import {
+  forfaitLePlusBas,
+  lireTarifs,
+  prixDeuxPublics,
+  remplacerPrix,
+  remplacerFourchette,
+} from '../utils/tarifs';
 
 const homepage = await reader.singletons.homepage.read();
 const settings = await reader.singletons.siteSettings.read();
@@ -47,20 +53,41 @@ const fourchetteToutesFormules =
 /**
  * Le prix mis en avant sur chaque carte, par destination.
  *
- * « Dès » et le montant le plus bas, partout : une carte se parcourt du coin de
- * l'œil, et le seul chiffre qu'on y cherche est celui à partir duquel on entre.
- * Une fourchette y demande de lire deux nombres pour n'en retenir qu'un ; le
- * détail — les deux publics, les deux formules — attend sur la page, à un clic.
+ * « Dès » et le montant le plus bas : une carte se parcourt du coin de l'œil, et
+ * le seul chiffre qu'on y cherche est celui à partir duquel on entre. Une
+ * fourchette y demande de lire deux nombres pour n'en retenir qu'un ; le détail
+ * — les deux formules, la durée — attend sur la page, à un clic.
+ *
+ * LE PUBLIC, LUI, NE PEUT PAS ATTENDRE. Le montant le plus bas était celui des
+ * enfants, sans le dire : 28 €/mois et 35 € la séance, quand l'adulte qui
+ * cliquait trouvait 36 € et 45 €. Un prix d'appel qui s'adresse à quelqu'un
+ * d'autre que son lecteur n'est pas un ancrage, c'est un démenti différé.
  */
 const prixParPage: Record<string, string | null> = {
-  '/ateliers-reguliers/': forfaitMin ? `Dès ${forfaitMin} €/mois` : null,
+  '/ateliers-reguliers/': prixDeuxPublics(
+    forfaitLePlusBas(ateliers?.tarifs, 'adultes'),
+    forfaitLePlusBas(ateliers?.tarifs, 'enfants'),
+    '/mois',
+  ),
+  // Les stages n'ont qu'un public : la parenthèse n'aurait rien à annoncer.
   '/stages-thematiques/': tarifs?.stages ? `Dès ${tarifs.stages.min} €` : null,
-  '/seances-sans-engagement/': (() => {
-    // Le tarif enfant est le plus bas des deux : c'est lui qui ouvre la porte.
-    const prix = [tarifs?.seance.adultes, tarifs?.seance.enfants].filter((n): n is number => !!n);
-    return prix.length ? `Dès ${Math.min(...prix)} € la séance` : null;
-  })(),
+  '/seances-sans-engagement/': prixDeuxPublics(
+    tarifs?.seance.adultes,
+    tarifs?.seance.enfants,
+    ' la séance',
+  ),
 };
+
+/**
+ * La ligne « par où commencer », son prix relu en base.
+ *
+ * Elle envoie vers la séance sans engagement : c'est la porte la moins chère et
+ * la seule qui n'engage pas la saison. Le tarif adulte, donc — c'est le lecteur
+ * de cette phrase-là, l'enfant vient avec un parent qui a déjà choisi.
+ */
+const orientation = homepage.orientationText?.trim()
+  ? remplacerPrix(homepage.orientationText, tarifs?.seance.adultes)
+  : null;
 
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
 const resolvedCover = await resolveImage(homepage.coverImage, coverGlob);
@@ -163,10 +190,17 @@ const siteUrl = Astro.site?.origin;
   </Fragment>
 
   <!-- 1. Hero -->
-  <Hero title={homepage.title} subtitle={homepage.subtitle} coverImage={resolvedCover ?? undefined} flush />
+  <Hero
+    title={homepage.title}
+    subtitle={homepage.subtitle}
+    coverImage={resolvedCover ?? undefined}
+    actionLabel={homepage.heroLinkLabel}
+    actionHref="#formules"
+    flush
+  />
 
   <!-- 2. Introduction + Service Cards -->
-  <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+  <section id="formules" class="scroll-mt-20 bg-[var(--color-bg-accent)] py-16 md:py-20">
     <div class="max-w-4xl mx-auto px-4">
       {homepage.introductionTitle && (
         <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-4">
@@ -194,6 +228,11 @@ const siteUrl = Astro.site?.origin;
             />
           ))}
         </div>
+      )}
+      {orientation && (
+        <p class="mx-auto mt-10 max-w-2xl rounded-xl bg-white p-5 text-center text-base leading-relaxed text-[var(--color-text)] shadow-md dark:bg-[var(--color-card-bg)]">
+          {orientation}
+        </p>
       )}
       <ContactCTA label={homepage.ctaLabel} />
     </div>
