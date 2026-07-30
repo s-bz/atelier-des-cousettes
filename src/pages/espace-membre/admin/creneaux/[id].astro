@@ -62,23 +62,6 @@ if (Astro.request.method === 'POST') {
       else return Astro.redirect('/espace-membre/admin/creneaux/?fait=Supprimé.');
     }
 
-  } else if (action === 'inscrire-stage') {
-    // Toutes les dates d'un coup. La fonction refuse en bloc si l'une est
-    // complète : mieux vaut un refus net qu'une inscription partielle sur un
-    // stage dont le deuxième jour suppose le premier.
-    const { data, error } = await supabase.rpc('book_stage', {
-      p_creneau: id, p_participant: String(form.get('participant') ?? ''),
-    });
-    if (error) erreur = error.message;
-    else message = `Inscrit sur ${data} date${(data as number) > 1 ? 's' : ''}.`;
-
-  } else if (action === 'retirer-stage') {
-    const { data, error } = await supabase.rpc('release_stage', {
-      p_creneau: id, p_participant: String(form.get('participant') ?? ''),
-    });
-    if (error) erreur = error.message;
-    else message = `${data} date${(data as number) > 1 ? 's' : ''} libérée${(data as number) > 1 ? 's' : ''}.`;
-
   } else {
     const label = String(form.get('label') ?? '').trim();
     const debut = String(form.get('debut') ?? '').trim();
@@ -134,13 +117,14 @@ const { data: creneau } = await supabase
 if (!creneau) return new Response('Créneau introuvable', { status: 404 });
 
 /**
- * Qui est inscrit à ce stage, et sur combien de ses dates.
+ * Des inscriptions qui ne couvrent pas tout le forfait.
  *
- * Le décompte est affiché parce qu'il révèle les inscriptions bancales héritées
- * d'avant le groupement : « 2 / 3 dates » signale quelqu'un qu'il faut
- * réinscrire, là où un simple nom laisserait croire que tout va bien.
+ * Le cas est devenu rare — inscrire et retirer portent sur l'ensemble des dates
+ * — mais pas impossible : ajouter une date à un stage où cinq personnes sont
+ * déjà inscrites les laisse toutes à 3 sur 4. Un avertissement suffit à le
+ * dire ; une liste de noms n'aurait rien à faire sur un écran de réglages.
  */
-const aVenir = creneau.kind === 'stage'
+const aVenir = creneau.seances_par_stage > 1
   ? (await supabase
       .from('sessions')
       .select('id')
@@ -152,32 +136,16 @@ const aVenir = creneau.kind === 'stage'
 const { data: inscriptions } = aVenir.length
   ? await supabase
       .from('bookings')
-      .select('participant_id, participants(first_name, last_name)')
+      .select('participant_id')
       .in('session_id', aVenir.map((s) => s.id))
       .eq('status', 'booked')
   : { data: [] };
 
-const parPersonne = new Map<string, { nom: string; dates: number }>();
+const datesParPersonne = new Map<string, number>();
 for (const b of (inscriptions ?? []) as any[]) {
-  const nom = `${b.participants?.first_name ?? ''} ${b.participants?.last_name ?? ''}`.trim();
-  const vu = parPersonne.get(b.participant_id);
-  parPersonne.set(b.participant_id, { nom, dates: (vu?.dates ?? 0) + 1 });
+  datesParPersonne.set(b.participant_id, (datesParPersonne.get(b.participant_id) ?? 0) + 1);
 }
-const inscrits = [...parPersonne.entries()]
-  .map(([pid, v]) => ({ id: pid, ...v }))
-  .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
-
-// Seules les personnes du public du stage : proposer les autres serait proposer
-// un geste que la base refusera.
-const { data: candidats } = creneau.kind === 'stage'
-  ? await supabase
-      .from('participants')
-      .select('id, first_name, last_name')
-      .eq('audience', creneau.audience === 'enfants' ? 'enfant' : 'adulte')
-      .order('last_name')
-  : { data: [] };
-
-const inscriptibles = (candidats ?? []).filter((p) => !parPersonne.has(p.id));
+const incomplets = [...datesParPersonne.values()].filter((n) => n < aVenir.length).length;
 
 /**
  * Le nombre de dates créées correspond-il au forfait annoncé ?
@@ -250,6 +218,19 @@ const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (�
       {' '}{datesCreees} date{(datesCreees ?? 0) > 1 ? 's ont' : ' a'} été créée
       {(datesCreees ?? 0) > 1 ? 's' : ''} — ni {creneau.seances_par_stage}, ni un multiple.
       Il en manque une, ou il y en a une de trop.
+    </p>
+  )}
+
+  {incomplets > 0 && (
+    <p class="mb-6 rounded-xl border border-[var(--color-button)] bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-text)] shadow-md">
+      <strong class="text-[var(--color-button)]">
+        {incomplets} inscription{incomplets > 1 ? 's' : ''} ne couvre
+        {incomplets > 1 ? 'nt' : ''} pas tout le forfait.
+      </strong>
+      {' '}Arrive après l’ajout d’une date à un stage où des personnes étaient déjà inscrites.
+      {' '}<a href={`/espace-membre/admin/seances/?creneau=${creneau.id}`}
+              class="text-[var(--color-button)] underline">Voir les dates</a> :
+      retirer puis réinscrire depuis l’une d’elles rétablit la couverture complète.
     </p>
   )}
 
@@ -358,87 +339,6 @@ const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (�
       Enregistrer
     </button>
   </form>
-
-  {/*
-    Les inscriptions au stage, ici et pas sur chaque date.
-    Un forfait s'achète en entier : c'est donc le stage qui porte l'inscription,
-    pas ses journées. Pour un stage à dates indépendantes on renvoie vers les
-    séances, où l'inscription se fait date par date — c'est le geste juste dans
-    ce cas.
-  */}
-  {estStage && creneau.seances_par_stage > 1 && (
-    <section class="mt-8">
-      <h2 class="mb-1 text-lg font-bold text-[var(--color-heading)]"
-          style="font-family: var(--font-heading)">
-        Inscrits au stage
-        <span class="ml-2 text-sm font-normal text-[var(--color-text-light)]">
-          {inscrits.length} / {creneau.default_capacity}
-        </span>
-      </h2>
-      <p class="mb-4 text-sm text-[var(--color-text-light)]">
-        L’inscription porte sur les {aVenir.length} date{aVenir.length > 1 ? 's' : ''} à venir,
-        et se retire de la même façon.
-      </p>
-
-      {inscrits.length === 0 ? (
-        <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
-          Personne pour l’instant.
-        </p>
-      ) : (
-        <ul class="space-y-2">
-          {inscrits.map((p) => (
-            <li class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
-              <a href={`/espace-membre/admin/participants/${p.id}/`}
-                 class="font-medium text-[var(--color-heading)] underline-offset-2 hover:underline">
-                {p.nom}
-              </a>
-              {/* Un décompte partiel trahit une inscription faite date par date
-                  avant le groupement, ou une place libérée sur une seule. */}
-              <span class={`text-sm ${p.dates < aVenir.length
-                ? 'font-medium text-[var(--color-button)]'
-                : 'text-[var(--color-text-light)]'}`}>
-                {p.dates} / {aVenir.length} date{aVenir.length > 1 ? 's' : ''}
-                {p.dates < aVenir.length ? ' — incomplet' : ''}
-              </span>
-
-              <form method="post" class="ml-auto">
-                <input type="hidden" name="action" value="retirer-stage" />
-                <input type="hidden" name="participant" value={p.id} />
-                <button type="submit" class="text-sm text-[var(--color-button)] underline">
-                  Retirer du stage
-                </button>
-              </form>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {inscriptibles.length > 0 && aVenir.length > 0 && (
-        <form method="post" class="mt-4 flex flex-wrap items-end gap-3">
-          <input type="hidden" name="action" value="inscrire-stage" />
-          <div class="min-w-[16rem] flex-1 sm:max-w-sm">
-            <label for="participant" class="block text-sm font-medium mb-1">Inscrire quelqu’un</label>
-            <select id="participant" name="participant" required class="champ">
-              <option value="">Choisir…</option>
-              {inscriptibles.map((p) => (
-                <option value={p.id}>{p.last_name} {p.first_name}</option>
-              ))}
-            </select>
-          </div>
-          <button type="submit"
-                  class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-5 py-2 font-medium text-white">
-            Inscrire aux {aVenir.length} dates
-          </button>
-        </form>
-      )}
-
-      {aVenir.length === 0 && (
-        <p class="mt-4 text-sm text-[var(--color-text-light)]">
-          Aucune date à venir : créez-en depuis l’onglet Séances avant d’inscrire quelqu’un.
-        </p>
-      )}
-    </section>
-  )}
 
   <div class="mt-8 flex flex-wrap items-center gap-4 border-t border-[var(--color-border-prominent)] pt-4">
     <form method="post">
