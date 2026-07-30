@@ -11,7 +11,8 @@ import { reader } from '../utils/reader';
  * La note Google précède les citations : c'est un chiffre vérifiable, que le
  * lecteur peut aller contrôler d'un clic, et il donne aux témoignages qui
  * suivent une caution que leur seule présence sur notre propre site ne leur
- * donnerait pas.
+ * donnerait pas. LE NOMBRE D'AVIS NE S'AFFICHE PAS : « 6 avis » dit surtout
+ * qu'ils sont peu nombreux, quand « 5,0 sur Google » dit qu'ils sont bons.
  *
  * RIEN NE S'AFFICHE SI RIEN N'EST RENSEIGNÉ. Une section « ils en parlent »
  * vide dirait le contraire de ce qu'elle cherche à dire.
@@ -20,11 +21,10 @@ interface Props {
   /** Clé de page : seuls les témoignages qui la citent s'affichent. */
   page: 'accueil' | 'ateliers' | 'stages' | 'seances';
   titre?: string;
-  limite?: number;
   fond?: boolean;
 }
 
-const { page, titre = 'Ce qu’en disent les élèves', limite = 3, fond = false } = Astro.props;
+const { page, titre = 'Ce qu’en disent les élèves', fond = false } = Astro.props;
 
 const settings = await reader.singletons.siteSettings.read();
 // Le dossier n'existe pas tant qu'aucun témoignage n'est saisi.
@@ -32,19 +32,19 @@ const tous = await reader.collections.temoignages.all().catch(() => []);
 
 const retenus = tous
   .filter((t) => (t.entry.pages ?? []).includes(page))
-  .filter((t) => t.entry.texte?.trim())
-  .slice(0, limite);
+  .filter((t) => t.entry.texte?.trim());
 
 const note = settings?.googleNote?.trim();
-const nombre = settings?.googleNombreAvis?.trim();
 const lienAvis = settings?.googleBusinessUrl;
 
 const afficher = retenus.length > 0 || Boolean(note);
+// Un seul témoignage n'est pas un carrousel : les flèches n'auraient rien à faire.
+const defilable = retenus.length > 1;
 ---
 
 {afficher && (
   <section class={`py-16 md:py-20 ${fond ? 'bg-[var(--color-bg-accent)]' : ''}`}>
-    <div class="mx-auto max-w-4xl px-4">
+    <div class="mx-auto max-w-5xl px-4">
       <h2 class="heading-font mb-3 text-center text-2xl font-bold text-[var(--color-heading)] md:text-3xl">
         {titre}
       </h2>
@@ -59,12 +59,11 @@ const afficher = retenus.length > 0 || Boolean(note);
           */}
           <span aria-hidden="true" class="text-[var(--color-button)]">★★★★★</span>{' '}
           <strong class="text-[var(--color-heading)]">{note}</strong> sur Google
-          {nombre && <span>{' '}· {nombre} avis</span>}
           {lienAvis && (
             <Fragment>
               {' — '}
               <a href={lienAvis} class="font-medium text-[var(--color-button)] underline">
-                les lire
+                lire les avis
               </a>
             </Fragment>
           )}
@@ -72,27 +71,104 @@ const afficher = retenus.length > 0 || Boolean(note);
       )}
 
       {retenus.length > 0 && (
-        <div class="grid gap-6 md:grid-cols-3">
-          {retenus.map((t) => (
-            <figure class="rounded-xl bg-white p-5 shadow-md dark:bg-[var(--color-card-bg)]">
-              <blockquote class="text-sm leading-relaxed text-[var(--color-text)]">
-                « {t.entry.texte} »
-              </blockquote>
-              <figcaption class="mt-4 text-sm font-medium text-[var(--color-heading)]">
-                {t.entry.auteur}
-                {t.entry.lieu && (
-                  <span class="font-normal text-[var(--color-text-light)]">, {t.entry.lieu}</span>
-                )}
-                {t.entry.source === 'google' && (
-                  <span class="block text-xs font-normal text-[var(--color-text-light)]">
-                    Avis Google
-                  </span>
-                )}
-              </figcaption>
-            </figure>
-          ))}
+        <div class="relative">
+          {/*
+            UN CARROUSEL SANS BIBLIOTHÈQUE NI JAVASCRIPT OBLIGATOIRE.
+
+            Le défilement horizontal avec accroche est natif : au doigt sur
+            mobile, à la molette ou au clavier sur ordinateur, et il fonctionne
+            avant que le moindre script ait chargé. Les flèches ne font
+            qu'améliorer ce qui marche déjà — c'est pour cela qu'elles sont
+            posées par le script et absentes sans lui, plutôt que présentes et
+            inertes.
+
+            `tabindex` rend la piste focalisable : sans lui, un utilisateur au
+            clavier ne peut pas la faire défiler, et les témoignages hors écran
+            lui seraient inaccessibles.
+          */}
+          <div
+            class="temoignages-piste flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-4"
+            tabindex="0"
+            role="group"
+            aria-label="Témoignages"
+          >
+            {retenus.map((t) => (
+              <figure class="w-[85%] shrink-0 snap-start rounded-xl bg-white p-5 shadow-md sm:w-[48%] md:w-[31.5%] dark:bg-[var(--color-card-bg)]">
+                <blockquote class="text-sm leading-relaxed text-[var(--color-text)]">
+                  « {t.entry.texte} »
+                </blockquote>
+                <figcaption class="mt-4 text-sm font-medium text-[var(--color-heading)]">
+                  {t.entry.auteur}
+                  {t.entry.lieu && (
+                    <span class="font-normal text-[var(--color-text-light)]">, {t.entry.lieu}</span>
+                  )}
+                  {t.entry.source === 'google' && (
+                    <span class="block text-xs font-normal text-[var(--color-text-light)]">
+                      Avis Google
+                    </span>
+                  )}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+
+          {defilable && (
+            <div class="temoignages-fleches mt-2 hidden justify-center gap-3">
+              <button
+                type="button"
+                data-sens="-1"
+                aria-label="Témoignages précédents"
+                class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-1.5 text-lg leading-none text-[var(--color-button)]"
+              >‹</button>
+              <button
+                type="button"
+                data-sens="1"
+                aria-label="Témoignages suivants"
+                class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-1.5 text-lg leading-none text-[var(--color-button)]"
+              >›</button>
+            </div>
+          )}
         </div>
       )}
     </div>
   </section>
 )}
+
+<style>
+  /* La barre de défilement gêne plus qu'elle n'aide : l'accroche et les
+     flèches disent déjà qu'on peut avancer. */
+  .temoignages-piste {
+    scrollbar-width: none;
+  }
+  .temoignages-piste::-webkit-scrollbar {
+    display: none;
+  }
+  .temoignages-piste:focus-visible {
+    outline: 2px solid var(--color-button);
+    outline-offset: 4px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .temoignages-piste {
+      scroll-behavior: auto;
+    }
+  }
+</style>
+
+<script>
+  // Les flèches n'apparaissent qu'ici : sans script elles ne feraient rien, et
+  // un bouton mort vaut moins que pas de bouton. Le défilement, lui, marche
+  // déjà sans nous.
+  for (const groupe of document.querySelectorAll<HTMLElement>('.temoignages-fleches')) {
+    const piste = groupe.parentElement?.querySelector<HTMLElement>('.temoignages-piste');
+    if (!piste) continue;
+    groupe.classList.replace('hidden', 'flex');
+    for (const bouton of groupe.querySelectorAll<HTMLElement>('button')) {
+      bouton.addEventListener('click', () => {
+        const carte = piste.firstElementChild as HTMLElement | null;
+        // Une carte plus l'espace qui la sépare de la suivante.
+        const pas = carte ? carte.offsetWidth + 24 : piste.clientWidth;
+        piste.scrollBy({ left: pas * Number(bouton.dataset.sens) });
+      });
+    }
+  }
+</script>

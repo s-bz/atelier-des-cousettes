@@ -95,11 +95,14 @@ export default config({
          *
          * Laisser la note vide masque le bandeau : mieux vaut rien qu'un 5,0
          * devenu 4,2.
+         *
+         * Le NOMBRE d'avis n'est pas affiché, donc pas demandé : « 6 avis » dit
+         * surtout qu'ils sont peu nombreux, là où « 5,0 sur Google » dit qu'ils
+         * sont bons.
          */
         googleNote: fields.text({
           label: 'Note Google (ex : 5,0) — vide pour masquer',
         }),
-        googleNombreAvis: fields.text({ label: 'Nombre d’avis Google (ex : 6)' }),
 
         avisProvisoire: fields.text({
           label: 'Bandeau d’avertissement (ateliers, stages, séances)',
