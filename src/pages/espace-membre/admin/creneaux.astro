@@ -244,7 +244,8 @@ const SECTIONS = [
             </div>
             <div>
               <label for={`n-places-${section.kind}`} class="block text-sm font-medium mb-1">Places</label>
-              <input id={`n-places-${section.kind}`} name="places" type="number" min="1" required value="6" class="champ" />
+              <input id={`n-places-${section.kind}`} name="places" type="number" min="1" required
+                     value={section.kind === 'stage' ? '6' : '3'} class="champ" />
             </div>
             <div>
               <label for={`n-prix-${section.kind}`} class="block text-sm font-medium mb-1">{section.libellePrix}</label>
