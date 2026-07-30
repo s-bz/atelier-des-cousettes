@@ -253,6 +253,41 @@ const { data: reservations } = await supabase
 const absences = (reservations ?? []).filter((r: any) => r.attendance === 'absent').length;
 
 const enCours = (abonnements ?? []).filter((a) => a.ends_on >= new Date().toISOString().slice(0, 10));
+
+/**
+ * Un forfait tient-il dans les dates de son créneau attitré ?
+ *
+ * Vingt séances sur un créneau qui n'en compte que dix dans la saison ne
+ * peuvent pas toutes s'y placer, quoi que fasse l'inscription d'office. Le
+ * dépassement se découvrait alors en mars, sous la forme d'un solde qui ne
+ * descendait plus — la cause étant à deux écrans de là.
+ *
+ * On compte les dates PROGRAMMÉES sur la fenêtre de l'abonnement, y compris
+ * celles déjà réservées : la question n'est pas ce qu'il reste à prendre, mais
+ * ce que ce créneau peut porter en tout.
+ */
+const plafonds = await Promise.all(
+  enCours
+    .filter((a) => a.total_credits !== null && a.home_creneau_id)
+    .map(async (a) => {
+      const { count } = await supabase
+        .from('sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('creneau_id', a.home_creneau_id)
+        .eq('status', 'scheduled')
+        .gte('starts_at', a.starts_on)
+        .lte('starts_at', `${a.ends_on}T23:59:59`);
+
+      return {
+        creneau: (a.creneaux as any)?.label ?? a.home_creneau_id,
+        forfait: a.total_credits as number,
+        dates: count ?? 0,
+        ailleurs: (a.total_credits as number) - (count ?? 0),
+      };
+    }),
+);
+
+const debordements = plafonds.filter((p) => p.ailleurs > 0);
 const dateFr = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
 const anneeCourante = new Date().getFullYear();
 const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
@@ -266,6 +301,23 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
 >
   {message && <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm">{message}</p>}
   {erreur && <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>}
+
+  {/*
+    Le forfait dépasse ce que son créneau peut porter.
+    Dit ici, à la création comme à chaque visite, plutôt que découvert en mars
+    sous la forme d'un solde qui ne descend plus — la cause étant alors à deux
+    écrans de là.
+  */}
+  {debordements.map((d) => (
+    <p class="mb-6 rounded-xl border border-[var(--color-button)] bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-text)] shadow-md">
+      <strong class="text-[var(--color-button)]">
+        {d.ailleurs} séance{d.ailleurs > 1 ? 's' : ''} à placer sur d’autres créneaux.
+      </strong>
+      {' '}Le forfait en compte {d.forfait}, et « {d.creneau} » n’a que {d.dates} date
+      {d.dates > 1 ? 's' : ''} sur la période. L’inscription d’office remplira ce créneau,
+      le reste demande un choix.
+    </p>
+  ))}
 
   {/*
     Une seule quantité en grand : celle qui répond à une question.
@@ -289,6 +341,20 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
         ? `${-(solde as number)} séance${-(solde as number) > 1 ? 's' : ''} au-delà du forfait, à facturer.`
         : 'Une séance s’acquiert au premier de chaque mois, se reporte jusqu’en juin, et une réservation lointaine est décomptée dès maintenant.'}
     </p>
+
+    {/*
+      Réserver à sa place, depuis le planning des adhérents lui-même.
+      Une partie des inscrits ne réservera pas en ligne, et les séances qui
+      débordent du créneau attitré demandent un choix que l'inscription d'office
+      ne peut pas faire. Réutiliser leur écran plutôt qu'en bâtir un second
+      évite d'avoir deux règles de réservation à maintenir.
+    */}
+    {(solde as number) > 0 && (
+      <a href={`/espace-membre/planning/?pour=${participant.id}`}
+         class="mt-4 inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90">
+        Choisir {solde} date{(solde as number) > 1 ? 's' : ''} pour {participant.first_name}
+      </a>
+    )}
   </div>
 
   <h2 class="mb-3 text-lg font-bold text-[var(--color-heading)]">Abonnements</h2>
