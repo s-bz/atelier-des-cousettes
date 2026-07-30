@@ -5,12 +5,17 @@ interface Seance {
   capacity: number;
   places_attente: number;
   bookings: { status: string }[] | null;
-  /**
-   * Nom de l'atelier, quand les dates de plusieurs créneaux sont mêlées.
-   * Sur la page d'un créneau unique il n'apporte rien ; sur une liste
-   * chronologique il est indispensable — « jeudi 8 octobre » ne dit pas où.
+  /*
+   * Volontairement, RIEN d'autre que la date, l'heure et l'état.
+   *
+   * Ce composant a porté un temps le nom de l'atelier sur chaque ligne, puis son
+   * lieu. Les deux doublaient la hauteur de chaque entrée sur un téléphone, pour
+   * une information que l'entête de section dit une fois et mieux : le nom se
+   * devinait déjà de la date et de l'heure, et le lieu décide si l'on peut venir
+   * — il mérite un titre, pas une répétition sur soixante lignes.
+   *
+   * Une liste qui mêle plusieurs lieux se découpe par lieu ; elle ne s'annote pas.
    */
-  creneau?: string | null;
 }
 
 interface Props {
@@ -97,9 +102,6 @@ const lignes = [...seances]
         <span class="text-[var(--color-text-light)]">
           {heureFr.format(new Date(s.starts_at))} – {heureFr.format(new Date(s.ends_at))}
         </span>
-        {s.creneau && (
-          <span class="text-[var(--color-text-light)]">{s.creneau}</span>
-        )}
         {s.etat && (
           <span class={`ml-auto shrink-0 text-xs font-medium ${
             s.etat.ton === 'sourd' ? 'text-[var(--color-text-light)]'

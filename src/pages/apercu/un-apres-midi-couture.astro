@@ -70,7 +70,7 @@ const { data: seances, error } = await supabase
   .select(`
     starts_at, ends_at, capacity, places_attente, status,
     bookings(status),
-    creneaux!inner(label, audience, kind, archived_at)
+    creneaux!inner(label, audience, default_location, kind, archived_at)
   `)
   .eq('status', 'scheduled')
   .eq('creneaux.kind', 'atelier')
@@ -85,30 +85,80 @@ const aplati = ((seances ?? []) as any[]).map((s) => ({
   capacity: s.capacity,
   places_attente: s.places_attente,
   bookings: s.bookings,
-  creneau: s.creneaux?.label ?? null,
+  lieu: s.creneaux?.default_location ?? null,
   audience: s.creneaux?.audience ?? 'adultes',
 }));
 
-// Deux publics, deux tarifs, deux durées. Le prix vient de la base, non du
-// contenu : c'est le même champ qui sert à facturer une séance hors forfait, et
-// deux endroits pour un seul montant finiraient par se contredire.
-const { data: tarifs } = await supabase
+/**
+ * Les créneaux d'atelier — d'eux viennent les LIEUX, les publics, les tarifs et
+ * les horaires.
+ *
+ * Et non des séances : un lieu dont aucune date n'est encore programmée
+ * disparaîtrait alors de la page, alors que c'est précisément là qu'il faut
+ * inviter à écrire. Verdalle est dans ce cas aujourd'hui — le créneau existe,
+ * son calendrier est vide.
+ *
+ * Le prix vient de la base et non du contenu : c'est le même champ qui sert à
+ * facturer une séance hors forfait, et deux endroits pour un seul montant
+ * finiraient par se contredire.
+ */
+const { data: creneauxAtelier } = await supabase
   .from('creneaux')
-  .select('audience, default_unit_price_cents')
+  .select('audience, default_location, default_unit_price_cents, default_start_time, default_end_time')
   .eq('kind', 'atelier')
   .is('archived_at', null);
 
-const prixDe = (audience: string) => {
-  const trouve = (tarifs ?? []).find((t) => t.audience === audience);
-  return trouve ? (trouve.default_unit_price_cents / 100).toFixed(0) : null;
+const euros = (cents: number) => (cents / 100).toFixed(0);
+
+/** « 3 h », « 2 h 30 » — lu sur les horaires du créneau, non recopié à la main. */
+const duree = (debut: string, fin: string) => {
+  const min = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const m = min(fin) - min(debut);
+  return m <= 0 ? null : m % 60 === 0 ? `${m / 60} h` : `${Math.floor(m / 60)} h ${m % 60}`;
 };
 
-const publics = [
-  { cle: 'adultes', titre: 'Adultes', duree: '3 h', prix: prixDe('adultes'),
-    items: aplati.filter((s) => s.audience === 'adultes') },
-  { cle: 'enfants', titre: 'Enfants', duree: '2 h', prix: prixDe('enfants'),
-    items: aplati.filter((s) => s.audience === 'enfants') },
-].filter((p) => p.items.length > 0);
+const PUBLICS = [
+  { cle: 'adultes', titre: 'Adultes' },
+  { cle: 'enfants', titre: 'Enfants' },
+];
+
+/**
+ * Un lieu, et pour chacun de ses publics ses dates.
+ *
+ * Segmenter par lieu d'abord : c'est ce qui décide si l'on peut venir. Un tarif
+ * se compare, une date se choisit, mais un village à trente minutes de route ne
+ * se découvre pas au dernier moment.
+ *
+ * Le nom de l'atelier ne figure plus sur les lignes. « Atelier du samedi
+ * après-midi » sous « Samedi 12 septembre 2026 · 14:00 – 17:00 » ne disait rien
+ * que la date et l'heure ne disaient déjà, et doublait la hauteur de chacune des
+ * 59 lignes — sur un téléphone, la liste en devenait illisible.
+ */
+const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location))]
+  .map((lieu) => {
+    const publics = PUBLICS.map(({ cle, titre }) => {
+      const cs = (creneauxAtelier ?? []).filter(
+        (c) => c.default_location === lieu && c.audience === cle,
+      );
+      if (cs.length === 0) return null;
+      const durees = [...new Set(cs.map((c) => duree(c.default_start_time, c.default_end_time)).filter(Boolean))];
+      return {
+        cle, titre,
+        prix: euros(cs[0].default_unit_price_cents),
+        duree: durees.length === 1 ? durees[0] : durees.join(' ou '),
+        // Le lieu est retiré des lignes : il titre déjà la section qui les porte.
+        items: aplati
+          .filter((s) => s.lieu === lieu && s.audience === cle)
+          .map(({ lieu: _, ...reste }) => reste),
+      };
+    }).filter((p): p is NonNullable<typeof p> => p !== null);
+    return { lieu, publics, total: publics.reduce((n, p) => n + p.items.length, 0) };
+  })
+  // Le lieu le plus fourni d'abord : c'est là que la plupart des gens iront.
+  // Un tri sur le nombre de dates se corrige tout seul si l'équilibre change,
+  // là où un ordre écrit en dur resterait faux.
+  .sort((a, b) => b.total - a.total || a.lieu.localeCompare(b.lieu));
+
 ---
 
 <BaseLayout title={`${page.title} — aperçu`} description={page.seoDescription}
@@ -219,28 +269,57 @@ const publics = [
         <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
           <CalendrierCreneau seances={[]} erreur={true} />
         </div>
-      ) : publics.length === 0 ? (
+      ) : lieux.length === 0 ? (
         <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
           <CalendrierCreneau seances={[]}
                              vide="Aucune date programmée pour l’instant — me contacter." />
         </div>
       ) : (
-        <div class="space-y-8">
-          {publics.map((p) => (
+        <div class="space-y-12">
+          {lieux.map((l) => (
             <div>
-              <h3 class="mb-1 text-lg font-bold text-[var(--color-heading)]">
-                {p.titre}
-                {p.prix && (
-                  <span class="ml-2 text-base font-medium text-[var(--color-button)]">
-                    {p.prix} € la séance
-                  </span>
-                )}
-              </h3>
-              <p class="mb-3 text-sm text-[var(--color-text-light)]">
-                {p.duree} d’accompagnement · {p.items.length} date{p.items.length > 1 ? 's' : ''} à venir
-              </p>
-              <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
-                <CalendrierCreneau seances={p.items} />
+              <h3 class="mb-6 text-xl font-bold text-[var(--color-heading)]">{l.lieu}</h3>
+              <div class="space-y-8">
+                {l.publics.map((p) => (
+                  <div>
+                    <h4 class="mb-1 text-lg font-semibold text-[var(--color-heading)]">
+                      {p.titre}
+                      {p.prix && (
+                        <span class="ml-2 text-base font-medium text-[var(--color-button)]">
+                          {p.prix} € la séance
+                        </span>
+                      )}
+                    </h4>
+                    <p class="mb-3 text-sm text-[var(--color-text-light)]">
+                      {p.duree} d’accompagnement
+                      {p.items.length > 0 &&
+                        ` · ${p.items.length} date${p.items.length > 1 ? 's' : ''} à venir`}
+                    </p>
+                    <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
+                      {p.items.length === 0 ? (
+                        <p class="text-sm text-[var(--color-text-light)]">
+                          {/*
+                            Un calendrier vide n'invite à rien. Dire à qui écrire,
+                            et ouvrir le formulaire d'un clic, transforme une
+                            impasse en prise de contact — c'est le même parti que
+                            sur la page des ateliers, pour un créneau sans date.
+                          */}
+                          Aucune date programmée pour l’instant.{' '}
+                          <a
+                            href="/contact/"
+                            data-tally-fallback
+                            class="font-medium text-[var(--color-button)] underline"
+                          >
+                            Contactez Isabelle
+                          </a>
+                          {' '}pour connaître les prochaines.
+                        </p>
+                      ) : (
+                        <CalendrierCreneau seances={p.items} />
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
