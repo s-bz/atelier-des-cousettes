@@ -304,7 +304,18 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
                         ` · ${p.items.length} date${p.items.length > 1 ? 's' : ''} à venir`}
                     </p>
                     <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
-<CalendrierCreneau seances={p.items} limite={3} />
+{/*
+                        SIX DATES ICI, contre trois sur la page des ateliers.
+                        Là-bas une carte ne montre qu'un créneau, et l'on sait
+                        déjà quel jour on cherche ; ici la liste mêle tous les
+                        ateliers d'un lieu, et trois dates ne couvraient parfois
+                        qu'une quinzaine. Six laissent voir un mois, de quoi
+                        juger si l'on peut se libérer.
+
+                        Le reste se replie : cette page déroulait 59 dates pour
+                        les adultes et 35 pour les enfants.
+                      */}
+                      <CalendrierCreneau seances={p.items} limite={6} />
                     </div>
                   </div>
                 ))}
