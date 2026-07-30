@@ -173,6 +173,29 @@ for (const f of familles) {
 }
 
 /**
+ * L'ORDRE DES STAGES SUIT CELUI DU CONTENU, et non l'alphabet.
+ *
+ * Isabelle range ses stages dans le CMS, et cet ordre veut dire quelque chose :
+ * l'initiation ouvre, la découverte suit, les stages techniques viennent après.
+ * Trier sur le libellé effaçait ce classement et remontait la banane en
+ * deuxième position, entre l'initiation et la découverte, pour la seule raison
+ * qu'elle commence par un B.
+ *
+ * Conséquence heureuse : les deux pages affichent enfin les stages dans le même
+ * ordre, ce qui rend la comparaison possible.
+ *
+ * Un stage que le contenu ne décrit pas passe à la fin, où il se remarque —
+ * c'est un stage à décrire, pas un stage à cacher.
+ */
+const rangDansLeContenu = (base: string) => {
+  const i = descriptions.findIndex((d) => base === d.name || base.startsWith(d.name));
+  return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+};
+familles.sort(
+  (a, b) => rangDansLeContenu(a.base) - rangDansLeContenu(b.base) || a.base.localeCompare(b.base),
+);
+
+/**
  * Le tarif d'une formule, son prix et sa durée appariés : « 70 € pour 5 h ».
  *
  * Deux fourchettes côte à côte — « 70 € – 95 € » puis « 5 h – 7 h » — obligeaient
