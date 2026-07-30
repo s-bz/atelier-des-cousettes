@@ -44,19 +44,42 @@ const passe = Astro.url.searchParams.get('quand') === 'passe';
 const debutDuJour = new Date();
 debutDuJour.setHours(0, 0, 0, 0);
 
-const requete = supabase
+// Filtre par créneau, pour arriver ici depuis l'écran des ateliers et stages.
+// Sur un stage, c'est le seul moyen de voir ses quelques dates sans les
+// chercher parmi les cent-vingt séances de la saison.
+const creneauFiltre = Astro.url.searchParams.get('creneau');
+
+let requete = supabase
   .from('sessions')
-  .select('id, creneau_id, starts_at, ends_at, capacity, status, bookings(status), creneaux(label)');
+  .select('id, creneau_id, starts_at, ends_at, capacity, status, bookings(status), creneaux(label, kind)');
+
+if (creneauFiltre) requete = requete.eq('creneau_id', creneauFiltre);
 
 const { data: seances } = passe
   ? await requete.lt('starts_at', debutDuJour.toISOString()).order('starts_at', { ascending: false })
   : await requete.gte('starts_at', debutDuJour.toISOString()).order('starts_at');
 
+const { data: creneauNomme } = creneauFiltre
+  ? await supabase.from('creneaux').select('label, kind').eq('id', creneauFiltre).maybeSingle()
+  : { data: null };
+
 // Compte de l'autre côté, pour que l'onglet annonce ce qu'il contient.
-const { count: nombreAutre } = await supabase
+let compte = supabase
   .from('sessions')
   .select('id', { count: 'exact', head: true })
   [passe ? 'gte' : 'lt']('starts_at', debutDuJour.toISOString());
+if (creneauFiltre) compte = compte.eq('creneau_id', creneauFiltre);
+const { count: nombreAutre } = await compte;
+
+// La bascule à venir/passé doit conserver le filtre : le perdre renverrait sur
+// les cent-vingt séances de la saison, sans dire pourquoi.
+const lien = (quand?: string) => {
+  const p = new URLSearchParams();
+  if (quand) p.set('quand', quand);
+  if (creneauFiltre) p.set('creneau', creneauFiltre);
+  const q = p.toString();
+  return `/espace-membre/admin/seances/${q ? `?${q}` : ''}`;
+};
 
 type Seance = NonNullable<typeof seances>[number];
 
@@ -82,7 +105,21 @@ for (const s of seances ?? []) {
 }
 ---
 
-<AdminLayout title="Séances" soustitre="Le calendrier de la saison.">
+<AdminLayout
+  title={creneauNomme ? creneauNomme.label : 'Séances'}
+  soustitre={creneauNomme
+    ? (creneauNomme.kind === 'stage' ? 'Les dates de ce stage.' : 'Les séances de cet atelier.')
+    : 'Le calendrier de la saison.'}
+>
+
+  {creneauFiltre && (
+    <p class="mb-6 flex flex-wrap items-center gap-3 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">
+      Vous ne voyez que ce créneau.
+      <a href="/espace-membre/admin/seances/" class="text-[var(--color-button)] underline">
+        Voir toute la saison
+      </a>
+    </p>
+  )}
 
   {message && (
     <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">{message}</p>
@@ -102,14 +139,14 @@ for (const s of seances ?? []) {
     </form>
 
     <nav class="ml-auto flex gap-2" aria-label="Période">
-      <a href="/espace-membre/admin/seances/"
+      <a href={lien()}
          aria-current={!passe ? 'page' : undefined}
          class={`rounded-[var(--radius-button)] px-4 py-2 text-sm font-medium ${
            !passe ? 'bg-[var(--color-button)] text-white'
                   : 'border border-[var(--color-border-prominent)] text-[var(--color-text)]'}`}>
         À venir{!passe ? '' : ` (${nombreAutre ?? 0})`}
       </a>
-      <a href="/espace-membre/admin/seances/?quand=passe"
+      <a href={lien('passe')}
          aria-current={passe ? 'page' : undefined}
          class={`rounded-[var(--radius-button)] px-4 py-2 text-sm font-medium ${
            passe ? 'bg-[var(--color-button)] text-white'

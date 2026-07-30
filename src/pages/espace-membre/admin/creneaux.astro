@@ -78,22 +78,32 @@ if (Astro.request.method === 'POST') {
 
       if (action === 'creer') {
         const label = String(form.get('label') ?? '').trim();
+        const kind = String(form.get('kind') ?? 'atelier');
         // L'identifiant suit toSlug(), comme les ancres du site public : un lien
         // profond vers un créneau doit continuer de fonctionner.
         const nouvelId = toSlug(label);
 
-        if (!label) erreur = 'Donnez un nom au créneau.';
+        if (!label) erreur = 'Donnez un nom.';
         else if (!nouvelId) erreur = 'Ce nom ne produit aucun identifiant utilisable.';
         else {
           const { error } = await supabase.from('creneaux').insert({
-            id: nouvelId, label, group_id: String(form.get('groupe') ?? ''), ...valeurs,
+            id: nouvelId,
+            label,
+            kind,
+            // Un stage n'appartient à aucun groupe d'ateliers : le groupe sert à
+            // présenter ensemble les créneaux d'un même lieu sur la page
+            // publique, et un stage vit sur la sienne.
+            group_id: kind === 'stage' ? null : String(form.get('groupe') ?? ''),
+            ...valeurs,
           });
           if (error) {
             erreur = error.code === '23505'
               ? `Un créneau porte déjà ce nom (${nouvelId}).`
               : `Création impossible : ${error.message}`;
           } else {
-            message = `Créneau « ${label} » créé.`;
+            message = kind === 'stage'
+              ? `Stage « ${label} » créé. Ajoutez ses dates depuis l’onglet Séances.`
+              : `Atelier « ${label} » créé.`;
           }
         }
       } else {
@@ -107,16 +117,41 @@ if (Astro.request.method === 'POST') {
 
 const { data: tous } = await supabase
   .from('creneaux')
-  .select('id, label, group_id, audience, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, archived_at, sessions(id)')
+  .select('id, label, group_id, kind, audience, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, archived_at, sessions(id)')
   .order('label');
 
 const lieux = [...new Set((tous ?? []).map((c) => c.default_location))].sort();
 const actifs = (tous ?? []).filter((c) => !c.archived_at);
 const archives = (tous ?? []).filter((c) => c.archived_at);
+
+/**
+ * Ateliers et stages séparés, parce qu'ils ne se ressemblent que de structure.
+ *
+ * Un atelier revient chaque semaine et se paie au forfait ; le prix qu'il porte
+ * est celui d'une séance HORS forfait, à facturer en fin de saison. Un stage a
+ * lieu une fois, et son prix est ce qu'il coûte. Mélangés dans une même liste,
+ * la colonne « prix » voulait dire deux choses à la fois.
+ */
+const SECTIONS = [
+  {
+    kind: 'atelier',
+    titre: 'Ateliers réguliers',
+    aide: 'Séances payées par le forfait. Le prix indiqué est celui d’une séance en dépassement, facturée en fin de saison.',
+    items: actifs.filter((c) => c.kind === 'atelier'),
+    libellePrix: 'Séance hors forfait (€)',
+  },
+  {
+    kind: 'stage',
+    titre: 'Stages thématiques',
+    aide: 'Payés à l’unité, hors forfait : un stage ne consomme aucune séance et n’apparaît jamais dans les séances à facturer.',
+    items: actifs.filter((c) => c.kind === 'stage'),
+    libellePrix: 'Prix du stage (€)',
+  },
+];
 ---
 
 <AdminLayout
-  title="Créneaux"
+  title="Ateliers et stages"
   soustitre="Les valeurs reprises automatiquement à la création d’une séance."
 >
   {message && (
@@ -132,161 +167,199 @@ const archives = (tous ?? []).filter((c) => c.archived_at);
     une séance existante, ouvrez-la depuis l’onglet Séances.
   </p>
 
-  <details class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
-    <summary class="cursor-pointer font-medium text-[var(--color-heading)]">Ajouter un créneau</summary>
+  {/*
+    Deux formulaires de création plutôt qu'un seul avec un sélecteur : le groupe
+    ne concerne que les ateliers, et le masquer selon un choix demanderait du
+    JavaScript sur un écran qui doit fonctionner sans. Deux formulaires disent
+    aussi plus clairement qu'il s'agit de deux choses différentes.
+  */}
+  {SECTIONS.map((section) => (
+    <section class="mb-10">
+      <h2 class="mb-1 text-lg font-bold text-[var(--color-heading)]"
+          style="font-family: var(--font-heading)">
+        {section.titre}
+        <span class="ml-2 text-sm font-normal text-[var(--color-text-light)]">
+          {section.items.length}
+        </span>
+      </h2>
+      <p class="mb-4 max-w-2xl text-sm text-[var(--color-text-light)]">{section.aide}</p>
 
-    <form method="post" class="mt-4">
-      <input type="hidden" name="action" value="creer" />
+      <details class="mb-4 rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+        <summary class="cursor-pointer font-medium text-[var(--color-heading)]">
+          {section.kind === 'stage' ? 'Ajouter un stage' : 'Ajouter un atelier'}
+        </summary>
 
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label for="label" class="block text-sm font-medium mb-1">Nom</label>
-          <input id="label" name="label" required placeholder="Atelier du mercredi matin" class="champ" />
-        </div>
-        <div>
-          <label for="groupe" class="block text-sm font-medium mb-1">Groupe</label>
-          <select id="groupe" name="groupe" required class="champ">
-            {ATELIER_GROUPS.map((g) => <option value={g.id}>{g.label}</option>)}
-          </select>
-        </div>
-        <div>
-          <label for="n-audience" class="block text-sm font-medium mb-1">Public</label>
-          <select id="n-audience" name="audience" required class="champ">
-            <option value="adultes">Adultes</option>
-            <option value="enfants">Enfants</option>
-          </select>
-          <p class="mt-1 text-sm text-[var(--color-text-light)]">
-            Seules les personnes de ce public pourront s’y inscrire.
-          </p>
-        </div>
-      </div>
+        <form method="post" class="mt-4">
+          <input type="hidden" name="action" value="creer" />
+          <input type="hidden" name="kind" value={section.kind} />
 
-      <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <div>
-          <label for="n-debut" class="block text-sm font-medium mb-1">Début</label>
-          <input id="n-debut" name="debut" required value="14:00" class="champ"
-                 inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" placeholder="14:00" />
-        </div>
-        <div>
-          <label for="n-fin" class="block text-sm font-medium mb-1">Fin</label>
-          <input id="n-fin" name="fin" required value="17:00" class="champ"
-                 inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" placeholder="17:00" />
-        </div>
-        <div>
-          <label for="n-lieu" class="block text-sm font-medium mb-1">Lieu</label>
-          <select id="n-lieu" name="lieu" class="champ">
-            {lieux.map((l) => <option value={l}>{l}</option>)}
-          </select>
-          <input name="lieu_autre" class="champ mt-2" placeholder="ou un nouveau lieu" />
-        </div>
-        <div>
-          <label for="n-places" class="block text-sm font-medium mb-1">Places</label>
-          <input id="n-places" name="places" type="number" min="1" required value="6" class="champ" />
-        </div>
-        <div>
-          <label for="n-prix" class="block text-sm font-medium mb-1">Séance seule (€)</label>
-          <input id="n-prix" name="prix" type="number" min="0" step="0.01" required value="25.00" class="champ" />
-        </div>
-      </div>
-
-      <button type="submit" class="mt-4 rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-2 font-medium text-white">
-        Créer le créneau
-      </button>
-    </form>
-  </details>
-
-  <div class="space-y-4">
-    {actifs.map((c) => {
-      const seances = (c.sessions ?? []).length;
-      return (
-        <div class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
-          <form method="post">
-            <input type="hidden" name="action" value="modifier" />
-            <input type="hidden" name="creneau" value={c.id} />
-
-            <div class="mb-4 flex flex-wrap items-baseline gap-x-3">
-              <h2 class="font-bold text-[var(--color-heading)]">{c.label}</h2>
-              <span class="text-sm text-[var(--color-text-light)]">
-                {seances} séance{seances > 1 ? 's' : ''}
-              </span>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label for={`label-${section.kind}`} class="block text-sm font-medium mb-1">Nom</label>
+              <input id={`label-${section.kind}`} name="label" required class="champ"
+                     placeholder={section.kind === 'stage' ? 'Stage surjeteuse' : 'Atelier du mercredi matin'} />
             </div>
 
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+            {section.kind === 'atelier' && (
               <div>
-                <label for={`debut-${c.id}`} class="block text-sm font-medium mb-1">Début</label>
-                <input id={`debut-${c.id}`} name="debut" required class="champ"
-                       inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]"
-                       value={c.default_start_time.slice(0, 5)} />
-              </div>
-              <div>
-                <label for={`fin-${c.id}`} class="block text-sm font-medium mb-1">Fin</label>
-                <input id={`fin-${c.id}`} name="fin" required class="champ"
-                       inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]"
-                       value={c.default_end_time.slice(0, 5)} />
-              </div>
-              <div>
-                <label for={`audience-${c.id}`} class="block text-sm font-medium mb-1">Public</label>
-                <select id={`audience-${c.id}`} name="audience" class="champ">
-                  <option value="adultes" selected={c.audience === 'adultes'}>Adultes</option>
-                  <option value="enfants" selected={c.audience === 'enfants'}>Enfants</option>
+                <label for="groupe" class="block text-sm font-medium mb-1">Groupe</label>
+                <select id="groupe" name="groupe" required class="champ">
+                  {ATELIER_GROUPS.map((g) => <option value={g.id}>{g.label}</option>)}
                 </select>
+                <p class="mt-1 text-sm text-[var(--color-text-light)]">
+                  Sous quel titre il apparaît sur le site public.
+                </p>
               </div>
-              <div>
-                <label for={`lieu-${c.id}`} class="block text-sm font-medium mb-1">Lieu</label>
-                <select id={`lieu-${c.id}`} name="lieu" class="champ">
-                  {lieux.map((l) => (
-                    <option value={l} selected={l === c.default_location}>{l}</option>
-                  ))}
-                </select>
-                <input name="lieu_autre" class="champ mt-2" placeholder="ou un nouveau lieu" />
-              </div>
-              <div>
-                <label for={`places-${c.id}`} class="block text-sm font-medium mb-1">Places</label>
-                <input id={`places-${c.id}`} name="places" type="number" min="1" required
-                       value={c.default_capacity} class="champ" />
-              </div>
-              <div>
-                <label for={`prix-${c.id}`} class="block text-sm font-medium mb-1">Séance seule (€)</label>
-                <input id={`prix-${c.id}`} name="prix" type="number" min="0" step="0.01" required
-                       value={(c.default_unit_price_cents / 100).toFixed(2)} class="champ" />
-              </div>
-            </div>
-
-            <button type="submit"
-                    class="mt-4 rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)]">
-              Enregistrer
-            </button>
-          </form>
-
-          <div class="mt-4 flex flex-wrap items-center gap-4 border-t border-[var(--color-border)] pt-3">
-            <form method="post">
-              <input type="hidden" name="action" value="archiver" />
-              <input type="hidden" name="creneau" value={c.id} />
-              <button type="submit" class="text-sm text-[var(--color-text-light)] underline">
-                Archiver
-              </button>
-            </form>
-
-            {seances === 0 && (
-              <form method="post">
-                <input type="hidden" name="action" value="supprimer" />
-                <input type="hidden" name="creneau" value={c.id} />
-                <button type="submit" class="text-sm text-[var(--color-button)] underline">
-                  Supprimer
-                </button>
-              </form>
             )}
 
-            <span class="text-sm text-[var(--color-text-light)]">
-              {seances === 0
-                ? 'Aucune séance : suppression possible.'
-                : 'Des séances existent : archivez plutôt que supprimer.'}
-            </span>
+            <div>
+              <label for={`audience-n-${section.kind}`} class="block text-sm font-medium mb-1">Public</label>
+              <select id={`audience-n-${section.kind}`} name="audience" required class="champ">
+                <option value="adultes">Adultes</option>
+                <option value="enfants">Enfants</option>
+              </select>
+              <p class="mt-1 text-sm text-[var(--color-text-light)]">
+                Seules les personnes de ce public pourront s’y inscrire.
+              </p>
+            </div>
           </div>
+
+          <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div>
+              <label for={`n-debut-${section.kind}`} class="block text-sm font-medium mb-1">Début</label>
+              <input id={`n-debut-${section.kind}`} name="debut" required value="14:00" class="champ"
+                     inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" placeholder="14:00" />
+            </div>
+            <div>
+              <label for={`n-fin-${section.kind}`} class="block text-sm font-medium mb-1">Fin</label>
+              <input id={`n-fin-${section.kind}`} name="fin" required value="17:00" class="champ"
+                     inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" placeholder="17:00" />
+            </div>
+            <div>
+              <label for={`n-lieu-${section.kind}`} class="block text-sm font-medium mb-1">Lieu</label>
+              <select id={`n-lieu-${section.kind}`} name="lieu" class="champ">
+                {lieux.map((l) => <option value={l}>{l}</option>)}
+              </select>
+              <input name="lieu_autre" class="champ mt-2" placeholder="ou un nouveau lieu" />
+            </div>
+            <div>
+              <label for={`n-places-${section.kind}`} class="block text-sm font-medium mb-1">Places</label>
+              <input id={`n-places-${section.kind}`} name="places" type="number" min="1" required value="6" class="champ" />
+            </div>
+            <div>
+              <label for={`n-prix-${section.kind}`} class="block text-sm font-medium mb-1">{section.libellePrix}</label>
+              <input id={`n-prix-${section.kind}`} name="prix" type="number" min="0" step="0.01" required
+                     value={section.kind === 'stage' ? '40.00' : '25.00'} class="champ" />
+            </div>
+          </div>
+
+          <button type="submit" class="mt-4 rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-2 font-medium text-white">
+            {section.kind === 'stage' ? 'Créer le stage' : 'Créer l’atelier'}
+          </button>
+        </form>
+      </details>
+
+      {section.items.length === 0 ? (
+        <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
+          {section.kind === 'stage' ? 'Aucun stage pour l’instant.' : 'Aucun atelier pour l’instant.'}
+        </p>
+      ) : (
+        <div class="space-y-4">
+          {section.items.map((c) => {
+            const seances = (c.sessions ?? []).length;
+            return (
+              <div class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+                <form method="post">
+                  <input type="hidden" name="action" value="modifier" />
+                  <input type="hidden" name="creneau" value={c.id} />
+
+                  <div class="mb-4 flex flex-wrap items-baseline gap-x-3">
+                    <h3 class="font-bold text-[var(--color-heading)]">{c.label}</h3>
+                    <a href={`/espace-membre/admin/seances/?creneau=${c.id}`}
+                       class="text-sm text-[var(--color-button)] underline">
+                      {seances} séance{seances > 1 ? 's' : ''}
+                    </a>
+                  </div>
+
+                  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+                    <div>
+                      <label for={`debut-${c.id}`} class="block text-sm font-medium mb-1">Début</label>
+                      <input id={`debut-${c.id}`} name="debut" required class="champ"
+                             inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]"
+                             value={c.default_start_time.slice(0, 5)} />
+                    </div>
+                    <div>
+                      <label for={`fin-${c.id}`} class="block text-sm font-medium mb-1">Fin</label>
+                      <input id={`fin-${c.id}`} name="fin" required class="champ"
+                             inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]"
+                             value={c.default_end_time.slice(0, 5)} />
+                    </div>
+                    <div>
+                      <label for={`audience-${c.id}`} class="block text-sm font-medium mb-1">Public</label>
+                      <select id={`audience-${c.id}`} name="audience" class="champ">
+                        <option value="adultes" selected={c.audience === 'adultes'}>Adultes</option>
+                        <option value="enfants" selected={c.audience === 'enfants'}>Enfants</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label for={`lieu-${c.id}`} class="block text-sm font-medium mb-1">Lieu</label>
+                      <select id={`lieu-${c.id}`} name="lieu" class="champ">
+                        {lieux.map((l) => (
+                          <option value={l} selected={l === c.default_location}>{l}</option>
+                        ))}
+                      </select>
+                      <input name="lieu_autre" class="champ mt-2" placeholder="ou un nouveau lieu" />
+                    </div>
+                    <div>
+                      <label for={`places-${c.id}`} class="block text-sm font-medium mb-1">Places</label>
+                      <input id={`places-${c.id}`} name="places" type="number" min="1" required
+                             value={c.default_capacity} class="champ" />
+                    </div>
+                    <div>
+                      <label for={`prix-${c.id}`} class="block text-sm font-medium mb-1">{section.libellePrix}</label>
+                      <input id={`prix-${c.id}`} name="prix" type="number" min="0" step="0.01" required
+                             value={(c.default_unit_price_cents / 100).toFixed(2)} class="champ" />
+                    </div>
+                  </div>
+
+                  <button type="submit"
+                          class="mt-4 rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)]">
+                    Enregistrer
+                  </button>
+                </form>
+
+                <div class="mt-4 flex flex-wrap items-center gap-4 border-t border-[var(--color-border)] pt-3">
+                  <form method="post">
+                    <input type="hidden" name="action" value="archiver" />
+                    <input type="hidden" name="creneau" value={c.id} />
+                    <button type="submit" class="text-sm text-[var(--color-text-light)] underline">
+                      Archiver
+                    </button>
+                  </form>
+
+                  {seances === 0 && (
+                    <form method="post">
+                      <input type="hidden" name="action" value="supprimer" />
+                      <input type="hidden" name="creneau" value={c.id} />
+                      <button type="submit" class="text-sm text-[var(--color-button)] underline">
+                        Supprimer
+                      </button>
+                    </form>
+                  )}
+
+                  <span class="text-sm text-[var(--color-text-light)]">
+                    {seances === 0
+                      ? 'Aucune séance : suppression possible.'
+                      : 'Des séances existent : archivez plutôt que supprimer.'}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
-      );
-    })}
-  </div>
+      )}
+    </section>
+  ))}
 
   {archives.length > 0 && (
     <details class="mt-8">
