@@ -30,32 +30,39 @@ const { seances, vide = 'Prochaines dates à venir — me contacter.', erreur = 
  * partout, et le recopier trois fois garantirait qu'une des trois finisse par
  * dire autre chose que les deux autres.
  *
- * TROIS ÉTATS, et non « libre ou complet ». « Complet » ferme la porte, « liste
- * d'attente » l'entrouvre : les confondre ferait renoncer quelqu'un qui aurait
- * pu venir. « Dernière place » se distingue aussi — c'est l'information qui fait
- * écrire aujourd'hui plutôt que la semaine prochaine.
- *
- * On ne publie QUE des nombres. Jamais un nom, jamais une adresse : ces pages
- * sont publiques, et la liste des personnes inscrites n'y a rien à faire.
+ * On ne publie AUCUN nom, aucune adresse : ces pages sont publiques, et la liste
+ * des personnes inscrites n'y a rien à faire.
+ */
+/**
+ * L'ANNÉE EST AFFICHÉE, et ce n'est pas du zèle : une saison court de septembre
+ * à juin, donc chaque liste enjambe deux années. « samedi 10 avril » sans année,
+ * lu en octobre, se comprend comme dans six mois ou dans dix-huit.
  */
 const dateFr = new Intl.DateTimeFormat('fr-FR', {
-  weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris',
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris',
 });
 const heureFr = new Intl.DateTimeFormat('fr-FR', {
   hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris',
 });
 
+/**
+ * Ce qu'il y a à dire d'une séance — et rien de plus.
+ *
+ * TANT QU'IL RESTE DE LA PLACE, ON NE DIT RIEN. Le nombre exact de places libres
+ * ne change pas la démarche de qui veut s'inscrire, et un décompte affiché finit
+ * par travailler contre l'atelier : « 5 places » laisse croire qu'on peut
+ * attendre, « 1 place » met une pression que personne n'a demandée. Une date sans
+ * mention est une date où l'on peut venir, ce qui est le cas le plus courant.
+ *
+ * Restent les deux seuls moments où la démarche change vraiment. « Complet »
+ * ferme la porte, « liste d'attente » l'entrouvre : les confondre ferait
+ * renoncer quelqu'un qui aurait pu venir.
+ */
 function etatDe(s: Seance) {
   const prises = (s.bookings ?? []).filter((b) => b.status === 'booked').length;
   const enFile = (s.bookings ?? []).filter((b) => b.status === 'waiting').length;
-  const restantes = s.capacity - prises;
 
-  if (restantes > 0) {
-    return {
-      libelle: restantes === 1 ? 'dernière place' : `${restantes} places`,
-      ton: restantes === 1 ? 'urgent' : 'normal',
-    };
-  }
+  if (s.capacity - prises > 0) return null;
   if (enFile < s.places_attente) return { libelle: 'liste d’attente', ton: 'normal' };
   return { libelle: 'complet', ton: 'sourd' };
 }
@@ -93,13 +100,14 @@ const lignes = [...seances]
         {s.creneau && (
           <span class="text-[var(--color-text-light)]">{s.creneau}</span>
         )}
-        <span class={`ml-auto shrink-0 text-xs font-medium ${
-          s.etat.ton === 'urgent' ? 'text-[var(--color-button)]'
-          : s.etat.ton === 'sourd' ? 'text-[var(--color-text-light)]'
-          : 'text-[var(--color-heading)]'
-        }`}>
-          {s.etat.libelle}
-        </span>
+        {s.etat && (
+          <span class={`ml-auto shrink-0 text-xs font-medium ${
+            s.etat.ton === 'sourd' ? 'text-[var(--color-text-light)]'
+            : 'text-[var(--color-heading)]'
+          }`}>
+            {s.etat.libelle}
+          </span>
+        )}
       </li>
     ))}
   </ul>
