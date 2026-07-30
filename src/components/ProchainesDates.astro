@@ -1,0 +1,100 @@
+---
+import { getAdminClient } from '../utils/supabase';
+
+interface Props {
+  /** Identifiant du créneau, obtenu par toSlug() sur son nom. */
+  creneau: string;
+  /** Combien de dates montrer au plus. */
+  limite?: number;
+}
+
+const { creneau, limite = 6 } = Astro.props;
+
+/**
+ * Les prochaines dates d'un créneau, et ce qu'il y reste de place.
+ *
+ * ÎLOT SERVEUR (`server:defer`). La page est prérendue — c'est ce qui la rend
+ * rapide et bien référencée — mais des places restantes figées au build
+ * mentiraient dès la première inscription. Seul ce fragment est calculé à
+ * chaque visite.
+ *
+ * Le repli — les dates saisies dans Keystatic — s'affiche pendant le calcul et
+ * si la base ne répond pas. La page ne perd donc jamais son calendrier, elle
+ * perd au pire sa fraîcheur.
+ *
+ * On ne publie ICI QUE des nombres : une date, des places restantes. Jamais un
+ * nom, jamais un e-mail — c'est une page publique, et la liste des personnes
+ * inscrites n'y a rien à faire.
+ */
+
+const supabase = getAdminClient();
+
+const { data: seances } = await supabase
+  .from('sessions')
+  .select('id, starts_at, ends_at, capacity, places_attente, bookings(status)')
+  .eq('creneau_id', creneau)
+  .eq('status', 'scheduled')
+  .gt('starts_at', new Date().toISOString())
+  .order('starts_at')
+  .limit(limite);
+
+const dateFr = new Intl.DateTimeFormat('fr-FR', {
+  weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris',
+});
+const heureFr = new Intl.DateTimeFormat('fr-FR', {
+  hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris',
+});
+
+type Etat = { libelle: string; urgent: boolean; sourd: boolean };
+
+/**
+ * Trois états, parce qu'ils appellent trois réactions.
+ *
+ * « Complet » et « liste d'attente » ne se confondent pas : le premier ferme la
+ * porte, le second l'entrouvre. Les mélanger ferait renoncer quelqu'un qui
+ * aurait pu venir.
+ */
+function etatDe(s: any): Etat {
+  const prises = (s.bookings ?? []).filter((b: any) => b.status === 'booked').length;
+  const enFile = (s.bookings ?? []).filter((b: any) => b.status === 'waiting').length;
+  const restantes = s.capacity - prises;
+
+  if (restantes > 0) {
+    return {
+      libelle: restantes === 1 ? 'dernière place' : `${restantes} places`,
+      urgent: restantes === 1,
+      sourd: false,
+    };
+  }
+  if (enFile < s.places_attente) {
+    return { libelle: 'liste d’attente', urgent: false, sourd: false };
+  }
+  return { libelle: 'complet', urgent: false, sourd: true };
+}
+
+const dates = (seances ?? []).map((s) => ({ ...s, etat: etatDe(s) }));
+---
+
+{dates.length > 0 ? (
+  <ul class="space-y-1 text-sm text-[var(--color-text)]">
+    {dates.map((s) => (
+      <li class="flex flex-wrap items-baseline gap-x-3">
+        <span class="first-letter:uppercase">{dateFr.format(new Date(s.starts_at))}</span>
+        <span class="text-[var(--color-text-light)]">
+          {heureFr.format(new Date(s.starts_at))} – {heureFr.format(new Date(s.ends_at))}
+        </span>
+        <span class={`ml-auto text-xs font-medium ${
+          s.etat.urgent ? 'text-[var(--color-button)]'
+          : s.etat.sourd ? 'text-[var(--color-text-light)]'
+          : 'text-[var(--color-heading)]'
+        }`}>
+          {s.etat.libelle}
+        </span>
+      </li>
+    ))}
+  </ul>
+) : (
+  /* Aucune date programmée : on laisse parler le contenu de Keystatic, qui dit
+     « Me contacter » là où le calendrier n'est pas encore arrêté. */
+  <slot />
+)}
