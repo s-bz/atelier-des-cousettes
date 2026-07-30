@@ -13,11 +13,36 @@ introduction: >-
 creneauxSectionTitle: Nos créneaux
 calendarLabel: 'Calendrier :'
 faqSectionTitle: Questions fréquentes
+tarifsTitle: Tarifs
+tarifsNote: >-
+  L'adhésion à l'association est comprise dans tous ces tarifs : il n'y a rien à
+  régler en plus. Un forfait s'achète pour la saison et se pose sur les dates de
+  votre choix, dans le créneau qui vous convient. Le tissu et les fournitures
+  restent à votre charge.
+tarifs:
+  - audience: adultes
+    creneaux: Mardi, jeudi ou samedi après-midi, samedi matin, et Verdalle
+    formules:
+      - label: 10 séances
+        prix: 355 €
+        mensuel: ou 35,50 € par mois pendant 10 mois
+      - label: 20 séances
+        prix: 580 €
+        mensuel: ou 58 € par mois pendant 10 mois
+  - audience: enfants
+    creneaux: Jeudi 17h30–19h30 ou samedi matin
+    formules:
+      - label: 10 séances
+        prix: 275 €
+        mensuel: ou 27,50 € par mois pendant 10 mois
+      - label: 20 séances
+        prix: 500 €
+        mensuel: ou 50 € par mois pendant 10 mois
 creneaux:
   - name: Atelier de Verdalle
     location: Verdalle
     day: '1 fois par mois le jeudi '
-    time: de 9h30 à 12h
+    time: de 9h30 à 12h30
     group: verdalle
     price: 25 €/mois
     priceDetails: Paiement mensuel de 50 € pour 2 ateliers de 2h30 par mois.
@@ -65,7 +90,7 @@ creneaux:
     location: Revel
     day: 1 à 2 fois par mois, le jeudi
     time: 17h30 à 19h30
-    group: revel-adultes
+    group: revel-enfants
     price: 25 € la séance
     priceDetails: >-
       Paiement de 25 € pour 2h d'atelier. Selon la demande du groupe : une ou

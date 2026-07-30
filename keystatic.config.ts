@@ -177,6 +177,57 @@ export default config({
         creneauxSectionTitle: fields.text({ label: 'Titre section créneaux' }),
         calendarLabel: fields.text({ label: 'Libellé « Calendrier : »' }),
         faqSectionTitle: fields.text({ label: 'Titre section FAQ' }),
+
+        /*
+         * LES TARIFS SE DÉCLARENT PAR PUBLIC, ET NON PAR CRÉNEAU.
+         *
+         * Un forfait s'achète pour la saison et se pose sur les dates de son
+         * choix, quel que soit le créneau : le prix ne dépend donc pas du jour
+         * mais du public. Le déclarer sept fois, une par créneau, ne le rendait
+         * pas plus juste — cela offrait sept occasions de se contredire, et
+         * Verdalle en profitait déjà pour annoncer 25 € sur sa carte et 50 €
+         * dans son détail.
+         *
+         * Le prix d'une séance sans engagement ne figure PAS ici : il vit en
+         * base, où il sert à facturer les séances hors forfait. Recopié dans le
+         * CMS, il aurait dérivé en une saison, et la page aurait promis un
+         * montant que l'écran « à facturer » aurait démenti.
+         */
+        tarifsTitle: fields.text({ label: 'Titre section tarifs' }),
+        tarifsNote: fields.text({ label: 'Note sous les tarifs', multiline: true }),
+        tarifs: fields.array(
+          fields.object({
+            audience: fields.select({
+              label: 'Public',
+              options: [
+                { label: 'Adultes', value: 'adultes' },
+                { label: 'Enfants', value: 'enfants' },
+              ],
+              defaultValue: 'adultes',
+            }),
+            creneaux: fields.text({
+              label: 'Créneaux concernés (ex : jeudi 17h30–19h30 ou samedi matin)',
+            }),
+            formules: fields.array(
+              fields.object({
+                label: fields.text({ label: 'Formule (ex : 10 séances)' }),
+                prix: fields.text({ label: 'Prix (ex : 275 €)' }),
+                mensuel: fields.text({
+                  label: 'Ou mensuellement (ex : 27,50 € par mois pendant 10 mois)',
+                }),
+              }),
+              {
+                label: 'Formules',
+                itemLabel: (props) =>
+                  `${props.fields.label.value || 'Formule'} — ${props.fields.prix.value || '?'}`,
+              },
+            ),
+          }),
+          {
+            label: 'Tarifs par public',
+            itemLabel: (props) => (props.fields.audience.value === 'enfants' ? 'Enfants' : 'Adultes'),
+          },
+        ),
         creneaux: fields.array(
           fields.object({
             name: fields.text({ label: 'Nom du créneau' }),
