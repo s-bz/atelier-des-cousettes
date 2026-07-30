@@ -134,6 +134,7 @@ if (Astro.request.method === 'POST' && choisie) {
 let solde = 0;
 let seances: any[] = [];
 let mesReservations = new Map<string, string>();
+const mesAttentes = new Set<string>();
 
 if (choisie) {
   ({ solde } = await soldeDe(choisie.id));
@@ -143,7 +144,7 @@ if (choisie) {
 
   const { data } = await supabase
     .from('sessions')
-    .select('id, starts_at, ends_at, location, capacity, status, creneaux!inner(label, audience, kind), bookings(id, participant_id, status)')
+    .select('id, starts_at, ends_at, location, capacity, status, creneaux!inner(label, audience, kind, places_attente), bookings(id, participant_id, status)')
     .gte('starts_at', debutDuJour.toISOString())
     .eq('status', 'scheduled')
     // Les séances d'un autre public ne sont pas seulement irréservables :
@@ -160,15 +161,39 @@ if (choisie) {
   seances = data ?? [];
 
   for (const s of seances) {
+    // Inscrit OU en attente : dans les deux cas la ligne existe, et le bouton
+    // doit permettre de s'en retirer plutôt que de proposer une seconde
+    // inscription que la base refuserait.
     const mienne = (s.bookings ?? []).find(
-      (b: any) => b.participant_id === choisie.id && b.status === 'booked',
+      (b: any) => b.participant_id === choisie.id
+        && (b.status === 'booked' || b.status === 'waiting'),
     );
-    if (mienne) mesReservations.set(s.id, mienne.id);
+    if (mienne) {
+      mesReservations.set(s.id, mienne.id);
+      if (mienne.status === 'waiting') mesAttentes.add(s.id);
+    }
   }
 }
 
 const occupees = (s: any) =>
   (s.bookings ?? []).filter((b: any) => b.status === 'booked').length;
+
+const enAttente = (s: any) =>
+  (s.bookings ?? []).filter((b: any) => b.status === 'waiting').length;
+
+/**
+ * Ce que la séance peut encore accepter, et sous quelle forme.
+ *
+ * Trois états, et non « libre ou complet » : une séance pleine dont la liste
+ * d'attente n'est pas saturée accepte encore quelqu'un — sans lui promettre une
+ * place. Le confondre avec « complet » priverait de la liste d'attente ; le
+ * confondre avec « libre » ferait espérer une place qui n'existe pas.
+ */
+function etatSeance(s: any): 'libre' | 'attente' | 'complet' {
+  if (occupees(s) < s.capacity) return 'libre';
+  if (enAttente(s) < ((s.creneaux as any)?.places_attente ?? 0)) return 'attente';
+  return 'complet';
+}
 
 const moisFr = new Intl.DateTimeFormat('fr-FR', {
   month: 'long', year: 'numeric', timeZone: 'Europe/Paris',
@@ -255,7 +280,12 @@ const lien = personnes.length > 1 && choisie ? `?personne=${choisie.id}` : '';
                 {liste.map((s) => {
                   const reservationId = mesReservations.get(s.id);
                   const prises = occupees(s);
-                  const complet = prises >= s.capacity;
+                  const etat = etatSeance(s);
+                  const jAttends = mesAttentes.has(s.id);
+                  // Moins de 48 h : se désister ne rend plus la séance. On le
+                  // dit AVANT le clic — l'apprendre après serait une mauvaise
+                  // surprise, et elle porterait sur de l'argent.
+                  const tardif = new Date(s.starts_at).getTime() - Date.now() < 48 * 3600e3;
                   return (
                     <li class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
                       <div class="min-w-[12rem] flex-1">
@@ -270,27 +300,48 @@ const lien = personnes.length > 1 && choisie ? `?personne=${choisie.id}` : '';
                       </div>
 
                       {reservationId ? (
-                        <form method="post" class="flex items-center gap-3">
+                        <form method="post" class="flex flex-wrap items-center gap-x-3 gap-y-1">
                           <input type="hidden" name="action" value="liberer" />
                           <input type="hidden" name="reservation" value={reservationId} />
-                          <span class="text-sm font-medium text-[var(--color-heading)]">Inscrit</span>
+                          <span class={`text-sm font-medium ${jAttends ? 'text-[var(--color-text-light)]' : 'text-[var(--color-heading)]'}`}>
+                            {jAttends ? 'En attente' : 'Inscrit'}
+                          </span>
                           <button type="submit" class="text-sm text-[var(--color-button)] underline">
-                            Libérer
+                            {jAttends ? 'Me retirer' : 'Libérer'}
                           </button>
+                          {/* Se retirer de la liste d'attente ne coûte jamais
+                              rien : on n'avait pas de place. */}
+                          {tardif && !jAttends && (
+                            <span class="w-full text-xs text-[var(--color-button)]">
+                              Moins de 48 h : la place repartira, mais la séance restera due.
+                            </span>
+                          )}
                         </form>
-                      ) : complet ? (
+                      ) : etat === 'complet' ? (
                         <span class="text-sm text-[var(--color-text-light)]">Complet</span>
                       ) : (
-                        <form method="post" class="flex items-center gap-3">
+                        <form method="post" class="flex flex-wrap items-center gap-x-3 gap-y-1">
                           <input type="hidden" name="action" value="reserver" />
                           <input type="hidden" name="seance" value={s.id} />
                           <span class="text-sm text-[var(--color-text-light)]">
-                            {s.capacity - prises} place{s.capacity - prises > 1 ? 's' : ''}
+                            {etat === 'libre'
+                              ? `${s.capacity - prises} place${s.capacity - prises > 1 ? 's' : ''}`
+                              : 'Complet'}
                           </span>
                           <button type="submit"
                                   class="rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-4 py-1.5 text-sm font-medium text-[var(--color-button)] transition-colors hover:bg-[var(--color-button)] hover:text-white">
-                            {solde > 0 ? 'Réserver' : 'Réserver en plus'}
+                            {etat === 'attente'
+                              ? 'Liste d’attente'
+                              : solde > 0 ? 'Réserver' : 'Réserver en plus'}
                           </button>
+                          {/* La liste d'attente ne promet rien : le dire ici
+                              évite qu'on la prenne pour une inscription. */}
+                          {etat === 'attente' && (
+                            <span class="w-full text-xs text-[var(--color-text-light)]">
+                              La séance est pleine. Vous prendrez la place dès qu’une se libère,
+                              et serez prévenu par e-mail. Aucune séance n’est décomptée en attendant.
+                            </span>
+                          )}
                         </form>
                       )}
                     </li>

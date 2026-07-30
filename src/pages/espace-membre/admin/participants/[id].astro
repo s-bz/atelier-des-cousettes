@@ -110,6 +110,21 @@ if (Astro.request.method === 'POST') {
     else message = 'Abonnement supprimé. Les réservations existantes sont conservées.';
   }
 
+  // Rendre une séance retenue après un désistement tardif.
+  //
+  // La règle des 48 h est ferme par défaut, mais Isabelle reste libre d'y
+  // renoncer — une hospitalisation n'est pas un oubli. Sans ce geste, la seule
+  // issue serait de ne pas appliquer la règle du tout.
+  if (action === 'rendre-quand-meme') {
+    const { error } = await supabase
+      .from('bookings')
+      .update({ credit_retenu: false })
+      .eq('id', String(form.get('reservation') ?? ''))
+      .eq('participant_id', id);
+    if (error) erreur = `Impossible : ${error.message}`;
+    else message = 'Séance rendue : elle revient au solde malgré le délai.';
+  }
+
   // Retirer quelqu'un d'une séance.
   //
   // Isabelle apprend souvent les empêchements par téléphone ou de vive voix :
@@ -243,9 +258,12 @@ const { data: creneaux } = await supabase
 
 const { data: reservations } = await supabase
   .from('bookings')
-  .select('id, source, status, attendance, sessions(starts_at, status, creneaux(label))')
+  .select('id, source, status, credit_retenu, attendance, sessions(starts_at, status, creneaux(label))')
   .eq('participant_id', id)
-  .eq('status', 'booked')
+  // Les places rendues trop tard figurent ici bien qu'elles soient libérées :
+  // la séance reste due, donc elle compte, donc elle doit se voir. L'omettre
+  // ferait un solde que rien sur cette page n'expliquerait.
+  .or('status.eq.booked,status.eq.waiting,credit_retenu.eq.true')
   .order('starts_at', { referencedTable: 'sessions' });
 
 // Les absences notées, comptées ici plutôt que laissées à repérer à l'œil dans
@@ -581,19 +599,40 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
               <span class="text-sm text-[var(--color-button)]">séance annulée</span>
             )}
 
+            {r.status === 'waiting' && (
+              <span class="text-sm text-[var(--color-text-light)]">en attente d’une place</span>
+            )}
+            {r.credit_retenu && (
+              <span class="text-sm font-medium text-[var(--color-button)]">
+                annulée tardivement — séance due
+              </span>
+            )}
+
             {/*
-              Le libellé dit ce qui va se passer, et ce n'est pas la même chose
-              des deux côtés d'aujourd'hui : à venir, on libère une place ;
-              passée, on rend un crédit déjà consommé.
+              Trois gestes selon l'état, et le libellé dit lequel :
+              une séance retenue se rend malgré le délai, une séance passée se
+              rend, une séance à venir se retire.
             */}
-            <form method="post" class="ml-auto">
-              <input type="hidden" name="action" value="liberer" />
-              <input type="hidden" name="reservation" value={r.id} />
-              <button type="submit"
-                      class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-1.5 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-bg-accent)]">
-                {passee ? 'Rendre la séance' : 'Retirer de la séance'}
-              </button>
-            </form>
+            {r.credit_retenu ? (
+              <form method="post" class="ml-auto">
+                <input type="hidden" name="action" value="rendre-quand-meme" />
+                <input type="hidden" name="reservation" value={r.id} />
+                <button type="submit"
+                        class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-1.5 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-bg-accent)]">
+                  Rendre malgré le délai
+                </button>
+              </form>
+            ) : (
+              <form method="post" class="ml-auto">
+                <input type="hidden" name="action" value="liberer" />
+                <input type="hidden" name="reservation" value={r.id} />
+                <button type="submit"
+                        class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-1.5 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-bg-accent)]">
+                  {r.status === 'waiting' ? 'Retirer de la liste'
+                    : passee ? 'Rendre la séance' : 'Retirer de la séance'}
+                </button>
+              </form>
+            )}
           </li>
         );
       })}

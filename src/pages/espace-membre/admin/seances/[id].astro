@@ -96,11 +96,38 @@ if (Astro.request.method === 'POST') {
   }
 
   if (action === 'liberer') {
-    const { error } = await supabase.rpc('release_booking', {
+    const { data: issue, error } = await supabase.rpc('release_booking', {
       p_booking: String(form.get('booking')),
     });
-    if (error) erreur = error.message;
-    else message = 'Place libérée, le crédit est rendu.';
+
+    if (error) {
+      erreur = error.message;
+    } else {
+      const tardif = Boolean((issue as any)?.tardif);
+      const promu = (issue as any)?.promu as string | null;
+
+      // Le premier de la file prend la place, et doit l'apprendre : il n'a rien
+      // à faire, et sans message il découvrirait son inscription par hasard.
+      // Envoyé ici comme depuis l'espace adhérent — la promotion ne dépend pas
+      // de qui a rendu la place.
+      if (promu) {
+        const [{ data: suivant }, { data: s }] = await Promise.all([
+          supabase.from('participants').select('first_name, accounts(email)').eq('id', promu).maybeSingle(),
+          supabase.from('sessions').select('starts_at, ends_at, location').eq('id', id).maybeSingle(),
+        ]);
+        if (s) {
+          await notifier('promotion_attente', (suivant as any)?.accounts?.email, variablesSeance({
+            prenom: (suivant as any)?.first_name ?? '',
+            starts_at: s.starts_at, ends_at: s.ends_at, location: s.location,
+          }));
+        }
+      }
+
+      message = (tardif
+        ? 'Place libérée. À moins de 48 h, la séance reste due — utilisez « Rendre la séance » sur sa fiche pour la lui rendre malgré tout.'
+        : 'Place libérée, le crédit est rendu.')
+        + (promu ? ' La première personne en attente a pris la place et a été prévenue.' : '');
+    }
   }
 
   // Noter la présence.
@@ -189,9 +216,10 @@ const lieux = [...new Set([
 
 const { data: reservations } = await supabase
   .from('bookings')
-  .select('id, source, status, attendance, participants(id, first_name, last_name)')
+  .select('id, source, status, attendance, created_at, participants(id, first_name, last_name)')
   .eq('session_id', id)
-  .eq('status', 'booked');
+  .in('status', ['booked', 'waiting'])
+  .order('created_at');
 
 // La feuille de présence n'apparaît qu'une fois la séance commencée : la
 // proposer trois semaines à l'avance inviterait à noter des présences que
@@ -242,7 +270,11 @@ const { count: datesAVenir } = groupees
       .gt('starts_at', new Date().toISOString())
   : { count: 0 };
 
-const prises = (reservations ?? []).length;
+// Inscrits et personnes en attente, séparés : ils ne sont pas dans le même
+// état et la feuille de présence ne concerne que les premiers.
+const inscrits = (reservations ?? []).filter((r: any) => r.status === 'booked');
+const attente = (reservations ?? []).filter((r: any) => r.status === 'waiting');
+const prises = inscrits.length;
 const annulee = seance.status === 'cancelled';
 
 const dateFr = new Intl.DateTimeFormat('fr-FR', {
@@ -340,6 +372,42 @@ const debut = new Date(seance.starts_at);
         </li>
       ))}
     </ul>
+  )}
+
+  {/*
+    La liste d'attente, dans l'ordre où elle sera servie.
+    Séparée des inscrits : ces personnes n'ont pas de place, ne comptent pas
+    dans la feuille de présence, et rien ne leur est décompté. La première
+    prendra la place automatiquement dès qu'une se libère.
+  */}
+  {attente.length > 0 && (
+    <section class="mt-8">
+      <h2 class="mb-1 text-lg font-bold text-[var(--color-heading)]">
+        Liste d’attente
+        <span class="ml-2 text-sm font-normal text-[var(--color-text-light)]">{attente.length}</span>
+      </h2>
+      <p class="mb-3 text-sm text-[var(--color-text-light)]">
+        Dans l’ordre d’arrivée. La première personne prend la place dès qu’une se libère,
+        et reçoit un e-mail. Aucune séance ne leur est décomptée en attendant.
+      </p>
+      <ul class="space-y-2">
+        {attente.map((r: any, i: number) => (
+          <li class="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
+            <span class="text-sm text-[var(--color-text-light)]">{i + 1}.</span>
+            <span class="font-medium text-[var(--color-heading)]">
+              {r.participants?.first_name} {r.participants?.last_name}
+            </span>
+            <form method="post" class="ml-auto">
+              <input type="hidden" name="action" value="liberer" />
+              <input type="hidden" name="booking" value={r.id} />
+              <button type="submit" class="text-sm text-[var(--color-button)] underline">
+                Retirer de la liste
+              </button>
+            </form>
+          </li>
+        ))}
+      </ul>
+    </section>
   )}
 
   {/*

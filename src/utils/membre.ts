@@ -93,8 +93,11 @@ export async function libererPlace(
     return { ok: false, message: 'Cette réservation ne vous appartient pas.' };
   }
 
-  const { error } = await supabase.rpc('release_booking', { p_booking: reservationId });
+  const { data: issue, error } = await supabase.rpc('release_booking', { p_booking: reservationId });
   if (error) return { ok: false, message: error.message };
+
+  const tardif = Boolean((issue as any)?.tardif);
+  const promu = (issue as any)?.promu as string | null;
 
   const personne = (cible as any).participants;
   const seance = (cible as any).sessions;
@@ -128,7 +131,35 @@ export async function libererPlace(
     }));
   }
 
-  return { ok: true, message: 'Place libérée. La séance revient à votre solde.' };
+  // La place rendue revient au premier de la file. Le prévenir est le seul
+  // moyen qu'il l'apprenne : il n'a rien à faire, et sans message il
+  // découvrirait son inscription en consultant son espace par hasard.
+  if (promu && seance) {
+    const { data: suivant } = await supabase
+      .from('participants')
+      .select('first_name, accounts(email)')
+      .eq('id', promu)
+      .maybeSingle();
+
+    await notifier('promotion_attente', (suivant as any)?.accounts?.email, variablesSeance({
+      prenom: (suivant as any)?.first_name ?? '',
+      starts_at: seance.starts_at,
+      ends_at: seance.ends_at,
+      location: seance.location,
+    }));
+  }
+
+  return {
+    ok: true,
+    // Le message dit ce qui vient de se passer, y compris quand ce n'est pas
+    // la bonne nouvelle attendue : annoncer « la séance revient à votre solde »
+    // après un désistement tardif serait faux, et la surprise viendrait à la
+    // facturation.
+    message: tardif
+      ? 'Place libérée : elle est proposée aux autres. Mais à moins de 48 h de la séance, '
+        + 'celle-ci reste due — elle ne revient pas à votre solde.'
+      : 'Place libérée. La séance revient à votre solde.',
+  };
 }
 
 export const dateLongue = new Intl.DateTimeFormat('fr-FR', {
