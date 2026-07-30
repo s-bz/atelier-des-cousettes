@@ -237,6 +237,22 @@ const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (�
     <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>
   )}
 
+  {/*
+    Le compte des dates ne tombe pas juste sur le forfait annoncé.
+    C'est tout l'intérêt de déclarer ce nombre : avant, deux des trois matinées
+    du stage découverte faisaient un forfait de deux dates, toujours vendu 90 €,
+    et rien ne s'en apercevait.
+  */}
+  {forfaitIncoherent && (
+    <p class="mb-6 rounded-xl border border-[var(--color-button)] bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-text)] shadow-md">
+      <strong class="text-[var(--color-button)]">Le compte des dates ne tombe pas juste.</strong>
+      {' '}Ce stage est annoncé comme un forfait de {creneau.seances_par_stage} séances, mais
+      {' '}{datesCreees} date{(datesCreees ?? 0) > 1 ? 's ont' : ' a'} été créée
+      {(datesCreees ?? 0) > 1 ? 's' : ''} — ni {creneau.seances_par_stage}, ni un multiple.
+      Il en manque une, ou il y en a une de trop.
+    </p>
+  )}
+
   {creneau.archived_at && (
     <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">
       Archivé : il n’est plus proposé à l’inscription. Ses {seances} séance{(seances ?? 0) > 1 ? 's' : ''} sont conservées.

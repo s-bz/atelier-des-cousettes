@@ -83,12 +83,8 @@ ni liées.
 ```sql
 create view v_seances_publiques as
 select
-  s.id            as seance_id,
+  s.id as seance_id,
   s.creneau_id,
-  c.label         as creneau_label,
-  c.kind,
-  c.group_id,
-  c.audience,
   s.starts_at,
   s.ends_at,
   s.location,
@@ -99,6 +95,11 @@ where s.status = 'scheduled'
   and c.archived_at is null
   and s.starts_at > now();
 ```
+
+La jointure ne sert qu'à filtrer : les attributs du créneau — libellé, `kind`,
+`audience`, `group_id`, `seances_par_stage`, `default_unit_price_cents` — sont
+lus séparément et rapprochés dans le module. Les recopier ici en ferait deux
+sources à garder d'accord.
 
 Aucune donnée de réservation n'en sort : le site public n'affiche ni le nombre
 de places libres, ni la mention « complet ». La vue ne touche donc jamais
@@ -126,24 +127,36 @@ quand son calendrier n'est pas encore posé.
 Les fonctions de mise en forme sont pures et vivent dans le même module :
 
 - `formaterPrix(cents)` → « 40 € », « 32,50 € »
-- `fourchetteDePrix(seances)` → « 40 € » si toutes égales, « 40 €–90 € » sinon
+- `fourchette(valeurs, formater)` → « 40 € » si toutes égales, « 33 €–40 € » sinon
 - `dureeEnHeures(seance)` → « 3h », « 2h30 »
-- `fourchetteDeDurees(seances)` → « 3h » ou « 3h–7h »
 - `grouperParMois(seances)` → `[{ mois: 'Octobre', jours: [4, 25] }, …]`
 - `formaterSeance(seance)` → « Samedi 10 janvier de 14h à 17h »
+- `prixDuStage(creneau, seances)` et `dureeDuStage(creneau, seances)` — voir
+  § 6, page 2 : la règle diffère selon `seances_par_stage`
+- `blocsDeStage(creneau, seances)` → découpe les dates en groupes de
+  `seances_par_stage`, dans l'ordre chronologique
 
 ### 5.3 Le lien Keystatic → base
 
-Un champ `creneauId` sur chaque entrée `creneaux[]` (ateliers) et `stages[]`,
-facultatif pour ne pas invalider le contenu existant.
+Un champ `creneauIds` — une **liste** d'identifiants — sur chaque entrée
+`creneaux[]` (ateliers) et `stages[]`, facultatif pour ne pas invalider le
+contenu existant.
+
+Une liste, et non un identifiant seul, parce que le cas est déjà là : « Stage
+découverte de la couture » est un seul texte sur le site, et deux créneaux en
+base depuis `scripts/seed-stages.mjs` — `stage-decouverte-couture-complete` et
+`stage-decouverte-couture-courte`. Chacun a son prix, sa durée et ses dates ;
+seule la description leur est commune. Un champ simple aurait obligé à
+dédoubler la prose, ou à faire disparaître une formule.
 
 Pas de rapprochement implicite par le nom. Les identifiants en base valent bien
-`toSlug(label)` aujourd'hui, mais le jour où Isabelle renomme un créneau depuis
-l'écran d'administration, un rapprochement par le nom ferait disparaître son
-texte sans le moindre signal. Un champ explicite rend la liaison visible et
-réparable.
+`toSlug(label)` pour les ateliers, mais les stages n'ont jamais suivi cette
+règle — `stage-sac-tote-bag` face à « Stage sac et tote bag » — et le jour où
+Isabelle renomme un créneau depuis l'écran d'administration, un rapprochement
+par le nom ferait disparaître son texte sans le moindre signal. Un champ
+explicite rend la liaison visible et réparable.
 
-Une entrée Keystatic dont le `creneauId` ne correspond à aucune ligne produit
+Une entrée Keystatic dont un `creneauId` ne correspond à aucune ligne produit
 un `console.warn` — lisible dans les journaux Vercel — et s'affiche sans dates.
 Pas de bandeau de diagnostic à l'écran : Isabelle est la première lectrice de
 ces pages et n'a pas à y voir passer nos erreurs.

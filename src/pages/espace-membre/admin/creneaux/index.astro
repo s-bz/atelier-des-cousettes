@@ -86,7 +86,7 @@ if (Astro.request.method === 'POST') {
 
 const { data: tous } = await supabase
   .from('creneaux')
-  .select('id, label, kind, audience, seances_par_stage, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, archived_at, sessions(id)')
+  .select('id, label, kind, audience, seances_par_stage, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, archived_at, sessions(starts_at, ends_at)')
   .order('label');
 
 const lieux = [...new Set((tous ?? []).map((c) => c.default_location))].sort();
@@ -119,6 +119,33 @@ const SECTIONS = [
 ];
 
 const euros = (cents: number) => (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2);
+
+/**
+ * Durée totale d'UN stage, lue sur ses dates.
+ *
+ * C'est le chiffre qu'Isabelle annonce — « 90 € pour 7 h d'atelier » — et il ne
+ * se lisait nulle part : les trois matinées font 2 h, 2 h et 3 h, un total
+ * qu'on ne devinait qu'en additionnant à la main.
+ *
+ * On additionne les `seances_par_stage` PREMIÈRES dates, pas toutes : si le
+ * même forfait est proposé deux fois dans la saison, son total ne double pas.
+ */
+function heuresDuStage(c: { seances_par_stage: number; sessions: { starts_at: string; ends_at: string }[] | null }) {
+  const dates = [...(c.sessions ?? [])]
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+    .slice(0, c.seances_par_stage);
+
+  if (dates.length === 0) return null;
+
+  const minutes = dates.reduce(
+    (n, s) => n + (new Date(s.ends_at).getTime() - new Date(s.starts_at).getTime()) / 60000,
+    0,
+  );
+
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  return m === 0 ? `${h} h` : `${h} h ${m}`;
+}
 ---
 
 <AdminLayout
@@ -163,12 +190,21 @@ const euros = (cents: number) => (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2
                     {' '}{euros(c.default_unit_price_cents)} €
                   </span>
                   {/* Un forfait le dit : « 3 séances » n'a pas le même sens
-                      qu'un stage proposé trois fois. */}
+                      qu'un stage proposé trois fois. Les heures avec, parce que
+                      c'est le chiffre annoncé : « 90 € pour 7 h d'atelier ». */}
                   {c.seances_par_stage > 1 && (
                     <span class="rounded-full bg-[var(--color-bg-accent)] px-3 py-1 text-xs font-medium text-[var(--color-heading)]">
                       forfait de {c.seances_par_stage} séances
+                      {heuresDuStage(c) && ` · ${heuresDuStage(c)}`}
                     </span>
                   )}
+                  {/*
+                    Pas d'heures pour un stage à date unique : ses dates n'ont
+                    pas forcément la même durée — l'initiation machine dure 3 h
+                    le samedi et 2 h 30 le jeudi — et un chiffre unique en
+                    désignerait une seule. L'horaire de chaque date figure déjà
+                    dans la liste des séances.
+                  */}
                   <span class="ml-auto text-sm text-[var(--color-text-light)]">
                     {seances} séance{seances > 1 ? 's' : ''}
                   </span>
