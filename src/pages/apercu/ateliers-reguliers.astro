@@ -215,7 +215,7 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
     par lieu puis sous les tarifs et la FAQ. Celui-ci arrivait avant qu'on ait lu
     de quoi décider — et un bouton répété six fois cesse d'être remarqué.
   */}
-  {page.introduction && <IntroSection text={page.introduction} cta={false} />}
+  {page.introduction && <IntroSection text={page.introduction} cta={false} fond />}
 
   {groupes.length > 0 && (
     <section class="pt-8 pb-16 md:pt-10 md:pb-20">
@@ -430,7 +430,7 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
     </section>
   )}
 
-  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} />
+  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} fond={false} />
 
   {page.crossLinksText && (
     <CrossLinksSection text={page.crossLinksText} excludeHref="/ateliers-reguliers/" />

@@ -11,9 +11,17 @@ interface Props {
    * d'avoir rien lu ne sert personne, et répété six fois il cesse de se voir.
    */
   cta?: boolean;
+  /**
+   * Poser l'introduction sur le fond chaud.
+   *
+   * Les sections alternent, fond et pas de fond. Sur les pages d'aperçu,
+   * l'alternance commence par le fond : la page s'ouvre sur une bande colorée
+   * qui pose l'introduction, plutôt que de la laisser flotter sur le clair.
+   */
+  fond?: boolean;
 }
 
-const { text, ctaLabel, cta = true } = Astro.props;
+const { text, ctaLabel, cta = true, fond = false } = Astro.props;
 ---
 
 {/*
@@ -26,7 +34,7 @@ const { text, ctaLabel, cta = true } = Astro.props;
   voyait plus que l'espace qu'on avait gagné. Un composant ne peut pas savoir ce
   qui le suit ; il lui reste à ne jamais coller.
 */}
-<section class={`pt-12 md:pt-16 ${cta ? 'pb-16 md:pb-20' : 'pb-8 md:pb-10'}`}>
+<section class={`pt-12 md:pt-16 ${cta ? 'pb-16 md:pb-20' : 'pb-8 md:pb-10'} ${fond ? 'bg-[var(--color-bg-accent)]' : ''}`}>
   <div class="max-w-3xl mx-auto px-4 text-center">
     <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{text}</p>
     <slot />

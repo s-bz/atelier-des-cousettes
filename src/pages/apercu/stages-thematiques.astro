@@ -283,7 +283,7 @@ const stagesGroupes = familles.map((f) => {
 
 
   {page.introduction && (
-    <IntroSection text={page.introduction} cta={false} />
+    <IntroSection text={page.introduction} cta={false} fond />
   )}
 
   {avecDates.length === 0 ? (
@@ -297,7 +297,7 @@ const stagesGroupes = familles.map((f) => {
     </section>
   ) : (
     <Fragment>
-      <section class="bg-[var(--color-bg-accent)] pt-10 pb-16 md:pt-12 md:pb-20">
+      <section class="pt-10 pb-16 md:pt-12 md:pb-20">
         <div class="mx-auto max-w-4xl px-4">
           <h2 class="mb-10 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
             {page.stagesSectionTitle}
@@ -321,7 +321,7 @@ const stagesGroupes = familles.map((f) => {
         </div>
       </section>
 
-      <section class="py-16 md:py-20">
+      <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
         <div class="mx-auto max-w-3xl space-y-8 px-4">
           {/*
             Le même conteneur que sur les deux autres pages : carte blanche,
@@ -423,7 +423,7 @@ const stagesGroupes = familles.map((f) => {
     </Fragment>
   )}
 
-  <FaqSection title={page.faqSectionTitle} items={faqAJour} ctaLabel={page.ctaLabel} />
+  <FaqSection title={page.faqSectionTitle} items={faqAJour} ctaLabel={page.ctaLabel} fond={false} />
 
   {page.crossLinksText && (
     <CrossLinksSection text={page.crossLinksText} excludeHref="/stages-thematiques/" />
