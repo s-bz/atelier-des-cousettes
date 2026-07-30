@@ -3,17 +3,18 @@ export const prerender = false;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Hero from '../../components/Hero.astro';
-import IntroSection from '../../components/IntroSection.astro';
+import CrossLinksSection from '../../components/CrossLinksSection.astro';
 import CalendrierCreneau from '../../components/CalendrierCreneau.astro';
 import ContactCTA from '../../components/ContactCTA.astro';
 import FaqSection from '../../components/FaqSection.astro';
-import { reader } from '../../utils/reader';
-import { resolveImage } from '../../utils/images';
-import { getAdminClient } from '../../utils/supabase';
+import { getPageContext, reader } from '../../utils/reader';
+import { resolveImage, resolveImageUrl } from '../../utils/images';
 import { splitParagraphs } from '../../utils/strings';
+import { buildServicePageSchemas } from '../../utils/schema';
+import { getAdminClient } from '../../utils/supabase';
 
 /**
- * Aperçu : un après-midi couture, rendu depuis la base.
+ * Aperçu : un après-midi couture, ses dates lues en base.
  *
  * CETTE FORMULE N'A PAS DE CRÉNEAU PROPRE, et n'en a pas besoin : venir une
  * fois, c'est prendre une place dans un atelier existant. Ses dates sont donc
@@ -33,14 +34,34 @@ import { splitParagraphs } from '../../utils/strings';
  * séance déplacée, et afficher une date qui n'existe plus ferait se déplacer
  * quelqu'un pour rien. En cas de panne, on le dit et on invite à revenir.
  *
+ * Tout le reste — l'introduction, le bloc d'informations, la description, la
+ * liste « pour qui », la FAQ, les liens croisés, le JSON-LD — est rendu comme
+ * sur la page publiée.
+ *
  * noIndex, et exclue du plan du site.
  */
 
 const page = await reader.singletons.apresMidiCouture.read();
 if (!page) throw new Error('Contenu de l’après-midi couture introuvable');
 
+const { settings, siteUrl } = await getPageContext(Astro.site);
+
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
 const couverture = await resolveImage(page.coverImage, coverGlob);
+const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
+
+const faqItems = page.faqItems ?? [];
+const schemas = buildServicePageSchemas({
+  title: page.title,
+  seoDescription: page.seoDescription,
+  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
+  siteUrl,
+  settings,
+  offers: page.schemaOffers ?? [],
+  faqItems,
+});
+
+const audienceItems = page.audienceItems ?? [];
 
 const supabase = getAdminClient();
 
@@ -58,7 +79,7 @@ const { data: seances, error } = await supabase
   .order('starts_at')
   .limit(120);
 
-const aplati = (seances ?? []).map((s: any) => ({
+const aplati = ((seances ?? []) as any[]).map((s) => ({
   starts_at: s.starts_at,
   ends_at: s.ends_at,
   capacity: s.capacity,
@@ -87,49 +108,109 @@ const publics = [
     items: aplati.filter((s) => s.audience === 'adultes') },
   { cle: 'enfants', titre: 'Enfants', duree: '2 h', prix: prixDe('enfants'),
     items: aplati.filter((s) => s.audience === 'enfants') },
-].filter((p) => p.items.length > 0 || Boolean(error));
+].filter((p) => p.items.length > 0);
 ---
 
-<BaseLayout title={`${page.title} — aperçu`} description={page.seoDescription} noIndex={true}>
+<BaseLayout title={`${page.title} — aperçu`} description={page.seoDescription}
+            ogImage={ogImage} noIndex={true}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
+  </Fragment>
+
   <Hero title={page.title} subtitle={page.subtitle}
         coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
 
   <div class="bg-[var(--color-bg-accent)] py-3">
     <p class="mx-auto max-w-4xl px-4 text-sm text-[var(--color-text)]">
-      <strong class="text-[var(--color-button)]">Aperçu.</strong> Les dates et leur disponibilité
-      sont lues en base. La version publiée reste
+      <strong class="text-[var(--color-button)]">Aperçu.</strong> Seules les dates changent : ce
+      sont celles des ateliers, lues en base. La version publiée reste
       {' '}<a href="/un-apres-midi-couture/" class="text-[var(--color-button)] underline">ici</a>.
     </p>
   </div>
 
   {page.introduction && (
-    <IntroSection text={page.introduction} ctaLabel={page.ctaLabel} />
+    <section class="py-16 md:py-20">
+      <div class="mx-auto max-w-3xl px-4 text-center">
+        <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">
+          {page.introduction}
+        </p>
+        {(page.price || page.duration || page.location) && (
+          <div class="mt-8 flex flex-wrap justify-center gap-4">
+            {page.price && (
+              <div class="rounded-xl bg-[var(--color-bg-accent)] px-5 py-3 text-center">
+                <p class="heading-font text-2xl font-bold text-[var(--color-button)]">{page.price}</p>
+                {page.priceLabel && (
+                  <p class="text-xs text-[var(--color-text-light)]">{page.priceLabel}</p>
+                )}
+              </div>
+            )}
+            {page.duration && (
+              <div class="rounded-xl bg-[var(--color-bg-accent)] px-5 py-3 text-center">
+                <p class="heading-font text-2xl font-bold text-[var(--color-heading)]">{page.duration}</p>
+                {page.durationLabel && (
+                  <p class="text-xs text-[var(--color-text-light)]">{page.durationLabel}</p>
+                )}
+              </div>
+            )}
+            {page.location && (
+              <div class="rounded-xl bg-[var(--color-bg-accent)] px-5 py-3 text-center">
+                <p class="heading-font text-2xl font-bold text-[var(--color-heading)]">{page.location}</p>
+                {page.locationLabel && (
+                  <p class="text-xs text-[var(--color-text-light)]">{page.locationLabel}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        <ContactCTA label={page.ctaLabel} />
+      </div>
+    </section>
+  )}
+
+  {(page.description || audienceItems.length > 0) && (
+    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+      <div class="mx-auto max-w-3xl px-4">
+        {page.description && (
+          <div class="mb-12">
+            {page.descriptionTitle && (
+              <h2 class="mb-6 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+                {page.descriptionTitle}
+              </h2>
+            )}
+            <div class="prose max-w-none">
+              {splitParagraphs(page.description).map((para) => <p>{para}</p>)}
+            </div>
+          </div>
+        )}
+        {audienceItems.length > 0 && (
+          <div>
+            {page.audienceTitle && (
+              <h2 class="mb-6 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+                {page.audienceTitle}
+              </h2>
+            )}
+            <ul class="space-y-3">
+              {audienceItems.map((item) => (
+                <li class="flex items-start gap-3">
+                  <span class="mt-1 text-[var(--color-button)]">&#10003;</span>
+                  <span class="text-[var(--color-text)]">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </section>
   )}
 
   <section class="py-16 md:py-20">
     <div class="mx-auto max-w-3xl px-4">
-      {page.descriptionTitle && (
-        <h2 class="mb-4 text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
-          {page.descriptionTitle}
+      {page.datesTitle && (
+        <h2 class="mb-2 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+          {page.datesTitle}
         </h2>
       )}
-      {page.description && (
-        <div class="prose mb-10">
-          {splitParagraphs(page.description).map((p) => <p>{p}</p>)}
-        </div>
-      )}
-
-      {(page.audienceItems ?? []).length > 0 && (
-        <>
-          <h2 class="mb-4 text-xl font-bold text-[var(--color-heading)]">{page.audienceTitle}</h2>
-          <ul class="mb-10 list-disc space-y-1 pl-5 text-[var(--color-text)]">
-            {(page.audienceItems ?? []).map((item: string) => <li>{item}</li>)}
-          </ul>
-        </>
-      )}
-
-      <h2 class="mb-2 text-xl font-bold text-[var(--color-heading)]">{page.datesTitle}</h2>
-      <p class="mb-6 text-sm text-[var(--color-text-light)]">
+      <p class="mb-8 text-center text-sm text-[var(--color-text-light)]">
         Venir une fois, c’est prendre une place dans un atelier existant : toutes les dates
         ci-dessous sont ouvertes, dans la limite des places libres.
       </p>
@@ -140,9 +221,8 @@ const publics = [
         </div>
       ) : publics.length === 0 ? (
         <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
-          <p class="text-sm text-[var(--color-text-light)]">
-            Aucune date programmée pour l’instant — me contacter.
-          </p>
+          <CalendrierCreneau seances={[]}
+                             vide="Aucune date programmée pour l’instant — me contacter." />
         </div>
       ) : (
         <div class="space-y-8">
@@ -168,14 +248,18 @@ const publics = [
       )}
 
       {page.datesNote && (
-        <p class="mt-4 text-sm text-[var(--color-text-light)]">{page.datesNote}</p>
+        <p class="mt-4 text-center text-sm italic text-[var(--color-text-light)]">
+          {page.datesNote}
+        </p>
       )}
 
-      <div class="mt-12">
-        <ContactCTA label={page.ctaLabel} />
-      </div>
+      <ContactCTA label={page.ctaLabel} />
     </div>
   </section>
 
-  <FaqSection title={page.faqSectionTitle} items={page.faqItems ?? []} ctaLabel={page.ctaLabel} />
+  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} />
+
+  {page.crossLinksText && (
+    <CrossLinksSection text={page.crossLinksText} excludeHref="/un-apres-midi-couture/" />
+  )}
 </BaseLayout>

@@ -3,29 +3,37 @@ export const prerender = false;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Hero from '../../components/Hero.astro';
+import DetailCard from '../../components/DetailCard.astro';
 import IntroSection from '../../components/IntroSection.astro';
+import CrossLinksSection from '../../components/CrossLinksSection.astro';
 import CalendrierCreneau from '../../components/CalendrierCreneau.astro';
 import ContactCTA from '../../components/ContactCTA.astro';
 import FaqSection from '../../components/FaqSection.astro';
-import { reader } from '../../utils/reader';
-import { resolveImage } from '../../utils/images';
+import { getPageContext, reader } from '../../utils/reader';
+import { resolveImage, resolveImageUrl } from '../../utils/images';
+import { toSlug, splitParagraphs } from '../../utils/strings';
+import { buildServicePageSchemas } from '../../utils/schema';
 import { getAdminClient } from '../../utils/supabase';
-import { ATELIER_GROUP_LABELS } from '../../utils/ateliers';
+import { ATELIER_GROUPS, ATELIER_GROUP_LABELS } from '../../utils/ateliers';
 
 /**
- * Aperçu : la page des ateliers réguliers, rendue depuis la base.
+ * Aperçu : la page des ateliers réguliers, ses dates lues en base.
  *
  * DOUBLON ASSUMÉ de /ateliers-reguliers/, le temps de vérifier que la base peut
  * porter le site public. La page publiée reste inchangée et fait foi.
  *
- * La différence tient en une inversion : la liste des créneaux, leurs horaires
- * et leurs dates viennent de la BASE, plus du contenu. Le contenu garde ce qui
- * est éditorial — l'introduction, les tarifs rédigés, la FAQ — parce que ce sont
- * des phrases d'Isabelle et qu'aucune table ne les remplacera.
+ * UNE SEULE CHOSE CHANGE : le bloc des dates. Tout le reste — les cartes, les
+ * tarifs mensuels, les descriptions de tarif, la FAQ, les liens croisés, le
+ * JSON-LD — est rendu exactement comme sur la page publiée, à partir du même
+ * contenu. C'est la condition pour que la comparaison veuille dire quelque
+ * chose : si l'aperçu perdait au passage la moitié des paragraphes d'Isabelle,
+ * il ne prouverait rien sinon qu'on peut faire plus court.
  *
- * Rendue à chaque visite (prerender = false) plutôt que prérendue avec un îlot :
- * une page d'essai n'a pas à être optimisée, et tout voir d'un bloc facilite la
- * comparaison avec l'original.
+ * Ce qui reste au contenu, et pourquoi : les tarifs mensuels n'existent pas en
+ * base. `default_unit_price_cents` est le prix d'une séance HORS forfait — 40 €
+ * pour un adulte — et non les « 33 € ou 55 €/mois » d'un abonnement. Afficher
+ * l'un à la place de l'autre ne serait pas une simplification mais une erreur
+ * de prix.
  *
  * noIndex, et exclue du plan du site (voir astro.config.mjs) : deux pages au même
  * contenu se feraient concurrence, et celle-ci pourrait sortir avant l'autre.
@@ -34,51 +42,72 @@ import { ATELIER_GROUP_LABELS } from '../../utils/ateliers';
 const page = await reader.singletons.ateliersReguliers.read();
 if (!page) throw new Error('Contenu des ateliers réguliers introuvable');
 
+const { settings, siteUrl } = await getPageContext(Astro.site);
+
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
 const couverture = await resolveImage(page.coverImage, coverGlob);
+const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
+
+const faqItems = page.faqItems ?? [];
+const schemas = buildServicePageSchemas({
+  title: page.title,
+  seoDescription: page.seoDescription,
+  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
+  siteUrl,
+  settings,
+  offers: page.schemaOffers ?? [],
+  faqItems,
+});
+
+const creneaux = page.creneaux ?? [];
+const groupes = ATELIER_GROUPS
+  .map((g) => ({ ...g, items: creneaux.filter((c) => c.group === g.id) }))
+  .filter((g) => g.items.length > 0);
 
 const supabase = getAdminClient();
 
-// Les créneaux actifs, avec leurs séances à venir. Un créneau archivé n'est plus
-// proposé : le montrer ferait espérer une inscription impossible.
-const { data: creneaux, error } = await supabase
+// Les séances à venir de chaque créneau d'atelier encore proposé. Un créneau
+// archivé n'est plus au programme : montrer ses dates ferait espérer une
+// inscription impossible.
+const { data: enBase, error } = await supabase
   .from('creneaux')
-  .select(`
-    id, label, group_id, audience, default_location,
-    default_start_time, default_end_time, default_capacity, default_unit_price_cents,
-    sessions(starts_at, ends_at, capacity, places_attente, status, bookings(status))
-  `)
+  .select('label, sessions(starts_at, ends_at, capacity, places_attente, status, bookings(status))')
   .eq('kind', 'atelier')
-  .is('archived_at', null)
-  .order('label');
+  .is('archived_at', null);
 
 const maintenant = new Date().toISOString();
 
-const avecDates = (creneaux ?? []).map((c) => ({
-  ...c,
-  // Le filtrage se fait ici et non dans la requête : PostgREST ne sait pas
-  // filtrer les lignes imbriquées sans écarter le parent qui n'en a aucune, et
-  // un créneau sans date doit rester visible pour dire « me contacter ».
-  aVenir: (c.sessions ?? []).filter(
-    (s: any) => s.status === 'scheduled' && s.starts_at > maintenant,
-  ),
-}));
+/**
+ * Le pont entre les deux mondes est le NOM du créneau, seul identifiant commun :
+ * le contenu ne connaît pas les identifiants de la base, et la base ignore
+ * l'ordre des fiches du CMS. Comparaison insensible à la casse et aux espaces de
+ * bord, un « Atelier du samedi matin » saisi à la main pouvant traîner une espace.
+ */
+const parNom = new Map(
+  (enBase ?? []).map((c) => [
+    c.label.trim().toLowerCase(),
+    ((c.sessions ?? []) as any[]).filter(
+      (s) => s.status === 'scheduled' && s.starts_at > maintenant,
+    ),
+  ]),
+);
 
-// Regroupés par lieu et public, comme sur la page publiée. L'ordre vient de
-// ATELIER_GROUP_LABELS pour que Verdalle ne passe pas avant Revel selon l'ordre
-// alphabétique des libellés.
-const groupes = Object.entries(ATELIER_GROUP_LABELS)
-  .map(([id, libelle]) => ({
-    id, libelle,
-    items: avecDates.filter((c) => c.group_id === id),
-  }))
-  .filter((g) => g.items.length > 0);
+const datesDe = (nom: string) => parNom.get(nom.trim().toLowerCase()) ?? [];
 
-const heure = (t: string) => t.slice(0, 5).replace(':', 'h');
-const euros = (cents: number) => (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2);
+/**
+ * Un créneau du contenu qu'aucune ligne de la base ne porte est une anomalie, pas
+ * un créneau sans date. Le dire fait gagner du temps : c'est précisément ce que
+ * cette page sert à découvrir avant de basculer les pages publiées.
+ */
+const inconnuEnBase = (nom: string) => !parNom.has(nom.trim().toLowerCase());
 ---
 
-<BaseLayout title={`${page.title} — aperçu`} description={page.seoDescription} noIndex={true}>
+<BaseLayout title={`${page.title} — aperçu`} description={page.seoDescription}
+            ogImage={ogImage} noIndex={true}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
+  </Fragment>
+
   <Hero title={page.title} subtitle={page.subtitle}
         coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
 
@@ -88,8 +117,8 @@ const euros = (cents: number) => (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2
   */}
   <div class="bg-[var(--color-bg-accent)] py-3">
     <p class="mx-auto max-w-4xl px-4 text-sm text-[var(--color-text)]">
-      <strong class="text-[var(--color-button)]">Aperçu.</strong> Cette page lit le calendrier
-      réel et signale les séances complètes. La version publiée reste
+      <strong class="text-[var(--color-button)]">Aperçu.</strong> Seules les dates changent : elles
+      sont lues en base, et les séances complètes y sont signalées. La version publiée reste
       {' '}<a href="/ateliers-reguliers/" class="text-[var(--color-button)] underline">ici</a>.
     </p>
   </div>
@@ -98,53 +127,87 @@ const euros = (cents: number) => (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2
     <IntroSection text={page.introduction} ctaLabel={page.ctaLabel} />
   )}
 
-  <section class="py-16 md:py-20">
-    <div class="mx-auto max-w-3xl px-4">
-      <h2 class="mb-10 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
-        {page.creneauxSectionTitle}
-      </h2>
+  {groupes.length > 0 && (
+    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+      <div class="mx-auto max-w-4xl px-4">
+        <h2 class="mb-6 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+          {page.creneauxSectionTitle}
+        </h2>
 
-      {groupes.length === 0 ? (
-        <p class="rounded-xl bg-[var(--color-bg-accent)] p-5 text-[var(--color-text)]">
-          Aucun créneau pour l’instant.
-        </p>
-      ) : (
-        <div class="space-y-12">
+        <nav class="mb-10 flex flex-wrap justify-center gap-3">
           {groupes.map((g) => (
-            <div>
-              <h3 class="mb-6 text-xl font-bold text-[var(--color-heading)]">{g.libelle}</h3>
-              <div class="space-y-8">
-                {g.items.map((c) => (
-                  <div>
-                    <h4 class="text-lg font-bold text-[var(--color-heading)]">
-                      {c.label}
-                      <span class="ml-2 text-base font-medium text-[var(--color-button)]">
-                        {heure(c.default_start_time)} à {heure(c.default_end_time)}
-                      </span>
-                    </h4>
-                    <p class="mb-3 text-sm text-[var(--color-text-light)]">
-                      {c.default_location} · {c.default_capacity} places ·
-                      {' '}{euros(c.default_unit_price_cents)} € la séance hors forfait
-                    </p>
-                    <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
-                      <p class="mb-2 text-sm font-semibold text-[var(--color-heading)]">
-                        {page.calendarLabel}
-                      </p>
-                      <CalendrierCreneau seances={c.aVenir} erreur={Boolean(error)} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <a
+              href={`#${g.id}`}
+              class="inline-block rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)] transition-colors hover:bg-[var(--color-button)] hover:text-white"
+            >
+              {g.label}
+            </a>
           ))}
-        </div>
-      )}
+        </nav>
 
-      <div class="mt-12">
+        {groupes.map((g) => (
+          <div id={g.id} class="mb-12 scroll-mt-24 last:mb-0">
+            <h3 class="mb-6 text-xl font-bold text-[var(--color-heading)]">{g.label}</h3>
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {g.items.map((c) => (
+                <DetailCard
+                  name={c.name}
+                  anchorId={`detail-${toSlug(c.name)}`}
+                  primaryBadge={c.price}
+                  details={[`${c.day} · ${c.time}`, c.location]}
+                  note={c.note || undefined}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  {creneaux.length > 0 && (
+    <section class="py-16 md:py-20">
+      <div class="mx-auto max-w-3xl space-y-16 px-4">
+        {creneaux.map((c) => (
+          <div id={`detail-${toSlug(c.name)}`} class="scroll-mt-24">
+            <h2 class="mb-2 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
+              {c.name}
+              <span class="ml-2 text-base font-medium text-[var(--color-button)]">
+                {c.day} &middot; {c.time}
+              </span>
+            </h2>
+            <p class="mb-4 text-sm text-[var(--color-text-light)]">
+              {/* Keystatic type c.group en string ; le cast est sûr, les options
+                  du champ étant dérivées d'ATELIER_GROUPS. */}
+              {ATELIER_GROUP_LABELS[c.group as keyof typeof ATELIER_GROUP_LABELS] || c.location}
+            </p>
+            {c.priceDetails && (
+              <div class="prose mb-4">
+                {splitParagraphs(c.priceDetails).map((para) => <p>{para}</p>)}
+              </div>
+            )}
+            <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
+              <p class="mb-2 text-sm font-semibold text-[var(--color-heading)]">
+                {page.calendarLabel}
+              </p>
+              <CalendrierCreneau
+                seances={datesDe(c.name)}
+                erreur={Boolean(error)}
+                vide={inconnuEnBase(c.name)
+                  ? 'Ce créneau n’existe pas encore en base — à créer avant la bascule.'
+                  : 'Aucune date programmée pour l’instant — me contacter.'}
+              />
+            </div>
+          </div>
+        ))}
         <ContactCTA label={page.ctaLabel} />
       </div>
-    </div>
-  </section>
+    </section>
+  )}
 
-  <FaqSection title={page.faqSectionTitle} items={page.faqItems ?? []} ctaLabel={page.ctaLabel} />
+  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} />
+
+  {page.crossLinksText && (
+    <CrossLinksSection text={page.crossLinksText} excludeHref="/ateliers-reguliers/" />
+  )}
 </BaseLayout>
