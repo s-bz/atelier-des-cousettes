@@ -306,22 +306,22 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
 
   {groupes.length > 0 && (
     <section class="py-16 md:py-20">
-      <div class="mx-auto max-w-3xl px-4">
+      <div class="mx-auto max-w-4xl px-4">
         <h2 class="mb-6 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
           {page.creneauxSectionTitle}
         </h2>
 
         {/*
-          UNE SEULE LISTE, découpée par lieu et par public.
+          UNE SEULE LISTE, en cartes, découpée par lieu et par public.
 
-          Une grille de cartes doublait cette section : mêmes noms, mêmes
-          horaires, mêmes titres de groupe, à quelques centimètres au-dessus.
-          Elle se justifiait tant qu'elle portait les tarifs ; ceux-ci sont
-          désormais en tête de page, et il ne lui restait qu'à répéter — jusqu'à
-          afficher deux fois la durée sur la même carte.
+          Il y a eu un temps deux sections : une grille de cartes, puis les mêmes
+          créneaux détaillés en dessous. Mêmes noms, mêmes horaires, mêmes titres
+          de groupe à quelques centimètres d'écart — la grille se justifiait tant
+          qu'elle portait les tarifs, partis depuis en tête de page.
 
-          Les pastilles de navigation restent : sauter à son lieu rend service,
-          recopier la liste ne le rendait plus.
+          Le calendrier entre donc dans la carte, replié au-delà des trois
+          prochaines dates. Sept créneaux à vingt dates faisaient un rouleau où
+          l'on ne trouvait plus les créneaux eux-mêmes.
         */}
         <nav class="mb-12 flex flex-wrap justify-center gap-3">
           {groupes.map((g) => (
@@ -335,50 +335,58 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
         </nav>
 
         {groupes.map((g) => (
-          <div id={g.id} class="mb-16 scroll-mt-24 space-y-10 last:mb-0">
-            <h3 class="text-xl md:text-2xl font-bold text-[var(--color-heading)]">
+          <div id={g.id} class="mb-14 scroll-mt-24 last:mb-0">
+            <h3 class="mb-6 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
               {g.label}
             </h3>
-            {g.items.map((c) => (
-          <div id={`detail-${toSlug(c.name)}`} class="scroll-mt-24">
-            <h4 class="mb-1 text-lg font-bold text-[var(--color-heading)]">
-              {c.name}
-              <span class="ml-2 text-sm font-medium text-[var(--color-button)]">
-                {c.day} &middot; {c.time}
-              </span>
-            </h4>
-            <p class="mb-4 text-sm text-[var(--color-text-light)]">
-              {dureeDe(c.name) ? `${dureeDe(c.name)} par séance` : c.location}
-              {c.note && ` · ${c.note}`}
-            </p>
 
-            {ecartsDe(c).length > 0 && (
-              <div class="mb-4 rounded-xl border border-[var(--color-button)] p-3 text-sm">
-                <p class="font-semibold text-[var(--color-button)]">
-                  Écart entre cette page et la base
-                </p>
-                <ul class="mt-1 list-disc space-y-0.5 pl-5 text-[var(--color-text)]">
-                  {ecartsDe(c).map((e) => <li>{e}</li>)}
-                </ul>
-              </div>
-            )}
-            <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
-              <p class="mb-2 text-sm font-semibold text-[var(--color-heading)]">
-                {page.calendarLabel}
-              </p>
-              <CalendrierCreneau
-                seances={datesDe(c.name)}
-                erreur={Boolean(error)}
-                contact={!inconnuEnBase(c.name)}
-                vide={inconnuEnBase(c.name)
-                  ? 'Ce créneau n’existe pas encore en base — à créer avant la bascule.'
-                  : 'Aucune date programmée pour l’instant.'}
-              />
+            {/* Deux colonnes au plus : une liste de dates a besoin de sa largeur. */}
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+              {g.items.map((c) => (
+                <div
+                  id={`detail-${toSlug(c.name)}`}
+                  class="scroll-mt-24 rounded-xl bg-white p-5 shadow-md dark:bg-[var(--color-card-bg)]"
+                >
+                  <h4 class="text-lg font-bold text-[var(--color-heading)]">{c.name}</h4>
+                  <p class="text-sm text-[var(--color-text-light)]">
+                    {c.day} &middot; {c.time}
+                  </p>
+                  <p class="mb-4 text-sm text-[var(--color-text-light)]">
+                    {dureeDe(c.name) ? `${dureeDe(c.name)} par séance` : c.location}
+                    {c.note && ` · ${c.note}`}
+                  </p>
+
+                  {ecartsDe(c).length > 0 && (
+                    <div class="mb-4 rounded-xl border border-[var(--color-button)] p-3 text-sm">
+                      <p class="font-semibold text-[var(--color-button)]">
+                        Écart entre cette page et la base
+                      </p>
+                      <ul class="mt-1 list-disc space-y-0.5 pl-5 text-[var(--color-text)]">
+                        {ecartsDe(c).map((e) => <li>{e}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
+                    <p class="mb-2 text-sm font-semibold text-[var(--color-heading)]">
+                      {page.calendarLabel}
+                    </p>
+                    <CalendrierCreneau
+                      seances={datesDe(c.name)}
+                      erreur={Boolean(error)}
+                      limite={3}
+                      contact={!inconnuEnBase(c.name)}
+                      vide={inconnuEnBase(c.name)
+                        ? 'Ce créneau n’existe pas encore en base — à créer avant la bascule.'
+                        : 'Aucune date programmée pour l’instant.'}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-            ))}
-          </div>
         ))}
+
         <ContactCTA label={page.ctaLabel} />
       </div>
     </section>

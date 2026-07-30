@@ -1,0 +1,46 @@
+---
+interface Props {
+  starts_at: string;
+  ends_at: string;
+  /** « complet », « liste d'attente » — absent tant qu'il reste de la place. */
+  etat: { libelle: string; ton: string } | null;
+}
+
+/**
+ * Une date de séance : le jour, l'heure, et l'état s'il y a lieu.
+ *
+ * Extrait de CalendrierCreneau parce que celui-ci rend maintenant DEUX listes —
+ * les premières dates, puis les suivantes repliées. Recopier ce gabarit aurait
+ * suffi à ce que les deux moitiés d'un même calendrier finissent par ne plus se
+ * ressembler.
+ *
+ * L'ANNÉE EST AFFICHÉE : une saison court de septembre à juin, donc chaque liste
+ * enjambe deux années. « samedi 10 avril » sans année, lu en octobre, se comprend
+ * comme dans six mois ou dans dix-huit.
+ */
+const { starts_at, ends_at, etat } = Astro.props;
+
+const dateFr = new Intl.DateTimeFormat('fr-FR', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris',
+});
+const heureFr = new Intl.DateTimeFormat('fr-FR', {
+  hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris',
+});
+---
+
+<li class="flex flex-wrap items-baseline gap-x-3">
+  <span class="text-[var(--color-text)] first-letter:uppercase">
+    {dateFr.format(new Date(starts_at))}
+  </span>
+  <span class="text-[var(--color-text-light)]">
+    {heureFr.format(new Date(starts_at))} – {heureFr.format(new Date(ends_at))}
+  </span>
+  {etat && (
+    <span class={`ml-auto shrink-0 text-xs font-medium ${
+      etat.ton === 'sourd' ? 'text-[var(--color-text-light)]'
+      : 'text-[var(--color-heading)]'
+    }`}>
+      {etat.libelle}
+    </span>
+  )}
+</li>
