@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getAdminClient } from '../../../utils/supabase';
-import { notifier, notifierAdmin, variablesSeance, variablesSemaine } from '../../../utils/emails';
+import { notifier, notifierAdmins, variablesSeance, variablesSemaine } from '../../../utils/emails';
 
 export const prerender = false;
 
@@ -30,7 +30,7 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   const supabase = getAdminClient();
-  const bilan = { inscriptions: 0, rappels: 0, echecs: 0, recapitulatif: false };
+  const bilan = { inscriptions: 0, rappels: 0, echecs: 0, recapitulatif: 0 };
 
   // ── 1. Auto-inscription ────────────────────────────────────────────────
   const { data: inscrites, error: erreurInscription } =
@@ -142,12 +142,15 @@ export const GET: APIRoute = async ({ request }) => {
         .sort((a: string, b: string) => a.localeCompare(b, 'fr')),
     }));
 
-    const parti = await notifierAdmin('admin_semaine', variablesSemaine({
+    // Envoyé même quand la semaine est vide : savoir qu'il n'y a rien fait
+    // partie de ce qu'on veut savoir le dimanche, et un silence se confond avec
+    // une panne. Le message le dit alors explicitement.
+    const partis = await notifierAdmins('admin_semaine', variablesSemaine({
       debut: lundi, fin: dimanche, seances: resume,
     }));
 
-    bilan.recapitulatif = parti;
-    if (!parti) console.error('[cron] récapitulatif hebdomadaire non parti');
+    bilan.recapitulatif = partis;
+    if (partis === 0) console.error('[cron] récapitulatif hebdomadaire non parti');
   }
 
   console.log('[cron] terminé :', bilan);

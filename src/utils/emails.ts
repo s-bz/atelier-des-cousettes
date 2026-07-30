@@ -324,10 +324,19 @@ export function variablesSemaine(o: { debut: Date; fin: Date; seances: SeanceSem
     periode: `du ${jourEtDate.format(o.debut)} au ${jourEtDate.format(o.fin)}`,
     nombre_seances: String(o.seances.length),
     nombre_inscrits: String(o.seances.reduce((n, s) => n + s.inscrits.length, 0)),
-    seances: lignes.length ? lignes.join('\n') : '- aucune séance cette semaine',
-    alerte: vides
-      ? `${vides} séance${vides > 1 ? 's n’ont' : ' n’a'} encore personne.`
-      : 'Toutes les séances ont au moins un inscrit.',
+    seances: lignes.length
+      ? lignes.join('\n')
+      : '- aucun atelier ni stage cette semaine',
+    // Une semaine vide n'est pas une semaine où « toutes les séances ont au
+    // moins un inscrit » : cette phrase, vraie au sens strict, se lisait comme
+    // un feu vert alors qu'il n'y avait rien du tout. Le message part quand
+    // même — savoir qu'il n'y a rien fait partie de ce qu'on veut savoir le
+    // dimanche.
+    alerte: o.seances.length === 0
+      ? 'Aucun atelier ni stage n’est prévu cette semaine.'
+      : vides
+        ? `${vides} séance${vides > 1 ? 's n’ont' : ' n’a'} encore personne.`
+        : 'Toutes les séances ont au moins un inscrit.',
   };
 }
 
@@ -539,4 +548,36 @@ export async function notifier(
  */
 export async function notifierAdmin(id: string, valeurs: Valeurs): Promise<boolean> {
   return notifier(id, ADMIN, valeurs);
+}
+
+/**
+ * Prévient TOUS les comptes administrateurs, un par un.
+ *
+ * Réservé au récapitulatif hebdomadaire. Les avis de réservation et de
+ * libération continuent de partir sur la seule boîte de l'atelier : ce sont des
+ * mouvements du quotidien, et les dupliquer sur chaque compte technique
+ * apprendrait surtout à les ignorer. Le point du dimanche, lui, est le genre de
+ * chose que chacun veut lire pour soi.
+ *
+ * Renvoie le nombre de messages partis. Zéro compte admin est possible — un
+ * projet fraîchement installé — et ne doit pas faire échouer la tâche de nuit.
+ */
+export async function notifierAdmins(id: string, valeurs: Valeurs): Promise<number> {
+  const supabase = getAdminClient();
+  const { data } = await supabase
+    .from('accounts')
+    .select('email')
+    .eq('role', 'admin')
+    .order('email');
+
+  const adresses = [...new Set((data ?? []).map((a) => a.email).filter(Boolean))];
+  // Aucun compte admin : on retombe sur la boîte de l'atelier plutôt que de ne
+  // rien envoyer. Un récapitulatif muet passerait pour une panne.
+  if (adresses.length === 0) return (await notifier(id, ADMIN, valeurs)) ? 1 : 0;
+
+  let partis = 0;
+  for (const adresse of adresses) {
+    if (await notifier(id, adresse, valeurs)) partis++;
+  }
+  return partis;
 }
