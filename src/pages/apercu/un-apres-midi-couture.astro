@@ -9,7 +9,7 @@ import ContactCTA from '../../components/ContactCTA.astro';
 import FaqSection from '../../components/FaqSection.astro';
 import { getPageContext, reader } from '../../utils/reader';
 import { resolveImage, resolveImageUrl } from '../../utils/images';
-import { splitParagraphs } from '../../utils/strings';
+import { splitParagraphs, toSlug } from '../../utils/strings';
 import { buildServicePageSchemas } from '../../utils/schema';
 import { getAdminClient } from '../../utils/supabase';
 
@@ -51,17 +51,87 @@ const couverture = await resolveImage(page.coverImage, coverGlob);
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
 
 const faqItems = page.faqItems ?? [];
-const schemas = buildServicePageSchemas({
-  title: page.title,
-  seoDescription: page.seoDescription,
-  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
-  siteUrl,
-  settings,
-  offers: page.schemaOffers ?? [],
-  faqItems,
-});
+
+/**
+ * PROPOSITION DE RENOMMAGE — à ne pas confondre avec le contenu.
+ *
+ * La page s'intitule « Un après-midi couture » et liste pourtant 26 séances le
+ * matin et 19 en fin de journée sur 94 : près de la moitié dément son titre.
+ * Elle n'a plus rien d'exclusivement après-midi depuis qu'elle tire ses dates
+ * de tous les ateliers.
+ *
+ * CES LIBELLÉS VIVENT ICI ET NON DANS LE CMS, à dessein. Le contenu est partagé
+ * avec la page publiée : le modifier renommerait le site en production avant
+ * qu'Isabelle ait vu la proposition. Ils rejoindront Keystatic le jour de la
+ * bascule — trancher cela est précisément l'office de cette page.
+ *
+ * L'URL ne change pas et n'a pas à changer : onze articles de blog, l'accueil,
+ * le menu et les liens croisés y renvoient, et c'est une adresse, pas une
+ * promesse.
+ */
+const PROPOSITION = {
+  title: 'Une séance sans engagement',
+  subtitle: 'Cousez en toute liberté, à l’heure qui vous convient',
+  introduction:
+    'Une séance ponctuelle pour coudre à votre rythme, avec l’accompagnement ' +
+    'd’Isabelle — 3 heures pour les adultes, 2 heures pour les enfants. Le matin, ' +
+    'l’après-midi ou en fin de journée, selon les créneaux. Sans engagement, ' +
+    'ouvert à tous les niveaux.',
+  descriptionTitle: 'Comment se déroule une séance ?',
+  lienDates: 'Voir les dates',
+  lienDeroulement: 'Comment ça se passe',
+  seoDescription:
+    'Séance de couture sans engagement à Revel et Verdalle (Tarn), près de ' +
+    'Castres : le matin, l’après-midi ou en fin de journée, 45 € pour les ' +
+    'adultes et 35 € pour les enfants, adhésion comprise. Ouvert à tous.',
+  coverImageAlt: 'Séance de couture ponctuelle à l’Atelier des Cousettes',
+  // Deux questions nommaient l'après-midi ; leurs réponses, elles, restent vraies.
+  questions: {
+    "Quel est le tarif d'un après-midi couture ?": 'Quel est le tarif d’une séance ?',
+    'Où ont lieu les après-midi couture ?': 'Où ont lieu les séances ?',
+    // Une séance dure 3 h pour un adulte et 2 h pour un enfant : la question
+    // n'en annonçait qu'une, et le parent d'un enfant y lisait une durée qu'il
+    // n'aurait pas.
+    'Quels projets peut-on réaliser en 3 heures ?':
+      'Quels projets peut-on réaliser en 2 à 3 heures ?',
+  } as Record<string, string>,
+
+  /**
+   * Deux réponses décrivaient un fonctionnement qui n'existe plus.
+   *
+   * L'annulation renvoyait à « prévenez Isabelle le plus tôt possible », sans
+   * dire ce qu'il en coûte. Depuis, la règle est écrite dans le code et dans
+   * les e-mails : 48 h — vérifié des deux côtés, `interval '48 hours'` dans la
+   * base et « jusqu'à 48 h avant la séance » dans les gabarits.
+   *
+   * L'inscription annonçait un délai d'une semaine que rien n'applique, et
+   * ignorait l'espace adhérent où les dates se choisissent désormais.
+   */
+  reponses: {
+    "Quelle est la politique d'annulation ?":
+      'Vous pouvez libérer votre place jusqu’à 48 h avant la séance : elle ne ' +
+      'vous est pas comptée. Passé ce délai, la séance reste due. Prévenez ' +
+      'Isabelle dès que vous le savez — votre place profite alors à quelqu’un ' +
+      'd’autre, prévenu par e-mail. Les séances ont lieu sous réserve d’un ' +
+      'nombre suffisant d’inscriptions.',
+    "Comment s'inscrire ?":
+      'Pour une première venue, écrivez à Isabelle par le formulaire de contact ' +
+      'ou appelez-la. Elle vous inscrit et vous ouvre l’accès à votre espace ' +
+      'adhérent, où vous choisissez ensuite vos dates et les libérez si besoin. ' +
+      'Les places étant limitées, mieux vaut s’y prendre à l’avance.',
+  } as Record<string, string>,
+};
+
+const faqProposee = faqItems.map((q) => ({
+  ...q,
+  question: PROPOSITION.questions[q.question] ?? q.question,
+  answer: PROPOSITION.reponses[q.question] ?? q.answer,
+}));
+
 
 const audienceItems = page.audienceItems ?? [];
+
+
 
 const supabase = getAdminClient();
 
@@ -134,6 +204,44 @@ const PUBLICS = [
  * que la date et l'heure ne disaient déjà, et doublait la hauteur de chacune des
  * 59 lignes — sur un téléphone, la liste en devenait illisible.
  */
+/**
+ * Le tarif et la durée de chaque public, pour les pastilles de tête.
+ *
+ * Elles annonçaient « 40 € » et « 3h » depuis le contenu : le prix d'avant
+ * l'adhésion comprise, et la durée des seuls adultes. Un enfant venu pour deux
+ * heures à 35 € ne se reconnaissait dans aucun des deux chiffres.
+ *
+ * Une pastille par public plutôt qu'une seule : ils n'ont ni le même prix ni la
+ * même durée, et une moyenne n'aurait décrit personne.
+ */
+const parPublic = PUBLICS.map(({ cle, titre }) => {
+  const cs = (creneauxAtelier ?? []).filter((c) => c.audience === cle);
+  if (cs.length === 0) return null;
+  const durees = [...new Set(cs.map((c) => duree(c.default_start_time, c.default_end_time)).filter(Boolean))];
+  return { titre, prix: euros(cs[0].default_unit_price_cents), duree: durees.join(' ou ') };
+}).filter((p): p is NonNullable<typeof p> => p !== null);
+
+/**
+ * Les offres du schéma viennent des tarifs en base, non du contenu.
+ *
+ * Celles du CMS annonçaient encore « Après-midi couture (3h) » à 40 € : le nom
+ * d'avant et le prix d'avant, tandis que la page affiche 45 € et 35 €. C'est ce
+ * que Google lit — et la page publiée les émet toujours, faute d'avoir touché
+ * au contenu partagé.
+ */
+const schemas = buildServicePageSchemas({
+  title: PROPOSITION.title,
+  seoDescription: PROPOSITION.seoDescription,
+  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
+  siteUrl,
+  settings,
+  offers: parPublic.map((p) => ({
+    name: `Séance sans engagement — ${p.titre.toLowerCase()}`,
+    price: p.prix,
+  })),
+  faqItems: faqProposee,
+});
+
 const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location))]
   .map((lieu) => {
     const publics = PUBLICS.map(({ cle, titre }) => {
@@ -161,47 +269,33 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
 
 ---
 
-<BaseLayout title={`${page.title} — aperçu`} description={page.seoDescription}
+<BaseLayout title={`${PROPOSITION.title} — aperçu`} description={PROPOSITION.seoDescription}
             ogImage={ogImage} noIndex={true}>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
   </Fragment>
 
-  <Hero title={page.title} subtitle={page.subtitle}
-        coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
+  {/* `flush` : la marge basse du héros doublait celle de l'introduction. */}
+  <Hero flush title={PROPOSITION.title} subtitle={PROPOSITION.subtitle}
+        coverImage={couverture ?? undefined} altText={PROPOSITION.coverImageAlt} />
 
-  <div class="bg-[var(--color-bg-accent)] py-3">
-    <p class="mx-auto max-w-4xl px-4 text-sm text-[var(--color-text)]">
-      <strong class="text-[var(--color-button)]">Aperçu.</strong> Seules les dates changent : ce
-      sont celles des ateliers, lues en base. La version publiée reste
-      {' '}<a href="/un-apres-midi-couture/" class="text-[var(--color-button)] underline">ici</a>.
-    </p>
-  </div>
 
   {page.introduction && (
-    <section class="py-16 md:py-20">
+    <section class="bg-[var(--color-bg-accent)] pt-12 pb-10 md:pt-16 md:pb-12">
       <div class="mx-auto max-w-3xl px-4 text-center">
         <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">
-          {page.introduction}
+          {PROPOSITION.introduction}
         </p>
-        {(page.price || page.duration || page.location) && (
+        {(parPublic.length > 0 || page.location) && (
           <div class="mt-8 flex flex-wrap justify-center gap-4">
-            {page.price && (
+            {parPublic.map((p) => (
               <div class="rounded-xl bg-[var(--color-bg-accent)] px-5 py-3 text-center">
-                <p class="heading-font text-2xl font-bold text-[var(--color-button)]">{page.price}</p>
-                {page.priceLabel && (
-                  <p class="text-xs text-[var(--color-text-light)]">{page.priceLabel}</p>
-                )}
+                <p class="heading-font text-2xl font-bold text-[var(--color-button)]">{p.prix} €</p>
+                <p class="text-xs text-[var(--color-text-light)]">
+                  {page.priceLabel}, {p.titre.toLowerCase()}{p.duree && ` (${p.duree})`}
+                </p>
               </div>
-            )}
-            {page.duration && (
-              <div class="rounded-xl bg-[var(--color-bg-accent)] px-5 py-3 text-center">
-                <p class="heading-font text-2xl font-bold text-[var(--color-heading)]">{page.duration}</p>
-                {page.durationLabel && (
-                  <p class="text-xs text-[var(--color-text-light)]">{page.durationLabel}</p>
-                )}
-              </div>
-            )}
+            ))}
             {page.location && (
               <div class="rounded-xl bg-[var(--color-bg-accent)] px-5 py-3 text-center">
                 <p class="heading-font text-2xl font-bold text-[var(--color-heading)]">{page.location}</p>
@@ -212,19 +306,52 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
             )}
           </div>
         )}
-        <ContactCTA label={page.ctaLabel} />
+        {/*
+          LES DATES EN PREMIER, ET EN BOUTON. Sur cette page, ce sont elles qui
+          décident : qui ne peut se libérer aucun de ces jours n'écrira pas, et
+          lui proposer d'abord d'écrire lui fait franchir une étape qu'il devra
+          défaire. Les tarifs et le lieu se lisent au-dessus ; les dates sont
+          trois écrans plus bas.
+
+          Le contact passe en lien, sans disparaître : celui qui a une question
+          plutôt qu'une date à choisir le trouve encore.
+        */}
+        {/*
+          DEUX BOUTONS, ET AUCUN QUI DEMANDE D'ÉCRIRE. Les deux questions de qui
+          arrive ici sont « quand ? » et « comment ça se passe ? » — écrire vient
+          après, et la page l'offre cinq fois plus bas, au pied de chaque lieu et
+          dans la FAQ. Le proposer ici faisait franchir une étape avant d'avoir
+          de quoi la décider.
+
+          Le plein pour les dates, le contour pour le déroulement : à l'œil, l'un
+          est l'action, l'autre le complément.
+        */}
+        <div class="mt-8 mb-8 flex flex-wrap justify-center gap-3 not-prose">
+          <a
+            href="#dates"
+            class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 text-sm font-medium text-white no-underline transition-all hover:scale-[1.02] hover:bg-[var(--color-button-hover)]"
+          >
+            {PROPOSITION.lienDates}
+          </a>
+          <a
+            href="#deroulement"
+            class="inline-block rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-8 py-3 text-sm font-medium text-[var(--color-button)] no-underline transition-colors hover:bg-[var(--color-button)] hover:text-white"
+          >
+            {PROPOSITION.lienDeroulement}
+          </a>
+        </div>
       </div>
     </section>
   )}
 
   {(page.description || audienceItems.length > 0) && (
-    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+    <section id="deroulement" class="scroll-mt-24 py-16 md:py-20">
       <div class="mx-auto max-w-3xl px-4">
         {page.description && (
           <div class="mb-12">
             {page.descriptionTitle && (
               <h2 class="mb-6 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
-                {page.descriptionTitle}
+                {PROPOSITION.descriptionTitle}
               </h2>
             )}
             <div class="prose max-w-none">
@@ -241,8 +368,8 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
             )}
             <ul class="space-y-3">
               {audienceItems.map((item) => (
-                <li class="flex items-start gap-3">
-                  <span class="mt-1 text-[var(--color-button)]">&#10003;</span>
+                <li class="flex items-baseline gap-3">
+                  <span class="text-sm text-[var(--color-button)]">&#10003;</span>
                   <span class="text-[var(--color-text)]">{item}</span>
                 </li>
               ))}
@@ -253,8 +380,8 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
     </section>
   )}
 
-  <section class="py-16 md:py-20">
-    <div class="mx-auto max-w-3xl px-4">
+  <section id="dates" class="scroll-mt-24 bg-[var(--color-bg-accent)] py-16 md:py-20">
+    <div class="mx-auto max-w-4xl px-4">
       {page.datesTitle && (
         <h2 class="mb-2 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
           {page.datesTitle}
@@ -274,14 +401,47 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
           <CalendrierCreneau seances={[]} />
         </div>
       ) : (
+        <Fragment>
+          {/*
+            Les mêmes pastilles que sur la page des ateliers. Deux lieux
+            seulement ici, mais celui qui ne peut pas se rendre à Verdalle a
+            autant besoin de sauter la section que sur l'autre page — et deux
+            pages qui présentent les mêmes dates n'ont pas à se naviguer
+            différemment.
+
+            Elles ne s'affichent qu'à partir de deux lieux : une pastille unique
+            ne mènerait qu'à ce qu'on a déjà sous les yeux.
+          */}
+          {lieux.length > 1 && (
+            <nav class="mb-12 flex flex-wrap justify-center gap-3">
+              {lieux.map((l) => (
+                <a
+                  href={`#${toSlug(l.lieu)}`}
+                  class="inline-block rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)] transition-colors hover:bg-[var(--color-button)] hover:text-white"
+                >
+                  {l.lieu}
+                </a>
+              ))}
+            </nav>
+          )}
+
         <div class="space-y-12">
           {lieux.map((l) => (
-            <div>
-              <h3 class="mb-6 text-xl font-bold text-[var(--color-heading)]">{l.lieu}</h3>
-              <div class="space-y-8">
+            <div id={toSlug(l.lieu)} class="scroll-mt-24">
+              <h3 class="mb-6 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
+                {l.lieu}
+              </h3>
+              {/*
+                Même gabarit que la page des ateliers : une carte blanche par
+                bloc, le calendrier dans son encadré à l'intérieur, deux colonnes
+                au plus. Les deux pages montrent la même chose — des dates
+                groupées — et les présenter différemment obligeait à réapprendre
+                la lecture en passant de l'une à l'autre.
+              */}
+              <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {l.publics.map((p) => (
-                  <div>
-                    <h4 class="mb-1 text-lg font-semibold text-[var(--color-heading)]">
+                  <div class="rounded-xl bg-white p-5 shadow-md dark:bg-[var(--color-card-bg)]">
+                    <h4 class="mb-1 text-lg font-bold text-[var(--color-heading)]">
                       {p.titre}
                       {p.prix && (
                         <span class="ml-2 text-base font-medium text-[var(--color-button)]">
@@ -295,14 +455,33 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
                         ` · ${p.items.length} date${p.items.length > 1 ? 's' : ''} à venir`}
                     </p>
                     <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
-<CalendrierCreneau seances={p.items} />
+{/*
+                        SIX DATES ICI, contre trois sur la page des ateliers.
+                        Là-bas une carte ne montre qu'un créneau, et l'on sait
+                        déjà quel jour on cherche ; ici la liste mêle tous les
+                        ateliers d'un lieu, et trois dates ne couvraient parfois
+                        qu'une quinzaine. Six laissent voir un mois, de quoi
+                        juger si l'on peut se libérer.
+
+                        Le reste se replie : cette page déroulait 59 dates pour
+                        les adultes et 35 pour les enfants.
+                      */}
+                      <CalendrierCreneau seances={p.items} limite={6} />
                     </div>
                   </div>
                 ))}
               </div>
+
+              {/*
+                Un bouton par lieu, au pied de ses cartes. Celui qui vient à
+                Revel n'a plus à traverser Verdalle pour trouver de quoi écrire
+                — même parti que sur la page des ateliers.
+              */}
+              <ContactCTA label={page.ctaLabel} />
             </div>
           ))}
         </div>
+        </Fragment>
       )}
 
       {page.datesNote && (
@@ -310,12 +489,10 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
           {page.datesNote}
         </p>
       )}
-
-      <ContactCTA label={page.ctaLabel} />
     </div>
   </section>
 
-  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} />
+  <FaqSection title={page.faqSectionTitle} items={faqProposee} ctaLabel={page.ctaLabel} fond={false} />
 
   {page.crossLinksText && (
     <CrossLinksSection text={page.crossLinksText} excludeHref="/un-apres-midi-couture/" />

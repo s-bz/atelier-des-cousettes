@@ -102,6 +102,17 @@ const datesDe = (nom: string) =>
  */
 const inconnuEnBase = (nom: string) => !parNom.has(cle(nom));
 
+/**
+ * ET L'INVERSE : un créneau en base qu'aucune fiche du contenu ne décrit.
+ *
+ * Le contrôle ne regardait que dans un sens, et l'oubli s'est fait sentir dès
+ * qu'un créneau est né en base : la page le passait sous silence, puisqu'elle
+ * bâtit ses groupes à partir du contenu. Un créneau absent d'une page ne se
+ * remarque pas — c'est exactement ce qu'un contrôle doit rattraper.
+ */
+const nomsDuContenu = new Set(creneaux.map((c) => cle(c.name)));
+const absentsDuContenu = (enBase ?? []).filter((c) => !nomsDuContenu.has(cle(c.label)));
+
 /** « 3 h », « 2 h 30 » — la durée d'une séance, lue sur les horaires du créneau. */
 const enHeures = (debut: string, fin: string) => {
   const min = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
@@ -194,30 +205,20 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
     <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
   </Fragment>
 
-  <Hero title={page.title} subtitle={page.subtitle}
+  {/* `flush` : la marge basse du héros doublait celle de l'introduction. */}
+  <Hero flush title={page.title} subtitle={page.subtitle}
         coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
 
-  {/*
-    Le bandeau dit ce qu'est cette page. Sans lui, quelqu'un tombant dessus par
-    un lien partagé croirait lire la page officielle et s'étonnerait des écarts.
-  */}
-  <div class="bg-[var(--color-bg-accent)] py-3">
-    <p class="mx-auto max-w-4xl px-4 text-sm text-[var(--color-text)]">
-      <strong class="text-[var(--color-button)]">Aperçu.</strong> Seules les dates changent : elles
-      sont lues en base, et les séances complètes y sont signalées. La version publiée reste
-      {' '}<a href="/ateliers-reguliers/" class="text-[var(--color-button)] underline">ici</a>.
-    </p>
-  </div>
 
   {/*
     Pas de bouton sous l'introduction : la page en compte déjà cinq plus bas, un
     par lieu puis sous les tarifs et la FAQ. Celui-ci arrivait avant qu'on ait lu
     de quoi décider — et un bouton répété six fois cesse d'être remarqué.
   */}
-  {page.introduction && <IntroSection text={page.introduction} cta={false} />}
+  {page.introduction && <IntroSection text={page.introduction} cta={false} fond />}
 
   {groupes.length > 0 && (
-    <section class="py-16 md:py-20">
+    <section class="pt-8 pb-16 md:pt-10 md:pb-20">
       <div class="mx-auto max-w-4xl px-4">
         <h2 class="mb-6 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
           {page.creneauxSectionTitle}
@@ -245,6 +246,19 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
             </a>
           ))}
         </nav>
+
+        {absentsDuContenu.length > 0 && (
+          <div class="mb-10 rounded-xl border border-[var(--color-button)] p-4 text-sm">
+            <p class="font-semibold text-[var(--color-button)]">
+              En base mais absents de cette page
+            </p>
+            <ul class="mt-1 list-disc space-y-0.5 pl-5 text-[var(--color-text)]">
+              {absentsDuContenu.map((c) => (
+                <li>{c.label} — à décrire dans le CMS pour qu'il s'affiche</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {groupes.map((g) => (
           <div id={g.id} class="mb-14 scroll-mt-24 last:mb-0">
@@ -416,7 +430,7 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
     </section>
   )}
 
-  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} />
+  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} fond={false} />
 
   {page.crossLinksText && (
     <CrossLinksSection text={page.crossLinksText} excludeHref="/ateliers-reguliers/" />

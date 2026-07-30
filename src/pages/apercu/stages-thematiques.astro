@@ -43,15 +43,7 @@ const couverture = await resolveImage(page.coverImage, coverGlob);
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
 
 const faqItems = page.faqItems ?? [];
-const schemas = buildServicePageSchemas({
-  title: page.title,
-  seoDescription: page.seoDescription,
-  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
-  siteUrl,
-  settings,
-  offers: page.schemaOffers ?? [],
-  faqItems,
-});
+
 
 const supabase = getAdminClient();
 
@@ -129,6 +121,53 @@ const avecDates = (stages ?? []).map((c) => {
 });
 
 const euros = (cents: number) => (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2);
+
+/**
+ * La fourchette de prix de la FAQ, recalculée à chaque visite.
+ *
+ * Elle était écrite à la main — « de 45 € à 95 € » — et fausse depuis ce midi :
+ * la formule de 2 h 30 de l'initiation est à 38 €, donc le plancher a bougé
+ * sans que personne ne pense à la phrase qui l'annonce. C'est le propre d'un
+ * chiffre recopié.
+ *
+ * Seuls les NOMBRES sont remplacés : la phrase reste celle d'Isabelle, et si
+ * elle la réécrit sans la tournure « de X € à Y € », la réponse passe
+ * inchangée plutôt que d'être mutilée.
+ */
+const prixStages = (stages ?? []).map((c) => c.default_unit_price_cents);
+const fourchette = prixStages.length
+  ? `de ${euros(Math.min(...prixStages))} € à ${euros(Math.max(...prixStages))} €`
+  : null;
+
+const faqAJour = faqItems.map((q) => ({
+  ...q,
+  answer: fourchette
+    ? q.answer.replace(/de\s+\d+(?:,\d+)?\s*€\s+à\s+\d+(?:,\d+)?\s*€/, fourchette)
+    : q.answer,
+}));
+/**
+ * Les schémas se calculent ici, après la FAQ et les stages : Astro exécute le
+ * frontmatter dans l'ordre.
+ *
+ * Les offres viennent de la base et non du contenu. Celles du CMS énuméraient
+ * six stages quand la base en porte sept, et l'initiation à 45 € quand sa
+ * formule courte est à 38 € — un inventaire recopié qui vieillit à chaque
+ * changement de tarif, sous les yeux de personne puisque c'est Google qui le
+ * lit.
+ */
+const schemas = buildServicePageSchemas({
+  title: page.title,
+  seoDescription: page.seoDescription,
+  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
+  siteUrl,
+  settings,
+  offers: (stages ?? []).map((c) => ({
+    name: c.label,
+    price: euros(c.default_unit_price_cents),
+  })),
+  faqItems: faqAJour,
+});
+
 
 // « En N séances » et non « forfait de N séances ». Dans cette maison, un forfait
 // est un lot de séances d'atelier payé d'avance et posé sur les dates de son
@@ -238,19 +277,13 @@ const stagesGroupes = familles.map((f) => {
     <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
   </Fragment>
 
-  <Hero title={page.title} subtitle={page.subtitle}
+  {/* `flush` : la marge basse du héros doublait celle de l'introduction. */}
+  <Hero flush title={page.title} subtitle={page.subtitle}
         coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
 
-  <div class="bg-[var(--color-bg-accent)] py-3">
-    <p class="mx-auto max-w-4xl px-4 text-sm text-[var(--color-text)]">
-      <strong class="text-[var(--color-button)]">Aperçu.</strong> Les stages, leurs dates, leurs
-      tarifs et leur disponibilité sont lus en base. La version publiée reste
-      {' '}<a href="/stages-thematiques/" class="text-[var(--color-button)] underline">ici</a>.
-    </p>
-  </div>
 
   {page.introduction && (
-    <IntroSection text={page.introduction} ctaLabel={page.ctaLabel} />
+    <IntroSection text={page.introduction} cta={false} fond />
   )}
 
   {avecDates.length === 0 ? (
@@ -264,7 +297,7 @@ const stagesGroupes = familles.map((f) => {
     </section>
   ) : (
     <Fragment>
-      <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+      <section class="pt-10 pb-16 md:pt-12 md:pb-20">
         <div class="mx-auto max-w-4xl px-4">
           <h2 class="mb-10 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
             {page.stagesSectionTitle}
@@ -288,31 +321,60 @@ const stagesGroupes = familles.map((f) => {
         </div>
       </section>
 
-      <section class="py-16 md:py-20">
-        <div class="mx-auto max-w-3xl space-y-16 px-4">
+      <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+        <div class="mx-auto max-w-3xl space-y-8 px-4">
+          {/*
+            Le même conteneur que sur les deux autres pages : carte blanche,
+            calendriers dans leurs encadrés à l'intérieur. Une seule colonne ici,
+            contrairement aux ateliers — un stage porte deux paragraphes de
+            description, qui ne se lisent pas sur une demi-largeur.
+          */}
           {stagesGroupes.map((f) => (
-            <div id={toSlug(f.base)} class="scroll-mt-24">
+            <div
+              id={toSlug(f.base)}
+              class="scroll-mt-24 rounded-xl bg-white p-5 shadow-md md:p-6 dark:bg-[var(--color-card-bg)]"
+            >
+              {/*
+                LE PRIX SEUL DANS LE TITRE. « 70 € — 5 h » y mêlait le montant et
+                la durée par un tiret qui ne disait pas leur rapport, tandis que
+                la ligne suivante annonçait « Stage en 2 séances » : trois
+                caractéristiques éparpillées sur deux niveaux.
+
+                La durée rejoint donc les autres faits descriptifs, et le titre
+                ne porte plus que le chiffre qui décide. Un stage à plusieurs
+                formules garde son appariement — « 70 € pour 5 h ou 95 € pour
+                7 h » — parce que là, prix et durée vont vraiment par paires.
+              */}
               <h2 class="mb-2 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
                 {f.base}
                 <span class="ml-2 text-base font-medium text-[var(--color-button)]">
-                  {f.tarifPrincipal}{f.tarifSecondaire && ` — ${f.tarifSecondaire}`}
+                  {f.tarifPrincipal}
                 </span>
               </h2>
               <p class="mb-4 text-sm text-[var(--color-text-light)]">
                 {f.formules.length > 1
                   ? `${f.formules.length} formules au choix`
                   : formule(f.formules[0].seances_par_stage)}
+                {f.tarifSecondaire && ` · ${f.tarifSecondaire}`}
                 {f.lieuCommun && ` · ${f.lieuCommun}`}
                 {f.placesCommunes && ` · ${f.placesCommunes} places`}
                 {f.audience === 'enfants' && ' · enfants'}
               </p>
 
-              {/* Le prérequis et la description valent pour le stage entier : les
-                  répéter sous chaque formule les ferait passer pour des
-                  différences entre elles. */}
+              {/*
+                Le prérequis en note marquée, non en italique perdu entre deux
+                paragraphes. C'est la seule ligne qui peut faire renoncer — ou
+                rassurer : « recommandée » n'est pas « exigée », et il vaut mieux
+                le lire avant la description que le découvrir après.
+
+                Il vaut pour le stage entier, comme la description : les répéter
+                sous chaque formule les ferait passer pour des différences entre
+                elles.
+              */}
               {f.description?.prerequisite && (
-                <p class="mb-4 text-sm italic text-[var(--color-text-light)]">
-                  {f.description.prerequisite}
+                <p class="mb-4 border-l-4 border-[var(--color-button)] py-1 pl-4 text-sm text-[var(--color-text)]">
+                  <span class="font-semibold text-[var(--color-heading)]">Prérequis</span>
+                  {' — '}{f.description.prerequisite}
                 </p>
               )}
               {f.description?.fullDescription && (
@@ -352,15 +414,16 @@ const stagesGroupes = familles.map((f) => {
                   </div>
                 ))}
               </div>
+
+              <ContactCTA label={page.ctaLabel} />
             </div>
           ))}
-          <ContactCTA label={page.ctaLabel} />
         </div>
       </section>
     </Fragment>
   )}
 
-  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} />
+  <FaqSection title={page.faqSectionTitle} items={faqAJour} ctaLabel={page.ctaLabel} fond={false} />
 
   {page.crossLinksText && (
     <CrossLinksSection text={page.crossLinksText} excludeHref="/stages-thematiques/" />

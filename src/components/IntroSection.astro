@@ -11,17 +11,30 @@ interface Props {
    * d'avoir rien lu ne sert personne, et répété six fois il cesse de se voir.
    */
   cta?: boolean;
+  /**
+   * Poser l'introduction sur le fond chaud.
+   *
+   * Les sections alternent, fond et pas de fond. Sur les pages d'aperçu,
+   * l'alternance commence par le fond : la page s'ouvre sur une bande colorée
+   * qui pose l'introduction, plutôt que de la laisser flotter sur le clair.
+   */
+  fond?: boolean;
 }
 
-const { text, ctaLabel, cta = true } = Astro.props;
+const { text, ctaLabel, cta = true, fond = false } = Astro.props;
 ---
 
 {/*
-  Sans bouton, la marge basse ne sert plus à rien : elle s'ajoutait à celle de
-  la section suivante, et le paragraphe flottait au-dessus de cent soixante
-  pixels de vide. La section qui suit apporte alors seule la respiration.
+  Sans bouton, la marge basse se réduit sans disparaître.
+  
+  Elle s'ajoutait à celle de la section suivante, et le paragraphe flottait
+  au-dessus de cent soixante pixels de vide. Mais la supprimer tout à fait
+  allait trop loin : quand la section suivante a un fond différent, la limite
+  des deux couleurs venait se coller sous la dernière ligne, et la coupure se
+  voyait plus que l'espace qu'on avait gagné. Un composant ne peut pas savoir ce
+  qui le suit ; il lui reste à ne jamais coller.
 */}
-<section class={`pt-16 md:pt-20 ${cta ? 'pb-16 md:pb-20' : ''}`}>
+<section class={`pt-12 md:pt-16 ${cta ? 'pb-16 md:pb-20' : 'pb-8 md:pb-10'} ${fond ? 'bg-[var(--color-bg-accent)]' : ''}`}>
   <div class="max-w-3xl mx-auto px-4 text-center">
     <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{text}</p>
     <slot />

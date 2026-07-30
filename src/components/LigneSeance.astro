@@ -25,9 +25,25 @@ const { starts_at, ends_at, etat, heures = true } = Astro.props;
 const dateFr = new Intl.DateTimeFormat('fr-FR', {
   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris',
 });
+/**
+ * « 14h–17h » plutôt que « 14:00 – 17:00 ».
+ *
+ * Treize caractères contre sept : dans une carte sur deux colonnes, l'horaire
+ * poussait la pastille d'état à la ligne, où elle semblait désigner la date
+ * suivante. Et c'est ainsi qu'on écrit une heure en français — le reste de la
+ * page dit déjà « 14h à 17h ».
+ *
+ * Les minutes ne s'affichent que si elles existent : « 9h30 » se lit, « 9h00 »
+ * se déchiffre.
+ */
 const heureFr = new Intl.DateTimeFormat('fr-FR', {
   hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris',
 });
+
+const heure = (d: Date) => {
+  const [h, m] = heureFr.format(d).split(':');
+  return m === '00' ? `${Number(h)}h` : `${Number(h)}h${m}`;
+};
 ---
 
 <li class="flex flex-wrap items-baseline gap-x-3">
@@ -36,19 +52,27 @@ const heureFr = new Intl.DateTimeFormat('fr-FR', {
   </span>
   {heures && (
     <span class="text-[var(--color-text-light)]">
-      {heureFr.format(new Date(starts_at))} – {heureFr.format(new Date(ends_at))}
+      {heure(new Date(starts_at))}–{heure(new Date(ends_at))}
     </span>
   )}
   {/*
+    UNE PASTILLE, et non du texte au fil de la ligne. « liste d'attente » posé
+    nu à côté d'une date se lisait comme la suite de la phrase ; cerclé, il se
+    reconnaît d'un coup d'œil pour ce qu'il est — un état, pas une précision.
+
+    Le contour porte le sens, sans fond : la liste vit tantôt sur du blanc,
+    tantôt sur du beige, et un fond aurait fallu redéfinir à chaque surface.
+
     L'état suit la date au fil du texte, sans être poussé au bord droit. Chassé
     par `ml-auto`, il passait seul à la ligne dès que la date occupait toute la
     largeur — « liste d'attente » flottait alors sous sa propre date, à la
     hauteur de la suivante.
   */}
   {etat && (
-    <span class={`shrink-0 text-xs font-medium ${
-      etat.ton === 'sourd' ? 'text-[var(--color-text-light)]'
-      : 'text-[var(--color-heading)]'
+    <span class={`inline-flex shrink-0 items-center rounded-[var(--radius-button)] border px-2 py-0.5 text-xs font-medium ${
+      etat.ton === 'sourd'
+        ? 'border-[var(--color-text-light)] text-[var(--color-text-light)]'
+        : 'border-[var(--color-button)] text-[var(--color-button)]'
     }`}>
       {etat.libelle}
     </span>
