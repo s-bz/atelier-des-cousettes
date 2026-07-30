@@ -9,7 +9,6 @@ import FaqSection from '../components/FaqSection.astro';
 import { getPageContext, reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { toSlug, splitParagraphs, splitLines } from '../utils/strings';
-import ProchainesDates from '../components/ProchainesDates.astro';
 import { buildServicePageSchemas } from '../utils/schema';
 import { ATELIER_GROUPS, ATELIER_GROUP_LABELS } from '../utils/ateliers';
 
@@ -116,29 +115,16 @@ const groupedCreneaux = ATELIER_GROUPS
                 ))}
               </div>
             )}
-            {/*
-              Le calendrier vient de la base, pas du contenu.
-              Les dates saisies à la main dérivaient dès la première séance
-              déplacée, et ne disaient rien des places restantes. L'îlot est
-              calculé à chaque visite ; le texte de Keystatic reste dessous en
-              repli — affiché pendant le calcul, et si la base ne répond pas.
-              La page ne perd donc jamais son calendrier.
-            */}
-            <div class="p-4 rounded-xl bg-[var(--color-bg-accent)]">
-              <p class="text-sm font-semibold text-[var(--color-heading)] mb-2">{page.calendarLabel}</p>
-              <ProchainesDates server:defer creneau={toSlug(c.name)}>
-                <div slot="fallback" class="text-sm text-[var(--color-text)] space-y-1">
-                  {c.dates
-                    ? splitLines(c.dates).map((line) => <p>{line}</p>)
-                    : <p>Prochaines dates à venir.</p>}
-                </div>
+            {c.dates && (
+              <div class="p-4 rounded-xl bg-[var(--color-bg-accent)]">
+                <p class="text-sm font-semibold text-[var(--color-heading)] mb-2">{page.calendarLabel}</p>
                 <div class="text-sm text-[var(--color-text)] space-y-1">
-                  {c.dates
-                    ? splitLines(c.dates).map((line) => <p>{line}</p>)
-                    : <p>Me contacter pour les prochaines dates.</p>}
+                  {splitLines(c.dates).map((line) => (
+                    <p>{line}</p>
+                  ))}
                 </div>
-              </ProchainesDates>
-            </div>
+              </div>
+            )}
           </div>
         ))}
         <ContactCTA label={page.ctaLabel} />

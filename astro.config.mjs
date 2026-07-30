@@ -31,6 +31,12 @@ export default defineConfig({
   site: SITE,
   adapter: vercel(),
   integrations: [react(), markdoc(), keystatic(), sitemap({
+    // Les pages d'aperçu sont des doublons en cours de validation : elles
+    // affichent le même contenu que les pages publiées, à partir de la base.
+    // Les laisser dans le plan du site les ferait indexer comme du contenu
+    // dupliqué, et une page d'essai pourrait sortir en résultat de recherche
+    // avant la page réelle. Le noindex de chacune est la seconde barrière.
+    filter: (page) => !page.includes('/apercu/'),
     serialize(item) {
       const lastmod = blogLastmod.get(item.url);
       if (lastmod) item.lastmod = lastmod;
