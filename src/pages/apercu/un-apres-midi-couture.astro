@@ -134,6 +134,23 @@ const PUBLICS = [
  * que la date et l'heure ne disaient déjà, et doublait la hauteur de chacune des
  * 59 lignes — sur un téléphone, la liste en devenait illisible.
  */
+/**
+ * Le tarif et la durée de chaque public, pour les pastilles de tête.
+ *
+ * Elles annonçaient « 40 € » et « 3h » depuis le contenu : le prix d'avant
+ * l'adhésion comprise, et la durée des seuls adultes. Un enfant venu pour deux
+ * heures à 35 € ne se reconnaissait dans aucun des deux chiffres.
+ *
+ * Une pastille par public plutôt qu'une seule : ils n'ont ni le même prix ni la
+ * même durée, et une moyenne n'aurait décrit personne.
+ */
+const parPublic = PUBLICS.map(({ cle, titre }) => {
+  const cs = (creneauxAtelier ?? []).filter((c) => c.audience === cle);
+  if (cs.length === 0) return null;
+  const durees = [...new Set(cs.map((c) => duree(c.default_start_time, c.default_end_time)).filter(Boolean))];
+  return { titre, prix: euros(cs[0].default_unit_price_cents), duree: durees.join(' ou ') };
+}).filter((p): p is NonNullable<typeof p> => p !== null);
+
 const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location))]
   .map((lieu) => {
     const publics = PUBLICS.map(({ cle, titre }) => {
@@ -184,24 +201,16 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
         <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">
           {page.introduction}
         </p>
-        {(page.price || page.duration || page.location) && (
+        {(parPublic.length > 0 || page.location) && (
           <div class="mt-8 flex flex-wrap justify-center gap-4">
-            {page.price && (
+            {parPublic.map((p) => (
               <div class="rounded-xl bg-[var(--color-bg-accent)] px-5 py-3 text-center">
-                <p class="heading-font text-2xl font-bold text-[var(--color-button)]">{page.price}</p>
-                {page.priceLabel && (
-                  <p class="text-xs text-[var(--color-text-light)]">{page.priceLabel}</p>
-                )}
+                <p class="heading-font text-2xl font-bold text-[var(--color-button)]">{p.prix} €</p>
+                <p class="text-xs text-[var(--color-text-light)]">
+                  {page.priceLabel}, {p.titre.toLowerCase()}{p.duree && ` (${p.duree})`}
+                </p>
               </div>
-            )}
-            {page.duration && (
-              <div class="rounded-xl bg-[var(--color-bg-accent)] px-5 py-3 text-center">
-                <p class="heading-font text-2xl font-bold text-[var(--color-heading)]">{page.duration}</p>
-                {page.durationLabel && (
-                  <p class="text-xs text-[var(--color-text-light)]">{page.durationLabel}</p>
-                )}
-              </div>
-            )}
+            ))}
             {page.location && (
               <div class="rounded-xl bg-[var(--color-bg-accent)] px-5 py-3 text-center">
                 <p class="heading-font text-2xl font-bold text-[var(--color-heading)]">{page.location}</p>

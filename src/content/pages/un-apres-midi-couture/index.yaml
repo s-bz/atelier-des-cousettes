@@ -1,14 +1,15 @@
 title: Un après-midi couture
 subtitle: Cousez en toute liberté
 seoDescription: >-
-  Après-midi couture à Revel et Verdalle (Tarn), près de Castres : 3h
-  d'accompagnement personnalisé pour 40€. Ouvert à tous, sur inscription
-  ponctuelle.
+  Après-midi couture à Revel et Verdalle (Tarn), près de Castres :
+  accompagnement personnalisé, 45 € pour les adultes et 35 € pour les enfants,
+  adhésion comprise. Ouvert à tous, sur inscription ponctuelle.
 coverImage: /src/assets/images/covers/un-apres-midi-couture/coverImage.jpeg
 coverImageAlt: Séance d'un après-midi couture à l'Atelier des Cousettes
 introduction: >-
-  Une séance ponctuelle de 3 heures pour coudre à votre rythme, avec
-  l'accompagnement d'Isabelle. Sans engagement, ouvert à tous les niveaux.
+  Une séance ponctuelle pour coudre à votre rythme, avec l'accompagnement
+  d'Isabelle — 3 heures pour les adultes, 2 heures pour les enfants. Sans
+  engagement, ouvert à tous les niveaux.
 price: 40 €
 priceLabel: la séance
 duration: 3h
@@ -41,8 +42,9 @@ faqSectionTitle: Questions fréquentes
 faqItems:
   - question: Quel est le tarif d'un après-midi couture ?
     answer: >-
-      40 € pour 3 heures d'atelier. Merci de régler une adhésion ponctuelle
-      de 5 € à l'association Les P'tits Piafs.
+      45 € pour 3 heures d'atelier pour un adulte, 35 € pour 2 heures pour un
+      enfant. L'adhésion ponctuelle à l'association Les P'tits Piafs est comprise
+      dans ce tarif : il n'y a rien à régler en plus.
   - question: Faut-il apporter son matériel ?
     answer: >-
       Oui, chaque participant vient avec sa propre machine à coudre, ses
