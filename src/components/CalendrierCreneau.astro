@@ -42,6 +42,8 @@ interface Props {
   heuresEnTete?: boolean;
   /** Message affiché quand aucune date n'est programmée. */
   vide?: string;
+  /** La suite de la phrase, après le lien de contact. */
+  contactSuite?: string;
   /** La base n'a pas répondu. À distinguer d'un calendrier réellement vide. */
   erreur?: boolean;
   /**
@@ -56,9 +58,16 @@ interface Props {
 
 const {
   seances,
-  vide = 'Aucune date programmée pour l’instant.',
+  /*
+   * « Aucune date programmée » se lisait comme une fin de non-recevoir, et
+   * c'était faux : à Verdalle les dates se calent AVEC le groupe, elles ne
+   * manquent pas, elles n'existent pas encore. Dire l'un pour l'autre faisait
+   * renoncer là où il fallait écrire.
+   */
+  vide = 'Les dates de ce créneau se fixent avec le groupe.',
   erreur = false,
   contact = true,
+  contactSuite = 'pour en convenir.',
   limite,
   heuresEnTete = false,
 } = Astro.props;
@@ -146,7 +155,7 @@ const heures = !(heuresEnTete && creneauxHoraires.size === 1);
         >
           Contactez Isabelle
         </a>
-        {' '}pour connaître les prochaines.
+        {' '}{contactSuite}
       </Fragment>
     )}
   </p>

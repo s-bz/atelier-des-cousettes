@@ -18,7 +18,7 @@ serviceCards:
     image: /src/assets/images/homepage/serviceCards/0/image.jpg
     imageAlt: Ateliers réguliers
     priceRange: Dès 25 €/mois
-    shortDescription: Progressez chaque semaine en petits groupes, de septembre à juin.
+    shortDescription: Progressez en petits groupes, une à deux fois par mois, de septembre à juin.
   - label: Stages thématiques
     href: /stages-thematiques/
     image: /src/assets/images/homepage/serviceCards/1/image.jpg

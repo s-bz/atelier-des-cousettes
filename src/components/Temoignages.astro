@@ -1,0 +1,98 @@
+---
+import { reader } from '../utils/reader';
+
+/**
+ * Ce que disent les élèves — la pièce qui manquait à toutes les pages.
+ *
+ * On demande à quelqu'un de s'asseoir trois heures dans une pièce avec une
+ * inconnue et d'engager une saison. Aucune phrase que nous écririons ne pèse ce
+ * que pèse celle d'une voisine de Revel, et le site n'en portait aucune.
+ *
+ * La note Google précède les citations : c'est un chiffre vérifiable, que le
+ * lecteur peut aller contrôler d'un clic, et il donne aux témoignages qui
+ * suivent une caution que leur seule présence sur notre propre site ne leur
+ * donnerait pas.
+ *
+ * RIEN NE S'AFFICHE SI RIEN N'EST RENSEIGNÉ. Une section « ils en parlent »
+ * vide dirait le contraire de ce qu'elle cherche à dire.
+ */
+interface Props {
+  /** Clé de page : seuls les témoignages qui la citent s'affichent. */
+  page: 'accueil' | 'ateliers' | 'stages' | 'seances';
+  titre?: string;
+  limite?: number;
+  fond?: boolean;
+}
+
+const { page, titre = 'Ce qu’en disent les élèves', limite = 3, fond = false } = Astro.props;
+
+const settings = await reader.singletons.siteSettings.read();
+// Le dossier n'existe pas tant qu'aucun témoignage n'est saisi.
+const tous = await reader.collections.temoignages.all().catch(() => []);
+
+const retenus = tous
+  .filter((t) => (t.entry.pages ?? []).includes(page))
+  .filter((t) => t.entry.texte?.trim())
+  .slice(0, limite);
+
+const note = settings?.googleNote?.trim();
+const nombre = settings?.googleNombreAvis?.trim();
+const lienAvis = settings?.googleBusinessUrl;
+
+const afficher = retenus.length > 0 || Boolean(note);
+---
+
+{afficher && (
+  <section class={`py-16 md:py-20 ${fond ? 'bg-[var(--color-bg-accent)]' : ''}`}>
+    <div class="mx-auto max-w-4xl px-4">
+      <h2 class="heading-font mb-3 text-center text-2xl font-bold text-[var(--color-heading)] md:text-3xl">
+        {titre}
+      </h2>
+
+      {note && (
+        <p class="mb-10 text-center text-sm text-[var(--color-text)]">
+          {/*
+            Les étoiles sont décoratives : la note est écrite juste à côté, et
+            un lecteur d'écran qui énumérerait cinq « étoile » n'ajouterait
+            rien. Le lien mène aux avis eux-mêmes — une note qu'on ne peut pas
+            aller vérifier ne vaut pas mieux qu'une affirmation.
+          */}
+          <span aria-hidden="true" class="text-[var(--color-button)]">★★★★★</span>{' '}
+          <strong class="text-[var(--color-heading)]">{note}</strong> sur Google
+          {nombre && <span>{' '}· {nombre} avis</span>}
+          {lienAvis && (
+            <Fragment>
+              {' — '}
+              <a href={lienAvis} class="font-medium text-[var(--color-button)] underline">
+                les lire
+              </a>
+            </Fragment>
+          )}
+        </p>
+      )}
+
+      {retenus.length > 0 && (
+        <div class="grid gap-6 md:grid-cols-3">
+          {retenus.map((t) => (
+            <figure class="rounded-xl bg-white p-5 shadow-md dark:bg-[var(--color-card-bg)]">
+              <blockquote class="text-sm leading-relaxed text-[var(--color-text)]">
+                « {t.entry.texte} »
+              </blockquote>
+              <figcaption class="mt-4 text-sm font-medium text-[var(--color-heading)]">
+                {t.entry.auteur}
+                {t.entry.lieu && (
+                  <span class="font-normal text-[var(--color-text-light)]">, {t.entry.lieu}</span>
+                )}
+                {t.entry.source === 'google' && (
+                  <span class="block text-xs font-normal text-[var(--color-text-light)]">
+                    Avis Google
+                  </span>
+                )}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+)}

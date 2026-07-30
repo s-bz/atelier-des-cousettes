@@ -8,6 +8,7 @@ import CrossLinksSection from '../components/CrossLinksSection.astro';
 import CalendrierCreneau from '../components/CalendrierCreneau.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import FaqSection from '../components/FaqSection.astro';
+import Temoignages from '../components/Temoignages.astro';
 import { getPageContext, reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { splitParagraphs, toSlug } from '../utils/strings';
@@ -423,9 +424,11 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
     </div>
   </section>
 
-  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} fond={false} />
+  <Temoignages page="seances" />
+
+  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} fond />
 
   {page.crossLinksText && (
-    <CrossLinksSection text={page.crossLinksText} excludeHref="/seances-sans-engagement/" class="bg-[var(--color-bg-accent)]" />
+    <CrossLinksSection text={page.crossLinksText} excludeHref="/seances-sans-engagement/" />
   )}
 </BaseLayout>

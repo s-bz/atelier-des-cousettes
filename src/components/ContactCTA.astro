@@ -3,10 +3,31 @@ import { reader } from '../utils/reader';
 
 interface Props {
   label?: string;
+  /**
+   * Ajouter le téléphone et WhatsApp sous le bouton.
+   *
+   * FAUX PAR DÉFAUT, et c'est délibéré : ce composant apparaît quatre à cinq
+   * fois par page. Répété partout, le rappel cesserait d'être remarqué — c'est
+   * déjà ce qui est arrivé à un bouton qu'on avait mis six fois. On ne
+   * l'affiche donc qu'au dernier, sous la FAQ, là où celui qui n'a pas trouvé
+   * sa réponse est le plus près de renoncer.
+   */
+  telephone?: boolean;
 }
 
 const settings = await reader.singletons.siteSettings.read();
-const { label = settings?.defaultCtaLabel } = Astro.props;
+const { label = settings?.defaultCtaLabel, telephone = false } = Astro.props;
+
+/**
+ * Le mobile d'abord — c'est celui qui porte WhatsApp.
+ *
+ * Une partie du public de l'atelier appelle plutôt qu'elle n'écrit, et le
+ * numéro ne vivait jusqu'ici que dans le pied de page, cinq écrans plus bas.
+ */
+const numeros = settings?.phones ?? [];
+const mobile = numeros[0];
+const chiffres = mobile?.replace(/\D/g, '');
+const whatsapp = chiffres?.startsWith('0') ? `https://wa.me/33${chiffres.slice(1)}` : null;
 ---
 
 <div class="mt-8 mb-8 text-center not-prose">
@@ -17,6 +38,23 @@ const { label = settings?.defaultCtaLabel } = Astro.props;
   >
     {label}
   </a>
+
+  {telephone && mobile && (
+    <p class="mt-4 text-sm text-[var(--color-text)]">
+      ou appelez Isabelle au{' '}
+      <a href={`tel:${mobile.replace(/[.\s]/g, '')}`} class="font-medium text-[var(--color-button)]">
+        {mobile}
+      </a>
+      {whatsapp && (
+        <Fragment>
+          {' — '}
+          <a href={whatsapp} class="font-medium text-[var(--color-button)]">
+            aussi sur WhatsApp
+          </a>
+        </Fragment>
+      )}
+    </p>
+  )}
 </div>
 
 <style>
