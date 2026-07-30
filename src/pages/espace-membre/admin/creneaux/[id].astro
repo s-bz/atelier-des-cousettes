@@ -1,0 +1,271 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../../utils/guards';
+import { getAdminClient } from '../../../../utils/supabase';
+import { groupeDe } from '../../../../utils/ateliers';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const { id } = Astro.params;
+const supabase = getAdminClient();
+
+/**
+ * Un créneau, ouvert depuis la liste.
+ *
+ * Toutes les modifications d'un même créneau tiennent sur cet écran —
+ * modifier, archiver, réactiver, supprimer. Les disperser entre la liste et
+ * ici obligerait à se souvenir de quel geste se fait où.
+ */
+
+let message: string | null = Astro.url.searchParams.has('cree')
+  ? 'Créé. Ajoutez ses dates depuis l’onglet Séances.'
+  : null;
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = String(form.get('action') ?? 'modifier');
+
+  if (action === 'archiver' || action === 'reactiver') {
+    const { error } = await supabase
+      .from('creneaux')
+      .update({ archived_at: action === 'archiver' ? new Date().toISOString() : null })
+      .eq('id', id);
+    if (error) erreur = `Opération impossible : ${error.message}`;
+    else message = action === 'archiver'
+      ? 'Archivé. Il n’est plus proposé, son historique est conservé.'
+      : 'Réactivé.';
+
+  } else if (action === 'supprimer') {
+    // Refusé dès qu'une séance ou un abonnement le référence : les clés
+    // étrangères l'interdiraient de toute façon, mais un message clair vaut
+    // mieux qu'une erreur de contrainte, et l'archivage est la bonne réponse.
+    const [{ count: seances }, { count: abonnements }] = await Promise.all([
+      supabase.from('sessions').select('id', { count: 'exact', head: true }).eq('creneau_id', id),
+      supabase.from('subscriptions').select('id', { count: 'exact', head: true }).eq('home_creneau_id', id),
+    ]);
+
+    if ((seances ?? 0) > 0 || (abonnements ?? 0) > 0) {
+      const parts = [];
+      if (seances) parts.push(`${seances} séance${seances > 1 ? 's' : ''}`);
+      if (abonnements) parts.push(`${abonnements} abonnement${abonnements > 1 ? 's' : ''}`);
+      erreur = `Suppression impossible : ${parts.join(' et ')} y sont rattaché${
+        (seances ?? 0) + (abonnements ?? 0) > 1 ? 's' : ''
+      }. Archivez-le plutôt : il cessera d’être proposé sans rien effacer.`;
+    } else {
+      const { error } = await supabase.from('creneaux').delete().eq('id', id);
+      if (error) erreur = `Suppression impossible : ${error.message}`;
+      // La fiche n'existe plus : rester dessus afficherait un écran vide.
+      else return Astro.redirect('/espace-membre/admin/creneaux/?fait=Supprimé.');
+    }
+
+  } else {
+    const label = String(form.get('label') ?? '').trim();
+    const debut = String(form.get('debut') ?? '').trim();
+    const fin = String(form.get('fin') ?? '').trim();
+    const horaire = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+    if (!label) {
+      erreur = 'Le nom ne peut pas être vide.';
+    } else if (!horaire.test(debut) || !horaire.test(fin)) {
+      erreur = 'Les horaires s’écrivent sur 24 heures, par exemple 14:00 ou 09:30.';
+    } else if (debut >= fin) {
+      erreur = 'L’heure de fin doit suivre l’heure de début.';
+    } else {
+      const audience = String(form.get('audience') ?? 'adultes');
+      // Le champ libre l'emporte quand il est rempli : c'est ainsi qu'un nouveau
+      // lieu entre dans la liste.
+      const lieu = String(form.get('lieu_autre') ?? '').trim()
+                || String(form.get('lieu') ?? '').trim();
+      const estStage = String(form.get('kind') ?? 'atelier') === 'stage';
+
+      // Le nom se corrige, l'IDENTIFIANT NON. Il est référencé par les séances,
+      // les abonnements et les ancres du site public : le recalculer depuis le
+      // nouveau nom orphelinerait tout cela d'un coup.
+      //
+      // Le groupe, lui, SUIT le lieu et le public. Sans cela, changer le public
+      // d'un atelier le laisserait classé sous l'ancien : rangé « Enfants » sur
+      // le site tout en n'acceptant plus que des adultes.
+      const { error } = await supabase.from('creneaux').update({
+        label,
+        audience,
+        default_start_time: debut,
+        default_end_time: fin,
+        default_location: lieu,
+        default_capacity: Number(form.get('places')),
+        default_unit_price_cents: Math.round(Number(form.get('prix')) * 100),
+        ...(estStage ? {} : { group_id: groupeDe(lieu, audience) }),
+      }).eq('id', id);
+
+      if (error) erreur = `Modification impossible : ${error.message}`;
+      else message = 'Modifié. Les séances déjà créées ne changent pas.';
+    }
+  }
+}
+
+const { data: creneau } = await supabase
+  .from('creneaux')
+  .select('id, label, kind, audience, group_id, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, archived_at')
+  .eq('id', id)
+  .maybeSingle();
+
+if (!creneau) return new Response('Créneau introuvable', { status: 404 });
+
+const { data: lieuxConnus } = await supabase.from('creneaux').select('default_location');
+const lieux = [...new Set([
+  ...(lieuxConnus ?? []).map((c) => c.default_location),
+  creneau.default_location,
+])].sort();
+
+const [{ count: seances }, { count: abonnements }] = await Promise.all([
+  supabase.from('sessions').select('id', { count: 'exact', head: true }).eq('creneau_id', id),
+  supabase.from('subscriptions').select('id', { count: 'exact', head: true }).eq('home_creneau_id', id),
+]);
+
+const estStage = creneau.kind === 'stage';
+const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (€)';
+---
+
+<AdminLayout
+  title={creneau.label}
+  soustitre={estStage ? 'Stage thématique' : 'Atelier régulier'}
+>
+  <p class="mb-6">
+    <a href="/espace-membre/admin/creneaux/" class="text-sm text-[var(--color-button)] underline">
+      ← Tous les ateliers et stages
+    </a>
+  </p>
+
+  {message && (
+    <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">{message}</p>
+  )}
+  {erreur && (
+    <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>
+  )}
+
+  {creneau.archived_at && (
+    <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">
+      Archivé : il n’est plus proposé à l’inscription. Ses {seances} séance{(seances ?? 0) > 1 ? 's' : ''} sont conservées.
+    </p>
+  )}
+
+  <p class="mb-6 max-w-2xl text-[var(--color-text)]">
+    Ces valeurs ne sont qu’un point de départ : les modifier n’affecte
+    <strong> aucune séance déjà créée</strong>, seulement celles à venir. Pour corriger
+    une séance existante, ouvrez-la depuis
+    {' '}<a href={`/espace-membre/admin/seances/?creneau=${creneau.id}`}
+            class="text-[var(--color-button)] underline">
+      ses {seances} séance{(seances ?? 0) > 1 ? 's' : ''}
+    </a>.
+  </p>
+
+  {/*
+    Les data-prix ne servent qu'à l'ajustement automatique du tarif. Absents sur
+    un stage, dont le prix n'a rien à voir avec le public.
+  */}
+  <form method="post" class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md"
+        {...(estStage ? {} : { 'data-prix-adultes': '40.00', 'data-prix-enfants': '30.00' })}>
+    <input type="hidden" name="action" value="modifier" />
+    <input type="hidden" name="kind" value={creneau.kind} />
+
+    <div>
+      <label for="label" class="block text-sm font-medium mb-1">Nom</label>
+      <input id="label" name="label" required value={creneau.label} class="champ sm:max-w-sm" />
+    </div>
+
+    {/* Lieu et public côte à côte : pour un atelier, ce couple décide à lui seul
+        du titre sous lequel il paraît sur le site. */}
+    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="lieu" class="block text-sm font-medium mb-1">Lieu</label>
+        <select id="lieu" name="lieu" class="champ">
+          {lieux.map((l) => (
+            <option value={l} selected={l === creneau.default_location}>{l}</option>
+          ))}
+        </select>
+        <input name="lieu_autre" class="champ mt-2" placeholder="ou un nouveau lieu" />
+      </div>
+      <div>
+        <label for="audience" class="block text-sm font-medium mb-1">Public</label>
+        <select id="audience" name="audience" class="champ">
+          <option value="adultes" selected={creneau.audience === 'adultes'}>Adultes</option>
+          <option value="enfants" selected={creneau.audience === 'enfants'}>Enfants</option>
+        </select>
+        <p class="mt-1 text-sm text-[var(--color-text-light)]">
+          Seules les personnes de ce public peuvent s’y inscrire.
+          {!estStage && ' Avec le lieu, il décide du titre sous lequel l’atelier paraît sur le site.'}
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <label for="debut" class="block text-sm font-medium mb-1">Début</label>
+        <input id="debut" name="debut" required class="champ"
+               inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]"
+               value={creneau.default_start_time.slice(0, 5)} />
+      </div>
+      <div>
+        <label for="fin" class="block text-sm font-medium mb-1">Fin</label>
+        <input id="fin" name="fin" required class="champ"
+               inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]"
+               value={creneau.default_end_time.slice(0, 5)} />
+      </div>
+      <div>
+        <label for="places" class="block text-sm font-medium mb-1">Places</label>
+        <input id="places" name="places" type="number" min="1" required
+               value={creneau.default_capacity} class="champ" />
+      </div>
+      <div>
+        <label for="prix" class="block text-sm font-medium mb-1">{libellePrix}</label>
+        <input id="prix" name="prix" type="number" min="0" step="0.01" required
+               value={(creneau.default_unit_price_cents / 100).toFixed(2)} class="champ" />
+      </div>
+    </div>
+
+    <button type="submit"
+            class="mt-4 rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-2 font-medium text-white">
+      Enregistrer
+    </button>
+  </form>
+
+  <div class="mt-6 flex flex-wrap items-center gap-4 border-t border-[var(--color-border-prominent)] pt-4">
+    <form method="post">
+      <input type="hidden" name="action" value={creneau.archived_at ? 'reactiver' : 'archiver'} />
+      <button type="submit" class="text-sm text-[var(--color-text-light)] underline">
+        {creneau.archived_at ? 'Réactiver' : 'Archiver'}
+      </button>
+    </form>
+
+    {(seances ?? 0) === 0 && (abonnements ?? 0) === 0 && (
+      <form method="post">
+        <input type="hidden" name="action" value="supprimer" />
+        <button type="submit" class="text-sm text-[var(--color-button)] underline">Supprimer</button>
+      </form>
+    )}
+
+    <span class="text-sm text-[var(--color-text-light)]">
+      {(seances ?? 0) === 0 && (abonnements ?? 0) === 0
+        ? 'Rien n’y est rattaché : suppression possible.'
+        : 'Des séances ou des abonnements y sont rattachés : archivez plutôt que supprimer.'}
+    </span>
+  </div>
+
+  <script>
+    document.querySelectorAll<HTMLFormElement>('form[data-prix-adultes]').forEach((form) => {
+      const cible = form.querySelector<HTMLSelectElement>('select[name="audience"]');
+      const prix = form.querySelector<HTMLInputElement>('input[name="prix"]');
+      if (!cible || !prix) return;
+
+      cible.addEventListener('change', () => {
+        const montant = cible.value === 'enfants'
+          ? form.dataset.prixEnfants
+          : form.dataset.prixAdultes;
+        if (montant) prix.value = montant;
+      });
+    });
+  </script>
+</AdminLayout>
