@@ -4,7 +4,7 @@ export const prerender = false;
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../utils/guards';
 import { getAdminClient } from '../../../utils/supabase';
-import { ATELIER_GROUPS } from '../../../utils/ateliers';
+import { groupeDe } from '../../../utils/ateliers';
 import { toSlug } from '../../../utils/strings';
 
 const garde = requireAdmin(Astro);
@@ -90,10 +90,12 @@ if (Astro.request.method === 'POST') {
             id: nouvelId,
             label,
             kind,
-            // Un stage n'appartient à aucun groupe d'ateliers : le groupe sert à
-            // présenter ensemble les créneaux d'un même lieu sur la page
-            // publique, et un stage vit sur la sienne.
-            group_id: kind === 'stage' ? null : String(form.get('groupe') ?? ''),
+            // Le groupe est DÉDUIT du lieu et du public, jamais saisi : il n'est
+            // que leur croisement, et le demander à part permettait de le
+            // contredire. Un stage n'en a aucun — il vit sur sa propre page.
+            group_id: kind === 'stage'
+              ? null
+              : groupeDe(valeurs.default_location, valeurs.audience),
             ...valeurs,
           });
           if (error) {
@@ -107,9 +109,20 @@ if (Astro.request.method === 'POST') {
           }
         }
       } else {
-        const { error } = await supabase.from('creneaux').update(valeurs).eq('id', id);
+        // Le groupe suit le lieu et le public à chaque modification. Sans cela,
+        // changer le public d'un atelier laisserait le groupe sur l'ancien : le
+        // créneau resterait classé « Enfants » sur le site tout en n'acceptant
+        // plus que des adultes. C'est exactement la contradiction que la
+        // déduction supprime à la création.
+        const estStage = String(form.get('kind') ?? 'atelier') === 'stage';
+        const { error } = await supabase
+          .from('creneaux')
+          .update(estStage
+            ? valeurs
+            : { ...valeurs, group_id: groupeDe(valeurs.default_location, valeurs.audience) })
+          .eq('id', id);
         if (error) erreur = `Modification impossible : ${error.message}`;
-        else message = 'Créneau modifié. Les séances déjà créées ne changent pas.';
+        else message = 'Modifié. Les séances déjà créées ne changent pas.';
       }
     }
   }
@@ -189,29 +202,38 @@ const SECTIONS = [
           {section.kind === 'stage' ? 'Ajouter un stage' : 'Ajouter un atelier'}
         </summary>
 
-        <form method="post" class="mt-4">
+        {/*
+          Les data-prix ne servent qu'à l'ajustement automatique du tarif : ils
+          portent les montants là où le script les lit, plutôt que de les
+          recopier dans le script lui-même. Absents sur un stage, dont le prix
+          n'a rien à voir avec le public.
+        */}
+        <form method="post" class="mt-4"
+              {...(section.kind === 'atelier'
+                ? { 'data-prix-adultes': '40.00', 'data-prix-enfants': '30.00' }
+                : {})}>
           <input type="hidden" name="action" value="creer" />
           <input type="hidden" name="kind" value={section.kind} />
 
-          <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for={`label-${section.kind}`} class="block text-sm font-medium mb-1">Nom</label>
+            <input id={`label-${section.kind}`} name="label" required class="champ sm:max-w-sm"
+                   placeholder={section.kind === 'stage' ? 'Stage surjeteuse' : 'Atelier du mercredi matin'} />
+          </div>
+
+          {/*
+            Lieu et public côte à côte : pour un atelier, ce couple décide à lui
+            seul du titre sous lequel il paraît sur le site. Les séparer laissait
+            croire à deux réglages indépendants.
+          */}
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <label for={`label-${section.kind}`} class="block text-sm font-medium mb-1">Nom</label>
-              <input id={`label-${section.kind}`} name="label" required class="champ"
-                     placeholder={section.kind === 'stage' ? 'Stage surjeteuse' : 'Atelier du mercredi matin'} />
+              <label for={`n-lieu-${section.kind}`} class="block text-sm font-medium mb-1">Lieu</label>
+              <select id={`n-lieu-${section.kind}`} name="lieu" class="champ">
+                {lieux.map((l) => <option value={l}>{l}</option>)}
+              </select>
+              <input name="lieu_autre" class="champ mt-2" placeholder="ou un nouveau lieu" />
             </div>
-
-            {section.kind === 'atelier' && (
-              <div>
-                <label for="groupe" class="block text-sm font-medium mb-1">Groupe</label>
-                <select id="groupe" name="groupe" required class="champ">
-                  {ATELIER_GROUPS.map((g) => <option value={g.id}>{g.label}</option>)}
-                </select>
-                <p class="mt-1 text-sm text-[var(--color-text-light)]">
-                  Sous quel titre il apparaît sur le site public.
-                </p>
-              </div>
-            )}
-
             <div>
               <label for={`audience-n-${section.kind}`} class="block text-sm font-medium mb-1">Public</label>
               <select id={`audience-n-${section.kind}`} name="audience" required class="champ">
@@ -220,11 +242,13 @@ const SECTIONS = [
               </select>
               <p class="mt-1 text-sm text-[var(--color-text-light)]">
                 Seules les personnes de ce public pourront s’y inscrire.
+                {section.kind === 'atelier' &&
+                  ' Avec le lieu, il décide du titre sous lequel l’atelier paraît sur le site.'}
               </p>
             </div>
           </div>
 
-          <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <label for={`n-debut-${section.kind}`} class="block text-sm font-medium mb-1">Début</label>
               <input id={`n-debut-${section.kind}`} name="debut" required value="14:00" class="champ"
@@ -234,13 +258,6 @@ const SECTIONS = [
               <label for={`n-fin-${section.kind}`} class="block text-sm font-medium mb-1">Fin</label>
               <input id={`n-fin-${section.kind}`} name="fin" required value="17:00" class="champ"
                      inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" placeholder="17:00" />
-            </div>
-            <div>
-              <label for={`n-lieu-${section.kind}`} class="block text-sm font-medium mb-1">Lieu</label>
-              <select id={`n-lieu-${section.kind}`} name="lieu" class="champ">
-                {lieux.map((l) => <option value={l}>{l}</option>)}
-              </select>
-              <input name="lieu_autre" class="champ mt-2" placeholder="ou un nouveau lieu" />
             </div>
             <div>
               <label for={`n-places-${section.kind}`} class="block text-sm font-medium mb-1">Places</label>
@@ -253,7 +270,7 @@ const SECTIONS = [
                      value="40.00" class="champ" />
               {section.kind === 'atelier' && (
                 <p class="mt-1 text-sm text-[var(--color-text-light)]">
-                  40 € pour un adulte, 30 € pour un enfant.
+                  40 € adulte, 30 € enfant.
                 </p>
               )}
             </div>
@@ -275,9 +292,13 @@ const SECTIONS = [
             const seances = (c.sessions ?? []).length;
             return (
               <div class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
-                <form method="post">
+                <form method="post"
+                      {...(c.kind === 'atelier'
+                        ? { 'data-prix-adultes': '40.00', 'data-prix-enfants': '30.00' }
+                        : {})}>
                   <input type="hidden" name="action" value="modifier" />
                   <input type="hidden" name="creneau" value={c.id} />
+                  <input type="hidden" name="kind" value={c.kind} />
 
                   <div class="mb-4 flex flex-wrap items-baseline gap-x-3">
                     <h3 class="font-bold text-[var(--color-heading)]">{c.label}</h3>
@@ -287,7 +308,28 @@ const SECTIONS = [
                     </a>
                   </div>
 
-                  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+                  {/* Lieu et public d'abord, et côte à côte : ils décident du
+                      titre public de l'atelier. */}
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label for={`lieu-${c.id}`} class="block text-sm font-medium mb-1">Lieu</label>
+                      <select id={`lieu-${c.id}`} name="lieu" class="champ">
+                        {lieux.map((l) => (
+                          <option value={l} selected={l === c.default_location}>{l}</option>
+                        ))}
+                      </select>
+                      <input name="lieu_autre" class="champ mt-2" placeholder="ou un nouveau lieu" />
+                    </div>
+                    <div>
+                      <label for={`audience-${c.id}`} class="block text-sm font-medium mb-1">Public</label>
+                      <select id={`audience-${c.id}`} name="audience" class="champ">
+                        <option value="adultes" selected={c.audience === 'adultes'}>Adultes</option>
+                        <option value="enfants" selected={c.audience === 'enfants'}>Enfants</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div>
                       <label for={`debut-${c.id}`} class="block text-sm font-medium mb-1">Début</label>
                       <input id={`debut-${c.id}`} name="debut" required class="champ"
@@ -299,22 +341,6 @@ const SECTIONS = [
                       <input id={`fin-${c.id}`} name="fin" required class="champ"
                              inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]"
                              value={c.default_end_time.slice(0, 5)} />
-                    </div>
-                    <div>
-                      <label for={`audience-${c.id}`} class="block text-sm font-medium mb-1">Public</label>
-                      <select id={`audience-${c.id}`} name="audience" class="champ">
-                        <option value="adultes" selected={c.audience === 'adultes'}>Adultes</option>
-                        <option value="enfants" selected={c.audience === 'enfants'}>Enfants</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label for={`lieu-${c.id}`} class="block text-sm font-medium mb-1">Lieu</label>
-                      <select id={`lieu-${c.id}`} name="lieu" class="champ">
-                        {lieux.map((l) => (
-                          <option value={l} selected={l === c.default_location}>{l}</option>
-                        ))}
-                      </select>
-                      <input name="lieu_autre" class="champ mt-2" placeholder="ou un nouveau lieu" />
                     </div>
                     <div>
                       <label for={`places-${c.id}`} class="block text-sm font-medium mb-1">Places</label>
@@ -389,4 +415,31 @@ const SECTIONS = [
       </div>
     </details>
   )}
+
+  {/*
+    Le tarif suit le public choisi : 40 € adulte, 30 € enfant.
+
+    UN CONFORT, PAS UN MÉCANISME. Le champ reste saisissable, et sans
+    JavaScript la page fonctionne exactement comme avant — c'est la valeur
+    envoyée qui compte, jamais ce script. Poser la règle en base aurait empêché
+    un tarif exceptionnel ; la laisser au seul souvenir d'Isabelle produisait des
+    ateliers enfants à 40 €.
+
+    Les montants viennent des attributs data du formulaire : les écrire ici
+    aussi ferait deux endroits à corriger le jour d'une hausse.
+  */}
+  <script>
+    document.querySelectorAll<HTMLFormElement>('form[data-prix-adultes]').forEach((form) => {
+      const cible = form.querySelector<HTMLSelectElement>('select[name="audience"]');
+      const prix = form.querySelector<HTMLInputElement>('input[name="prix"]');
+      if (!cible || !prix) return;
+
+      cible.addEventListener('change', () => {
+        const montant = cible.value === 'enfants'
+          ? form.dataset.prixEnfants
+          : form.dataset.prixAdultes;
+        if (montant) prix.value = montant;
+      });
+    });
+  </script>
 </AdminLayout>
