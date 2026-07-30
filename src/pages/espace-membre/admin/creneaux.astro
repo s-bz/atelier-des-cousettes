@@ -109,20 +109,29 @@ if (Astro.request.method === 'POST') {
           }
         }
       } else {
-        // Le groupe suit le lieu et le public à chaque modification. Sans cela,
-        // changer le public d'un atelier laisserait le groupe sur l'ancien : le
-        // créneau resterait classé « Enfants » sur le site tout en n'acceptant
-        // plus que des adultes. C'est exactement la contradiction que la
-        // déduction supprime à la création.
-        const estStage = String(form.get('kind') ?? 'atelier') === 'stage';
-        const { error } = await supabase
-          .from('creneaux')
-          .update(estStage
-            ? valeurs
-            : { ...valeurs, group_id: groupeDe(valeurs.default_location, valeurs.audience) })
-          .eq('id', id);
-        if (error) erreur = `Modification impossible : ${error.message}`;
-        else message = 'Modifié. Les séances déjà créées ne changent pas.';
+        // Le nom se corrige, l'IDENTIFIANT NON. Il est référencé par les
+        // séances, les abonnements et les ancres du site public : le recalculer
+        // à partir du nouveau nom orphelinerait tout cela d'un coup. Une faute
+        // de frappe dans un intitulé n'a pas à coûter une saison de séances.
+        const label = String(form.get('label') ?? '').trim();
+        if (!label) {
+          erreur = 'Le nom ne peut pas être vide.';
+        } else {
+          // Le groupe suit le lieu et le public à chaque modification. Sans
+          // cela, changer le public d'un atelier laisserait le groupe sur
+          // l'ancien : le créneau resterait classé « Enfants » sur le site tout
+          // en n'acceptant plus que des adultes. C'est exactement la
+          // contradiction que la déduction supprime à la création.
+          const estStage = String(form.get('kind') ?? 'atelier') === 'stage';
+          const { error } = await supabase
+            .from('creneaux')
+            .update(estStage
+              ? { label, ...valeurs }
+              : { label, ...valeurs, group_id: groupeDe(valeurs.default_location, valeurs.audience) })
+            .eq('id', id);
+          if (error) erreur = `Modification impossible : ${error.message}`;
+          else message = 'Modifié. Les séances déjà créées ne changent pas.';
+        }
       }
     }
   }
@@ -298,16 +307,26 @@ const SECTIONS = [
                   <input type="hidden" name="creneau" value={c.id} />
                   <input type="hidden" name="kind" value={c.kind} />
 
-                  <div class="mb-4 flex flex-wrap items-baseline gap-x-3">
-                    <h3 class="font-bold text-[var(--color-heading)]">{c.label}</h3>
+                  {/*
+                    Le nom est un champ, pas un titre figé : une coquille dans
+                    un intitulé n'était réparable qu'en SQL. Il porte quand même
+                    la graisse d'un titre — c'est lui qui permet de repérer la
+                    bonne fiche en faisant défiler la liste.
+                  */}
+                  <div class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <div class="min-w-[16rem] flex-1">
+                      <label for={`label-${c.id}`} class="sr-only">Nom</label>
+                      <input id={`label-${c.id}`} name="label" required value={c.label}
+                             class="champ font-bold text-[var(--color-heading)]" />
+                    </div>
                     <a href={`/espace-membre/admin/seances/?creneau=${c.id}`}
                        class="text-sm text-[var(--color-button)] underline">
                       {seances} séance{seances > 1 ? 's' : ''}
                     </a>
                   </div>
 
-                  {/* Lieu et public d'abord, et côte à côte : ils décident du
-                      titre public de l'atelier. */}
+                  {/* Lieu et public côte à côte : ils décident du titre public
+                      de l'atelier. */}
                   <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label for={`lieu-${c.id}`} class="block text-sm font-medium mb-1">Lieu</label>
