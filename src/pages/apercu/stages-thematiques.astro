@@ -147,6 +147,22 @@ for (const f of familles) {
   f.formules.sort((a, b) => a.seances_par_stage - b.seances_par_stage);
 }
 
+/**
+ * Le tarif d'une formule, son prix et sa durée appariés : « 70 € pour 5 h ».
+ *
+ * Deux fourchettes côte à côte — « 70 € – 95 € » puis « 5 h – 7 h » — obligeaient
+ * à deviner laquelle allait avec laquelle. Rien n'y disait que la moins chère
+ * était la plus courte : c'est vrai ici, ce n'est pas une loi.
+ */
+const prixEtDuree = (c: Formule) =>
+  c.heures
+    ? `${euros(c.default_unit_price_cents)} € pour ${c.heures}`
+    : `${euros(c.default_unit_price_cents)} €`;
+
+/** « A, B ou C » — on choisit entre les formules, on ne parcourt pas une échelle. */
+const enumerer = (parts: string[]) =>
+  parts.length < 2 ? (parts[0] ?? '') : `${parts.slice(0, -1).join(', ')} ou ${parts.at(-1)}`;
+
 const stagesGroupes = familles.map((f) => {
   const prix = f.formules.map((c) => c.default_unit_price_cents);
   const heures = f.formules.map((c) => c.heures).filter(Boolean) as string[];
@@ -160,12 +176,12 @@ const stagesGroupes = familles.map((f) => {
     // La description est celle du stage, pas de la formule : c'est le même stage.
     description: f.formules[0].description,
     audience: f.formules[0].audience,
-    prixLibelle: Math.min(...prix) === Math.max(...prix)
-      ? `${euros(prix[0])} €`
-      : `${euros(Math.min(...prix))} € – ${euros(Math.max(...prix))} €`,
-    heuresLibelle: heures.length === 0 ? null
-      : heures[0] === heures[heures.length - 1] ? heures[0]
-      : `${heures[0]} – ${heures[heures.length - 1]}`,
+    // Une seule formule : le prix en couleur, la durée en gris à côté — il n'y a
+    // rien à apparier. Plusieurs : chaque prix porte sa durée, d'un bloc.
+    tarifPrincipal: f.formules.length > 1
+      ? enumerer(f.formules.map(prixEtDuree))
+      : `${euros(prix[0])} €`,
+    tarifSecondaire: f.formules.length > 1 ? null : (heures[0] ?? null),
     lieuCommun: lieux.size === 1 ? f.formules[0].default_location : null,
     placesCommunes: places.size === 1 ? f.formules[0].default_capacity : null,
   };
@@ -214,8 +230,8 @@ const stagesGroupes = familles.map((f) => {
               <DetailCard
                 name={f.base}
                 anchorId={toSlug(f.base)}
-                primaryBadge={f.prixLibelle}
-                secondaryBadge={f.heuresLibelle ?? undefined}
+                primaryBadge={f.tarifPrincipal}
+                secondaryBadge={f.tarifSecondaire ?? undefined}
                 details={[
                   f.description?.shortDescription,
                   f.formules.length > 1
@@ -235,7 +251,7 @@ const stagesGroupes = familles.map((f) => {
               <h2 class="mb-2 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
                 {f.base}
                 <span class="ml-2 text-base font-medium text-[var(--color-button)]">
-                  {f.prixLibelle}{f.heuresLibelle && ` — ${f.heuresLibelle}`}
+                  {f.tarifPrincipal}{f.tarifSecondaire && ` — ${f.tarifSecondaire}`}
                 </span>
               </h2>
               <p class="mb-4 text-sm text-[var(--color-text-light)]">
