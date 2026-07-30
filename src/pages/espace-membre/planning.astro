@@ -7,16 +7,55 @@ import { getAdminClient } from '../../utils/supabase';
 import { participantsDuCompte, soldeDe, libererPlace, dateLongue, heure } from '../../utils/membre';
 import { notifier, notifierAdmin, variablesSeance, variablesAdmin } from '../../utils/emails';
 
-const { session, account } = Astro.locals;
+const { session, account, isAdmin } = Astro.locals;
 if (!session) return Astro.redirect('/espace-membre/connexion/');
 if (!account) return Astro.redirect('/espace-membre/connexion/?inconnu=1');
 
-const { personnes, choisie } = await participantsDuCompte(
-  account.id,
-  Astro.url.searchParams.get('personne'),
-);
-
 const supabase = getAdminClient();
+
+/**
+ * MODE ADMINISTRATION : Isabelle réserve pour quelqu'un d'autre.
+ *
+ * Un forfait plus grand que son créneau attitré laisse des séances à placer
+ * ailleurs, et une partie des adhérents ne le fera pas en ligne. Sans ce mode,
+ * il fallait un second écran de réservation, calqué sur celui-ci — donc deux
+ * endroits à corriger le jour où la règle change.
+ *
+ * Le paramètre est `pour`, distinct de `personne` À DESSEIN. `personne` ne
+ * choisit qu'au sein du compte connecté et n'accorde donc rien ; `pour` sort de
+ * ce périmètre et n'est lu que si isAdmin. Deux noms pour deux portées, faute de
+ * quoi la lecture du code demanderait de vérifier à chaque fois laquelle
+ * s'applique.
+ */
+const pour = isAdmin ? Astro.url.searchParams.get('pour') : null;
+
+type Personne = Awaited<ReturnType<typeof participantsDuCompte>>['personnes'][number];
+
+let personnes: Personne[] = [];
+let choisie: Personne | null = null;
+
+// L'adresse de l'ADHÉRENT, et non celle du compte connecté : en mode
+// administration, la confirmation doit partir chez la personne inscrite, pas
+// chez Isabelle qui vient de cliquer.
+let destinataire: string | null = account.email;
+
+if (pour) {
+  const { data } = await supabase
+    .from('participants')
+    .select('id, first_name, last_name, audience, accounts(email)')
+    .eq('id', pour)
+    .maybeSingle();
+
+  if (!data) return new Response('Personne introuvable', { status: 404 });
+
+  choisie = data as any;
+  destinataire = (data as any).accounts?.email ?? null;
+} else {
+  ({ personnes, choisie } = await participantsDuCompte(
+    account.id,
+    Astro.url.searchParams.get('personne'),
+  ));
+}
 let message: string | null = null;
 let erreur: string | null = null;
 
@@ -32,7 +71,10 @@ if (Astro.request.method === 'POST' && choisie) {
     const { error } = await supabase.rpc('book_participant', {
       p_session: String(form.get('seance')),
       p_participant: choisie.id,
-      p_source: 'member',
+      // La provenance dit qui a réellement posé la place, et elle s'affiche sur
+      // la feuille de présence : « inscrit par vous » plutôt que « réservé en
+      // ligne » quand c'est Isabelle qui a cliqué.
+      p_source: pour ? 'admin' : 'member',
     });
     if (error) {
       erreur = error.message;
@@ -45,32 +87,39 @@ if (Astro.request.method === 'POST' && choisie) {
         .eq('id', seanceId)
         .maybeSingle();
       if (s) {
-        await notifier('confirmation', account.email, variablesSeance({
+        // Chez l'ADHÉRENT, dont l'adresse a été résolue plus haut. En mode
+        // administration, `account.email` serait celle d'Isabelle : elle
+        // recevrait la confirmation d'une séance qu'elle ne suit pas, et
+        // l'inscrit n'en saurait rien.
+        await notifier('confirmation', destinataire, variablesSeance({
           prenom: choisie.first_name,
           starts_at: s.starts_at,
           ends_at: s.ends_at,
           location: s.location,
         }));
 
-        // Et Isabelle. Seuls les gestes des adhérents la préviennent : ses
-        // propres ajouts depuis la feuille de présence et l'inscription
-        // d'office de la nuit n'envoient rien. Être notifié de ce qu'on vient
-        // de faire soi-même apprend surtout à ignorer ses notifications.
+        // Et Isabelle — sauf quand c'est elle qui vient de réserver. Seuls les
+        // gestes des adhérents la préviennent : ses propres ajouts depuis la
+        // feuille de présence et l'inscription d'office de la nuit n'envoient
+        // rien. Être notifié de ce qu'on vient de faire soi-même apprend
+        // surtout à ignorer ses notifications.
         const { count } = await supabase
           .from('bookings')
           .select('id', { count: 'exact', head: true })
           .eq('session_id', seanceId)
           .eq('status', 'booked');
 
-        await notifierAdmin('admin_reservation', variablesAdmin({
-          participant: `${choisie.first_name} ${choisie.last_name ?? ''}`.trim(),
-          starts_at: s.starts_at,
-          ends_at: s.ends_at,
-          location: s.location,
-          creneau: (s.creneaux as any)?.label ?? null,
-          occupees: count ?? 0,
-          capacite: s.capacity,
-        }));
+        if (!pour) {
+          await notifierAdmin('admin_reservation', variablesAdmin({
+            participant: `${choisie.first_name} ${choisie.last_name ?? ''}`.trim(),
+            starts_at: s.starts_at,
+            ends_at: s.ends_at,
+            location: s.location,
+            creneau: (s.creneaux as any)?.label ?? null,
+            occupees: count ?? 0,
+            capacite: s.capacity,
+          }));
+        }
       }
     }
   }
@@ -94,12 +143,17 @@ if (choisie) {
 
   const { data } = await supabase
     .from('sessions')
-    .select('id, starts_at, ends_at, location, capacity, status, creneaux!inner(label, audience), bookings(id, participant_id, status)')
+    .select('id, starts_at, ends_at, location, capacity, status, creneaux!inner(label, audience, kind), bookings(id, participant_id, status)')
     .gte('starts_at', debutDuJour.toISOString())
     .eq('status', 'scheduled')
     // Les séances d'un autre public ne sont pas seulement irréservables :
     // les montrer ferait espérer une place qui n'existe pas.
     .eq('creneaux.audience', `${choisie.audience}s`)
+    // LES STAGES SONT EXCLUS. Un stage se paie à l'unité et ne consomme aucun
+    // crédit : le laisser réservable ici le donnerait gratuitement, sans que
+    // rien ne s'en aperçoive — ni le solde, ni la facture. Les inscriptions aux
+    // stages passent par Isabelle jusqu'à ce que le paiement en ligne existe.
+    .eq('creneaux.kind', 'atelier')
     .order('starts_at')
     .limit(60);
 
@@ -138,10 +192,32 @@ const lien = personnes.length > 1 && choisie ? `?personne=${choisie.id}` : '';
             style="font-family: var(--font-heading)">
           Planning
         </h1>
-        <a href={`/espace-membre/${lien}`} class="ml-auto text-sm text-[var(--color-button)] underline">
-          Mon espace
-        </a>
+        {pour ? (
+          <a href={`/espace-membre/admin/participants/${pour}/`}
+             class="ml-auto text-sm text-[var(--color-button)] underline">
+            Retour à la fiche
+          </a>
+        ) : (
+          <a href={`/espace-membre/${lien}`} class="ml-auto text-sm text-[var(--color-button)] underline">
+            Mon espace
+          </a>
+        )}
       </div>
+
+      {/*
+        Dire au nom de qui on agit, et le dire fort. Sans ce bandeau, l'écran est
+        indistinguable de son propre planning : on croirait réserver pour soi, et
+        les premières places atterriraient chez la mauvaise personne.
+      */}
+      {pour && choisie && (
+        <p class="mb-6 rounded-xl border-2 border-[var(--color-button)] bg-[var(--color-card-bg)] p-4 text-sm shadow-md">
+          <strong class="text-[var(--color-button)]">Mode administration.</strong>
+          {' '}Vous réservez pour <strong>{choisie.first_name} {choisie.last_name}</strong>.
+          {destinataire
+            ? ' La confirmation lui sera envoyée.'
+            : ' Sans adresse e-mail, aucune confirmation ne partira : prévenez-le vous-même.'}
+        </p>
+      )}
 
       <SelecteurParticipant personnes={personnes} choisie={choisie} base="/espace-membre/planning/" />
 

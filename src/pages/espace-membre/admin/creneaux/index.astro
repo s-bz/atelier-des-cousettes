@@ -1,0 +1,368 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../../utils/guards';
+import { getAdminClient } from '../../../../utils/supabase';
+import { groupeDe } from '../../../../utils/ateliers';
+import { toSlug } from '../../../../utils/strings';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const supabase = getAdminClient();
+
+/**
+ * Liste, et non quatorze formulaires dépliés.
+ *
+ * La version précédente ouvrait chaque créneau en édition complète : pour lire
+ * l'horaire du samedi matin, il fallait traverser six formulaires. Or on vient
+ * presque toujours ici pour VÉRIFIER quelque chose, pas pour modifier — comme
+ * sur l'écran des séances, qui liste et n'ouvre qu'au clic.
+ *
+ * La création reste sur cette page, repliée : elle est brève, et lui donner un
+ * écran à part n'aurait ajouté qu'un aller-retour.
+ */
+
+let message: string | null = Astro.url.searchParams.get('fait');
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const label = String(form.get('label') ?? '').trim();
+  const kind = String(form.get('kind') ?? 'atelier');
+  const debut = String(form.get('debut') ?? '').trim();
+  const fin = String(form.get('fin') ?? '').trim();
+  const horaire = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+  // L'identifiant suit toSlug(), comme les ancres du site public : un lien
+  // profond vers un créneau doit continuer de fonctionner.
+  const nouvelId = toSlug(label);
+
+  if (!horaire.test(debut) || !horaire.test(fin)) {
+    erreur = 'Les horaires s’écrivent sur 24 heures, par exemple 14:00 ou 09:30.';
+  } else if (debut >= fin) {
+    erreur = 'L’heure de fin doit suivre l’heure de début.';
+  } else if (!label) {
+    erreur = 'Donnez un nom.';
+  } else if (!nouvelId) {
+    erreur = 'Ce nom ne produit aucun identifiant utilisable.';
+  } else {
+    const audience = String(form.get('audience') ?? 'adultes');
+    // Le champ libre l'emporte quand il est rempli : c'est ainsi qu'un nouveau
+    // lieu entre dans la liste, sans quoi le menu serait une impasse le jour où
+    // l'atelier s'installe ailleurs.
+    const lieu = String(form.get('lieu_autre') ?? '').trim()
+              || String(form.get('lieu') ?? '').trim();
+
+    const { error } = await supabase.from('creneaux').insert({
+      id: nouvelId,
+      label,
+      kind,
+      audience,
+      // Un atelier n'a pas de « stage » : la valeur reste à 1, son défaut.
+      seances_par_stage: kind === 'stage' ? Math.max(1, Number(form.get('seances') ?? 1)) : 1,
+      // Le groupe est DÉDUIT du lieu et du public, jamais saisi : il n'est que
+      // leur croisement. Un stage n'en a aucun — il vit sur sa propre page.
+      group_id: kind === 'stage' ? null : groupeDe(lieu, audience),
+      default_start_time: debut,
+      default_end_time: fin,
+      default_location: lieu,
+      default_capacity: Number(form.get('places')),
+      default_unit_price_cents: Math.round(Number(form.get('prix')) * 100),
+    });
+
+    if (error) {
+      erreur = error.code === '23505'
+        ? `Un créneau porte déjà ce nom (${nouvelId}).`
+        : `Création impossible : ${error.message}`;
+    } else {
+      // On ouvre la fiche créée : c'est là qu'on ajoute ses dates, et la voir
+      // confirme que tout est comme voulu.
+      return Astro.redirect(`/espace-membre/admin/creneaux/${nouvelId}/?cree=1`);
+    }
+  }
+}
+
+const { data: tous } = await supabase
+  .from('creneaux')
+  .select('id, label, kind, audience, seances_par_stage, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, archived_at, sessions(starts_at, ends_at)')
+  .order('label');
+
+const lieux = [...new Set((tous ?? []).map((c) => c.default_location))].sort();
+const actifs = (tous ?? []).filter((c) => !c.archived_at);
+const archives = (tous ?? []).filter((c) => c.archived_at);
+
+/**
+ * Ateliers et stages séparés, parce qu'ils ne se ressemblent que de structure.
+ *
+ * Un atelier revient chaque semaine et se paie au forfait ; le prix qu'il porte
+ * est celui d'une séance HORS forfait, à facturer en fin de saison. Un stage a
+ * lieu une fois, et son prix est ce qu'il coûte. Mélangés dans une même liste,
+ * la colonne « prix » voulait dire deux choses à la fois.
+ */
+const SECTIONS = [
+  {
+    kind: 'atelier',
+    titre: 'Ateliers réguliers',
+    aide: 'Séances payées par le forfait. Le prix indiqué est celui d’une séance en dépassement, facturée en fin de saison.',
+    items: actifs.filter((c) => c.kind === 'atelier'),
+    libellePrix: 'Séance hors forfait (€)',
+  },
+  {
+    kind: 'stage',
+    titre: 'Stages thématiques',
+    aide: 'Payés à l’unité, hors forfait : un stage ne consomme aucune séance et n’apparaît jamais dans les séances à facturer.',
+    items: actifs.filter((c) => c.kind === 'stage'),
+    libellePrix: 'Prix du stage (€)',
+  },
+];
+
+const euros = (cents: number) => (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2);
+
+/**
+ * Durée totale d'UN stage, lue sur ses dates.
+ *
+ * C'est le chiffre qu'Isabelle annonce — « 90 € pour 7 h d'atelier » — et il ne
+ * se lisait nulle part : les trois matinées font 2 h, 2 h et 3 h, un total
+ * qu'on ne devinait qu'en additionnant à la main.
+ *
+ * On additionne les `seances_par_stage` PREMIÈRES dates, pas toutes : si le
+ * même forfait est proposé deux fois dans la saison, son total ne double pas.
+ */
+function heuresDuStage(c: { seances_par_stage: number; sessions: { starts_at: string; ends_at: string }[] | null }) {
+  const dates = [...(c.sessions ?? [])]
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+    .slice(0, c.seances_par_stage);
+
+  if (dates.length === 0) return null;
+
+  const minutes = dates.reduce(
+    (n, s) => n + (new Date(s.ends_at).getTime() - new Date(s.starts_at).getTime()) / 60000,
+    0,
+  );
+
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  return m === 0 ? `${h} h` : `${h} h ${m}`;
+}
+---
+
+<AdminLayout
+  title="Créneaux / Types"
+  soustitre="Ce que vous proposez. Les séances, elles, sont les dates au calendrier."
+>
+  {message && (
+    <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">{message}</p>
+  )}
+  {erreur && (
+    <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>
+  )}
+
+  {SECTIONS.map((section) => (
+    <section class="mb-10">
+      <h2 class="mb-1 text-lg font-bold text-[var(--color-heading)]"
+          style="font-family: var(--font-heading)">
+        {section.titre}
+        <span class="ml-2 text-sm font-normal text-[var(--color-text-light)]">
+          {section.items.length}
+        </span>
+      </h2>
+      <p class="mb-4 max-w-2xl text-sm text-[var(--color-text-light)]">{section.aide}</p>
+
+      {section.items.length === 0 ? (
+        <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
+          {section.kind === 'stage' ? 'Aucun stage pour l’instant.' : 'Aucun atelier pour l’instant.'}
+        </p>
+      ) : (
+        <ul class="space-y-2">
+          {section.items.map((c) => {
+            const seances = (c.sessions ?? []).length;
+            return (
+              <li>
+                <a href={`/espace-membre/admin/creneaux/${c.id}/`}
+                   class="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md transition-opacity hover:opacity-80">
+                  <span class="font-medium text-[var(--color-heading)]">{c.label}</span>
+                  {/*
+                    Pas d'horaire pour un forfait : ses journées n'ont pas la
+                    même durée — 10 h–12 h les deux premiers matins du stage
+                    découverte, 10 h–13 h le troisième — et l'horaire par défaut
+                    n'en décrit qu'une. Il sert à préremplir la création d'une
+                    date, pas à résumer le stage. Le total d'heures, lui, est
+                    calculé sur les dates réelles.
+                  */}
+                  <span class="text-sm text-[var(--color-text-light)]">
+                    {c.default_location} · {c.audience} ·
+                    {c.seances_par_stage === 1 && (
+                      <> {c.default_start_time.slice(0, 5)}–{c.default_end_time.slice(0, 5)} ·</>
+                    )}
+                    {' '}{c.default_capacity} place{c.default_capacity > 1 ? 's' : ''} ·
+                    {' '}{euros(c.default_unit_price_cents)} €
+                  </span>
+                  {/* Un forfait le dit : « 3 séances » n'a pas le même sens
+                      qu'un stage proposé trois fois. Les heures avec, parce que
+                      c'est le chiffre annoncé : « 90 € pour 7 h d'atelier ». */}
+                  {c.seances_par_stage > 1 && (
+                    <span class="rounded-full bg-[var(--color-bg-accent)] px-3 py-1 text-xs font-medium text-[var(--color-heading)]">
+                      forfait de {c.seances_par_stage} séances
+                      {heuresDuStage(c) && ` · ${heuresDuStage(c)}`}
+                    </span>
+                  )}
+                  {/*
+                    Pas d'heures pour un stage à date unique : ses dates n'ont
+                    pas forcément la même durée — l'initiation machine dure 3 h
+                    le samedi et 2 h 30 le jeudi — et un chiffre unique en
+                    désignerait une seule. L'horaire de chaque date figure déjà
+                    dans la liste des séances.
+                  */}
+                  <span class="ml-auto text-sm text-[var(--color-text-light)]">
+                    {seances} séance{seances > 1 ? 's' : ''}
+                  </span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {/*
+        La création reste ici, repliée. Les data-prix ne servent qu'à
+        l'ajustement automatique du tarif : ils portent les montants là où le
+        script les lit. Absents sur un stage, dont le prix n'a rien à voir avec
+        le public.
+      */}
+      <details class="mt-4 rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+        <summary class="cursor-pointer font-medium text-[var(--color-heading)]">
+          {section.kind === 'stage' ? 'Ajouter un stage' : 'Ajouter un atelier'}
+        </summary>
+
+        <form method="post" class="mt-4"
+              {...(section.kind === 'atelier'
+                ? { 'data-prix-adultes': '40.00', 'data-prix-enfants': '30.00' }
+                : {})}>
+          <input type="hidden" name="kind" value={section.kind} />
+
+          <div>
+            <label for={`label-${section.kind}`} class="block text-sm font-medium mb-1">Nom</label>
+            <input id={`label-${section.kind}`} name="label" required class="champ sm:max-w-sm"
+                   placeholder={section.kind === 'stage' ? 'Stage surjeteuse' : 'Atelier du mercredi matin'} />
+          </div>
+
+          {/* Lieu et public côte à côte : pour un atelier, ce couple décide à
+              lui seul du titre sous lequel il paraît sur le site. */}
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label for={`n-lieu-${section.kind}`} class="block text-sm font-medium mb-1">Lieu</label>
+              <select id={`n-lieu-${section.kind}`} name="lieu" class="champ">
+                {lieux.map((l) => <option value={l}>{l}</option>)}
+              </select>
+              <input name="lieu_autre" class="champ mt-2" placeholder="ou un nouveau lieu" />
+            </div>
+            <div>
+              <label for={`audience-n-${section.kind}`} class="block text-sm font-medium mb-1">Public</label>
+              <select id={`audience-n-${section.kind}`} name="audience" required class="champ">
+                <option value="adultes">Adultes</option>
+                <option value="enfants">Enfants</option>
+              </select>
+              <p class="mt-1 text-sm text-[var(--color-text-light)]">
+                Seules les personnes de ce public pourront s’y inscrire.
+                {section.kind === 'atelier' &&
+                  ' Avec le lieu, il décide du titre sous lequel l’atelier paraît sur le site.'}
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label for={`n-debut-${section.kind}`} class="block text-sm font-medium mb-1">Début</label>
+              <input id={`n-debut-${section.kind}`} name="debut" required value="14:00" class="champ"
+                     inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" placeholder="14:00" />
+            </div>
+            <div>
+              <label for={`n-fin-${section.kind}`} class="block text-sm font-medium mb-1">Fin</label>
+              <input id={`n-fin-${section.kind}`} name="fin" required value="17:00" class="champ"
+                     inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" placeholder="17:00" />
+            </div>
+            <div>
+              <label for={`n-places-${section.kind}`} class="block text-sm font-medium mb-1">Places</label>
+              <input id={`n-places-${section.kind}`} name="places" type="number" min="1" required
+                     value={section.kind === 'stage' ? '6' : '3'} class="champ" />
+            </div>
+            <div>
+              <label for={`n-prix-${section.kind}`} class="block text-sm font-medium mb-1">{section.libellePrix}</label>
+              <input id={`n-prix-${section.kind}`} name="prix" type="number" min="0" step="0.01" required
+                     value="40.00" class="champ" />
+            </div>
+          </div>
+
+          {/*
+            Le nombre de séances DÉCLARÉ, et non déduit des dates créées.
+            Sans lui, créer deux des trois matinées du stage découverte en
+            faisait un forfait de deux dates, toujours affiché à 90 €.
+          */}
+          {section.kind === 'stage' && (
+            <div class="mt-4 sm:max-w-sm">
+              <label for="n-seances" class="block text-sm font-medium mb-1">
+                Séances par stage
+              </label>
+              <input id="n-seances" name="seances" type="number" min="1" required value="1" class="champ" />
+              <p class="mt-1 text-sm text-[var(--color-text-light)]">
+                <strong>1</strong> — chaque date est un stage à part entière, au prix ci-dessus.
+                <br />
+                <strong>2 ou plus</strong> — un forfait sur plusieurs jours : les dates se réservent
+                ensemble et le prix couvre l’ensemble.
+              </p>
+            </div>
+          )}
+
+          <button type="submit" class="mt-4 rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-2 font-medium text-white">
+            {section.kind === 'stage' ? 'Créer le stage' : 'Créer l’atelier'}
+          </button>
+        </form>
+      </details>
+    </section>
+  ))}
+
+  {archives.length > 0 && (
+    <details>
+      <summary class="cursor-pointer text-sm text-[var(--color-text-light)]">
+        {archives.length} archivé{archives.length > 1 ? 's' : ''}
+      </summary>
+      <ul class="mt-3 space-y-2">
+        {archives.map((c) => (
+          <li>
+            <a href={`/espace-membre/admin/creneaux/${c.id}/`}
+               class="flex flex-wrap items-center gap-x-4 rounded-xl bg-[var(--color-card-bg)] p-4 opacity-60 shadow-md transition-opacity hover:opacity-100">
+              <span class="font-medium text-[var(--color-heading)]">{c.label}</span>
+              <span class="text-sm text-[var(--color-text-light)]">
+                {(c.sessions ?? []).length} séance{(c.sessions ?? []).length > 1 ? 's' : ''} conservée{(c.sessions ?? []).length > 1 ? 's' : ''}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </details>
+  )}
+
+  {/*
+    Le tarif suit le public choisi : 40 € adulte, 30 € enfant. UN CONFORT, PAS UN
+    MÉCANISME — le champ reste saisissable, et sans JavaScript la page fonctionne
+    exactement comme avant. Poser la règle en base aurait empêché un tarif
+    exceptionnel ; la laisser au seul souvenir d'Isabelle produisait des ateliers
+    enfants à 40 €.
+  */}
+  <script>
+    document.querySelectorAll<HTMLFormElement>('form[data-prix-adultes]').forEach((form) => {
+      const cible = form.querySelector<HTMLSelectElement>('select[name="audience"]');
+      const prix = form.querySelector<HTMLInputElement>('input[name="prix"]');
+      if (!cible || !prix) return;
+
+      cible.addEventListener('change', () => {
+        const montant = cible.value === 'enfants'
+          ? form.dataset.prixEnfants
+          : form.dataset.prixAdultes;
+        if (montant) prix.value = montant;
+      });
+    });
+  </script>
+</AdminLayout>

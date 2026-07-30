@@ -67,7 +67,7 @@ if (choisie) {
 
   const { data } = await supabase
     .from('bookings')
-    .select('id, attendance, sessions(id, starts_at, ends_at, location, status, creneaux(label))')
+    .select('id, attendance, sessions(id, starts_at, ends_at, location, status, creneaux(label, kind))')
     .eq('participant_id', choisie.id)
     .eq('status', 'booked');
 
@@ -177,8 +177,21 @@ if (choisie) {
                     {heure.format(new Date(r.sessions.starts_at))} – {heure.format(new Date(r.sessions.ends_at))}
                   </span>
                   <span class="text-sm text-[var(--color-text-light)]">{r.sessions.location}</span>
+                  {r.sessions.creneaux?.kind === 'stage' && (
+                    <span class="text-sm font-medium text-[var(--color-text-light)]">Stage</span>
+                  )}
                   {r.sessions.status === 'cancelled' ? (
                     <span class="ml-auto text-sm font-medium text-[var(--color-button)]">Annulée</span>
+                  ) : r.sessions.creneaux?.kind === 'stage' ? (
+                    /*
+                      Pas de bouton pour un stage. Il a été payé à l'unité : le
+                      libérer ne rendrait rien au solde — l'annonce « la séance
+                      revient à votre solde » serait fausse — et la question d'un
+                      remboursement se règle avec Isabelle, pas par un clic.
+                    */
+                    <span class="ml-auto text-sm text-[var(--color-text-light)]">
+                      Empêchement ? Prévenez Isabelle.
+                    </span>
                   ) : (
                     /* Libérer depuis ici : c'est le geste le plus courant — on
                        vient voir ses prochaines séances précisément parce qu'on

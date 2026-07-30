@@ -131,20 +131,50 @@ if (Astro.request.method === 'POST') {
     else message = nouvelle === null ? 'Présence effacée.' : 'Présence notée.';
   }
 
-  if (action === 'inscrire') {
-    const { error } = await supabase.rpc('book_participant', {
-      p_session: id,
-      p_participant: String(form.get('participant')),
-      p_source: 'admin',
-    });
-    if (error) erreur = error.message;
-    else message = 'Participant inscrit.';
+  // Inscrire, ici comme partout : le geste se fait toujours depuis une séance.
+  //
+  // Sur un forfait de plusieurs jours, il porte sur TOUTES les dates du stage —
+  // ce n'est pas un autre écran qui le dit, c'est le libellé du bouton. Envoyer
+  // Isabelle sur la fiche du stage l'obligeait à savoir de quel type de stage il
+  // s'agissait avant de savoir quel écran ouvrir.
+  if (action === 'inscrire' || action === 'retirer-stage') {
+    const { data: type } = await supabase
+      .from('sessions')
+      .select('creneau_id, creneaux(seances_par_stage)')
+      .eq('id', id)
+      .maybeSingle();
+
+    const forfait = ((type?.creneaux as any)?.seances_par_stage ?? 1) > 1;
+    const participant = String(form.get('participant') ?? '');
+
+    if (action === 'retirer-stage') {
+      const { data, error } = await supabase.rpc('release_stage', {
+        p_creneau: type?.creneau_id, p_participant: participant,
+      });
+      if (error) erreur = error.message;
+      else message = `${data} date${(data as number) > 1 ? 's' : ''} libérée${(data as number) > 1 ? 's' : ''} sur ce stage.`;
+
+    } else if (forfait) {
+      // Tout ou rien : la fonction refuse en bloc si une date est complète.
+      const { data, error } = await supabase.rpc('book_stage', {
+        p_creneau: type?.creneau_id, p_participant: participant,
+      });
+      if (error) erreur = error.message;
+      else message = `Inscrit sur ${data} date${(data as number) > 1 ? 's' : ''} du stage.`;
+
+    } else {
+      const { error } = await supabase.rpc('book_participant', {
+        p_session: id, p_participant: participant, p_source: 'admin',
+      });
+      if (error) erreur = error.message;
+      else message = 'Participant inscrit.';
+    }
   }
 }
 
 const { data: seance } = await supabase
   .from('sessions')
-  .select('id, starts_at, ends_at, location, capacity, unit_price_cents, status, creneaux(label, audience)')
+  .select('id, creneau_id, starts_at, ends_at, location, capacity, unit_price_cents, status, creneaux(label, audience, seances_par_stage)')
   .eq('id', id)
   .maybeSingle();
 
@@ -168,8 +198,28 @@ const { data: reservations } = await supabase
 // personne n'a encore constatées.
 const commencee = new Date(seance.starts_at) <= new Date();
 
-// Participants non encore inscrits à cette séance, pour le sélecteur.
-const dejaInscrits = new Set((reservations ?? []).map((r: any) => r.participants?.id));
+// Forfait sur plusieurs jours : l'inscription porte sur toutes les dates.
+const groupees = ((seance.creneaux as any)?.seances_par_stage ?? 1) > 1;
+
+/**
+ * Qui est déjà pris, et sur quel périmètre.
+ *
+ * Sur un forfait, on regarde TOUT LE STAGE et non la seule date affichée : une
+ * personne inscrite au stage n'a pas à réapparaître dans le sélecteur sous
+ * prétexte qu'elle n'est pas sur cette date-ci — book_stage la refuserait, et
+ * proposer un geste voué à l'échec est pire que ne pas le proposer.
+ */
+let dejaInscrits = new Set((reservations ?? []).map((r: any) => r.participants?.id));
+
+if (groupees) {
+  const { data: duStage } = await supabase
+    .from('bookings')
+    .select('participant_id, sessions!inner(creneau_id)')
+    .eq('status', 'booked')
+    .eq('sessions.creneau_id', seance.creneau_id);
+  dejaInscrits = new Set((duStage ?? []).map((b: any) => b.participant_id));
+}
+
 // Seules les personnes du public de la séance : proposer les autres serait
 // proposer un geste que la base refusera.
 const publicSeance = (seance.creneaux as any)?.audience ?? 'adultes';
@@ -179,6 +229,18 @@ const { data: tousParticipants } = await supabase
   .eq('audience', publicSeance === 'enfants' ? 'enfant' : 'adulte')
   .order('last_name');
 const inscriptibles = (tousParticipants ?? []).filter((p) => !dejaInscrits.has(p.id));
+
+// Dates à venir du stage, pour le libellé du bouton : « Inscrire aux 3 dates »
+// dit ce qui va se passer, là où « Inscrire » laisserait croire à cette
+// séance-là seulement.
+const { count: datesAVenir } = groupees
+  ? await supabase
+      .from('sessions')
+      .select('id', { count: 'exact', head: true })
+      .eq('creneau_id', seance.creneau_id)
+      .eq('status', 'scheduled')
+      .gt('starts_at', new Date().toISOString())
+  : { count: 0 };
 
 const prises = (reservations ?? []).length;
 const annulee = seance.status === 'cancelled';
@@ -261,21 +323,44 @@ const debut = new Date(seance.starts_at);
             </div>
           )}
 
+          {/*
+            Sur un forfait, retirer libère TOUTES les dates. Ne libérer que
+            celle-ci fabriquerait l'inscription partielle que le forfait
+            interdit — quelqu'un présent au deuxième jour sans le premier.
+          */}
           <form method="post" class={commencee && !annulee ? '' : 'ml-auto'}>
-            <input type="hidden" name="action" value="liberer" />
-            <input type="hidden" name="booking" value={r.id} />
-            <button type="submit" class="text-sm text-[var(--color-button)] underline">Libérer la place</button>
+            <input type="hidden" name="action" value={groupees ? 'retirer-stage' : 'liberer'} />
+            {groupees
+              ? <input type="hidden" name="participant" value={r.participants?.id} />
+              : <input type="hidden" name="booking" value={r.id} />}
+            <button type="submit" class="text-sm text-[var(--color-button)] underline">
+              {groupees ? 'Retirer du stage' : 'Libérer la place'}
+            </button>
           </form>
         </li>
       ))}
     </ul>
   )}
 
+  {/*
+    Sur un stage dont les dates sont groupées, on N'INSCRIT PAS à la date.
+    Le forfait s'achète en entier, et inscrire ici produirait exactement l'état
+    que le groupement existe pour empêcher : quelqu'un présent au deuxième jour
+    sans avoir fait le premier. On renvoie donc là où le geste est juste.
+  */}
+  {/*
+    L'inscription se fait ici pour tout — atelier, stage à l'unité, forfait.
+    Sur un forfait, c'est le LIBELLÉ qui porte la portée du geste, pas un écran
+    différent : « Inscrire aux 3 dates du stage ». Renvoyer ailleurs obligeait à
+    savoir de quel type de stage il s'agissait avant de savoir où aller.
+  */}
   {!annulee && (
     <form method="post" class="mt-6 flex flex-wrap items-end gap-3">
       <input type="hidden" name="action" value="inscrire" />
       <div class="min-w-[240px] flex-1">
-        <label for="participant" class="block text-sm font-medium mb-1">Inscrire quelqu’un</label>
+        <label for="participant" class="block text-sm font-medium mb-1">
+          {groupees ? 'Inscrire quelqu’un au stage' : 'Inscrire quelqu’un'}
+        </label>
         <select id="participant" name="participant" required
                 class="champ">
           <option value="">Choisir…</option>
@@ -285,11 +370,19 @@ const debut = new Date(seance.starts_at);
         </select>
       </div>
       <button type="submit" class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-5 py-2 font-medium text-white">
-        Inscrire
+        {groupees ? `Inscrire aux ${datesAVenir} dates` : 'Inscrire'}
       </button>
+      {groupees && (
+        <p class="w-full text-sm text-[var(--color-text-light)]">
+          Ce stage est un forfait : l’inscription porte sur toutes ses dates à venir, et
+          échoue en bloc si l’une est complète.
+        </p>
+      )}
       {inscriptibles.length === 0 && (
         <p class="w-full text-sm text-[var(--color-text-light)]">
-          Aucun participant disponible. Créez-en depuis l’onglet Participants.
+          {groupees
+            ? 'Tout le monde est déjà inscrit à ce stage.'
+            : 'Aucun participant disponible. Créez-en depuis l’onglet Participants.'}
         </p>
       )}
     </form>

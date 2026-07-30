@@ -44,19 +44,54 @@ const passe = Astro.url.searchParams.get('quand') === 'passe';
 const debutDuJour = new Date();
 debutDuJour.setHours(0, 0, 0, 0);
 
-const requete = supabase
+// Filtre par créneau, pour arriver ici depuis l'écran des ateliers et stages.
+// Sur un stage, c'est le seul moyen de voir ses quelques dates sans les
+// chercher parmi les cent-vingt séances de la saison.
+const creneauFiltre = Astro.url.searchParams.get('creneau');
+
+let requete = supabase
   .from('sessions')
-  .select('id, creneau_id, starts_at, ends_at, capacity, status, bookings(status), creneaux(label)');
+  .select('id, creneau_id, starts_at, ends_at, capacity, status, bookings(status), creneaux(label, kind, seances_par_stage)');
+
+if (creneauFiltre) requete = requete.eq('creneau_id', creneauFiltre);
 
 const { data: seances } = passe
   ? await requete.lt('starts_at', debutDuJour.toISOString()).order('starts_at', { ascending: false })
   : await requete.gte('starts_at', debutDuJour.toISOString()).order('starts_at');
 
+const { data: creneauNomme } = creneauFiltre
+  ? await supabase.from('creneaux').select('label, kind').eq('id', creneauFiltre).maybeSingle()
+  : { data: null };
+
+// Tous les créneaux pour le sélecteur, archivés compris : leurs séances passées
+// restent consultables, et les exclure rendrait ce passé inatteignable.
+const { data: creneauxTous } = await supabase
+  .from('creneaux')
+  .select('id, label, kind, archived_at')
+  .order('label');
+
+const pourSelecteur = [
+  { titre: 'Ateliers réguliers', items: (creneauxTous ?? []).filter((c) => c.kind === 'atelier') },
+  { titre: 'Stages thématiques', items: (creneauxTous ?? []).filter((c) => c.kind === 'stage') },
+];
+
 // Compte de l'autre côté, pour que l'onglet annonce ce qu'il contient.
-const { count: nombreAutre } = await supabase
+let compte = supabase
   .from('sessions')
   .select('id', { count: 'exact', head: true })
   [passe ? 'gte' : 'lt']('starts_at', debutDuJour.toISOString());
+if (creneauFiltre) compte = compte.eq('creneau_id', creneauFiltre);
+const { count: nombreAutre } = await compte;
+
+// La bascule à venir/passé doit conserver le filtre : le perdre renverrait sur
+// les cent-vingt séances de la saison, sans dire pourquoi.
+const lien = (quand?: string) => {
+  const p = new URLSearchParams();
+  if (quand) p.set('quand', quand);
+  if (creneauFiltre) p.set('creneau', creneauFiltre);
+  const q = p.toString();
+  return `/espace-membre/admin/seances/${q ? `?${q}` : ''}`;
+};
 
 type Seance = NonNullable<typeof seances>[number];
 
@@ -80,9 +115,51 @@ for (const s of seances ?? []) {
   const cle = moisFr.format(new Date(s.starts_at));
   parMois.set(cle, [...(parMois.get(cle) ?? []), s]);
 }
+
+/**
+ * Les autres dates d'un forfait, rappelées sur chaque ligne.
+ *
+ * Une date d'un stage sur plusieurs jours ne se comprend pas seule : « jeudi
+ * 29 octobre, stage surjeteuse » ne dit pas que c'est le premier des deux
+ * jours, ni quand tombe le second. Or c'est ce qu'il faut savoir avant d'y
+ * inscrire quelqu'un — l'inscription porte sur les deux.
+ *
+ * Requête à part plutôt que jointure : la liste peut compter cent-vingt
+ * séances, dont une poignée de forfaits ; charger toutes les dates de tous les
+ * créneaux pour trois lignes serait cher pour rien.
+ */
+const idsForfaits = [...new Set(
+  (seances ?? [])
+    .filter((s: any) => (s.creneaux?.seances_par_stage ?? 1) > 1)
+    .map((s: any) => s.creneau_id),
+)];
+
+const { data: datesForfaits } = idsForfaits.length
+  ? await supabase
+      .from('sessions')
+      .select('id, creneau_id, starts_at')
+      .in('creneau_id', idsForfaits)
+      .eq('status', 'scheduled')
+      .order('starts_at')
+  : { data: [] };
+
+const forfaitParCreneau = new Map<string, { id: string; starts_at: string }[]>();
+for (const d of datesForfaits ?? []) {
+  forfaitParCreneau.set(d.creneau_id, [...(forfaitParCreneau.get(d.creneau_id) ?? []), d]);
+}
+
+const jourCourt = new Intl.DateTimeFormat('fr-FR', {
+  day: 'numeric', month: 'short', timeZone: 'Europe/Paris',
+});
 ---
 
-<AdminLayout title="Séances" soustitre="Le calendrier de la saison.">
+<AdminLayout
+  title={creneauNomme ? creneauNomme.label : 'Séances'}
+  soustitre={creneauNomme
+    ? (creneauNomme.kind === 'stage' ? 'Les dates de ce stage.' : 'Les séances de cet atelier.')
+    : 'Le calendrier de la saison.'}
+>
+
 
   {message && (
     <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">{message}</p>
@@ -94,6 +171,12 @@ for (const s of seances ?? []) {
       Créer des séances
     </a>
 
+    {/*
+      « Inscrire d'office » lance maintenant ce que la tâche de nuit fera de
+      toute façon : placer chaque adhérent sur les prochaines séances de son
+      créneau attitré. Sans ce bouton, Isabelle ajoute des séances, n'y voit
+      personne, et doit attendre le lendemain pour savoir si ça a marché.
+    */}
     <form method="post">
       <button type="submit"
               class="rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-3 text-sm font-medium text-[var(--color-button)]">
@@ -102,14 +185,14 @@ for (const s of seances ?? []) {
     </form>
 
     <nav class="ml-auto flex gap-2" aria-label="Période">
-      <a href="/espace-membre/admin/seances/"
+      <a href={lien()}
          aria-current={!passe ? 'page' : undefined}
          class={`rounded-[var(--radius-button)] px-4 py-2 text-sm font-medium ${
            !passe ? 'bg-[var(--color-button)] text-white'
                   : 'border border-[var(--color-border-prominent)] text-[var(--color-text)]'}`}>
         À venir{!passe ? '' : ` (${nombreAutre ?? 0})`}
       </a>
-      <a href="/espace-membre/admin/seances/?quand=passe"
+      <a href={lien('passe')}
          aria-current={passe ? 'page' : undefined}
          class={`rounded-[var(--radius-button)] px-4 py-2 text-sm font-medium ${
            passe ? 'bg-[var(--color-button)] text-white'
@@ -118,6 +201,43 @@ for (const s of seances ?? []) {
       </a>
     </nav>
   </div>
+
+  {/*
+    Filtre par créneau, en GET : l'URL porte le choix, donc reste partageable et
+    survit à un rechargement. La bascule à venir/passé le conserve, et le bouton
+    « Filtrer » garde l'écran utilisable sans JavaScript — le script en dessous
+    ne fait que dispenser du clic.
+  */}
+  <form method="get" class="mb-8 flex flex-wrap items-end gap-3">
+    {passe && <input type="hidden" name="quand" value="passe" />}
+
+    <div class="min-w-[16rem] flex-1 sm:max-w-sm">
+      <label for="creneau" class="block text-sm font-medium mb-1">Afficher</label>
+      <select id="creneau" name="creneau" class="champ">
+        <option value="">Tous les ateliers et stages</option>
+        {pourSelecteur.map((groupe) => groupe.items.length > 0 && (
+          <optgroup label={groupe.titre}>
+            {groupe.items.map((c) => (
+              <option value={c.id} selected={c.id === creneauFiltre}>
+                {c.label}{c.archived_at ? ' (archivé)' : ''}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </div>
+
+    {/*
+      Ce bouton est là pour le cas sans JavaScript, où le choix ne s'applique
+      pas de lui-même. Le script le masque justement quand il devient inutile :
+      le retirer du HTML rendrait le filtre inopérant sans script, le laisser
+      visible ferait douter que le choix a été pris en compte.
+    */}
+    <button type="submit" data-si-sans-script
+            class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-5 py-2 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-bg-accent)]">
+      Filtrer
+    </button>
+  </form>
 
   {(seances ?? []).length === 0 && (
     <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
@@ -137,6 +257,11 @@ for (const s of seances ?? []) {
           const prises = occupees(s);
           const complet = prises >= s.capacity;
           const annulee = s.status === 'cancelled';
+
+          // Forfait : les dates du stage, et le rang de celle-ci parmi elles.
+          const fratrie = forfaitParCreneau.get(s.creneau_id) ?? [];
+          const rang = fratrie.findIndex((d) => d.id === s.id) + 1;
+
           return (
             <li>
               <a href={`/espace-membre/admin/seances/${s.id}/`}
@@ -153,6 +278,26 @@ for (const s of seances ?? []) {
                 <span class={`ml-auto text-sm font-medium ${complet && !annulee ? 'text-[var(--color-button)]' : 'text-[var(--color-text-light)]'}`}>
                   {annulee ? 'Annulée' : `${prises} / ${s.capacity}`}
                 </span>
+
+                {/*
+                  Sur une ligne à part, sous le reste : cette date n'est qu'un
+                  jour d'un stage, et l'inscription porte sur tous. Sans ce
+                  rappel, « jeudi 29 octobre, surjeteuse » ne dit ni que c'est le
+                  premier des deux jours, ni quand tombe le second.
+                */}
+                {fratrie.length > 1 && (
+                  <span class="w-full text-sm text-[var(--color-text-light)]">
+                    Jour {rang} sur {fratrie.length} —
+                    {' '}{fratrie.map((d, i) => (
+                      <>
+                        {i > 0 && ', '}
+                        <span class={d.id === s.id ? 'font-medium text-[var(--color-heading)]' : ''}>
+                          {jourCourt.format(new Date(d.starts_at))}
+                        </span>
+                      </>
+                    ))}
+                  </span>
+                )}
               </a>
             </li>
           );
@@ -160,4 +305,18 @@ for (const s of seances ?? []) {
       </ul>
     </div>
   ))}
+
+  {/*
+    Le filtre s'applique dès le choix, et le bouton « Filtrer » disparaît alors :
+    il ne servait qu'à déclencher ce que le choix déclenche maintenant seul.
+  */}
+  <script>
+    const filtre = document.querySelector<HTMLSelectElement>('select#creneau');
+    if (filtre) {
+      filtre.addEventListener('change', () => filtre.form?.submit());
+      filtre.form
+        ?.querySelectorAll<HTMLElement>('[data-si-sans-script]')
+        .forEach((el) => { el.hidden = true; });
+    }
+  </script>
 </AdminLayout>

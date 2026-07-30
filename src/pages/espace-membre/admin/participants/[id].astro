@@ -253,6 +253,53 @@ const { data: reservations } = await supabase
 const absences = (reservations ?? []).filter((r: any) => r.attendance === 'absent').length;
 
 const enCours = (abonnements ?? []).filter((a) => a.ends_on >= new Date().toISOString().slice(0, 10));
+
+/**
+ * Ce qui reste à placer tient-il encore sur le créneau attitré ?
+ *
+ * La question ne porte PAS sur le forfait acheté mais sur le SOLDE, et pas sur
+ * les dates du créneau mais sur celles qui y sont encore prenables. Une première
+ * version comparait 20 séances aux 10 dates du mardi : l'avertissement restait
+ * affiché une fois les 20 placées — dix sur le mardi, dix ailleurs — et
+ * annonçait un travail déjà fait.
+ *
+ * Une date n'est prenable que si elle est à venir, non annulée, pas complète, et
+ * pas déjà RÉSERVÉE par cette personne.
+ *
+ * Une date qu'elle a LIBÉRÉE compte comme prenable, elle. C'est l'inscription
+ * d'office qui ne repasse jamais sur une place rendue — pour qu'un désistement
+ * ne soit pas défait la nuit suivante — mais rien n'empêche de la reprendre à la
+ * main, et cet avertissement parle précisément de placement à la main. L'exclure
+ * annoncerait « à placer ailleurs » des dates encore libres sur son créneau.
+ */
+const dispoParCreneau = await Promise.all(
+  enCours
+    .filter((a) => a.home_creneau_id)
+    .map(async (a) => {
+      const { data } = await supabase
+        .from('sessions')
+        .select('id, capacity, bookings(participant_id, status)')
+        .eq('creneau_id', a.home_creneau_id)
+        .eq('status', 'scheduled')
+        .gt('starts_at', new Date().toISOString())
+        .lte('starts_at', `${a.ends_on}T23:59:59`);
+
+      const libres = (data ?? []).filter((s: any) => {
+        const lignes = s.bookings ?? [];
+        const dejaPrise = lignes.some(
+          (b: any) => b.participant_id === id && b.status === 'booked',
+        );
+        const prises = lignes.filter((b: any) => b.status === 'booked').length;
+        return !dejaPrise && prises < s.capacity;
+      }).length;
+
+      return { creneau: (a.creneaux as any)?.label ?? a.home_creneau_id, libres };
+    }),
+);
+
+const placesAttitrees = dispoParCreneau.reduce((n, d) => n + d.libres, 0);
+const resteAPlacer = Math.max(0, (solde as number) ?? 0);
+const ailleurs = resteAPlacer - placesAttitrees;
 const dateFr = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
 const anneeCourante = new Date().getFullYear();
 const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
@@ -266,6 +313,23 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
 >
   {message && <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm">{message}</p>}
   {erreur && <p role="alert" class="mb-6 rounded-xl bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-button)] shadow-md">{erreur}</p>}
+
+  {/*
+    Ce qui reste à placer ne tient plus sur le créneau attitré.
+    Recalculé à chaque visite : l'avertissement disparaît de lui-même dès que les
+    dates sont posées, au lieu d'annoncer un travail déjà fait.
+  */}
+  {ailleurs > 0 && (
+    <p class="mb-6 rounded-xl border border-[var(--color-button)] bg-[var(--color-card-bg)] p-4 text-sm text-[var(--color-text)] shadow-md">
+      <strong class="text-[var(--color-button)]">
+        {ailleurs} séance{ailleurs > 1 ? 's' : ''} à placer sur un autre créneau.
+      </strong>
+      {' '}Il reste {resteAPlacer} séance{resteAPlacer > 1 ? 's' : ''} à poser, et
+      {placesAttitrees === 0
+        ? ` « ${dispoParCreneau.map((d) => d.creneau).join(' », « ')} » n’a plus de date libre.`
+        : ` seulement ${placesAttitrees} date${placesAttitrees > 1 ? 's' : ''} libre${placesAttitrees > 1 ? 's' : ''} sur son créneau habituel.`}
+    </p>
+  )}
 
   {/*
     Une seule quantité en grand : celle qui répond à une question.
@@ -289,6 +353,20 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
         ? `${-(solde as number)} séance${-(solde as number) > 1 ? 's' : ''} au-delà du forfait, à facturer.`
         : 'Une séance s’acquiert au premier de chaque mois, se reporte jusqu’en juin, et une réservation lointaine est décomptée dès maintenant.'}
     </p>
+
+    {/*
+      Réserver à sa place, depuis le planning des adhérents lui-même.
+      Une partie des inscrits ne réservera pas en ligne, et les séances qui
+      débordent du créneau attitré demandent un choix que l'inscription d'office
+      ne peut pas faire. Réutiliser leur écran plutôt qu'en bâtir un second
+      évite d'avoir deux règles de réservation à maintenir.
+    */}
+    {(solde as number) > 0 && (
+      <a href={`/espace-membre/planning/?pour=${participant.id}`}
+         class="mt-4 inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90">
+        Choisir {solde} date{(solde as number) > 1 ? 's' : ''} pour {participant.first_name}
+      </a>
+    )}
   </div>
 
   <h2 class="mb-3 text-lg font-bold text-[var(--color-heading)]">Abonnements</h2>
