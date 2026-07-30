@@ -353,6 +353,13 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
                   </div>
                 ))}
               </div>
+
+              {/*
+                Un bouton par lieu, au pied de ses cartes. Celui qui vient à
+                Revel n'a plus à traverser Verdalle pour trouver de quoi écrire
+                — même parti que sur la page des ateliers.
+              */}
+              <ContactCTA label={page.ctaLabel} />
             </div>
           ))}
         </div>
@@ -364,8 +371,6 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
           {page.datesNote}
         </p>
       )}
-
-      <ContactCTA label={page.ctaLabel} />
     </div>
   </section>
 
