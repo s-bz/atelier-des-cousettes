@@ -71,6 +71,7 @@ const IGNORED_PATHS = new Set([
   '/robots.txt',
   '/llms.txt',
   '/llms-full.txt',
+  '/tarifs.md',
 ]);
 
 let totalViolations = 0;
