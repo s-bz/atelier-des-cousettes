@@ -9,7 +9,7 @@ import ContactCTA from '../../components/ContactCTA.astro';
 import FaqSection from '../../components/FaqSection.astro';
 import { getPageContext, reader } from '../../utils/reader';
 import { resolveImage, resolveImageUrl } from '../../utils/images';
-import { splitParagraphs } from '../../utils/strings';
+import { splitParagraphs, toSlug } from '../../utils/strings';
 import { buildServicePageSchemas } from '../../utils/schema';
 import { getAdminClient } from '../../utils/supabase';
 
@@ -283,9 +283,33 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
           <CalendrierCreneau seances={[]} />
         </div>
       ) : (
+        <Fragment>
+          {/*
+            Les mêmes pastilles que sur la page des ateliers. Deux lieux
+            seulement ici, mais celui qui ne peut pas se rendre à Verdalle a
+            autant besoin de sauter la section que sur l'autre page — et deux
+            pages qui présentent les mêmes dates n'ont pas à se naviguer
+            différemment.
+
+            Elles ne s'affichent qu'à partir de deux lieux : une pastille unique
+            ne mènerait qu'à ce qu'on a déjà sous les yeux.
+          */}
+          {lieux.length > 1 && (
+            <nav class="mb-12 flex flex-wrap justify-center gap-3">
+              {lieux.map((l) => (
+                <a
+                  href={`#${toSlug(l.lieu)}`}
+                  class="inline-block rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)] transition-colors hover:bg-[var(--color-button)] hover:text-white"
+                >
+                  {l.lieu}
+                </a>
+              ))}
+            </nav>
+          )}
+
         <div class="space-y-12">
           {lieux.map((l) => (
-            <div>
+            <div id={toSlug(l.lieu)} class="scroll-mt-24">
               <h3 class="mb-6 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
                 {l.lieu}
               </h3>
@@ -332,6 +356,7 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
             </div>
           ))}
         </div>
+        </Fragment>
       )}
 
       {page.datesNote && (
