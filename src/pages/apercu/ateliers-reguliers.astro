@@ -433,6 +433,6 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
   <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} fond={false} />
 
   {page.crossLinksText && (
-    <CrossLinksSection text={page.crossLinksText} excludeHref="/ateliers-reguliers/" />
+    <CrossLinksSection text={page.crossLinksText} excludeHref="/ateliers-reguliers/" class="bg-[var(--color-bg-accent)]" />
   )}
 </BaseLayout>
