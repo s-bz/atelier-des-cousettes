@@ -275,12 +275,13 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
     <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
   </Fragment>
 
-  <Hero title={PROPOSITION.title} subtitle={PROPOSITION.subtitle}
+  {/* `flush` : la marge basse du héros doublait celle de l'introduction. */}
+  <Hero flush title={PROPOSITION.title} subtitle={PROPOSITION.subtitle}
         coverImage={couverture ?? undefined} altText={PROPOSITION.coverImageAlt} />
 
 
   {page.introduction && (
-    <section class="py-16 md:py-20">
+    <section class="pt-12 pb-10 md:pt-16 md:pb-12">
       <div class="mx-auto max-w-3xl px-4 text-center">
         <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">
           {PROPOSITION.introduction}

@@ -26,7 +26,7 @@ const { text, ctaLabel, cta = true } = Astro.props;
   voyait plus que l'espace qu'on avait gagné. Un composant ne peut pas savoir ce
   qui le suit ; il lui reste à ne jamais coller.
 */}
-<section class={`pt-16 md:pt-20 ${cta ? 'pb-16 md:pb-20' : 'pb-8 md:pb-10'}`}>
+<section class={`pt-12 md:pt-16 ${cta ? 'pb-16 md:pb-20' : 'pb-8 md:pb-10'}`}>
   <div class="max-w-3xl mx-auto px-4 text-center">
     <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{text}</p>
     <slot />
