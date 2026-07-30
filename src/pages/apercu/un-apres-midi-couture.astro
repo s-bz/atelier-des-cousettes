@@ -51,17 +51,54 @@ const couverture = await resolveImage(page.coverImage, coverGlob);
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
 
 const faqItems = page.faqItems ?? [];
-const schemas = buildServicePageSchemas({
-  title: page.title,
-  seoDescription: page.seoDescription,
-  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
-  siteUrl,
-  settings,
-  offers: page.schemaOffers ?? [],
-  faqItems,
-});
+
+/**
+ * PROPOSITION DE RENOMMAGE — à ne pas confondre avec le contenu.
+ *
+ * La page s'intitule « Un après-midi couture » et liste pourtant 26 séances le
+ * matin et 19 en fin de journée sur 94 : près de la moitié dément son titre.
+ * Elle n'a plus rien d'exclusivement après-midi depuis qu'elle tire ses dates
+ * de tous les ateliers.
+ *
+ * CES LIBELLÉS VIVENT ICI ET NON DANS LE CMS, à dessein. Le contenu est partagé
+ * avec la page publiée : le modifier renommerait le site en production avant
+ * qu'Isabelle ait vu la proposition. Ils rejoindront Keystatic le jour de la
+ * bascule — trancher cela est précisément l'office de cette page.
+ *
+ * L'URL ne change pas et n'a pas à changer : onze articles de blog, l'accueil,
+ * le menu et les liens croisés y renvoient, et c'est une adresse, pas une
+ * promesse.
+ */
+const PROPOSITION = {
+  title: 'Une séance sans engagement',
+  subtitle: 'Cousez en toute liberté, à l’heure qui vous convient',
+  introduction:
+    'Une séance ponctuelle pour coudre à votre rythme, avec l’accompagnement ' +
+    'd’Isabelle — 3 heures pour les adultes, 2 heures pour les enfants. Le matin, ' +
+    'l’après-midi ou en fin de journée, selon les créneaux. Sans engagement, ' +
+    'ouvert à tous les niveaux.',
+  descriptionTitle: 'Comment se déroule une séance ?',
+  seoDescription:
+    'Séance de couture sans engagement à Revel et Verdalle (Tarn), près de ' +
+    'Castres : le matin, l’après-midi ou en fin de journée, 45 € pour les ' +
+    'adultes et 35 € pour les enfants, adhésion comprise. Ouvert à tous.',
+  coverImageAlt: 'Séance de couture ponctuelle à l’Atelier des Cousettes',
+  // Deux questions nommaient l'après-midi ; leurs réponses, elles, restent vraies.
+  questions: {
+    "Quel est le tarif d'un après-midi couture ?": 'Quel est le tarif d’une séance ?',
+    'Où ont lieu les après-midi couture ?': 'Où ont lieu les séances ?',
+  } as Record<string, string>,
+};
+
+const faqProposee = faqItems.map((q) => ({
+  ...q,
+  question: PROPOSITION.questions[q.question] ?? q.question,
+}));
+
 
 const audienceItems = page.audienceItems ?? [];
+
+
 
 const supabase = getAdminClient();
 
@@ -151,6 +188,27 @@ const parPublic = PUBLICS.map(({ cle, titre }) => {
   return { titre, prix: euros(cs[0].default_unit_price_cents), duree: durees.join(' ou ') };
 }).filter((p): p is NonNullable<typeof p> => p !== null);
 
+/**
+ * Les offres du schéma viennent des tarifs en base, non du contenu.
+ *
+ * Celles du CMS annonçaient encore « Après-midi couture (3h) » à 40 € : le nom
+ * d'avant et le prix d'avant, tandis que la page affiche 45 € et 35 €. C'est ce
+ * que Google lit — et la page publiée les émet toujours, faute d'avoir touché
+ * au contenu partagé.
+ */
+const schemas = buildServicePageSchemas({
+  title: PROPOSITION.title,
+  seoDescription: PROPOSITION.seoDescription,
+  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
+  siteUrl,
+  settings,
+  offers: parPublic.map((p) => ({
+    name: `Séance sans engagement — ${p.titre.toLowerCase()}`,
+    price: p.prix,
+  })),
+  faqItems: faqProposee,
+});
+
 const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location))]
   .map((lieu) => {
     const publics = PUBLICS.map(({ cle, titre }) => {
@@ -178,14 +236,14 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
 
 ---
 
-<BaseLayout title={`${page.title} — aperçu`} description={page.seoDescription}
+<BaseLayout title={`${PROPOSITION.title} — aperçu`} description={PROPOSITION.seoDescription}
             ogImage={ogImage} noIndex={true}>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
   </Fragment>
 
-  <Hero title={page.title} subtitle={page.subtitle}
-        coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
+  <Hero title={PROPOSITION.title} subtitle={PROPOSITION.subtitle}
+        coverImage={couverture ?? undefined} altText={PROPOSITION.coverImageAlt} />
 
   <div class="bg-[var(--color-bg-accent)] py-3">
     <p class="mx-auto max-w-4xl px-4 text-sm text-[var(--color-text)]">
@@ -199,7 +257,7 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
     <section class="py-16 md:py-20">
       <div class="mx-auto max-w-3xl px-4 text-center">
         <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">
-          {page.introduction}
+          {PROPOSITION.introduction}
         </p>
         {(parPublic.length > 0 || page.location) && (
           <div class="mt-8 flex flex-wrap justify-center gap-4">
@@ -233,7 +291,7 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
           <div class="mb-12">
             {page.descriptionTitle && (
               <h2 class="mb-6 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
-                {page.descriptionTitle}
+                {PROPOSITION.descriptionTitle}
               </h2>
             )}
             <div class="prose max-w-none">
@@ -374,7 +432,7 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
     </div>
   </section>
 
-  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} />
+  <FaqSection title={page.faqSectionTitle} items={faqProposee} ctaLabel={page.ctaLabel} />
 
   {page.crossLinksText && (
     <CrossLinksSection text={page.crossLinksText} excludeHref="/un-apres-midi-couture/" />
