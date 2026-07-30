@@ -9,6 +9,7 @@ import CrossLinksSection from '../components/CrossLinksSection.astro';
 import CalendrierCreneau from '../components/CalendrierCreneau.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import FaqSection from '../components/FaqSection.astro';
+import Temoignages from '../components/Temoignages.astro';
 import { getPageContext, reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { toSlug } from '../utils/strings';
@@ -323,7 +324,7 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
                       contact={!inconnuEnBase(c.name)}
                       vide={inconnuEnBase(c.name)
                         ? 'Ce créneau n’existe pas encore en base — à créer avant la bascule.'
-                        : 'Aucune date programmée pour l’instant.'}
+                        : undefined}
                     />
                   </div>
                 </div>
@@ -440,9 +441,11 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
     </section>
   )}
 
-  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} fond={false} />
+  <Temoignages page="ateliers" />
+
+  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} fond />
 
   {page.crossLinksText && (
-    <CrossLinksSection text={page.crossLinksText} excludeHref="/ateliers-reguliers/" class="bg-[var(--color-bg-accent)]" />
+    <CrossLinksSection text={page.crossLinksText} excludeHref="/ateliers-reguliers/" />
   )}
 </BaseLayout>

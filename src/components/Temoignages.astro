@@ -1,0 +1,231 @@
+---
+import { reader } from '../utils/reader';
+
+/**
+ * Ce que disent les élèves — la pièce qui manquait à toutes les pages.
+ *
+ * On demande à quelqu'un de s'asseoir trois heures dans une pièce avec une
+ * inconnue et d'engager une saison. Aucune phrase que nous écririons ne pèse ce
+ * que pèse celle d'une voisine de Revel, et le site n'en portait aucune.
+ *
+ * La note Google précède les citations : c'est un chiffre vérifiable, que le
+ * lecteur peut aller contrôler d'un clic, et il donne aux témoignages qui
+ * suivent une caution que leur seule présence sur notre propre site ne leur
+ * donnerait pas. LE NOMBRE D'AVIS NE S'AFFICHE PAS : « 6 avis » dit surtout
+ * qu'ils sont peu nombreux, quand « 5,0 sur Google » dit qu'ils sont bons.
+ *
+ * RIEN NE S'AFFICHE SI RIEN N'EST RENSEIGNÉ. Une section « ils en parlent »
+ * vide dirait le contraire de ce qu'elle cherche à dire.
+ */
+interface Props {
+  /** Clé de page : seuls les témoignages qui la citent s'affichent. */
+  page: 'accueil' | 'ateliers' | 'stages' | 'seances';
+  titre?: string;
+  fond?: boolean;
+}
+
+const { page, titre = 'Ce qu’en disent les élèves', fond = false } = Astro.props;
+
+const settings = await reader.singletons.siteSettings.read();
+// Le dossier n'existe pas tant qu'aucun témoignage n'est saisi.
+const tous = await reader.collections.temoignages.all().catch(() => []);
+
+/*
+ * LES PLUS LONGS D'ABORD.
+ *
+ * Un avis détaillé emporte davantage qu'un « super ! », et c'est la première
+ * carte qu'on lit — les suivantes demandent un geste. L'ordre alphabétique des
+ * fichiers, lui, ne voulait rien dire.
+ *
+ * Accessoirement les cartes s'alignent sur la plus haute : mettre la plus
+ * longue en tête évite qu'une carte de deux lignes ouvre le carrousel en
+ * paraissant vide.
+ */
+const retenus = tous
+  .filter((t) => (t.entry.pages ?? []).includes(page))
+  .filter((t) => t.entry.texte?.trim())
+  .sort((a, b) => (b.entry.texte?.length ?? 0) - (a.entry.texte?.length ?? 0));
+
+const note = settings?.googleNote?.trim();
+const lienAvis = settings?.googleBusinessUrl;
+
+const afficher = retenus.length > 0 || Boolean(note);
+// Un seul témoignage n'est pas un carrousel : les flèches n'auraient rien à faire.
+const defilable = retenus.length > 1;
+---
+
+{afficher && (
+  <section class={`py-16 md:py-20 ${fond ? 'bg-[var(--color-bg-accent)]' : ''}`}>
+    <div class="mx-auto max-w-5xl px-4">
+      <h2 class="heading-font mb-3 text-center text-2xl font-bold text-[var(--color-heading)] md:text-3xl">
+        {titre}
+      </h2>
+
+      {note && (
+        <p class="mb-10 text-center text-sm text-[var(--color-text)]">
+          {/*
+            Les étoiles sont décoratives : la note est écrite juste à côté, et
+            un lecteur d'écran qui énumérerait cinq « étoile » n'ajouterait
+            rien. Le lien mène aux avis eux-mêmes — une note qu'on ne peut pas
+            aller vérifier ne vaut pas mieux qu'une affirmation.
+          */}
+          <span aria-hidden="true" class="text-[var(--color-button)]">★★★★★</span>{' '}
+          <strong class="text-[var(--color-heading)]">{note}</strong> sur Google
+          {lienAvis && (
+            <Fragment>
+              {' — '}
+              <a href={lienAvis} class="font-medium text-[var(--color-button)] underline">
+                lire les avis
+              </a>
+            </Fragment>
+          )}
+        </p>
+      )}
+
+      {retenus.length > 0 && (
+        <div class="relative">
+          {/*
+            UN CARROUSEL SANS BIBLIOTHÈQUE NI JAVASCRIPT OBLIGATOIRE.
+
+            Le défilement horizontal avec accroche est natif : au doigt sur
+            mobile, à la molette ou au clavier sur ordinateur, et il fonctionne
+            avant que le moindre script ait chargé. Les flèches ne font
+            qu'améliorer ce qui marche déjà — c'est pour cela qu'elles sont
+            posées par le script et absentes sans lui, plutôt que présentes et
+            inertes.
+
+            `tabindex` rend la piste focalisable : sans lui, un utilisateur au
+            clavier ne peut pas la faire défiler, et les témoignages hors écran
+            lui seraient inaccessibles.
+          */}
+          <div
+            class="temoignages-piste flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-4"
+            tabindex="0"
+            role="group"
+            aria-label="Témoignages"
+          >
+            {retenus.map((t) => (
+              <figure class="relative flex w-[85%] shrink-0 snap-start flex-col rounded-xl bg-white p-5 shadow-md sm:w-[48%] md:w-[31.5%] dark:bg-[var(--color-card-bg)]">
+                {/*
+                  ICI LES ÉTOILES PORTENT L'INFORMATION, et non plus la
+                  décoration : aucun chiffre ne les accompagne. Elles sont donc
+                  annoncées aux lecteurs d'écran, contrairement à celles du
+                  bandeau où la note est écrite juste à côté.
+
+                  LA CARTE EST `relative` À CAUSE DE CE `sr-only`. Le texte de
+                  substitution est en `position: absolute` ; sans repère sur la
+                  carte, son bloc conteneur devenait le cadre du carrousel — hors
+                  de la piste, donc hors de ce qu'elle découpe. Les six textes se
+                  posaient alors à l'abscisse de leur carte, y compris celles qui
+                  attendent à 1 800 px, et la PAGE ENTIÈRE prenait 558 px de large
+                  en trop. Un défilement horizontal parasite sur tout le site,
+                  pour six mots que personne ne voit.
+                */}
+                {t.entry.note && (
+                  <p class="mb-3 text-sm tracking-wide text-[var(--color-button)]">
+                    <span aria-hidden="true">{'★'.repeat(Number(t.entry.note))}</span>
+                    <span class="sr-only">{t.entry.note} étoiles sur 5</span>
+                  </p>
+                )}
+                <blockquote class="text-sm leading-relaxed text-[var(--color-text)]">
+                  « {t.entry.texte} »
+                </blockquote>
+                {/*
+                    Les cartes s'alignent sur la plus haute — c'est ce qui
+                    tient la ligne droite dans un carrousel. L'attribution
+                    descend donc en pied plutôt que de flotter au milieu d'un
+                    vide, sous un avis de deux lignes voisin d'un avis de dix.
+                  */}
+                <figcaption class="mt-auto pt-4 text-sm font-medium text-[var(--color-heading)]">
+                  {t.entry.auteur}
+                  {t.entry.lieu && (
+                    <span class="font-normal text-[var(--color-text-light)]">, {t.entry.lieu}</span>
+                  )}
+                  {t.entry.source === 'google' && (
+                    <span class="block text-xs font-normal text-[var(--color-text-light)]">
+                      Avis Google
+                    </span>
+                  )}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+
+          {defilable && (
+            <div class="temoignages-fleches mt-2 hidden justify-center gap-3">
+              <button
+                type="button"
+                data-sens="-1"
+                aria-label="Témoignages précédents"
+                class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-1.5 text-lg leading-none text-[var(--color-button)]"
+              >‹</button>
+              <button
+                type="button"
+                data-sens="1"
+                aria-label="Témoignages suivants"
+                class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-1.5 text-lg leading-none text-[var(--color-button)]"
+              >›</button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  </section>
+)}
+
+<style>
+  /* La barre de défilement gêne plus qu'elle n'aide : l'accroche et les
+     flèches disent déjà qu'on peut avancer. */
+  .temoignages-piste {
+    scrollbar-width: none;
+  }
+  .temoignages-piste::-webkit-scrollbar {
+    display: none;
+  }
+  .temoignages-piste:focus-visible {
+    outline: 2px solid var(--color-button);
+    outline-offset: 4px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .temoignages-piste {
+      scroll-behavior: auto;
+    }
+  }
+</style>
+
+<script>
+  // Les flèches n'apparaissent qu'ici : sans script elles ne feraient rien, et
+  // un bouton mort vaut moins que pas de bouton. Le défilement, lui, marche
+  // déjà sans nous.
+  for (const groupe of document.querySelectorAll<HTMLElement>('.temoignages-fleches')) {
+    const piste = groupe.parentElement?.querySelector<HTMLElement>('.temoignages-piste');
+    if (!piste) continue;
+
+    /*
+     * ON N'AFFICHE LES FLÈCHES QUE SI LA PISTE DÉBORDE VRAIMENT.
+     *
+     * Et non « s'il y a plus de trois avis » : le compte ne décide de rien. Trois
+     * cartes tiennent côte à côte sur un écran large — les flèches n'y auraient
+     * rien à faire — mais une seule tient sur un téléphone, où elles servent.
+     * C'est donc une question de largeur, qui change quand on tourne l'appareil
+     * ou qu'on redimensionne la fenêtre : d'où le réexamen à chaque changement
+     * de taille plutôt qu'une décision prise une fois pour toutes au chargement.
+     */
+    const ajuster = () => {
+      const deborde = piste.scrollWidth > piste.clientWidth + 1;
+      groupe.classList.toggle('hidden', !deborde);
+      groupe.classList.toggle('flex', deborde);
+    };
+    ajuster();
+    new ResizeObserver(ajuster).observe(piste);
+
+    for (const bouton of groupe.querySelectorAll<HTMLElement>('button')) {
+      bouton.addEventListener('click', () => {
+        const carte = piste.firstElementChild as HTMLElement | null;
+        // Une carte plus l'espace qui la sépare de la suivante.
+        const pas = carte ? carte.offsetWidth + 24 : piste.clientWidth;
+        piste.scrollBy({ left: pas * Number(bouton.dataset.sens) });
+      });
+    }
+  }
+</script>

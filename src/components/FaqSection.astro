@@ -31,11 +31,17 @@ const { title, items, ctaLabel, fond = true, cta = true } = Astro.props;
             <h3 class="faq-question text-lg font-semibold text-[var(--color-heading)]">
               {item.question}
             </h3>
-            <p class="mt-2 text-[var(--color-text)] leading-relaxed">{item.answer}</p>
+            {/*
+              `faq-answer` n'est pas décorative : le schéma FAQPage déclare
+              `speakable` sur `.faq-question` et `.faq-answer`, et la seconde
+              classe ne figurait sur aucun élément. Le sélecteur ne désignait
+              donc rien — un assistant vocal ne trouvait que les questions.
+            */}
+            <p class="faq-answer mt-2 text-[var(--color-text)] leading-relaxed">{item.answer}</p>
           </div>
         ))}
       </div>
-      {cta && <ContactCTA label={ctaLabel} />}
+      {cta && <ContactCTA label={ctaLabel} telephone />}
     </div>
   </section>
 )}
