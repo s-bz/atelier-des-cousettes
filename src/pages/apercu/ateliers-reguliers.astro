@@ -71,7 +71,10 @@ const supabase = getAdminClient();
 // inscription impossible.
 const { data: enBase, error } = await supabase
   .from('creneaux')
-  .select('label, sessions(starts_at, ends_at, capacity, places_attente, status, bookings(status))')
+  .select(`
+    label, audience, default_location, default_start_time, default_end_time,
+    sessions(starts_at, ends_at, capacity, places_attente, status, bookings(status))
+  `)
   .eq('kind', 'atelier')
   .is('archived_at', null);
 
@@ -83,23 +86,87 @@ const maintenant = new Date().toISOString();
  * l'ordre des fiches du CMS. Comparaison insensible à la casse et aux espaces de
  * bord, un « Atelier du samedi matin » saisi à la main pouvant traîner une espace.
  */
-const parNom = new Map(
-  (enBase ?? []).map((c) => [
-    c.label.trim().toLowerCase(),
-    ((c.sessions ?? []) as any[]).filter(
-      (s) => s.status === 'scheduled' && s.starts_at > maintenant,
-    ),
-  ]),
-);
+const cle = (nom: string) => nom.trim().toLowerCase();
 
-const datesDe = (nom: string) => parNom.get(nom.trim().toLowerCase()) ?? [];
+const parNom = new Map((enBase ?? []).map((c) => [cle(c.label), c]));
+
+const datesDe = (nom: string) =>
+  ((parNom.get(cle(nom))?.sessions ?? []) as any[]).filter(
+    (s) => s.status === 'scheduled' && s.starts_at > maintenant,
+  );
 
 /**
  * Un créneau du contenu qu'aucune ligne de la base ne porte est une anomalie, pas
  * un créneau sans date. Le dire fait gagner du temps : c'est précisément ce que
  * cette page sert à découvrir avant de basculer les pages publiées.
  */
-const inconnuEnBase = (nom: string) => !parNom.has(nom.trim().toLowerCase());
+const inconnuEnBase = (nom: string) => !parNom.has(cle(nom));
+
+/** « 3 h », « 2 h 30 » — la durée d'une séance, lue sur les horaires du créneau. */
+const enHeures = (debut: string, fin: string) => {
+  const min = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const m = min(fin) - min(debut);
+  return m <= 0 ? null : m % 60 === 0 ? `${m / 60} h` : `${Math.floor(m / 60)} h ${m % 60}`;
+};
+
+const dureeDe = (nom: string) => {
+  const c = parNom.get(cle(nom));
+  return c ? enHeures(c.default_start_time, c.default_end_time) : null;
+};
+
+/**
+ * Les horaires écrits à la main, ramenés à des minutes pour être comparables.
+ *
+ * Le contenu les note « 14h à 17h », « de 9h30 à 12h » ; la base « 14:00:00 ».
+ * Sans cette réduction, toute comparaison signalerait un écart sur chaque ligne.
+ */
+const enMinutes = (texte: string) => {
+  const bornes = [...texte.matchAll(/(\d{1,2})\s*h\s*(\d{2})?/g)]
+    .map((m) => Number(m[1]) * 60 + Number(m[2] ?? 0));
+  return bornes.length === 2 ? bornes : null;
+};
+
+/**
+ * CE QUE LE CONTENU ET LA BASE NE DISENT PAS PAREIL.
+ *
+ * C'est la raison d'être de cette page. Les deux sources décrivent les mêmes
+ * ateliers, et rien ne les tient d'accord : le contenu se modifie dans le CMS,
+ * la base dans l'espace d'administration. Tant que les deux vivent, elles
+ * divergent — et la page publiée affiche alors des horaires ou un public que les
+ * règles d'inscription ignorent.
+ *
+ * Les afficher ici les fait remarquer avant la bascule, plutôt qu'un adhérent
+ * ne les découvre devant une porte close.
+ */
+const ecartsDe = (c: { name: string; time: string; location: string; group: string }) => {
+  const base = parNom.get(cle(c.name));
+  if (!base) return [];
+  const ecarts: string[] = [];
+
+  const horairesContenu = enMinutes(c.time);
+  const horairesBase = enMinutes(
+    `${Number(base.default_start_time.slice(0, 2))}h${base.default_start_time.slice(3, 5)} à ` +
+    `${Number(base.default_end_time.slice(0, 2))}h${base.default_end_time.slice(3, 5)}`,
+  );
+  if (horairesContenu && horairesBase &&
+      (horairesContenu[0] !== horairesBase[0] || horairesContenu[1] !== horairesBase[1])) {
+    ecarts.push(
+      `horaires : « ${c.time} » ici, ` +
+      `${base.default_start_time.slice(0, 5)}–${base.default_end_time.slice(0, 5)} en base`,
+    );
+  }
+
+  const publicContenu = ATELIER_GROUPS.find((g) => g.id === c.group)?.audience;
+  if (publicContenu && publicContenu !== base.audience) {
+    ecarts.push(`public : ${publicContenu} ici, ${base.audience} en base`);
+  }
+
+  if (c.location.trim().toLowerCase() !== base.default_location.trim().toLowerCase()) {
+    ecarts.push(`lieu : ${c.location} ici, ${base.default_location} en base`);
+  }
+
+  return ecarts;
+};
 ---
 
 <BaseLayout title={`${page.title} — aperçu`} description={page.seoDescription}
@@ -154,7 +221,13 @@ const inconnuEnBase = (nom: string) => !parNom.has(nom.trim().toLowerCase());
                   name={c.name}
                   anchorId={`detail-${toSlug(c.name)}`}
                   primaryBadge={c.price}
-                  details={[`${c.day} · ${c.time}`, c.location]}
+                  details={[
+                    // La durée vient de la base et non du texte : elle se lisait
+                    // jusqu'ici au détour d'une phrase de tarif — « 2 ateliers de
+                    // 3h » — où elle passait pour un élément du prix.
+                    [`${c.day} · ${c.time}`, dureeDe(c.name)].filter(Boolean).join(' · '),
+                    c.location,
+                  ]}
                   note={c.note || undefined}
                 />
               ))}
@@ -180,7 +253,19 @@ const inconnuEnBase = (nom: string) => !parNom.has(nom.trim().toLowerCase());
               {/* Keystatic type c.group en string ; le cast est sûr, les options
                   du champ étant dérivées d'ATELIER_GROUPS. */}
               {ATELIER_GROUP_LABELS[c.group as keyof typeof ATELIER_GROUP_LABELS] || c.location}
+              {dureeDe(c.name) && ` · ${dureeDe(c.name)} par séance`}
             </p>
+
+            {ecartsDe(c).length > 0 && (
+              <div class="mb-4 rounded-xl border border-[var(--color-button)] p-3 text-sm">
+                <p class="font-semibold text-[var(--color-button)]">
+                  Écart entre cette page et la base
+                </p>
+                <ul class="mt-1 list-disc space-y-0.5 pl-5 text-[var(--color-text)]">
+                  {ecartsDe(c).map((e) => <li>{e}</li>)}
+                </ul>
+              </div>
+            )}
             {c.priceDetails && (
               <div class="prose mb-4">
                 {splitParagraphs(c.priceDetails).map((para) => <p>{para}</p>)}
