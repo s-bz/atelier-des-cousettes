@@ -286,11 +286,20 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
         <div class="space-y-12">
           {lieux.map((l) => (
             <div>
-              <h3 class="mb-6 text-xl font-bold text-[var(--color-heading)]">{l.lieu}</h3>
-              <div class="space-y-8">
+              <h3 class="mb-6 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
+                {l.lieu}
+              </h3>
+              {/*
+                Même gabarit que la page des ateliers : une carte blanche par
+                bloc, le calendrier dans son encadré à l'intérieur, deux colonnes
+                au plus. Les deux pages montrent la même chose — des dates
+                groupées — et les présenter différemment obligeait à réapprendre
+                la lecture en passant de l'une à l'autre.
+              */}
+              <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {l.publics.map((p) => (
-                  <div>
-                    <h4 class="mb-1 text-lg font-semibold text-[var(--color-heading)]">
+                  <div class="rounded-xl bg-white p-5 shadow-md dark:bg-[var(--color-card-bg)]">
+                    <h4 class="mb-1 text-lg font-bold text-[var(--color-heading)]">
                       {p.titre}
                       {p.prix && (
                         <span class="ml-2 text-base font-medium text-[var(--color-button)]">
