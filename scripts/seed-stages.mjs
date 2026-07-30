@@ -47,16 +47,10 @@ const STAGES = [
       { date: '2025-10-24', debut: '10:00', fin: '13:00', prix: 0 },
     ],
   },
-  {
-    id: 'stage-decouverte-couture-courte',
-    label: 'Stage découverte de la couture — formule courte',
-    audience: 'adultes',
-    capacite: 6,
-    seances: [
-      { date: '2026-04-23', debut: '14:30', fin: '17:00', prix: 4000 },
-      { date: '2026-04-24', debut: '14:30', fin: '17:00', prix: 4000 },
-    ],
-  },
+  // La « formule courte » du stage découverte n'est pas reconduite : les deux
+  // dates d'avril figurant dans le contenu 2025-2026 ne sont pas reprises.
+  // Le tarif annoncé — 40 € pour 3 h — ne correspondait d'ailleurs pas à ces
+  // séances de 2 h 30.
   {
     id: 'stage-surjeteuse',
     label: 'Stage surjeteuse',
