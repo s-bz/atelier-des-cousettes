@@ -58,11 +58,35 @@ for (const entry of readdirSync('src/content/blog', { withFileTypes: true })) {
   if (date) blogLastmod.set(`${SITE}/blog/${entry.name}/`, date);
 }
 
+/**
+ * Les pages écartées du plan du site.
+ *
+ * Une seule règle les réunit : AUCUNE N'EST INDEXABLE. Les y laisser demandait
+ * à Google de venir voir des pages qu'on lui interdit de retenir — la Search
+ * Console le signale comme « URL envoyée marquée noindex ». Le plan du site est
+ * une invitation à explorer, pas un inventaire de ce qui existe.
+ *
+ * Aucune ne devient pour autant inaccessible : elles répondent comme avant, et
+ * les mentions légales gardent leur lien en pied de page.
+ */
+const HORS_PLAN = [
+  // Douze adresses, dont les neuf écrans d'administration. Pour un visiteur
+  // anonyme — donc pour Google — toutes répondent 302 vers la connexion.
+  // La connexion elle-même répond 200 mais porte `noIndex` ; elle demeure la
+  // page d'accueil déclarée pour la validation OAuth de Google, qui ne dépend
+  // pas du plan du site.
+  '/espace-membre/',
+  // Marquées `noIndex` de longue date : elles n'ont rien à dire à une recherche.
+  '/mentions-legales/',
+  '/confidentialite/',
+];
+
 // https://astro.build/config
 export default defineConfig({
   site: SITE,
   adapter: vercel({ includeFiles: contenuKeystatic() }),
   integrations: [react(), markdoc(), keystatic(), sitemap({
+    filter: (page) => !HORS_PLAN.some((motif) => page.includes(motif)),
     serialize(item) {
       const lastmod = blogLastmod.get(item.url);
       if (lastmod) item.lastmod = lastmod;
