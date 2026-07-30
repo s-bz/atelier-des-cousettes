@@ -56,6 +56,23 @@ export default config({
         defaultCtaLabel: fields.text({ label: 'Libellé CTA par défaut' }),
 
         /*
+         * LA NOTE GOOGLE, RECOPIÉE ET NON LUE EN DIRECT.
+         *
+         * L'API Places la donnerait à la requête, au prix d'une clé, d'un quota
+         * et d'une facture pour un chiffre qui change deux fois l'an. Un champ
+         * suffit — à la condition qu'il soit facile à corriger, d'où sa place
+         * ici plutôt que dans le code.
+         *
+         * Laisser la note vide masque le bandeau : mieux vaut rien qu'un 5,0
+         * devenu 4,2. Le NOMBRE d'avis n'est pas affiché, donc pas demandé :
+         * « 6 avis » dit surtout qu'ils sont peu nombreux, là où « 5,0 sur
+         * Google » dit qu'ils sont bons.
+         */
+        googleNote: fields.text({
+          label: 'Note Google (ex : 5,0) — vide pour masquer',
+        }),
+
+        /*
          * LE BANDEAU D'AVERTISSEMENT DES TROIS PAGES DE FORMULES.
          *
          * Un seul champ pour les trois : c'est un avis daté, qui doit
@@ -465,6 +482,59 @@ export default config({
     }),
   },
   collections: {
+    /*
+     * LES TÉMOIGNAGES, RECOPIÉS DEPUIS GOOGLE OU RECUEILLIS DIRECTEMENT.
+     *
+     * Une collection et non un champ répété dans chaque page : le même
+     * témoignage sert aux ateliers, aux stages et à l'accueil, et le dupliquer
+     * garantirait qu'une version en retard traîne quelque part.
+     *
+     * `pages` décide où chacun s'affiche. Un témoignage d'élève d'atelier n'a
+     * rien à prouver sur la page des stages, où il ferait du remplissage.
+     */
+    temoignages: collection({
+      label: 'Témoignages',
+      slugField: 'auteur',
+      path: 'src/content/temoignages/*',
+      format: { data: 'yaml' },
+      schema: {
+        auteur: fields.slug({
+          name: { label: 'Prénom (ou prénom et initiale)' },
+          slug: { label: 'Identifiant (généré)' },
+        }),
+        texte: fields.text({ label: 'Témoignage', multiline: true }),
+        note: fields.select({
+          label: 'Note donnée',
+          options: [
+            { label: '★★★★★ (5)', value: '5' },
+            { label: '★★★★ (4)', value: '4' },
+            { label: '★★★ (3)', value: '3' },
+            { label: '★★ (2)', value: '2' },
+            { label: '★ (1)', value: '1' },
+          ],
+          defaultValue: '5',
+        }),
+        lieu: fields.text({ label: 'Commune (optionnel, ex : Revel)' }),
+        source: fields.select({
+          label: 'Origine',
+          options: [
+            { label: 'Avis Google', value: 'google' },
+            { label: 'Recueilli directement', value: 'direct' },
+          ],
+          defaultValue: 'google',
+        }),
+        pages: fields.multiselect({
+          label: 'Afficher sur',
+          options: [
+            { label: 'Accueil', value: 'accueil' },
+            { label: 'Ateliers réguliers', value: 'ateliers' },
+            { label: 'Stages thématiques', value: 'stages' },
+            { label: 'Séances sans engagement', value: 'seances' },
+          ],
+          defaultValue: ['accueil', 'ateliers', 'stages', 'seances'],
+        }),
+      },
+    }),
     blog: collection({
       label: 'Articles de blog',
       slugField: 'title',

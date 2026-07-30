@@ -7,6 +7,7 @@ import AnimatriceSection from '../components/AnimatriceSection.astro';
 import YouTubeEmbed from '../components/YouTubeEmbed.astro';
 import BlogCard from '../components/BlogCard.astro';
 import ContactCTA from '../components/ContactCTA.astro';
+import Temoignages from '../components/Temoignages.astro';
 import { reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { filterPublishedPosts } from '../utils/blog';
@@ -212,9 +213,11 @@ const siteUrl = Astro.site?.origin;
     </section>
   )}
 
+  <Temoignages page="accueil" fond />
+
   <!-- 4. Votre animatrice -->
   {homepage.animatriceText && (
-    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+    <section class="py-16 md:py-20">
       <AnimatriceSection
         title={homepage.animatriceTitle || ''}
         text={homepage.animatriceText}
@@ -229,7 +232,7 @@ const siteUrl = Astro.site?.origin;
 
   <!-- 5. YouTube Video -->
   {homepage.youtubeVideoId && (
-    <section class="py-16 md:py-20">
+    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
       <div class="max-w-3xl mx-auto px-4">
         {homepage.youtubeTitle && (
           <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-6">
@@ -253,7 +256,7 @@ const siteUrl = Astro.site?.origin;
 
   <!-- 6. Actualités + Latest Blog Posts -->
   {latestPosts.length > 0 && (
-    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+    <section class="py-16 md:py-20">
       <div class="max-w-3xl mx-auto px-4">
         {homepage.actualitesTitle && (
           <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-10">
