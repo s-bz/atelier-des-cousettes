@@ -137,11 +137,11 @@ if (Astro.request.method === 'POST') {
     // l'inscription partielle que le groupement interdit.
     const { data: type } = await supabase
       .from('sessions')
-      .select('creneaux(dates_groupees)')
+      .select('creneaux(seances_par_stage)')
       .eq('id', id)
       .maybeSingle();
 
-    if ((type?.creneaux as any)?.dates_groupees) {
+    if (((type?.creneaux as any)?.seances_par_stage ?? 1) > 1) {
       erreur = 'Ce stage se réserve en entier : passez par sa fiche.';
     } else {
       const { error } = await supabase.rpc('book_participant', {
@@ -157,7 +157,7 @@ if (Astro.request.method === 'POST') {
 
 const { data: seance } = await supabase
   .from('sessions')
-  .select('id, creneau_id, starts_at, ends_at, location, capacity, unit_price_cents, status, creneaux(label, audience, dates_groupees)')
+  .select('id, creneau_id, starts_at, ends_at, location, capacity, unit_price_cents, status, creneaux(label, audience, seances_par_stage)')
   .eq('id', id)
   .maybeSingle();
 
@@ -186,7 +186,7 @@ const dejaInscrits = new Set((reservations ?? []).map((r: any) => r.participants
 // Seules les personnes du public de la séance : proposer les autres serait
 // proposer un geste que la base refusera.
 // Stage à dates groupées : l'inscription se fait sur le stage, jamais ici.
-const groupees = Boolean((seance.creneaux as any)?.dates_groupees);
+const groupees = ((seance.creneaux as any)?.seances_par_stage ?? 1) > 1;
 
 const publicSeance = (seance.creneaux as any)?.audience ?? 'adultes';
 const { data: tousParticipants } = await supabase

@@ -115,7 +115,7 @@ if (Astro.request.method === 'POST') {
         default_capacity: Number(form.get('places')),
         default_unit_price_cents: Math.round(Number(form.get('prix')) * 100),
         ...(estStage
-          ? { dates_groupees: form.get('groupees') === 'on' }
+          ? { seances_par_stage: Math.max(1, Number(form.get('seances') ?? 1)) }
           : { group_id: groupeDe(lieu, audience) }),
       }).eq('id', id);
 
@@ -127,7 +127,7 @@ if (Astro.request.method === 'POST') {
 
 const { data: creneau } = await supabase
   .from('creneaux')
-  .select('id, label, kind, audience, group_id, dates_groupees, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, archived_at')
+  .select('id, label, kind, audience, group_id, seances_par_stage, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, archived_at')
   .eq('id', id)
   .maybeSingle();
 
@@ -178,6 +178,32 @@ const { data: candidats } = creneau.kind === 'stage'
   : { data: [] };
 
 const inscriptibles = (candidats ?? []).filter((p) => !parPersonne.has(p.id));
+
+/**
+ * Le nombre de dates créées correspond-il au forfait annoncé ?
+ *
+ * C'est tout l'intérêt de déclarer ce nombre au lieu de le déduire. Créer deux
+ * des trois matinées du stage découverte en faisait un forfait de deux dates,
+ * toujours vendu 90 € — et rien ne s'en apercevait, puisque le système comptait
+ * ce qui existait au lieu de vérifier ce qui était prévu.
+ *
+ * On compte TOUTES les dates, passées comprises : une date manquante est une
+ * erreur de saisie, pas une date écoulée.
+ */
+const { count: datesCreees } = creneau.kind === 'stage'
+  ? await supabase
+      .from('sessions')
+      .select('id', { count: 'exact', head: true })
+      .eq('creneau_id', id)
+      .eq('status', 'scheduled')
+  : { count: 0 };
+
+// Pour un forfait, le compte doit tomber juste : N dates pour une session du
+// stage, ou un multiple de N s'il est proposé plusieurs fois dans la saison. Un
+// reste signale une date oubliée ou une de trop.
+const forfaitIncoherent = creneau.seances_par_stage > 1
+  && (datesCreees ?? 0) > 0
+  && (datesCreees ?? 0) % creneau.seances_par_stage !== 0;
 
 const { data: lieuxConnus } = await supabase.from('creneaux').select('default_location');
 const lieux = [...new Set([
@@ -298,16 +324,17 @@ const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (�
       deuxième jour suppose le premier.
     */}
     {estStage && (
-      <label class="mt-4 flex items-start gap-3 rounded-xl bg-[var(--color-bg-accent)] p-4">
-        <input type="checkbox" name="groupees" class="mt-1"
-               checked={creneau.dates_groupees} />
-        <span class="text-sm text-[var(--color-text)]">
-          <strong class="text-[var(--color-heading)]">Les dates se réservent ensemble.</strong>
-          {' '}À cocher pour un forfait sur plusieurs jours : l’inscription porte sur toutes
-          les dates d’un coup, et le prix ci-dessus couvre l’ensemble. À laisser décoché
-          quand chaque date est une offre indépendante, proposée à ce prix-là.
-        </span>
-      </label>
+      <div class="mt-4 sm:max-w-sm">
+        <label for="seances" class="block text-sm font-medium mb-1">Séances par stage</label>
+        <input id="seances" name="seances" type="number" min="1" required
+               value={creneau.seances_par_stage} class="champ" />
+        <p class="mt-1 text-sm text-[var(--color-text-light)]">
+          <strong>1</strong> — chaque date est un stage à part entière, au prix ci-dessus.
+          <br />
+          <strong>2 ou plus</strong> — un forfait sur plusieurs jours : les dates se réservent
+          ensemble et le prix couvre l’ensemble.
+        </p>
+      </div>
     )}
 
     <button type="submit"
@@ -323,7 +350,7 @@ const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (�
     séances, où l'inscription se fait date par date — c'est le geste juste dans
     ce cas.
   */}
-  {estStage && creneau.dates_groupees && (
+  {estStage && creneau.seances_par_stage > 1 && (
     <section class="mt-8">
       <h2 class="mb-1 text-lg font-bold text-[var(--color-heading)]"
           style="font-family: var(--font-heading)">

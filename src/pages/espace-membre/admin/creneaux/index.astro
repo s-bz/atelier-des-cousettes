@@ -60,6 +60,8 @@ if (Astro.request.method === 'POST') {
       label,
       kind,
       audience,
+      // Un atelier n'a pas de « stage » : la valeur reste à 1, son défaut.
+      seances_par_stage: kind === 'stage' ? Math.max(1, Number(form.get('seances') ?? 1)) : 1,
       // Le groupe est DÉDUIT du lieu et du public, jamais saisi : il n'est que
       // leur croisement. Un stage n'en a aucun — il vit sur sa propre page.
       group_id: kind === 'stage' ? null : groupeDe(lieu, audience),
@@ -84,7 +86,7 @@ if (Astro.request.method === 'POST') {
 
 const { data: tous } = await supabase
   .from('creneaux')
-  .select('id, label, kind, audience, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, archived_at, sessions(id)')
+  .select('id, label, kind, audience, seances_par_stage, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, archived_at, sessions(id)')
   .order('label');
 
 const lieux = [...new Set((tous ?? []).map((c) => c.default_location))].sort();
@@ -160,6 +162,13 @@ const euros = (cents: number) => (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2
                     {' '}{c.default_capacity} place{c.default_capacity > 1 ? 's' : ''} ·
                     {' '}{euros(c.default_unit_price_cents)} €
                   </span>
+                  {/* Un forfait le dit : « 3 séances » n'a pas le même sens
+                      qu'un stage proposé trois fois. */}
+                  {c.seances_par_stage > 1 && (
+                    <span class="rounded-full bg-[var(--color-bg-accent)] px-3 py-1 text-xs font-medium text-[var(--color-heading)]">
+                      forfait de {c.seances_par_stage} séances
+                    </span>
+                  )}
                   <span class="ml-auto text-sm text-[var(--color-text-light)]">
                     {seances} séance{seances > 1 ? 's' : ''}
                   </span>
@@ -239,6 +248,26 @@ const euros = (cents: number) => (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2
                      value="40.00" class="champ" />
             </div>
           </div>
+
+          {/*
+            Le nombre de séances DÉCLARÉ, et non déduit des dates créées.
+            Sans lui, créer deux des trois matinées du stage découverte en
+            faisait un forfait de deux dates, toujours affiché à 90 €.
+          */}
+          {section.kind === 'stage' && (
+            <div class="mt-4 sm:max-w-sm">
+              <label for="n-seances" class="block text-sm font-medium mb-1">
+                Séances par stage
+              </label>
+              <input id="n-seances" name="seances" type="number" min="1" required value="1" class="champ" />
+              <p class="mt-1 text-sm text-[var(--color-text-light)]">
+                <strong>1</strong> — chaque date est un stage à part entière, au prix ci-dessus.
+                <br />
+                <strong>2 ou plus</strong> — un forfait sur plusieurs jours : les dates se réservent
+                ensemble et le prix couvre l’ensemble.
+              </p>
+            </div>
+          )}
 
           <button type="submit" class="mt-4 rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-2 font-medium text-white">
             {section.kind === 'stage' ? 'Créer le stage' : 'Créer l’atelier'}
