@@ -49,18 +49,69 @@ for (const [compte, membres] of parCompte) {
 
 foyers.sort((a, b) => a.membres[0].last_name.localeCompare(b.membres[0].last_name, 'fr'));
 
-const libelleSolde = (s: number) =>
-  s < 0
-    ? `${-s} à facturer`
-    : `${s} séance${s > 1 ? 's' : ''}`;
+/**
+ * L'état d'un adhérent, en un mot.
+ *
+ * Le solde était affiché tel quel — « 5 séances » — ce qui se lit comme un
+ * total acheté alors que c'est un RESTE À PLACER. Isabelle ne pouvait donc pas
+ * répondre d'un coup d'œil à la seule question qu'elle se pose en ouvrant cet
+ * écran : qui n'a pas encore choisi ses dates.
+ *
+ * Trois états, et non le nombre nu :
+ *   • à placer     — des séances acquises sans date choisie ;
+ *   • tout placé   — rien à faire, et c'est le cas normal ;
+ *   • à facturer   — plus de séances prises que d'acquises.
+ */
+function etatDe(solde: number, sansAbonnement: boolean) {
+  if (sansAbonnement) {
+    return { texte: 'aucun abonnement', urgent: true, discret: false };
+  }
+  if (solde < 0) {
+    return { texte: `${-solde} à facturer`, urgent: true, discret: false };
+  }
+  if (solde === 0) {
+    return { texte: 'tout est placé', urgent: false, discret: true };
+  }
+  return { texte: `${solde} à placer`, urgent: false, discret: false };
+}
+
+// Le compte de ceux qui attendent quelque chose, annoncé en tête : sur vingt
+// lignes, deux pastilles se remarquent moins qu'une phrase.
+const enAttente = (personnes ?? []).filter((p) => {
+  const solde = soldes.get(p.id) ?? 0;
+  return (p.subscriptions ?? []).length > 0 && solde > 0;
+}).length;
+
+const aFacturer = (personnes ?? []).filter((p) => (soldes.get(p.id) ?? 0) < 0).length;
 ---
 
 <AdminLayout title="Adhérents" soustitre="Les personnes qui viennent à l’atelier.">
 
   <a href="/espace-membre/admin/participants/nouveau/"
-     class="mb-8 inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
+     class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
     Inscrire quelqu’un
   </a>
+
+  {/*
+    Le bilan avant la liste : c'est la question qu'on se pose en ouvrant cet
+    écran, et vingt lignes à parcourir n'y répondent pas aussi vite qu'une
+    phrase.
+  */}
+  <p class="mt-6 mb-8 text-[var(--color-text)]">
+    {enAttente === 0 && aFacturer === 0 && 'Tout le monde a choisi ses dates, et rien n’est à facturer.'}
+    {enAttente > 0 && (
+      <span>
+        <strong>{enAttente}</strong> adhérent{enAttente > 1 ? 's ont' : ' a'} des séances
+        acquises sans date choisie.
+      </span>
+    )}
+    {aFacturer > 0 && (
+      <span class="text-[var(--color-button)]">
+        {enAttente > 0 ? ' ' : ''}<strong>{aFacturer}</strong> dépasse{aFacturer > 1 ? 'nt' : ''} son forfait —
+        {' '}<a href="/espace-membre/admin/a-facturer/" class="underline">à facturer</a>.
+      </span>
+    )}
+  </p>
 
   {foyers.length === 0 ? (
     <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
@@ -97,14 +148,28 @@ const libelleSolde = (s: number) =>
                     {(p.accounts as any)?.email}
                   </span>
                 )}
-                {sansAbonnement && (
-                  <span class="text-xs text-[var(--color-button)]">aucun abonnement</span>
-                )}
               </a>
 
-              <span class={`text-sm font-medium ${solde < 0 ? 'text-[var(--color-button)]' : 'text-[var(--color-text-light)]'}`}>
-                {libelleSolde(solde)}
-              </span>
+              {/*
+                Une pastille plutôt qu'un nombre nu : « 5 » ne dit pas s'il
+                reste cinq séances à placer ou cinq à payer. Seul l'état qui
+                demande quelque chose est mis en couleur — tout marquer revient
+                à ne rien marquer.
+              */}
+              {(() => {
+                const etat = etatDe(solde, sansAbonnement);
+                return (
+                  <span class={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
+                    etat.urgent
+                      ? 'bg-[var(--color-button)] text-white'
+                      : etat.discret
+                        ? 'text-[var(--color-text-light)]'
+                        : 'bg-[var(--color-bg-accent)] text-[var(--color-heading)]'
+                  }`}>
+                    {etat.texte}
+                  </span>
+                );
+              })()}
 
               <span class="flex items-center gap-1">
                 {email && (
