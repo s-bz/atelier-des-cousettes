@@ -62,6 +62,19 @@ export default config({
           label: 'Téléphones',
           itemLabel: (props) => props.value,
         }),
+        /*
+         * LE NUMÉRO WHATSAPP, SÉPARÉ DE LA LISTE DES TÉLÉPHONES.
+         *
+         * Les deux numéros ci-dessus ne se valent pas : le fixe ne reçoit pas
+         * WhatsApp. Deviner « le premier de la liste » marcherait aujourd'hui et
+         * casserait le jour où l'ordre change. Un champ à part, vide par défaut
+         * si le compte disparaît, retire le lien sans toucher au code.
+         */
+        whatsappNumber: fields.text({
+          label: 'Numéro WhatsApp — vide pour masquer',
+          description:
+            'Format français (06.95.78.36.34) ou international (+33 6 95 78 36 34). Le lien wa.me est construit automatiquement.',
+        }),
         facebookUrl: fields.url({ label: 'Facebook URL' }),
         googleBusinessUrl: fields.url({ label: 'Google Business Profile URL' }),
         googleReviewUrl: fields.url({ label: 'Lien avis Google (g.page)' }),
