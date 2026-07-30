@@ -250,7 +250,7 @@ const stagesGroupes = familles.map((f) => {
   </div>
 
   {page.introduction && (
-    <IntroSection text={page.introduction} ctaLabel={page.ctaLabel} />
+    <IntroSection text={page.introduction} cta={false} />
   )}
 
   {avecDates.length === 0 ? (
@@ -352,9 +352,10 @@ const stagesGroupes = familles.map((f) => {
                   </div>
                 ))}
               </div>
+
+              <ContactCTA label={page.ctaLabel} />
             </div>
           ))}
-          <ContactCTA label={page.ctaLabel} />
         </div>
       </section>
     </Fragment>
