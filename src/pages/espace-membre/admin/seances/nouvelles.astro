@@ -134,6 +134,57 @@ const { data: existantes } = creneau
 const isoParis = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' });
 const dejaLa = new Set((existantes ?? []).map((s) => isoParis.format(new Date(s.starts_at))));
 
+/**
+ * Ce qui est déjà prévu aux mêmes heures, tous créneaux confondus.
+ *
+ * Isabelle n'anime qu'un atelier à la fois. Rien ne l'empêchait pourtant de
+ * poser un stage sur une date où un atelier tourne déjà : le conflit ne se
+ * découvrait qu'en ouvrant le calendrier, ou le jour même. Cinq existent
+ * aujourd'hui dans la saison, tous nés du report des dates 2025-2026.
+ *
+ * On avertit, on ne bloque pas : deux séances simultanées peuvent être voulues
+ * — un atelier adultes et un atelier enfants menés avec de l'aide. Refuser
+ * ferait du système l'arbitre d'une décision qui n'est pas la sienne.
+ */
+const debutCreneau = (creneau?.default_start_time ?? '00:00').slice(0, 5);
+const finCreneau = (creneau?.default_end_time ?? '00:00').slice(0, 5);
+
+const { data: agenda } = creneau && propositions.length
+  ? await supabase
+      .from('sessions')
+      .select('starts_at, ends_at, creneaux(label)')
+      .eq('status', 'scheduled')
+      .neq('creneau_id', creneau.id)
+      .gte('starts_at', debutSaison.toISOString())
+      .lte('starts_at', finSaison.toISOString())
+  : { data: [] };
+
+const heureCourte = new Intl.DateTimeFormat('fr-FR', {
+  hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris',
+});
+
+/**
+ * Séances déjà prévues qui empiètent sur ce créneau, à cette date.
+ *
+ * La comparaison se fait sur des heures RENDUES À PARIS, « 14:00 » contre
+ * « 17:30 », et non sur des instants reconstruits. Composer « 2027-01-14T17:15 »
+ * en JavaScript l'interpréterait dans le fuseau du serveur — UTC en production —
+ * et décalerait tout d'une heure ou deux selon la saison. Les deux séances
+ * tombant le même jour à Paris, comparer leurs heures locales suffit et ne peut
+ * pas se tromper de fuseau.
+ */
+function conflitsLe(jour: string): string[] {
+  return (agenda ?? [])
+    .filter((s: any) => {
+      if (isoParis.format(new Date(s.starts_at)) !== jour) return false;
+      const debut = heureCourte.format(new Date(s.starts_at));
+      const fin = heureCourte.format(new Date(s.ends_at));
+      return debut < finCreneau && debutCreneau < fin;
+    })
+    .map((s: any) =>
+      `${(s.creneaux as any)?.label} ${heureCourte.format(new Date(s.starts_at))}–${heureCourte.format(new Date(s.ends_at))}`);
+}
+
 const moisFr = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 const jourFr = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', timeZone: 'UTC' });
 const nomJour = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -230,16 +281,27 @@ for (const d of propositions) {
                 <div class="flex flex-wrap gap-2">
                   {jours.map((d) => {
                     const existe = dejaLa.has(d);
+                    const conflits = existe ? [] : conflitsLe(d);
                     return (
-                      <label class={`rounded-[var(--radius-button)] border px-3 py-2 text-sm transition-colors ${
+                      <label title={conflits.length ? `Déjà prévu : ${conflits.join(' · ')}` : undefined}
+                             class={`rounded-[var(--radius-button)] border px-3 py-2 text-sm transition-colors ${
                         existe
                           ? 'cursor-not-allowed border-[var(--color-border)] bg-[var(--color-bg-accent)] text-[var(--color-text-light)]'
-                          : 'cursor-pointer border-[var(--color-border-prominent)] hover:bg-[var(--color-bg-accent)]'
+                          : conflits.length
+                            ? 'cursor-pointer border-[var(--color-button)] hover:bg-[var(--color-bg-accent)]'
+                            : 'cursor-pointer border-[var(--color-border-prominent)] hover:bg-[var(--color-bg-accent)]'
                       }`}>
                         <input type="checkbox" name="date" value={d} disabled={existe}
                                class="mr-2 align-middle" />
                         {jourFr.format(new Date(`${d}T12:00:00Z`))}
                         {existe && ' ✓'}
+                        {/* Le conflit est nommé, pas seulement signalé : « déjà
+                            occupé » obligerait à aller voir par quoi. */}
+                        {conflits.length > 0 && (
+                          <span class="ml-1 block text-xs text-[var(--color-button)]">
+                            déjà : {conflits.join(', ')}
+                          </span>
+                        )}
                       </label>
                     );
                   })}
