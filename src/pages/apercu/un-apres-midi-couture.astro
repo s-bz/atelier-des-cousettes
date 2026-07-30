@@ -304,7 +304,7 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
                         ` · ${p.items.length} date${p.items.length > 1 ? 's' : ''} à venir`}
                     </p>
                     <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
-<CalendrierCreneau seances={p.items} />
+<CalendrierCreneau seances={p.items} limite={3} />
                     </div>
                   </div>
                 ))}

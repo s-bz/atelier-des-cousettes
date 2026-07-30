@@ -168,6 +168,15 @@ creneaux:
       Avril : 4 et 11
       Mai : 30
       Juin : 27
+  - name: Atelier enfants de Verdalle
+    location: Verdalle
+    day: Sur demande
+    time: 14h à 16h
+    group: verdalle-enfants
+    price: 35 € la séance
+    priceDetails: ''
+    dates: ''
+    note: Créneau ouvert selon la demande — contactez Isabelle.
 faqItems:
   - question: Quels sont les tarifs des ateliers réguliers ?
     answer: >-

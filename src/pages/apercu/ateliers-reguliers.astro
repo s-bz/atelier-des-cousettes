@@ -102,6 +102,17 @@ const datesDe = (nom: string) =>
  */
 const inconnuEnBase = (nom: string) => !parNom.has(cle(nom));
 
+/**
+ * ET L'INVERSE : un créneau en base qu'aucune fiche du contenu ne décrit.
+ *
+ * Le contrôle ne regardait que dans un sens, et l'oubli s'est fait sentir dès
+ * qu'un créneau est né en base : la page le passait sous silence, puisqu'elle
+ * bâtit ses groupes à partir du contenu. Un créneau absent d'une page ne se
+ * remarque pas — c'est exactement ce qu'un contrôle doit rattraper.
+ */
+const nomsDuContenu = new Set(creneaux.map((c) => cle(c.name)));
+const absentsDuContenu = (enBase ?? []).filter((c) => !nomsDuContenu.has(cle(c.label)));
+
 /** « 3 h », « 2 h 30 » — la durée d'une séance, lue sur les horaires du créneau. */
 const enHeures = (debut: string, fin: string) => {
   const min = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
@@ -245,6 +256,19 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
             </a>
           ))}
         </nav>
+
+        {absentsDuContenu.length > 0 && (
+          <div class="mb-10 rounded-xl border border-[var(--color-button)] p-4 text-sm">
+            <p class="font-semibold text-[var(--color-button)]">
+              En base mais absents de cette page
+            </p>
+            <ul class="mt-1 list-disc space-y-0.5 pl-5 text-[var(--color-text)]">
+              {absentsDuContenu.map((c) => (
+                <li>{c.label} — à décrire dans le CMS pour qu'il s'affiche</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {groupes.map((g) => (
           <div id={g.id} class="mb-14 scroll-mt-24 last:mb-0">
