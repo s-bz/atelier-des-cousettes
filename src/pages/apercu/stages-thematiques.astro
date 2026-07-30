@@ -114,6 +114,62 @@ const euros = (cents: number) => (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2
 // dates fixées, où l'on vient à toutes. Le même mot pour les deux ferait croire
 // qu'on peut n'en prendre qu'une.
 const formule = (n: number) => (n > 1 ? `Stage en ${n} séances` : 'Une séance');
+
+/**
+ * Un stage, ses formules regroupées sous un seul titre.
+ *
+ * La base porte deux lignes nommées « Stage découverte de la couture — formule
+ * complète » et « … — formule courte », et c'est juste : ce sont deux cohortes
+ * distinctes, chacune avec son prix, ses dates, ses places et sa réservation en
+ * bloc. Mais deux cartes aux titres presque identiques, portant la même
+ * description, se lisent comme un doublon et laissent le lecteur chercher ce qui
+ * les sépare.
+ *
+ * On les réunit donc à l'affichage : un titre, la description une fois, puis
+ * chaque formule avec ce qui la distingue vraiment — sa durée, son prix, ses
+ * dates. Le regroupement se fait sur ce qui précède le tiret cadratin, seule
+ * marque commune aux deux libellés.
+ *
+ * Les formules vont de la plus courte à la plus longue : on choisit en pesant ce
+ * qu'on est prêt à y consacrer, et la progression se lit dans ce sens.
+ */
+type Formule = (typeof avecDates)[number] & { variante: string | null };
+
+const familles: { base: string; formules: Formule[] }[] = [];
+for (const c of avecDates) {
+  const [base, ...reste] = c.label.split('—');
+  const famille = familles.find((f) => f.base === base.trim());
+  const entree = { ...c, variante: reste.join('—').trim() || null };
+  if (famille) famille.formules.push(entree);
+  else familles.push({ base: base.trim(), formules: [entree] });
+}
+for (const f of familles) {
+  f.formules.sort((a, b) => a.seances_par_stage - b.seances_par_stage);
+}
+
+const stagesGroupes = familles.map((f) => {
+  const prix = f.formules.map((c) => c.default_unit_price_cents);
+  const heures = f.formules.map((c) => c.heures).filter(Boolean) as string[];
+  // Lieu et nombre de places ne remontent en tête que s'ils valent pour toutes
+  // les formules. Sinon chacune porte les siens : mieux vaut le répéter que
+  // laisser croire qu'un stage se tient là où il ne se tient pas.
+  const lieux = new Set(f.formules.map((c) => c.default_location));
+  const places = new Set(f.formules.map((c) => c.default_capacity));
+  return {
+    ...f,
+    // La description est celle du stage, pas de la formule : c'est le même stage.
+    description: f.formules[0].description,
+    audience: f.formules[0].audience,
+    prixLibelle: Math.min(...prix) === Math.max(...prix)
+      ? `${euros(prix[0])} €`
+      : `${euros(Math.min(...prix))} € – ${euros(Math.max(...prix))} €`,
+    heuresLibelle: heures.length === 0 ? null
+      : heures[0] === heures[heures.length - 1] ? heures[0]
+      : `${heures[0]} – ${heures[heures.length - 1]}`,
+    lieuCommun: lieux.size === 1 ? f.formules[0].default_location : null,
+    placesCommunes: places.size === 1 ? f.formules[0].default_capacity : null,
+  };
+});
 ---
 
 <BaseLayout title={`${page.title} — aperçu`} description={page.seoDescription}
@@ -154,15 +210,17 @@ const formule = (n: number) => (n > 1 ? `Stage en ${n} séances` : 'Une séance'
             {page.stagesSectionTitle}
           </h2>
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {avecDates.map((c) => (
+            {stagesGroupes.map((f) => (
               <DetailCard
-                name={c.label}
-                anchorId={toSlug(c.label)}
-                primaryBadge={`${euros(c.default_unit_price_cents)} €`}
-                secondaryBadge={c.heures ?? undefined}
+                name={f.base}
+                anchorId={toSlug(f.base)}
+                primaryBadge={f.prixLibelle}
+                secondaryBadge={f.heuresLibelle ?? undefined}
                 details={[
-                  c.description?.shortDescription,
-                  `${formule(c.seances_par_stage)} · ${c.default_location}`,
+                  f.description?.shortDescription,
+                  f.formules.length > 1
+                    ? `${f.formules.length} formules${f.lieuCommun ? ` · ${f.lieuCommun}` : ''}`
+                    : `${formule(f.formules[0].seances_par_stage)}${f.lieuCommun ? ` · ${f.lieuCommun}` : ''}`,
                 ].filter((l): l is string => Boolean(l))}
               />
             ))}
@@ -172,36 +230,68 @@ const formule = (n: number) => (n > 1 ? `Stage en ${n} séances` : 'Une séance'
 
       <section class="py-16 md:py-20">
         <div class="mx-auto max-w-3xl space-y-16 px-4">
-          {avecDates.map((c) => (
-            <div id={toSlug(c.label)} class="scroll-mt-24">
+          {stagesGroupes.map((f) => (
+            <div id={toSlug(f.base)} class="scroll-mt-24">
               <h2 class="mb-2 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
-                {c.label}
+                {f.base}
                 <span class="ml-2 text-base font-medium text-[var(--color-button)]">
-                  {euros(c.default_unit_price_cents)} €{c.heures && ` — ${c.heures}`}
+                  {f.prixLibelle}{f.heuresLibelle && ` — ${f.heuresLibelle}`}
                 </span>
               </h2>
               <p class="mb-4 text-sm text-[var(--color-text-light)]">
-                {formule(c.seances_par_stage)}
-                {' · '}{c.default_location}
-                {' · '}{c.default_capacity} places
-                {c.audience === 'enfants' && ' · enfants'}
+                {f.formules.length > 1
+                  ? `${f.formules.length} formules au choix`
+                  : formule(f.formules[0].seances_par_stage)}
+                {f.lieuCommun && ` · ${f.lieuCommun}`}
+                {f.placesCommunes && ` · ${f.placesCommunes} places`}
+                {f.audience === 'enfants' && ' · enfants'}
               </p>
-              {c.description?.prerequisite && (
+
+              {/* Le prérequis et la description valent pour le stage entier : les
+                  répéter sous chaque formule les ferait passer pour des
+                  différences entre elles. */}
+              {f.description?.prerequisite && (
                 <p class="mb-4 text-sm italic text-[var(--color-text-light)]">
-                  {c.description.prerequisite}
+                  {f.description.prerequisite}
                 </p>
               )}
-              {c.description?.fullDescription && (
+              {f.description?.fullDescription && (
                 <div class="prose">
-                  {splitParagraphs(c.description.fullDescription).map((para) => <p>{para}</p>)}
+                  {splitParagraphs(f.description.fullDescription).map((para) => <p>{para}</p>)}
                 </div>
               )}
-              <div class="mt-4 rounded-xl bg-[var(--color-bg-accent)] p-4">
-                <p class="mb-2 text-sm font-semibold text-[var(--color-heading)]">
-                  {c.seances_par_stage > 1 ? 'Dates du stage' : page.datesLabel}
-                </p>
-                <CalendrierCreneau seances={c.aVenir} erreur={Boolean(error)}
-                                   vide="Prochaine session à venir — me contacter." />
+
+              <div class="mt-4 space-y-4">
+                {f.formules.map((c) => (
+                  <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
+                    {/*
+                      L'en-tête d'une formule ne s'affiche que s'il y en a
+                      plusieurs. Sur un stage à formule unique, « Formule
+                      complète » ferait chercher l'autre.
+                    */}
+                    {f.formules.length > 1 ? (
+                      <p class="mb-2 text-sm font-semibold text-[var(--color-heading)]">
+                        {c.variante
+                          ? c.variante.charAt(0).toUpperCase() + c.variante.slice(1)
+                          : 'Autre formule'}
+                        <span class="ml-2 font-medium text-[var(--color-button)]">
+                          {euros(c.default_unit_price_cents)} €
+                        </span>
+                        <span class="ml-2 font-normal text-[var(--color-text-light)]">
+                          {c.heures && `${c.heures} · `}{formule(c.seances_par_stage).toLowerCase()}
+                          {!f.lieuCommun && ` · ${c.default_location}`}
+                          {!f.placesCommunes && ` · ${c.default_capacity} places`}
+                        </span>
+                      </p>
+                    ) : (
+                      <p class="mb-2 text-sm font-semibold text-[var(--color-heading)]">
+                        {c.seances_par_stage > 1 ? 'Dates du stage' : page.datesLabel}
+                      </p>
+                    )}
+                    <CalendrierCreneau seances={c.aVenir} erreur={Boolean(error)}
+                                       vide="Prochaine session à venir — me contacter." />
+                  </div>
+                ))}
               </div>
             </div>
           ))}
