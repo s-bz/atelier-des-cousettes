@@ -99,7 +99,12 @@ if (Astro.request.method === 'POST') {
         default_unit_price_cents: Math.round(Number(form.get('prix')) * 100),
         ...(estStage
           ? { seances_par_stage: Math.max(1, Number(form.get('seances') ?? 1)) }
-          : { group_id: groupeDe(lieu, audience) }),
+          : {
+              group_id: groupeDe(lieu, audience),
+              // Vide accepté : un atelier sans jour fixe existe, ses dates se
+              // saisiront simplement à la main.
+              jour_semaine: form.get('jour') === '' ? null : Number(form.get('jour')),
+            }),
       }).eq('id', id);
 
       if (error) erreur = `Modification impossible : ${error.message}`;
@@ -110,7 +115,7 @@ if (Astro.request.method === 'POST') {
 
 const { data: creneau } = await supabase
   .from('creneaux')
-  .select('id, label, kind, audience, group_id, seances_par_stage, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, archived_at')
+  .select('id, label, kind, audience, group_id, seances_par_stage, jour_semaine, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, archived_at')
   .eq('id', id)
   .maybeSingle();
 
@@ -320,6 +325,27 @@ const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (�
       les trois matinées du stage découverte sont un seul stage à 90 €, dont le
       deuxième jour suppose le premier.
     */}
+    {/*
+      Le jour fixe d'un atelier régulier. Renseigné, il fait PROPOSER les dates
+      de la saison à cocher au lieu de les faire taper une à une — vingt
+      occasions de se tromper de jour, sans que rien ne le signale.
+    */}
+    {!estStage && (
+      <div class="mt-4 sm:max-w-sm">
+        <label for="jour" class="block text-sm font-medium mb-1">Jour de la semaine</label>
+        <select id="jour" name="jour" class="champ">
+          <option value="" selected={creneau.jour_semaine === null}>Pas de jour fixe</option>
+          {['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'].map((nom, i) => (
+            <option value={i} selected={creneau.jour_semaine === i}>{nom}</option>
+          ))}
+        </select>
+        <p class="mt-1 text-sm text-[var(--color-text-light)]">
+          Les dates de la saison seront alors proposées à cocher, au lieu d’être saisies une
+          à une. Sans jour fixe, la saisie reste libre.
+        </p>
+      </div>
+    )}
+
     {estStage && (
       <div class="mt-4 sm:max-w-sm">
         <label for="seances" class="block text-sm font-medium mb-1">Séances par stage</label>

@@ -12,16 +12,15 @@ const supabase = getAdminClient();
 
 const { data: creneaux } = await supabase
   .from('creneaux')
-  .select('id, label, default_start_time, default_end_time, default_location, default_capacity')
+  .select('id, label, kind, jour_semaine, default_start_time, default_end_time, default_location, default_capacity')
   .is('archived_at', null)   // un créneau archivé n'est plus proposé
   .order('label');
 
 /**
  * Accepte « 12/10/2026 », « 12-10-2026 » et « 2026-10-12 ».
  *
- * Isabelle tient aujourd'hui ses dates en texte libre dans Keystatic, au format
- * français. Imposer AAAA-MM-JJ la ferait convertir cent dates à la main : le
- * plus sûr moyen d'introduire des erreurs dans le calendrier de la saison.
+ * Conservé pour les stages, dont les dates restent saisies à la main : elles
+ * sont irrégulières par nature, et aucune liste ne les devinerait.
  */
 function lireDate(ligne: string): string | null {
   const t = ligne.trim();
@@ -44,7 +43,37 @@ function lireDate(ligne: string): string | null {
   return `${a}-${String(m).padStart(2, '0')}-${String(j).padStart(2, '0')}`;
 }
 
-let creneauChoisi = '';
+/**
+ * La saison en cours : de septembre à juin.
+ *
+ * Juillet et août appartiennent à la saison qui s'ouvre en septembre — c'est le
+ * moment où Isabelle prépare son calendrier, et lui proposer la saison écoulée
+ * n'aurait aucun intérêt.
+ */
+const aujourdhui = new Date();
+const anneeSaison = aujourdhui.getMonth() >= 6
+  ? aujourdhui.getFullYear()
+  : aujourdhui.getFullYear() - 1;
+
+const debutSaison = new Date(Date.UTC(anneeSaison, 8, 1));      // 1er septembre
+const finSaison = new Date(Date.UTC(anneeSaison + 1, 5, 30));   // 30 juin
+
+/** Toutes les dates de la saison tombant ce jour de la semaine. */
+function datesDuJour(jour: number): string[] {
+  const dates: string[] = [];
+  const d = new Date(debutSaison);
+  while (d.getUTCDay() !== jour) d.setUTCDate(d.getUTCDate() + 1);
+  while (d <= finSaison) {
+    dates.push(d.toISOString().slice(0, 10));
+    d.setUTCDate(d.getUTCDate() + 7);
+  }
+  return dates;
+}
+
+// Le créneau vient de l'URL : c'est lui qui décide des dates à proposer, il faut
+// donc le connaître avant de dessiner la suite. En GET plutôt qu'en JavaScript,
+// pour que l'écran fonctionne sans.
+const creneauChoisi = Astro.url.searchParams.get('creneau') ?? '';
 let saisie = '';
 let erreur: string | null = null;
 let creees: number | null = null;
@@ -53,25 +82,30 @@ let illisibles: string[] = [];
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  creneauChoisi = String(form.get('creneau') ?? '');
+  const cible = String(form.get('creneau') ?? '');
   saisie = String(form.get('dates') ?? '');
 
-  const lignes = saisie.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const dates: string[] = [];
-  for (const ligne of lignes) {
-    const d = lireDate(ligne);
-    if (d) dates.push(d);
-    else illisibles.push(ligne);
+  // Deux origines possibles : les cases cochées d'un atelier, ou la saisie libre
+  // d'un stage. Les cases l'emportent quand il y en a.
+  const cochees = form.getAll('date').map(String).filter(Boolean);
+  const dates: string[] = [...cochees];
+
+  if (cochees.length === 0) {
+    for (const ligne of saisie.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)) {
+      const d = lireDate(ligne);
+      if (d) dates.push(d);
+      else illisibles.push(ligne);
+    }
   }
 
-  if (!creneauChoisi) {
+  if (!cible) {
     erreur = 'Choisissez un créneau.';
   } else if (dates.length === 0) {
-    erreur = 'Aucune date lisible. Écrivez une date par ligne, par exemple 09/10/2026.';
+    erreur = 'Aucune date retenue.';
   } else {
     const uniques = [...new Set(dates)];
     const { data, error } = await supabase.rpc('create_sessions', {
-      p_creneau: creneauChoisi,
+      p_creneau: cible,
       p_dates: uniques,
     });
     if (error) {
@@ -84,6 +118,30 @@ if (Astro.request.method === 'POST') {
       ignorees = uniques.length - (data as number);
     }
   }
+}
+
+const creneau = (creneaux ?? []).find((c) => c.id === creneauChoisi) ?? null;
+const parJour = creneau?.jour_semaine ?? null;
+
+const propositions = parJour !== null ? datesDuJour(parJour) : [];
+
+// Les dates déjà au calendrier : cochées et verrouillées, pour qu'on voie ce qui
+// existe sans pouvoir le recréer.
+const { data: existantes } = creneau
+  ? await supabase.from('sessions').select('starts_at').eq('creneau_id', creneau.id)
+  : { data: [] };
+
+const isoParis = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' });
+const dejaLa = new Set((existantes ?? []).map((s) => isoParis.format(new Date(s.starts_at))));
+
+const moisFr = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+const jourFr = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', timeZone: 'UTC' });
+const nomJour = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+
+const parMois = new Map<string, string[]>();
+for (const d of propositions) {
+  const cle = moisFr.format(new Date(`${d}T12:00:00Z`));
+  parMois.set(cle, [...(parMois.get(cle) ?? []), d]);
 }
 ---
 
@@ -99,7 +157,8 @@ if (Astro.request.method === 'POST') {
           {ignorees} date{ignorees > 1 ? 's' : ''} déjà présente{ignorees > 1 ? 's' : ''}, ignorée{ignorees > 1 ? 's' : ''}.
         </p>
       )}
-      <a href="/espace-membre/admin/seances/" class="mt-3 inline-block text-sm underline">
+      <a href={`/espace-membre/admin/seances/?creneau=${creneauChoisi}`}
+         class="mt-3 inline-block text-sm underline">
         Voir les séances
       </a>
     </div>
@@ -122,13 +181,10 @@ if (Astro.request.method === 'POST') {
     </p>
   )}
 
-  <form method="post" class="space-y-6">
-    <div>
+  <form method="get" class="mb-8 flex flex-wrap items-end gap-3">
+    <div class="min-w-[18rem] flex-1">
       <label for="creneau" class="block text-sm font-medium mb-1">Créneau</label>
-      <select
-        id="creneau" name="creneau" required
-        class="champ"
-      >
+      <select id="creneau" name="creneau" required class="champ">
         <option value="">Choisir…</option>
         {(creneaux ?? []).map((c) => (
           <option value={c.id} selected={c.id === creneauChoisi}>
@@ -137,29 +193,99 @@ if (Astro.request.method === 'POST') {
           </option>
         ))}
       </select>
-      <p class="mt-1 text-sm text-[var(--color-text-light)]">
-        Horaire, lieu et capacité sont repris du créneau. Chaque séance reste modifiable ensuite.
-      </p>
     </div>
-
-    <div>
-      <label for="dates" class="block text-sm font-medium mb-1">Dates, une par ligne</label>
-      <textarea
-        id="dates" name="dates" rows="10" required
-        placeholder={'09/10/2026\n23/10/2026\n06/11/2026'}
-        class="champ font-mono text-sm"
-      >{saisie}</textarea>
-      <p class="mt-1 text-sm text-[var(--color-text-light)]">
-        Formats acceptés : 09/10/2026 ou 2026-10-09. Une date déjà enregistrée est ignorée,
-        vous pouvez donc relancer sans risque de doublon.
-      </p>
-    </div>
-
-    <button
-      type="submit"
-      class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white"
-    >
-      Créer les séances
+    <button type="submit" data-si-sans-script
+            class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-5 py-2 text-sm font-medium text-[var(--color-text)]">
+      Voir les dates
     </button>
   </form>
+
+  {creneau && (
+    <form method="post" class="space-y-6">
+      <input type="hidden" name="creneau" value={creneau.id} />
+
+      <p class="rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">
+        <strong class="text-[var(--color-heading)]">{creneau.label}</strong> —
+        {' '}{creneau.default_start_time.slice(0, 5)} à {creneau.default_end_time.slice(0, 5)},
+        {' '}{creneau.default_location}, {creneau.default_capacity} places.
+        Chaque séance reste modifiable ensuite.
+      </p>
+
+      {parJour !== null ? (
+        <div>
+          <p class="mb-1 text-sm font-medium">
+            Saison {anneeSaison}–{anneeSaison + 1}, tous les {nomJour[parJour]}s
+          </p>
+          <p class="mb-4 text-sm text-[var(--color-text-light)]">
+            Cochez les dates où l’atelier a lieu. Les vacances et les absences se règlent
+            en ne les cochant pas. Les dates déjà au calendrier sont grisées.
+          </p>
+
+          <div class="space-y-5">
+            {[...parMois.entries()].map(([mois, jours]) => (
+              <fieldset>
+                <legend class="mb-2 text-sm font-medium text-[var(--color-heading)] first-letter:uppercase">
+                  {mois}
+                </legend>
+                <div class="flex flex-wrap gap-2">
+                  {jours.map((d) => {
+                    const existe = dejaLa.has(d);
+                    return (
+                      <label class={`rounded-[var(--radius-button)] border px-3 py-2 text-sm transition-colors ${
+                        existe
+                          ? 'cursor-not-allowed border-[var(--color-border)] bg-[var(--color-bg-accent)] text-[var(--color-text-light)]'
+                          : 'cursor-pointer border-[var(--color-border-prominent)] hover:bg-[var(--color-bg-accent)]'
+                      }`}>
+                        <input type="checkbox" name="date" value={d} disabled={existe}
+                               class="mr-2 align-middle" />
+                        {jourFr.format(new Date(`${d}T12:00:00Z`))}
+                        {existe && ' ✓'}
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div>
+          {/*
+            Pas de jour fixe : saisie libre. C'est le cas des stages, dont les
+            dates sont irrégulières — le forfait découverte tient sur un
+            mercredi, un jeudi et un vendredi de suite.
+          */}
+          <label for="dates" class="block text-sm font-medium mb-1">Dates, une par ligne</label>
+          <textarea id="dates" name="dates" rows="8" required
+                    placeholder={'09/10/2026\n23/10/2026\n06/11/2026'}
+                    class="champ font-mono text-sm">{saisie}</textarea>
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Formats acceptés : 09/10/2026 ou 2026-10-09. Une date déjà enregistrée est ignorée,
+            vous pouvez donc relancer sans risque de doublon.
+            {creneau.kind === 'atelier' && (
+              <>
+                {' '}Pour que les dates soient proposées à cocher, indiquez le jour de la semaine
+                {' '}<a href={`/espace-membre/admin/creneaux/${creneau.id}/`}
+                        class="text-[var(--color-button)] underline">sur la fiche de l’atelier</a>.
+              </>
+            )}
+          </p>
+        </div>
+      )}
+
+      <button type="submit"
+              class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
+        Créer les séances
+      </button>
+    </form>
+  )}
+
+  <script>
+    const choix = document.querySelector<HTMLSelectElement>('select#creneau');
+    if (choix) {
+      choix.addEventListener('change', () => choix.form?.submit());
+      choix.form?.querySelectorAll<HTMLElement>('[data-si-sans-script]')
+        .forEach((el) => { el.hidden = true; });
+    }
+  </script>
 </AdminLayout>
