@@ -348,12 +348,20 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
                   class="scroll-mt-24 rounded-xl bg-white p-5 shadow-md dark:bg-[var(--color-card-bg)]"
                 >
                   <h4 class="text-lg font-bold text-[var(--color-heading)]">{c.name}</h4>
-                  <p class="text-sm text-[var(--color-text-light)]">
-                    {c.day} &middot; {c.time}
-                  </p>
-                  <p class="mb-4 text-sm text-[var(--color-text-light)]">
-                    {dureeDe(c.name) ? `${dureeDe(c.name)} par séance` : c.location}
-                    {c.note && ` · ${c.note}`}
+                  <p class="text-sm text-[var(--color-text-light)]">{c.day}</p>
+                  {/*
+                    L'horaire monte en évidence : il ne se répète plus sur chaque
+                    date, c'est donc ici qu'on le lit — une seule fois, mais
+                    lisiblement.
+                  */}
+                  <p class="mb-4 font-medium text-[var(--color-heading)]">
+                    {c.time}
+                    {dureeDe(c.name) && ` · ${dureeDe(c.name)} par séance`}
+                    {c.note && (
+                      <span class="block text-sm font-normal text-[var(--color-text-light)]">
+                        {c.note}
+                      </span>
+                    )}
                   </p>
 
                   {ecartsDe(c).length > 0 && (
@@ -375,6 +383,7 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
                       seances={datesDe(c.name)}
                       erreur={Boolean(error)}
                       limite={3}
+                      heuresEnTete={true}
                       contact={!inconnuEnBase(c.name)}
                       vide={inconnuEnBase(c.name)
                         ? 'Ce créneau n’existe pas encore en base — à créer avant la bascule.'
