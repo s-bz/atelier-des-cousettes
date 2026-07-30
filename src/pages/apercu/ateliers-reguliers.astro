@@ -1,0 +1,150 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Hero from '../../components/Hero.astro';
+import IntroSection from '../../components/IntroSection.astro';
+import CalendrierCreneau from '../../components/CalendrierCreneau.astro';
+import ContactCTA from '../../components/ContactCTA.astro';
+import FaqSection from '../../components/FaqSection.astro';
+import { reader } from '../../utils/reader';
+import { resolveImage } from '../../utils/images';
+import { getAdminClient } from '../../utils/supabase';
+import { ATELIER_GROUP_LABELS } from '../../utils/ateliers';
+
+/**
+ * Aperçu : la page des ateliers réguliers, rendue depuis la base.
+ *
+ * DOUBLON ASSUMÉ de /ateliers-reguliers/, le temps de vérifier que la base peut
+ * porter le site public. La page publiée reste inchangée et fait foi.
+ *
+ * La différence tient en une inversion : la liste des créneaux, leurs horaires
+ * et leurs dates viennent de la BASE, plus du contenu. Le contenu garde ce qui
+ * est éditorial — l'introduction, les tarifs rédigés, la FAQ — parce que ce sont
+ * des phrases d'Isabelle et qu'aucune table ne les remplacera.
+ *
+ * Rendue à chaque visite (prerender = false) plutôt que prérendue avec un îlot :
+ * une page d'essai n'a pas à être optimisée, et tout voir d'un bloc facilite la
+ * comparaison avec l'original.
+ *
+ * noIndex, et exclue du plan du site (voir astro.config.mjs) : deux pages au même
+ * contenu se feraient concurrence, et celle-ci pourrait sortir avant l'autre.
+ */
+
+const page = await reader.singletons.ateliersReguliers.read();
+if (!page) throw new Error('Contenu des ateliers réguliers introuvable');
+
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const couverture = await resolveImage(page.coverImage, coverGlob);
+
+const supabase = getAdminClient();
+
+// Les créneaux actifs, avec leurs séances à venir. Un créneau archivé n'est plus
+// proposé : le montrer ferait espérer une inscription impossible.
+const { data: creneaux, error } = await supabase
+  .from('creneaux')
+  .select(`
+    id, label, group_id, audience, default_location,
+    default_start_time, default_end_time, default_capacity, default_unit_price_cents,
+    sessions(starts_at, ends_at, capacity, places_attente, status, bookings(status))
+  `)
+  .eq('kind', 'atelier')
+  .is('archived_at', null)
+  .order('label');
+
+const maintenant = new Date().toISOString();
+
+const avecDates = (creneaux ?? []).map((c) => ({
+  ...c,
+  // Le filtrage se fait ici et non dans la requête : PostgREST ne sait pas
+  // filtrer les lignes imbriquées sans écarter le parent qui n'en a aucune, et
+  // un créneau sans date doit rester visible pour dire « me contacter ».
+  aVenir: (c.sessions ?? []).filter(
+    (s: any) => s.status === 'scheduled' && s.starts_at > maintenant,
+  ),
+}));
+
+// Regroupés par lieu et public, comme sur la page publiée. L'ordre vient de
+// ATELIER_GROUP_LABELS pour que Verdalle ne passe pas avant Revel selon l'ordre
+// alphabétique des libellés.
+const groupes = Object.entries(ATELIER_GROUP_LABELS)
+  .map(([id, libelle]) => ({
+    id, libelle,
+    items: avecDates.filter((c) => c.group_id === id),
+  }))
+  .filter((g) => g.items.length > 0);
+
+const heure = (t: string) => t.slice(0, 5).replace(':', 'h');
+const euros = (cents: number) => (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2);
+---
+
+<BaseLayout title={`${page.title} — aperçu`} description={page.seoDescription} noIndex={true}>
+  <Hero title={page.title} subtitle={page.subtitle}
+        coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
+
+  {/*
+    Le bandeau dit ce qu'est cette page. Sans lui, quelqu'un tombant dessus par
+    un lien partagé croirait lire la page officielle et s'étonnerait des écarts.
+  */}
+  <div class="bg-[var(--color-bg-accent)] py-3">
+    <p class="mx-auto max-w-4xl px-4 text-sm text-[var(--color-text)]">
+      <strong class="text-[var(--color-button)]">Aperçu.</strong> Cette page lit le calendrier
+      réel et les places restantes. La version publiée reste
+      {' '}<a href="/ateliers-reguliers/" class="text-[var(--color-button)] underline">ici</a>.
+    </p>
+  </div>
+
+  {page.introduction && (
+    <IntroSection text={page.introduction} ctaLabel={page.ctaLabel} />
+  )}
+
+  <section class="py-16 md:py-20">
+    <div class="mx-auto max-w-3xl px-4">
+      <h2 class="mb-10 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+        {page.creneauxSectionTitle}
+      </h2>
+
+      {groupes.length === 0 ? (
+        <p class="rounded-xl bg-[var(--color-bg-accent)] p-5 text-[var(--color-text)]">
+          Aucun créneau pour l’instant.
+        </p>
+      ) : (
+        <div class="space-y-12">
+          {groupes.map((g) => (
+            <div>
+              <h3 class="mb-6 text-xl font-bold text-[var(--color-heading)]">{g.libelle}</h3>
+              <div class="space-y-8">
+                {g.items.map((c) => (
+                  <div>
+                    <h4 class="text-lg font-bold text-[var(--color-heading)]">
+                      {c.label}
+                      <span class="ml-2 text-base font-medium text-[var(--color-button)]">
+                        {heure(c.default_start_time)} à {heure(c.default_end_time)}
+                      </span>
+                    </h4>
+                    <p class="mb-3 text-sm text-[var(--color-text-light)]">
+                      {c.default_location} · {c.default_capacity} places ·
+                      {' '}{euros(c.default_unit_price_cents)} € la séance hors forfait
+                    </p>
+                    <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
+                      <p class="mb-2 text-sm font-semibold text-[var(--color-heading)]">
+                        {page.calendarLabel}
+                      </p>
+                      <CalendrierCreneau seances={c.aVenir} erreur={Boolean(error)} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div class="mt-12">
+        <ContactCTA label={page.ctaLabel} />
+      </div>
+    </div>
+  </section>
+
+  <FaqSection title={page.faqSectionTitle} items={page.faqItems ?? []} ctaLabel={page.ctaLabel} />
+</BaseLayout>

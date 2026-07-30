@@ -1,0 +1,174 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Hero from '../../components/Hero.astro';
+import IntroSection from '../../components/IntroSection.astro';
+import CalendrierCreneau from '../../components/CalendrierCreneau.astro';
+import ContactCTA from '../../components/ContactCTA.astro';
+import FaqSection from '../../components/FaqSection.astro';
+import { reader } from '../../utils/reader';
+import { resolveImage } from '../../utils/images';
+import { getAdminClient } from '../../utils/supabase';
+import { splitParagraphs } from '../../utils/strings';
+
+/**
+ * Aperçu : la page des stages, rendue depuis la base.
+ *
+ * Les stages sont listés depuis la BASE et non depuis le contenu, et c'est ici
+ * que la bascule change le plus de choses : le contenu décrit six stages, la
+ * base en porte sept — la formule complète et la formule courte du stage
+ * découverte y sont deux produits distincts, avec deux prix et deux calendriers.
+ * La page publiée les mélange dans un seul bloc de texte.
+ *
+ * Les descriptions restent dans le contenu : ce sont des paragraphes rédigés,
+ * et rien dans une table ne les remplacera. On les rapproche par le NOM, seul
+ * pont existant — les identifiants de la base ont été inventés par le script
+ * d'amorçage et ne correspondent pas aux titres.
+ *
+ * noIndex, et exclue du plan du site.
+ */
+
+const page = await reader.singletons.stagesThematiques.read();
+if (!page) throw new Error('Contenu des stages introuvable');
+
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const couverture = await resolveImage(page.coverImage, coverGlob);
+
+const supabase = getAdminClient();
+
+const { data: stages, error } = await supabase
+  .from('creneaux')
+  .select(`
+    id, label, audience, default_location, default_capacity,
+    default_unit_price_cents, seances_par_stage,
+    sessions(starts_at, ends_at, capacity, places_attente, status, bookings(status))
+  `)
+  .eq('kind', 'stage')
+  .is('archived_at', null)
+  .order('label');
+
+const maintenant = new Date().toISOString();
+
+/**
+ * Le texte du contenu qui décrit ce stage, s'il en existe un.
+ *
+ * Rapprochement par préfixe : « Stage découverte de la couture — formule
+ * complète » commence par « Stage découverte de la couture ». Les deux formules
+ * héritent donc de la même description, ce qui est exact — c'est le même stage,
+ * proposé sur deux durées.
+ */
+const descriptions = page.stages ?? [];
+const descriptionDe = (label: string) =>
+  descriptions.find((d) => label === d.name || label.startsWith(d.name)) ?? null;
+
+const avecDates = (stages ?? []).map((c) => {
+  const aVenir = (c.sessions ?? []).filter(
+    (s: any) => s.status === 'scheduled' && s.starts_at > maintenant,
+  );
+
+  // Durée totale d'un stage : la somme de ses `seances_par_stage` premières
+  // dates. C'est le chiffre annoncé — « 90 € pour 7 h » — et il ne se lit nulle
+  // part ailleurs, les trois matinées faisant 2 h, 2 h et 3 h.
+  const pourUneSession = [...(c.sessions ?? [])]
+    .sort((a: any, b: any) => a.starts_at.localeCompare(b.starts_at))
+    .slice(0, c.seances_par_stage);
+  const minutes = pourUneSession.reduce(
+    (n: number, s: any) => n + (new Date(s.ends_at).getTime() - new Date(s.starts_at).getTime()) / 60000,
+    0,
+  );
+
+  return {
+    ...c,
+    aVenir,
+    description: descriptionDe(c.label),
+    heures: minutes > 0
+      ? (minutes % 60 === 0 ? `${minutes / 60} h` : `${Math.floor(minutes / 60)} h ${minutes % 60}`)
+      : null,
+  };
+});
+
+const euros = (cents: number) => (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2);
+---
+
+<BaseLayout title={`${page.title} — aperçu`} description={page.seoDescription} noIndex={true}>
+  <Hero title={page.title} subtitle={page.subtitle}
+        coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
+
+  <div class="bg-[var(--color-bg-accent)] py-3">
+    <p class="mx-auto max-w-4xl px-4 text-sm text-[var(--color-text)]">
+      <strong class="text-[var(--color-button)]">Aperçu.</strong> Cette page lit les stages, leurs
+      dates et leurs places depuis la base. La version publiée reste
+      {' '}<a href="/stages-thematiques/" class="text-[var(--color-button)] underline">ici</a>.
+    </p>
+  </div>
+
+  {page.introduction && (
+    <IntroSection text={page.introduction} ctaLabel={page.ctaLabel} />
+  )}
+
+  <section class="py-16 md:py-20">
+    <div class="mx-auto max-w-3xl px-4">
+      <h2 class="mb-10 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+        {page.stagesSectionTitle}
+      </h2>
+
+      {avecDates.length === 0 ? (
+        <p class="rounded-xl bg-[var(--color-bg-accent)] p-5 text-[var(--color-text)]">
+          Aucun stage pour l’instant.
+        </p>
+      ) : (
+        <div class="space-y-12">
+          {avecDates.map((c) => (
+            <div>
+              <h3 class="text-lg font-bold text-[var(--color-heading)]">
+                {c.label}
+                <span class="ml-2 text-base font-medium text-[var(--color-button)]">
+                  {euros(c.default_unit_price_cents)} €
+                </span>
+              </h3>
+
+              <p class="mb-3 text-sm text-[var(--color-text-light)]">
+                {/* Un forfait le dit : « 3 séances » n'a pas le même sens qu'un
+                    stage proposé trois fois dans la saison. */}
+                {c.seances_par_stage > 1
+                  ? `Forfait de ${c.seances_par_stage} séances`
+                  : 'Une séance'}
+                {c.heures && ` · ${c.heures}`}
+                {' · '}{c.default_location}
+                {' · '}{c.default_capacity} places
+                {c.audience === 'enfants' && ' · enfants'}
+              </p>
+
+              {c.description?.shortDescription && (
+                <div class="prose mb-4">
+                  {splitParagraphs(c.description.shortDescription).map((p) => <p>{p}</p>)}
+                </div>
+              )}
+
+              {c.description?.prerequisite && (
+                <p class="mb-4 text-sm text-[var(--color-text-light)]">
+                  <strong>Prérequis :</strong> {c.description.prerequisite}
+                </p>
+              )}
+
+              <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
+                <p class="mb-2 text-sm font-semibold text-[var(--color-heading)]">
+                  {c.seances_par_stage > 1 ? 'Les dates du forfait' : page.datesLabel}
+                </p>
+                <CalendrierCreneau seances={c.aVenir} erreur={Boolean(error)}
+                                   vide="Prochaine session à venir — me contacter." />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div class="mt-12">
+        <ContactCTA label={page.ctaLabel} />
+      </div>
+    </div>
+  </section>
+
+  <FaqSection title={page.faqSectionTitle} items={page.faqItems ?? []} ctaLabel={page.ctaLabel} />
+</BaseLayout>

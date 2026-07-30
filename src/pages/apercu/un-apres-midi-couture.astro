@@ -1,0 +1,181 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Hero from '../../components/Hero.astro';
+import IntroSection from '../../components/IntroSection.astro';
+import CalendrierCreneau from '../../components/CalendrierCreneau.astro';
+import ContactCTA from '../../components/ContactCTA.astro';
+import FaqSection from '../../components/FaqSection.astro';
+import { reader } from '../../utils/reader';
+import { resolveImage } from '../../utils/images';
+import { getAdminClient } from '../../utils/supabase';
+import { splitParagraphs } from '../../utils/strings';
+
+/**
+ * Aperçu : un après-midi couture, rendu depuis la base.
+ *
+ * CETTE FORMULE N'A PAS DE CRÉNEAU PROPRE, et n'en a pas besoin : venir une
+ * fois, c'est prendre une place dans un atelier existant. Ses dates sont donc
+ * exactement celles des ateliers réguliers, et son prix est celui d'une séance
+ * hors forfait — 40 € pour un adulte, 30 € pour un enfant. C'est le même
+ * montant, parce que c'est la même chose : une séance que rien ne couvre.
+ *
+ * Les dates sont présentées CHRONOLOGIQUEMENT et non par créneau : celui qui
+ * vient une fois cherche « quand puis-je venir », pas « quel atelier suivre ».
+ * Le nom de l'atelier reste sur chaque ligne, faute de quoi « jeudi 8 octobre »
+ * ne dirait pas où se rendre.
+ *
+ * Adultes et enfants sont séparés : les durées diffèrent — 3 h contre 2 h — les
+ * prix aussi, et surtout on ne s'inscrit pas dans le mauvais groupe.
+ *
+ * AUCUN REPLI sur les dates du contenu : elles seraient périmées dès la première
+ * séance déplacée, et afficher une date qui n'existe plus ferait se déplacer
+ * quelqu'un pour rien. En cas de panne, on le dit et on invite à revenir.
+ *
+ * noIndex, et exclue du plan du site.
+ */
+
+const page = await reader.singletons.apresMidiCouture.read();
+if (!page) throw new Error('Contenu de l’après-midi couture introuvable');
+
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const couverture = await resolveImage(page.coverImage, coverGlob);
+
+const supabase = getAdminClient();
+
+const { data: seances, error } = await supabase
+  .from('sessions')
+  .select(`
+    starts_at, ends_at, capacity, places_attente, status,
+    bookings(status),
+    creneaux!inner(label, audience, kind, archived_at)
+  `)
+  .eq('status', 'scheduled')
+  .eq('creneaux.kind', 'atelier')
+  .is('creneaux.archived_at', null)
+  .gt('starts_at', new Date().toISOString())
+  .order('starts_at')
+  .limit(120);
+
+const aplati = (seances ?? []).map((s: any) => ({
+  starts_at: s.starts_at,
+  ends_at: s.ends_at,
+  capacity: s.capacity,
+  places_attente: s.places_attente,
+  bookings: s.bookings,
+  creneau: s.creneaux?.label ?? null,
+  audience: s.creneaux?.audience ?? 'adultes',
+}));
+
+// Deux publics, deux tarifs, deux durées. Le prix vient de la base, non du
+// contenu : c'est le même champ qui sert à facturer une séance hors forfait, et
+// deux endroits pour un seul montant finiraient par se contredire.
+const { data: tarifs } = await supabase
+  .from('creneaux')
+  .select('audience, default_unit_price_cents')
+  .eq('kind', 'atelier')
+  .is('archived_at', null);
+
+const prixDe = (audience: string) => {
+  const trouve = (tarifs ?? []).find((t) => t.audience === audience);
+  return trouve ? (trouve.default_unit_price_cents / 100).toFixed(0) : null;
+};
+
+const publics = [
+  { cle: 'adultes', titre: 'Adultes', duree: '3 h', prix: prixDe('adultes'),
+    items: aplati.filter((s) => s.audience === 'adultes') },
+  { cle: 'enfants', titre: 'Enfants', duree: '2 h', prix: prixDe('enfants'),
+    items: aplati.filter((s) => s.audience === 'enfants') },
+].filter((p) => p.items.length > 0 || Boolean(error));
+---
+
+<BaseLayout title={`${page.title} — aperçu`} description={page.seoDescription} noIndex={true}>
+  <Hero title={page.title} subtitle={page.subtitle}
+        coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
+
+  <div class="bg-[var(--color-bg-accent)] py-3">
+    <p class="mx-auto max-w-4xl px-4 text-sm text-[var(--color-text)]">
+      <strong class="text-[var(--color-button)]">Aperçu.</strong> Les dates et les places sont
+      lues en base. La version publiée reste
+      {' '}<a href="/un-apres-midi-couture/" class="text-[var(--color-button)] underline">ici</a>.
+    </p>
+  </div>
+
+  {page.introduction && (
+    <IntroSection text={page.introduction} ctaLabel={page.ctaLabel} />
+  )}
+
+  <section class="py-16 md:py-20">
+    <div class="mx-auto max-w-3xl px-4">
+      {page.descriptionTitle && (
+        <h2 class="mb-4 text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+          {page.descriptionTitle}
+        </h2>
+      )}
+      {page.description && (
+        <div class="prose mb-10">
+          {splitParagraphs(page.description).map((p) => <p>{p}</p>)}
+        </div>
+      )}
+
+      {(page.audienceItems ?? []).length > 0 && (
+        <>
+          <h2 class="mb-4 text-xl font-bold text-[var(--color-heading)]">{page.audienceTitle}</h2>
+          <ul class="mb-10 list-disc space-y-1 pl-5 text-[var(--color-text)]">
+            {(page.audienceItems ?? []).map((item: string) => <li>{item}</li>)}
+          </ul>
+        </>
+      )}
+
+      <h2 class="mb-2 text-xl font-bold text-[var(--color-heading)]">{page.datesTitle}</h2>
+      <p class="mb-6 text-sm text-[var(--color-text-light)]">
+        Venir une fois, c’est prendre une place dans un atelier existant : toutes les dates
+        ci-dessous sont ouvertes, dans la limite des places libres.
+      </p>
+
+      {error ? (
+        <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
+          <CalendrierCreneau seances={[]} erreur={true} />
+        </div>
+      ) : publics.length === 0 ? (
+        <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
+          <p class="text-sm text-[var(--color-text-light)]">
+            Aucune date programmée pour l’instant — me contacter.
+          </p>
+        </div>
+      ) : (
+        <div class="space-y-8">
+          {publics.map((p) => (
+            <div>
+              <h3 class="mb-1 text-lg font-bold text-[var(--color-heading)]">
+                {p.titre}
+                {p.prix && (
+                  <span class="ml-2 text-base font-medium text-[var(--color-button)]">
+                    {p.prix} € la séance
+                  </span>
+                )}
+              </h3>
+              <p class="mb-3 text-sm text-[var(--color-text-light)]">
+                {p.duree} d’accompagnement · {p.items.length} date{p.items.length > 1 ? 's' : ''} à venir
+              </p>
+              <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
+                <CalendrierCreneau seances={p.items} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {page.datesNote && (
+        <p class="mt-4 text-sm text-[var(--color-text-light)]">{page.datesNote}</p>
+      )}
+
+      <div class="mt-12">
+        <ContactCTA label={page.ctaLabel} />
+      </div>
+    </div>
+  </section>
+
+  <FaqSection title={page.faqSectionTitle} items={page.faqItems ?? []} ctaLabel={page.ctaLabel} />
+</BaseLayout>

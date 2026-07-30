@@ -1,0 +1,106 @@
+---
+interface Seance {
+  starts_at: string;
+  ends_at: string;
+  capacity: number;
+  places_attente: number;
+  bookings: { status: string }[] | null;
+  /**
+   * Nom de l'atelier, quand les dates de plusieurs créneaux sont mêlées.
+   * Sur la page d'un créneau unique il n'apporte rien ; sur une liste
+   * chronologique il est indispensable — « jeudi 8 octobre » ne dit pas où.
+   */
+  creneau?: string | null;
+}
+
+interface Props {
+  seances: Seance[];
+  /** Message affiché quand aucune date n'est programmée. */
+  vide?: string;
+  /** La base n'a pas répondu. À distinguer d'un calendrier réellement vide. */
+  erreur?: boolean;
+}
+
+const { seances, vide = 'Prochaines dates à venir — me contacter.', erreur = false } = Astro.props;
+
+/**
+ * Les dates d'un créneau, avec ce qu'il y reste de place.
+ *
+ * Partagé par les trois pages d'aperçu : le calcul des états est le même
+ * partout, et le recopier trois fois garantirait qu'une des trois finisse par
+ * dire autre chose que les deux autres.
+ *
+ * TROIS ÉTATS, et non « libre ou complet ». « Complet » ferme la porte, « liste
+ * d'attente » l'entrouvre : les confondre ferait renoncer quelqu'un qui aurait
+ * pu venir. « Dernière place » se distingue aussi — c'est l'information qui fait
+ * écrire aujourd'hui plutôt que la semaine prochaine.
+ *
+ * On ne publie QUE des nombres. Jamais un nom, jamais une adresse : ces pages
+ * sont publiques, et la liste des personnes inscrites n'y a rien à faire.
+ */
+const dateFr = new Intl.DateTimeFormat('fr-FR', {
+  weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris',
+});
+const heureFr = new Intl.DateTimeFormat('fr-FR', {
+  hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris',
+});
+
+function etatDe(s: Seance) {
+  const prises = (s.bookings ?? []).filter((b) => b.status === 'booked').length;
+  const enFile = (s.bookings ?? []).filter((b) => b.status === 'waiting').length;
+  const restantes = s.capacity - prises;
+
+  if (restantes > 0) {
+    return {
+      libelle: restantes === 1 ? 'dernière place' : `${restantes} places`,
+      ton: restantes === 1 ? 'urgent' : 'normal',
+    };
+  }
+  if (enFile < s.places_attente) return { libelle: 'liste d’attente', ton: 'normal' };
+  return { libelle: 'complet', ton: 'sourd' };
+}
+
+const lignes = [...seances]
+  .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+  .map((s) => ({ ...s, etat: etatDe(s) }));
+---
+
+{/*
+  Une panne ne se déguise pas en calendrier vide. « Aucune date » ferait renoncer
+  quelqu'un alors que les dates existent : dire qu'on n'a pas pu les lire invite
+  à revenir, ce qu'un calendrier vide n'invite pas à faire.
+
+  Et surtout : PAS de repli sur les dates saisies à la main. Elles seraient
+  périmées dès la première séance déplacée, et afficher une date qui n'existe
+  plus est pire que n'afficher aucune date — quelqu'un se déplacerait.
+*/}
+{erreur ? (
+  <p role="status" class="text-sm text-[var(--color-button)]">
+    Le calendrier n’a pas pu être chargé. Merci de réessayer dans quelques minutes.
+  </p>
+) : lignes.length === 0 ? (
+  <p class="text-sm text-[var(--color-text-light)]">{vide}</p>
+) : (
+  <ul class="space-y-1.5 text-sm">
+    {lignes.map((s) => (
+      <li class="flex flex-wrap items-baseline gap-x-3">
+        <span class="text-[var(--color-text)] first-letter:uppercase">
+          {dateFr.format(new Date(s.starts_at))}
+        </span>
+        <span class="text-[var(--color-text-light)]">
+          {heureFr.format(new Date(s.starts_at))} – {heureFr.format(new Date(s.ends_at))}
+        </span>
+        {s.creneau && (
+          <span class="text-[var(--color-text-light)]">{s.creneau}</span>
+        )}
+        <span class={`ml-auto shrink-0 text-xs font-medium ${
+          s.etat.ton === 'urgent' ? 'text-[var(--color-button)]'
+          : s.etat.ton === 'sourd' ? 'text-[var(--color-text-light)]'
+          : 'text-[var(--color-heading)]'
+        }`}>
+          {s.etat.libelle}
+        </span>
+      </li>
+    ))}
+  </ul>
+)}
