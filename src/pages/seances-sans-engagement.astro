@@ -220,7 +220,7 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
         {(parPublic.length > 0 || page.location) && (
           <div class="mt-8 flex flex-wrap justify-center gap-4">
             {parPublic.map((p) => (
-              <div class="rounded-xl bg-[var(--color-bg-accent)] px-5 py-3 text-center">
+              <div class="rounded-xl bg-white px-5 py-3 text-center shadow-md dark:bg-[var(--color-card-bg)]">
                 <p class="heading-font text-2xl font-bold text-[var(--color-button)]">{p.prix} €</p>
                 <p class="text-xs text-[var(--color-text-light)]">
                   {page.priceLabel}, {p.titre.toLowerCase()}{p.duree && ` (${p.duree})`}
@@ -228,7 +228,7 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
               </div>
             ))}
             {page.location && (
-              <div class="rounded-xl bg-[var(--color-bg-accent)] px-5 py-3 text-center">
+              <div class="rounded-xl bg-white px-5 py-3 text-center shadow-md dark:bg-[var(--color-card-bg)]">
                 <p class="heading-font text-2xl font-bold text-[var(--color-heading)]">{page.location}</p>
                 {page.locationLabel && (
                   <p class="text-xs text-[var(--color-text-light)]">{page.locationLabel}</p>

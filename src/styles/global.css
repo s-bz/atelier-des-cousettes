@@ -340,7 +340,19 @@ dialog#lightbox {
     --color-bg-dark: #0e0e0d;
     --color-border: #30302e;
     --color-border-prominent: #3d3d3a;
-    --color-card-bg: #1e1e1c;
+    /*
+     * UNE CARTE DOIT ÊTRE PLUS CLAIRE QUE CE SUR QUOI ELLE POSE.
+     *
+     * Ce jeton valait #1e1e1c, exactement --color-bg-accent : sur une section
+     * accentuée — c'est-à-dire une section sur deux — la carte était peinte de
+     * la couleur du fond, et il ne restait d'elle que son ombre. En clair le
+     * problème ne se voyait pas, le blanc tranchant sur le crème ; en sombre
+     * les deux jetons s'étaient rejoints.
+     *
+     * #262624 se place entre le fond accentué et la bordure : assez clair pour
+     * que la carte existe sur les deux fonds, assez sourd pour ne pas briller.
+     */
+    --color-card-bg: #262624;
     --color-link: #e08a6d;
     --color-dark-text: #87867f;
     --color-button: #c96442;
