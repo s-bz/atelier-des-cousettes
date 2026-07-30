@@ -47,6 +47,7 @@ const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
   <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
     <div class="max-w-3xl mx-auto px-4">
       <iframe
+        id="tally-formulaire"
         data-tally-src="https://tally.so/embed/wvGxVA?hideTitle=1&transparentBackground=1&dynamicHeight=1&formEventsForwarding=1"
         loading="lazy"
         width="100%"
@@ -60,6 +61,88 @@ const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
   </section>
 </BaseLayout>
 
+{/*
+  L'ORIGINE ENTRE DANS L'ADRESSE DU FORMULAIRE, AVANT QUE TALLY NE LA LISE.
+
+  Ce script précède celui qui charge Tally, et c'est la seule chose qui compte
+  dans son ordre : `Tally.loadEmbeds()` recopie `data-tally-src` dans `src` sans
+  jamais y revenir. L'attribut modifié après coup ne serait plus regardé.
+
+  La page est statique — elle ne peut donc pas lire le paramètre à la
+  construction, il n'existe qu'au moment du clic. D'où ce détour par le
+  navigateur plutôt qu'un rendu à la demande pour un seul mot.
+
+  Le champ `origine` doit exister côté Tally, en champ caché du même nom. S'il
+  manque, le paramètre est simplement ignoré : la page ne casse pas, et
+  l'origine reste lisible dans PostHog par le script du dessous.
+*/}
+<script is:inline>
+  (function () {
+    var cadre = document.getElementById('tally-formulaire');
+    if (!cadre) return;
+    var origine = new URLSearchParams(location.search).get('origine');
+    // La même forme stricte que côté serveur : cette valeur retourne dans une URL.
+    if (!origine || !/^[a-z0-9-]{1,64}$/.test(origine)) return;
+    cadre.dataset.tallySrc += '&origine=' + origine;
+  })();
+</script>
+
 <script is:inline>
   var d=document,w="https://tally.so/widgets/embed.js",v=function(){"undefined"!=typeof Tally?Tally.loadEmbeds():d.querySelectorAll("iframe[data-tally-src]:not([src])").forEach((function(e){e.src=e.dataset.tallySrc}))};if("undefined"!=typeof Tally)v();else if(d.querySelector('script[src="'+w+'"]')==null){var s=d.createElement("script");s.src=w,s.onload=v,s.onerror=v,d.body.appendChild(s);}
+</script>
+
+{/*
+  CE QUE LE FORMULAIRE RACONTE, ENFIN ÉCOUTÉ.
+
+  `formEventsForwarding=1` était dans l'adresse de l'iframe depuis le début :
+  Tally publiait déjà ses événements à la page qui l'héberge, et personne ne
+  s'était abonné. On savait donc combien de gens VOYAIENT le formulaire — la
+  page est mesurée comme les autres — mais rien de ce qu'ils en faisaient.
+
+  Les trois événements suffisent à faire un entonnoir : affiché → parcouru →
+  envoyé. `origine` accompagne les trois, si bien qu'on lit non seulement
+  combien de demandes arrivent, mais depuis quelle page — ce qui est la seule
+  façon de savoir si un bouton sert.
+
+  ON VÉRIFIE `origin` AVANT DE FAIRE CONFIANCE AU MESSAGE. N'importe quelle
+  iframe, n'importe quel onglet peut poster à cette fenêtre ; sans ce contrôle,
+  la mesure serait à la portée du premier venu.
+*/}
+<script is:inline>
+  (function () {
+    var origine = new URLSearchParams(location.search).get('origine');
+    if (origine && !/^[a-z0-9-]{1,64}$/.test(origine)) origine = null;
+
+    var noms = {
+      'Tally.FormLoaded': 'formulaire_affiche',
+      'Tally.FormPageView': 'formulaire_page_vue',
+      'Tally.FormSubmitted': 'formulaire_envoye',
+    };
+
+    window.addEventListener('message', function (e) {
+      if (e.origin !== 'https://tally.so') return;
+      if (typeof e.data !== 'string') return;
+
+      var message;
+      try {
+        message = JSON.parse(e.data);
+      } catch (err) {
+        return;
+      }
+
+      var nom = message && message.event && noms[message.event];
+      if (!nom) return;
+
+      // PostHog est absent en développement sans clé, et peut avoir été refusé.
+      if (typeof window.posthog === 'undefined') return;
+
+      var charge = message.payload || {};
+      window.posthog.capture(nom, {
+        origine: origine || 'inconnue',
+        formulaire: charge.formId,
+        // Seul `FormPageView` porte un numéro de page ; ailleurs il est absent.
+        page: charge.page,
+      });
+    });
+  })();
 </script>

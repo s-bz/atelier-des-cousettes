@@ -1,5 +1,6 @@
 ---
 import { reader } from '../utils/reader';
+import { lienContact } from '../utils/origine';
 
 interface Props {
   label?: string;
@@ -32,7 +33,7 @@ const whatsapp = chiffres?.startsWith('0') ? `https://wa.me/33${chiffres.slice(1
 
 <div class="mt-8 mb-8 text-center not-prose">
   <a
-    href="/contact/"
+    href={lienContact(Astro.url.pathname)}
     data-tally-fallback
     class="cta-button inline-block px-8 py-3 rounded-[var(--radius-button)] font-medium text-sm bg-[var(--color-button)] text-white transition-all hover:bg-[var(--color-button-hover)] hover:scale-[1.02] no-underline"
   >
