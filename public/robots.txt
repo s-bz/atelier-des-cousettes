@@ -1,66 +1,19 @@
 User-agent: *
 Allow: /
-
 Sitemap: https://atelier-des-cousettes.fr/sitemap-index.xml
 
-# Les robots des moteurs de réponse, nommés un par un.
-#
-# La règle « User-agent: * / Allow: / » ci-dessus les autorise déjà tous : ces
-# blocs n'ouvrent rien de plus. Ils sont là pour être LUS PAR UN HUMAIN — la
-# liste dit quels moteurs comptent pour cet atelier, et le jour où l'un d'eux
-# devra être écarté, la ligne à modifier existe déjà, au bon nom.
-#
-# Le bon nom, justement, avait changé sans que la liste suive : « Claude-Web »
-# ne désigne plus rien. Le robot d'Anthropic s'appelle ClaudeBot, et
-# Claude-SearchBot pour la recherche.
-
-# OpenAI — ChatGPT
+# AI crawlers
 User-agent: GPTBot
-Allow: /
-
-User-agent: OAI-SearchBot
 Allow: /
 
 User-agent: ChatGPT-User
 Allow: /
 
-# Anthropic — Claude
-User-agent: ClaudeBot
-Allow: /
-
-User-agent: Claude-SearchBot
-Allow: /
-
-User-agent: anthropic-ai
-Allow: /
-
-# Google — Gemini et les aperçus IA de la recherche
-User-agent: Google-Extended
-Allow: /
-
-# Microsoft — Copilot
-User-agent: Bingbot
-Allow: /
-
-# Perplexity
-User-agent: PerplexityBot
-Allow: /
-
-User-agent: Perplexity-User
-Allow: /
-
-# Apple — Siri et la recherche Apple
-User-agent: Applebot
+User-agent: Claude-Web
 Allow: /
 
 User-agent: Applebot-Extended
 Allow: /
 
-# Mistral — Le Chat
-User-agent: MistralAI-User
+User-agent: PerplexityBot
 Allow: /
-
-# Fichiers écrits pour les machines :
-#   https://atelier-des-cousettes.fr/llms.txt       — la fiche d'identité
-#   https://atelier-des-cousettes.fr/llms-full.txt  — le détail des formules
-#   https://atelier-des-cousettes.fr/tarifs.md      — les tarifs, avec leur périmètre
