@@ -93,11 +93,37 @@ const PROPOSITION = {
     'Quels projets peut-on réaliser en 3 heures ?':
       'Quels projets peut-on réaliser en 2 à 3 heures ?',
   } as Record<string, string>,
+
+  /**
+   * Deux réponses décrivaient un fonctionnement qui n'existe plus.
+   *
+   * L'annulation renvoyait à « prévenez Isabelle le plus tôt possible », sans
+   * dire ce qu'il en coûte. Depuis, la règle est écrite dans le code et dans
+   * les e-mails : 48 h — vérifié des deux côtés, `interval '48 hours'` dans la
+   * base et « jusqu'à 48 h avant la séance » dans les gabarits.
+   *
+   * L'inscription annonçait un délai d'une semaine que rien n'applique, et
+   * ignorait l'espace adhérent où les dates se choisissent désormais.
+   */
+  reponses: {
+    "Quelle est la politique d'annulation ?":
+      'Vous pouvez libérer votre place jusqu’à 48 h avant la séance : elle ne ' +
+      'vous est pas comptée. Passé ce délai, la séance reste due. Prévenez ' +
+      'Isabelle dès que vous le savez — votre place profite alors à quelqu’un ' +
+      'd’autre, prévenu par e-mail. Les séances ont lieu sous réserve d’un ' +
+      'nombre suffisant d’inscriptions.',
+    "Comment s'inscrire ?":
+      'Pour une première venue, écrivez à Isabelle par le formulaire de contact ' +
+      'ou appelez-la. Elle vous inscrit et vous ouvre l’accès à votre espace ' +
+      'adhérent, où vous choisissez ensuite vos dates et les libérez si besoin. ' +
+      'Les places étant limitées, mieux vaut s’y prendre à l’avance.',
+  } as Record<string, string>,
 };
 
 const faqProposee = faqItems.map((q) => ({
   ...q,
   question: PROPOSITION.questions[q.question] ?? q.question,
+  answer: PROPOSITION.reponses[q.question] ?? q.answer,
 }));
 
 
