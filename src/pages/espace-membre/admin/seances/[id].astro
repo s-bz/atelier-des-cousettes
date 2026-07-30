@@ -4,7 +4,7 @@ export const prerender = false;
 import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
-import { notifier, variablesSeance } from '../../../../utils/emails';
+import { notifier, variablesSeance, variablesDeplacement } from '../../../../utils/emails';
 import { previenLaListe } from '../../../../utils/membre';
 
 const garde = requireAdmin(Astro);
@@ -83,6 +83,18 @@ if (Astro.request.method === 'POST') {
     if (!horaire.test(debut) || !horaire.test(fin)) {
       erreur = 'Les horaires s’écrivent sur 24 heures, par exemple 14:00.';
     } else {
+      // L'ANCIENNE date est lue AVANT le déplacement : après, elle n'existe
+      // plus nulle part, et le message ne pourrait plus dire quelle séance a
+      // bougé — la seule information qui permette de corriger son agenda.
+      const { data: avant } = await supabase
+        .from('sessions').select('starts_at').eq('id', id).maybeSingle();
+
+      const { data: inscritsAvant } = await supabase
+        .from('bookings')
+        .select('participants(first_name, accounts(email))')
+        .eq('session_id', id)
+        .eq('status', 'booked');
+
       const { error } = await supabase.rpc('update_session_schedule', {
         p_session: id,
         p_date: String(form.get('date')),
@@ -91,8 +103,34 @@ if (Astro.request.method === 'POST') {
         p_location: String(form.get('lieu_autre') ?? '').trim()
                     || String(form.get('lieu') ?? '').trim(),
       });
-      if (error) erreur = error.message;
-      else message = 'Séance déplacée. Les inscrits gardent leur place.';
+
+      if (error) {
+        erreur = error.message;
+      } else {
+        const { data: apres } = await supabase
+          .from('sessions').select('starts_at, ends_at, location').eq('id', id).maybeSingle();
+
+        let prevenus = 0;
+        for (const r of (inscritsAvant ?? []) as any[]) {
+          if (!avant || !apres) break;
+          const envoye = await notifier('deplacement', r.participants?.accounts?.email,
+            variablesDeplacement({
+              prenom: r.participants?.first_name ?? '',
+              avant_starts_at: avant.starts_at,
+              starts_at: apres.starts_at,
+              ends_at: apres.ends_at,
+              location: apres.location,
+            }));
+          if (envoye) prevenus++;
+        }
+
+        const sansCompte = (inscritsAvant ?? []).length - prevenus;
+        message = 'Séance déplacée. Les inscrits gardent leur place.'
+          + (prevenus > 0 ? ` ${prevenus} prévenu${prevenus > 1 ? 's' : ''} par e-mail.` : '')
+          + (sansCompte > 0
+              ? ` ${sansCompte} sans accès au site, à prévenir vous-même.`
+              : '');
+      }
     }
   }
 
@@ -489,7 +527,8 @@ const debut = new Date(seance.starts_at);
 
       <p class="mt-2 text-sm text-[var(--color-text-light)]">
         Les personnes inscrites gardent leur place : c’est la même séance à une autre date,
-        pas une annulation. Prévenez-les, aucun message n’est envoyé.
+        pas une annulation. Chacune reçoit un e-mail rappelant l’ancienne date et la
+        nouvelle. Celles sans adresse sont à prévenir vous-même.
       </p>
 
       <button type="submit"
@@ -543,8 +582,10 @@ const debut = new Date(seance.starts_at);
                 ? 'Une personne perdra sa place et récupérera sa séance :'
                 : `${prises} personnes perdront leur place et récupéreront leur séance :`}
             </p>
+            {/* Les inscrits seulement : quelqu'un en attente n'a pas de place
+                à perdre, et le compter ici gonflerait l'annonce. */}
             <ul class="mt-1 list-disc pl-5 text-sm text-[var(--color-text)]">
-              {(reservations ?? []).map((r: any) => (
+              {inscrits.map((r: any) => (
                 <li>{r.participants?.first_name} {r.participants?.last_name}</li>
               ))}
             </ul>
@@ -553,10 +594,17 @@ const debut = new Date(seance.starts_at);
           <p class="mt-2 text-sm text-[var(--color-text)]">Personne n’est inscrit.</p>
         )}
 
+        {attente.length > 0 && (
+          <p class="mt-2 text-sm text-[var(--color-text)]">
+            {attente.length === 1 ? 'Une personne quitte' : `${attente.length} personnes quittent`}
+            {' '}aussi la liste d’attente. Rien ne leur était décompté.
+          </p>
+        )}
+
         <p class="mt-3 text-sm text-[var(--color-text-light)]">
           Chaque personne inscrite reçoit un e-mail d’annulation, et sa séance lui est
-          intégralement rendue. Celles sans adresse sont à prévenir vous-même — le compte
-          vous sera donné après coup.
+          intégralement rendue — y compris à qui s’était désisté trop tard. Celles sans
+          adresse sont à prévenir vous-même : leur nombre vous sera donné après coup.
         </p>
         <p class="mt-2 text-sm text-[var(--color-text-light)]">
           Cette action ne se défait pas : il faudrait recréer la séance et réinscrire chacun.
