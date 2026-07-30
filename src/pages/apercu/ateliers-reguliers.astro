@@ -3,7 +3,6 @@ export const prerender = false;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Hero from '../../components/Hero.astro';
-import DetailCard from '../../components/DetailCard.astro';
 import IntroSection from '../../components/IntroSection.astro';
 import CrossLinksSection from '../../components/CrossLinksSection.astro';
 import CalendrierCreneau from '../../components/CalendrierCreneau.astro';
@@ -306,13 +305,25 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
   )}
 
   {groupes.length > 0 && (
-    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
-      <div class="mx-auto max-w-4xl px-4">
+    <section class="py-16 md:py-20">
+      <div class="mx-auto max-w-3xl px-4">
         <h2 class="mb-6 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
           {page.creneauxSectionTitle}
         </h2>
 
-        <nav class="mb-10 flex flex-wrap justify-center gap-3">
+        {/*
+          UNE SEULE LISTE, découpée par lieu et par public.
+
+          Une grille de cartes doublait cette section : mêmes noms, mêmes
+          horaires, mêmes titres de groupe, à quelques centimètres au-dessus.
+          Elle se justifiait tant qu'elle portait les tarifs ; ceux-ci sont
+          désormais en tête de page, et il ne lui restait qu'à répéter — jusqu'à
+          afficher deux fois la durée sur la même carte.
+
+          Les pastilles de navigation restent : sauter à son lieu rend service,
+          recopier la liste ne le rendait plus.
+        */}
+        <nav class="mb-12 flex flex-wrap justify-center gap-3">
           {groupes.map((g) => (
             <a
               href={`#${g.id}`}
@@ -324,55 +335,19 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
         </nav>
 
         {groupes.map((g) => (
-          <div id={g.id} class="mb-12 scroll-mt-24 last:mb-0">
-            <h3 class="mb-6 text-xl font-bold text-[var(--color-heading)]">{g.label}</h3>
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {g.items.map((c) => (
-                <DetailCard
-                  name={c.name}
-                  anchorId={`detail-${toSlug(c.name)}`}
-                  primaryBadge={dureeDe(c.name) ?? c.time}
-                  details={[
-                    // La durée vient de la base et non du texte : elle se lisait
-                    // jusqu'ici au détour d'une phrase de tarif — « 2 ateliers de
-                    // 3h » — où elle passait pour un élément du prix.
-                    [`${c.day} · ${c.time}`, dureeDe(c.name)].filter(Boolean).join(' · '),
-                    c.location,
-                  ]}
-                  note={c.note || undefined}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  )}
-
-  {groupes.length > 0 && (
-    <section class="py-16 md:py-20">
-      <div class="mx-auto max-w-3xl space-y-16 px-4">
-        {/*
-          LE MÊME DÉCOUPAGE QUE LES CARTES CI-DESSUS — par lieu et par public.
-          Cette section était une liste à plat, dans l'ordre du CMS : Verdalle
-          ouvrait, et « Revel — Adultes » se répétait en gris sous cinq créneaux
-          d'affilée. Un titre le dit une fois, comme pour les dates de
-          l'après-midi couture : ce qui vaut pour tout un groupe se met en tête,
-          il ne s'annote pas ligne à ligne.
-        */}
-        {groupes.map((g) => (
-          <div class="space-y-16">
-            <h2 class="text-2xl font-bold text-[var(--color-heading)]">{g.label}</h2>
+          <div id={g.id} class="mb-16 scroll-mt-24 space-y-10 last:mb-0">
+            <h3 class="text-xl font-bold text-[var(--color-heading)]">{g.label}</h3>
             {g.items.map((c) => (
           <div id={`detail-${toSlug(c.name)}`} class="scroll-mt-24">
-            <h3 class="mb-2 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
+            <h4 class="mb-2 text-lg md:text-xl font-bold text-[var(--color-heading)]">
               {c.name}
               <span class="ml-2 text-base font-medium text-[var(--color-button)]">
                 {c.day} &middot; {c.time}
               </span>
-            </h3>
+            </h4>
             <p class="mb-4 text-sm text-[var(--color-text-light)]">
               {dureeDe(c.name) ? `${dureeDe(c.name)} par séance` : c.location}
+              {c.note && ` · ${c.note}`}
             </p>
 
             {ecartsDe(c).length > 0 && (
