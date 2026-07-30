@@ -328,30 +328,59 @@ const stagesGroupes = familles.map((f) => {
       </section>
 
       <section class="py-16 md:py-20">
-        <div class="mx-auto max-w-3xl space-y-16 px-4">
+        <div class="mx-auto max-w-3xl space-y-8 px-4">
+          {/*
+            Le même conteneur que sur les deux autres pages : carte blanche,
+            calendriers dans leurs encadrés à l'intérieur. Une seule colonne ici,
+            contrairement aux ateliers — un stage porte deux paragraphes de
+            description, qui ne se lisent pas sur une demi-largeur.
+          */}
           {stagesGroupes.map((f) => (
-            <div id={toSlug(f.base)} class="scroll-mt-24">
+            <div
+              id={toSlug(f.base)}
+              class="scroll-mt-24 rounded-xl bg-white p-5 shadow-md md:p-6 dark:bg-[var(--color-card-bg)]"
+            >
+              {/*
+                LE PRIX SEUL DANS LE TITRE. « 70 € — 5 h » y mêlait le montant et
+                la durée par un tiret qui ne disait pas leur rapport, tandis que
+                la ligne suivante annonçait « Stage en 2 séances » : trois
+                caractéristiques éparpillées sur deux niveaux.
+
+                La durée rejoint donc les autres faits descriptifs, et le titre
+                ne porte plus que le chiffre qui décide. Un stage à plusieurs
+                formules garde son appariement — « 70 € pour 5 h ou 95 € pour
+                7 h » — parce que là, prix et durée vont vraiment par paires.
+              */}
               <h2 class="mb-2 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
                 {f.base}
                 <span class="ml-2 text-base font-medium text-[var(--color-button)]">
-                  {f.tarifPrincipal}{f.tarifSecondaire && ` — ${f.tarifSecondaire}`}
+                  {f.tarifPrincipal}
                 </span>
               </h2>
               <p class="mb-4 text-sm text-[var(--color-text-light)]">
                 {f.formules.length > 1
                   ? `${f.formules.length} formules au choix`
                   : formule(f.formules[0].seances_par_stage)}
+                {f.tarifSecondaire && ` · ${f.tarifSecondaire}`}
                 {f.lieuCommun && ` · ${f.lieuCommun}`}
                 {f.placesCommunes && ` · ${f.placesCommunes} places`}
                 {f.audience === 'enfants' && ' · enfants'}
               </p>
 
-              {/* Le prérequis et la description valent pour le stage entier : les
-                  répéter sous chaque formule les ferait passer pour des
-                  différences entre elles. */}
+              {/*
+                Le prérequis en note marquée, non en italique perdu entre deux
+                paragraphes. C'est la seule ligne qui peut faire renoncer — ou
+                rassurer : « recommandée » n'est pas « exigée », et il vaut mieux
+                le lire avant la description que le découvrir après.
+
+                Il vaut pour le stage entier, comme la description : les répéter
+                sous chaque formule les ferait passer pour des différences entre
+                elles.
+              */}
               {f.description?.prerequisite && (
-                <p class="mb-4 text-sm italic text-[var(--color-text-light)]">
-                  {f.description.prerequisite}
+                <p class="mb-4 border-l-4 border-[var(--color-button)] py-1 pl-4 text-sm text-[var(--color-text)]">
+                  <span class="font-semibold text-[var(--color-heading)]">Prérequis</span>
+                  {' — '}{f.description.prerequisite}
                 </p>
               )}
               {f.description?.fullDescription && (
