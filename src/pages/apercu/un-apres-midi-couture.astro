@@ -87,6 +87,11 @@ const PROPOSITION = {
   questions: {
     "Quel est le tarif d'un après-midi couture ?": 'Quel est le tarif d’une séance ?',
     'Où ont lieu les après-midi couture ?': 'Où ont lieu les séances ?',
+    // Une séance dure 3 h pour un adulte et 2 h pour un enfant : la question
+    // n'en annonçait qu'une, et le parent d'un enfant y lisait une durée qu'il
+    // n'aurait pas.
+    'Quels projets peut-on réaliser en 3 heures ?':
+      'Quels projets peut-on réaliser en 2 à 3 heures ?',
   } as Record<string, string>,
 };
 
