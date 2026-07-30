@@ -8,9 +8,21 @@ interface Props {
   coverImage?: ImageMetadata;
   altText?: string;
   flush?: boolean;
+  /**
+   * Un lien discret sous le sous-titre — les deux ensemble ou rien.
+   *
+   * Volontairement pas un bouton de contact : les pages en portent déjà
+   * plusieurs plus bas, et en ajouter un ici les affaiblirait tous. Celui-ci ne
+   * demande pas d'écrire, il fait descendre — c'est un autre geste, qui ne
+   * dispute rien au premier.
+   */
+  actionLabel?: string;
+  actionHref?: string;
 }
 
-const { title, subtitle, coverImage, altText, flush = false } = Astro.props;
+const { title, subtitle, coverImage, altText, flush = false, actionLabel, actionHref } = Astro.props;
+
+const action = actionLabel?.trim() && actionHref ? { label: actionLabel, href: actionHref } : null;
 
 // Generate optimized image URL for preloading
 const preloadImage = coverImage
@@ -43,6 +55,14 @@ const preloadImage = coverImage
       {subtitle && (
         <p class="hero-subtitle mt-3 text-lg md:text-xl text-white/90">{subtitle}</p>
       )}
+      {action && (
+        <a
+          href={action.href}
+          class="hero-action mt-5 inline-block rounded-[var(--radius-button)] border-2 border-white/80 px-6 py-2 text-sm font-medium text-white no-underline transition-colors hover:bg-white hover:text-[var(--color-heading)]"
+        >
+          {action.label} <span aria-hidden="true">↓</span>
+        </a>
+      )}
     </div>
   </section>
 ) : (
@@ -63,5 +83,13 @@ const preloadImage = coverImage
   }
   .hero-subtitle {
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7), 0 0 2px rgba(0, 0, 0, 0.4);
+  }
+  /* Le lien passe en blanc sur l'image, et en sombre une fois le fond rempli. */
+  .hero-action {
+    color: white !important;
+    text-decoration: none !important;
+  }
+  .hero-action:hover {
+    color: var(--color-heading) !important;
   }
 </style>
