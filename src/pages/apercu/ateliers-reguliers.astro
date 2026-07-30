@@ -14,7 +14,7 @@ import { resolveImage, resolveImageUrl } from '../../utils/images';
 import { toSlug } from '../../utils/strings';
 import { buildServicePageSchemas } from '../../utils/schema';
 import { getAdminClient } from '../../utils/supabase';
-import { ATELIER_GROUPS, ATELIER_GROUP_LABELS } from '../../utils/ateliers';
+import { ATELIER_GROUPS } from '../../utils/ateliers';
 
 /**
  * Aperçu : la page des ateliers réguliers, ses dates lues en base.
@@ -349,22 +349,30 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
     </section>
   )}
 
-  {creneaux.length > 0 && (
+  {groupes.length > 0 && (
     <section class="py-16 md:py-20">
       <div class="mx-auto max-w-3xl space-y-16 px-4">
-        {creneaux.map((c) => (
+        {/*
+          LE MÊME DÉCOUPAGE QUE LES CARTES CI-DESSUS — par lieu et par public.
+          Cette section était une liste à plat, dans l'ordre du CMS : Verdalle
+          ouvrait, et « Revel — Adultes » se répétait en gris sous cinq créneaux
+          d'affilée. Un titre le dit une fois, comme pour les dates de
+          l'après-midi couture : ce qui vaut pour tout un groupe se met en tête,
+          il ne s'annote pas ligne à ligne.
+        */}
+        {groupes.map((g) => (
+          <div class="space-y-16">
+            <h2 class="text-2xl font-bold text-[var(--color-heading)]">{g.label}</h2>
+            {g.items.map((c) => (
           <div id={`detail-${toSlug(c.name)}`} class="scroll-mt-24">
-            <h2 class="mb-2 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
+            <h3 class="mb-2 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
               {c.name}
               <span class="ml-2 text-base font-medium text-[var(--color-button)]">
                 {c.day} &middot; {c.time}
               </span>
-            </h2>
+            </h3>
             <p class="mb-4 text-sm text-[var(--color-text-light)]">
-              {/* Keystatic type c.group en string ; le cast est sûr, les options
-                  du champ étant dérivées d'ATELIER_GROUPS. */}
-              {ATELIER_GROUP_LABELS[c.group as keyof typeof ATELIER_GROUP_LABELS] || c.location}
-              {dureeDe(c.name) && ` · ${dureeDe(c.name)} par séance`}
+              {dureeDe(c.name) ? `${dureeDe(c.name)} par séance` : c.location}
             </p>
 
             {ecartsDe(c).length > 0 && (
@@ -390,6 +398,8 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
                   : 'Aucune date programmée pour l’instant.'}
               />
             </div>
+          </div>
+            ))}
           </div>
         ))}
         <ContactCTA label={page.ctaLabel} />
