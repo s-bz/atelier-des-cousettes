@@ -43,15 +43,7 @@ const couverture = await resolveImage(page.coverImage, coverGlob);
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
 
 const faqItems = page.faqItems ?? [];
-const schemas = buildServicePageSchemas({
-  title: page.title,
-  seoDescription: page.seoDescription,
-  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
-  siteUrl,
-  settings,
-  offers: page.schemaOffers ?? [],
-  faqItems,
-});
+
 
 const supabase = getAdminClient();
 
@@ -129,6 +121,53 @@ const avecDates = (stages ?? []).map((c) => {
 });
 
 const euros = (cents: number) => (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2);
+
+/**
+ * La fourchette de prix de la FAQ, recalculée à chaque visite.
+ *
+ * Elle était écrite à la main — « de 45 € à 95 € » — et fausse depuis ce midi :
+ * la formule de 2 h 30 de l'initiation est à 38 €, donc le plancher a bougé
+ * sans que personne ne pense à la phrase qui l'annonce. C'est le propre d'un
+ * chiffre recopié.
+ *
+ * Seuls les NOMBRES sont remplacés : la phrase reste celle d'Isabelle, et si
+ * elle la réécrit sans la tournure « de X € à Y € », la réponse passe
+ * inchangée plutôt que d'être mutilée.
+ */
+const prixStages = (stages ?? []).map((c) => c.default_unit_price_cents);
+const fourchette = prixStages.length
+  ? `de ${euros(Math.min(...prixStages))} € à ${euros(Math.max(...prixStages))} €`
+  : null;
+
+const faqAJour = faqItems.map((q) => ({
+  ...q,
+  answer: fourchette
+    ? q.answer.replace(/de\s+\d+(?:,\d+)?\s*€\s+à\s+\d+(?:,\d+)?\s*€/, fourchette)
+    : q.answer,
+}));
+/**
+ * Les schémas se calculent ici, après la FAQ et les stages : Astro exécute le
+ * frontmatter dans l'ordre.
+ *
+ * Les offres viennent de la base et non du contenu. Celles du CMS énuméraient
+ * six stages quand la base en porte sept, et l'initiation à 45 € quand sa
+ * formule courte est à 38 € — un inventaire recopié qui vieillit à chaque
+ * changement de tarif, sous les yeux de personne puisque c'est Google qui le
+ * lit.
+ */
+const schemas = buildServicePageSchemas({
+  title: page.title,
+  seoDescription: page.seoDescription,
+  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
+  siteUrl,
+  settings,
+  offers: (stages ?? []).map((c) => ({
+    name: c.label,
+    price: euros(c.default_unit_price_cents),
+  })),
+  faqItems: faqAJour,
+});
+
 
 // « En N séances » et non « forfait de N séances ». Dans cette maison, un forfait
 // est un lot de séances d'atelier payé d'avance et posé sur les dates de son
@@ -361,7 +400,7 @@ const stagesGroupes = familles.map((f) => {
     </Fragment>
   )}
 
-  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} />
+  <FaqSection title={page.faqSectionTitle} items={faqAJour} ctaLabel={page.ctaLabel} />
 
   {page.crossLinksText && (
     <CrossLinksSection text={page.crossLinksText} excludeHref="/stages-thematiques/" />
