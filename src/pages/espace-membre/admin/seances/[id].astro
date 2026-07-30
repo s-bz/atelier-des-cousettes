@@ -4,7 +4,8 @@ export const prerender = false;
 import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
-import { notifier, variablesSeance } from '../../../../utils/emails';
+import { notifier, variablesSeance, variablesDeplacement } from '../../../../utils/emails';
+import { previenLaListe } from '../../../../utils/membre';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -64,14 +65,25 @@ if (Astro.request.method === 'POST') {
   }
 
   if (action === 'capacite') {
-    const capacite = Number(form.get('capacite'));
+    // Deux réglages, un seul enregistrement. La capacité passe par sa fonction,
+    // qui refuse de descendre sous le nombre d'inscrits ; la liste d'attente
+    // n'a pas cette contrainte — la réduire ferme la file sans retirer
+    // personne de ceux qui y sont déjà.
     const { error } = await supabase.rpc('set_session_capacity', {
-      p_session: id, p_capacity: capacite,
+      p_session: id, p_capacity: Number(form.get('capacite')),
     });
-    // Le message de la fonction indique déjà le nombre de réservations en
-    // cours : le reprendre tel quel est plus utile que le reformuler.
-    if (error) erreur = error.message;
-    else message = 'Capacité modifiée.';
+
+    if (error) {
+      // Le message de la fonction indique déjà le nombre de réservations en
+      // cours : le reprendre tel quel est plus utile que le reformuler.
+      erreur = error.message;
+    } else {
+      const { error: e2 } = await supabase.rpc('set_session_waitlist', {
+        p_session: id, p_places: Math.max(0, Number(form.get('attente') ?? 0)),
+      });
+      if (e2) erreur = `Capacité modifiée, mais liste d’attente impossible : ${e2.message}`;
+      else message = 'Places et liste d’attente modifiées.';
+    }
   }
 
   if (action === 'deplacer') {
@@ -82,6 +94,18 @@ if (Astro.request.method === 'POST') {
     if (!horaire.test(debut) || !horaire.test(fin)) {
       erreur = 'Les horaires s’écrivent sur 24 heures, par exemple 14:00.';
     } else {
+      // L'ANCIENNE date est lue AVANT le déplacement : après, elle n'existe
+      // plus nulle part, et le message ne pourrait plus dire quelle séance a
+      // bougé — la seule information qui permette de corriger son agenda.
+      const { data: avant } = await supabase
+        .from('sessions').select('starts_at').eq('id', id).maybeSingle();
+
+      const { data: inscritsAvant } = await supabase
+        .from('bookings')
+        .select('participants(first_name, accounts(email))')
+        .eq('session_id', id)
+        .eq('status', 'booked');
+
       const { error } = await supabase.rpc('update_session_schedule', {
         p_session: id,
         p_date: String(form.get('date')),
@@ -90,17 +114,66 @@ if (Astro.request.method === 'POST') {
         p_location: String(form.get('lieu_autre') ?? '').trim()
                     || String(form.get('lieu') ?? '').trim(),
       });
-      if (error) erreur = error.message;
-      else message = 'Séance déplacée. Les inscrits gardent leur place.';
+
+      if (error) {
+        erreur = error.message;
+      } else {
+        const { data: apres } = await supabase
+          .from('sessions').select('starts_at, ends_at, location').eq('id', id).maybeSingle();
+
+        let prevenus = 0;
+        for (const r of (inscritsAvant ?? []) as any[]) {
+          if (!avant || !apres) break;
+          const envoye = await notifier('deplacement', r.participants?.accounts?.email,
+            variablesDeplacement({
+              prenom: r.participants?.first_name ?? '',
+              avant_starts_at: avant.starts_at,
+              starts_at: apres.starts_at,
+              ends_at: apres.ends_at,
+              location: apres.location,
+            }));
+          if (envoye) prevenus++;
+        }
+
+        const sansCompte = (inscritsAvant ?? []).length - prevenus;
+        message = 'Séance déplacée. Les inscrits gardent leur place.'
+          + (prevenus > 0 ? ` ${prevenus} prévenu${prevenus > 1 ? 's' : ''} par e-mail.` : '')
+          + (sansCompte > 0
+              ? ` ${sansCompte} sans accès au site, à prévenir vous-même.`
+              : '');
+      }
     }
   }
 
   if (action === 'liberer') {
-    const { error } = await supabase.rpc('release_booking', {
+    const { data: issue, error } = await supabase.rpc('release_booking', {
       p_booking: String(form.get('booking')),
     });
-    if (error) erreur = error.message;
-    else message = 'Place libérée, le crédit est rendu.';
+
+    if (error) {
+      erreur = error.message;
+    } else {
+      const tardif = Boolean((issue as any)?.tardif);
+      const attente = ((issue as any)?.attente ?? []) as string[];
+
+      // Toute la liste d'attente est prévenue qu'une place est libre, et
+      // personne n'est inscrit d'office : la place part à qui la veut. Envoyé
+      // ici comme depuis l'espace adhérent — l'annonce ne dépend pas de qui a
+      // rendu la place.
+      let prevenus = 0;
+      if (attente.length > 0) {
+        const { data: s } = await supabase
+          .from('sessions').select('starts_at, ends_at, location').eq('id', id).maybeSingle();
+        if (s) prevenus = await previenLaListe(attente, s);
+      }
+
+      message = (tardif
+        ? 'Place libérée. À moins de 48 h, la séance reste due — utilisez « Rendre malgré le délai » sur sa fiche pour la lui rendre.'
+        : 'Place libérée, le crédit est rendu.')
+        + (attente.length > 0
+            ? ` ${prevenus} personne${prevenus > 1 ? 's' : ''} de la liste d’attente prévenue${prevenus > 1 ? 's' : ''} : la première à réserver prendra la place.`
+            : '');
+    }
   }
 
   // Noter la présence.
@@ -137,6 +210,22 @@ if (Astro.request.method === 'POST') {
   // ce n'est pas un autre écran qui le dit, c'est le libellé du bouton. Envoyer
   // Isabelle sur la fiche du stage l'obligeait à savoir de quel type de stage il
   // s'agissait avant de savoir quel écran ouvrir.
+  // Donner sa place à quelqu'un de la liste d'attente, sans attendre qu'une se
+  // libère. book_participant convertit sa ligne existante plutôt que d'en poser
+  // une seconde, que l'index unique refuserait.
+  if (action === 'promouvoir') {
+    const { error } = await supabase.rpc('book_participant', {
+      p_session: id,
+      p_participant: String(form.get('participant') ?? ''),
+      p_source: 'admin',
+      p_forcer: form.get('forcer') === 'on',
+    });
+    if (error) erreur = error.message;
+    else message = form.get('forcer') === 'on'
+      ? 'Inscrit au-delà des places, depuis la liste d’attente.'
+      : 'Inscrit : la place lui a été donnée.';
+  }
+
   if (action === 'inscrire' || action === 'retirer-stage') {
     const { data: type } = await supabase
       .from('sessions')
@@ -154,6 +243,16 @@ if (Astro.request.method === 'POST') {
       if (error) erreur = error.message;
       else message = `${data} date${(data as number) > 1 ? 's' : ''} libérée${(data as number) > 1 ? 's' : ''} sur ce stage.`;
 
+    } else if (action === 'inscrire' && form.get('forcer') === 'on') {
+      // Dépassement volontaire : Isabelle seule sait si une personne de plus
+      // tient dans sa salle. Le drapeau est refusé côté base à quiconque n'est
+      // pas administrateur.
+      const { error } = await supabase.rpc('book_participant', {
+        p_session: id, p_participant: participant, p_source: 'admin', p_forcer: true,
+      });
+      if (error) erreur = error.message;
+      else message = 'Inscrit au-delà des places. La séance affiche désormais un dépassement.';
+
     } else if (forfait) {
       // Tout ou rien : la fonction refuse en bloc si une date est complète.
       const { data, error } = await supabase.rpc('book_stage', {
@@ -163,18 +262,27 @@ if (Astro.request.method === 'POST') {
       else message = `Inscrit sur ${data} date${(data as number) > 1 ? 's' : ''} du stage.`;
 
     } else {
-      const { error } = await supabase.rpc('book_participant', {
+      const { data: ligne, error } = await supabase.rpc('book_participant', {
         p_session: id, p_participant: participant, p_source: 'admin',
       });
-      if (error) erreur = error.message;
-      else message = 'Participant inscrit.';
+      if (error) {
+        erreur = error.message;
+      } else {
+        // Dire lequel des deux états a été posé : « inscrit » sur une séance
+        // pleine laisserait croire à une place obtenue.
+        const { data: pose } = await supabase
+          .from('bookings').select('status').eq('id', ligne).maybeSingle();
+        message = pose?.status === 'waiting'
+          ? 'Ajouté à la liste d’attente. La personne sera prévenue dès qu’une place se libère, et restera libre de la prendre ou non.'
+          : 'Participant inscrit.';
+      }
     }
   }
 }
 
 const { data: seance } = await supabase
   .from('sessions')
-  .select('id, creneau_id, starts_at, ends_at, location, capacity, unit_price_cents, status, creneaux(label, audience, seances_par_stage)')
+  .select('id, creneau_id, starts_at, ends_at, location, capacity, places_attente, unit_price_cents, status, creneaux(label, audience, seances_par_stage, places_attente)')
   .eq('id', id)
   .maybeSingle();
 
@@ -189,9 +297,10 @@ const lieux = [...new Set([
 
 const { data: reservations } = await supabase
   .from('bookings')
-  .select('id, source, status, attendance, participants(id, first_name, last_name)')
+  .select('id, source, status, attendance, created_at, participants(id, first_name, last_name)')
   .eq('session_id', id)
-  .eq('status', 'booked');
+  .in('status', ['booked', 'waiting'])
+  .order('created_at');
 
 // La feuille de présence n'apparaît qu'une fois la séance commencée : la
 // proposer trois semaines à l'avance inviterait à noter des présences que
@@ -200,6 +309,8 @@ const commencee = new Date(seance.starts_at) <= new Date();
 
 // Forfait sur plusieurs jours : l'inscription porte sur toutes les dates.
 const groupees = ((seance.creneaux as any)?.seances_par_stage ?? 1) > 1;
+const creneauAttente = (seance.creneaux as any)?.places_attente ?? 0;
+
 
 /**
  * Qui est déjà pris, et sur quel périmètre.
@@ -242,7 +353,23 @@ const { count: datesAVenir } = groupees
       .gt('starts_at', new Date().toISOString())
   : { count: 0 };
 
-const prises = (reservations ?? []).length;
+// Inscrits et personnes en attente, séparés : ils ne sont pas dans le même
+// état et la feuille de présence ne concerne que les premiers.
+const inscrits = (reservations ?? []).filter((r: any) => r.status === 'booked');
+const attente = (reservations ?? []).filter((r: any) => r.status === 'waiting');
+const prises = inscrits.length;
+/**
+ * Ce que l'inscription va réellement produire.
+ *
+ * Trois issues, et le bouton doit les nommer : une place, un rang dans la file,
+ * ou un dépassement assumé. « Inscrire » sur une séance pleine laisserait croire
+ * à une place obtenue, et l'échec — ou pire, la mise en attente silencieuse —
+ * se découvrirait après coup.
+ */
+const etatInscription: 'libre' | 'attente' | 'complet' =
+  prises < seance.capacity ? 'libre'
+  : attente.length < seance.places_attente ? 'attente'
+  : 'complet';
 const annulee = seance.status === 'cancelled';
 
 const dateFr = new Intl.DateTimeFormat('fr-FR', {
@@ -286,7 +413,11 @@ const debut = new Date(seance.starts_at);
     <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">Personne pour l’instant.</p>
   ) : (
     <ul class="space-y-2">
-      {(reservations ?? []).map((r: any) => (
+      {/* `inscrits` et non `reservations` : depuis la liste d'attente, cette
+          dernière porte aussi les personnes en attente, qui ont leur propre
+          section plus bas. Les afficher ici les montrait deux fois, en
+          contredisant le compte affiché juste au-dessus. */}
+      {inscrits.map((r: any) => (
         <li class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
           <span class="font-medium text-[var(--color-heading)]">
             {r.participants?.first_name} {r.participants?.last_name}
@@ -343,6 +474,58 @@ const debut = new Date(seance.starts_at);
   )}
 
   {/*
+    La liste d'attente, dans l'ordre où elle sera servie.
+    Séparée des inscrits : ces personnes n'ont pas de place, ne comptent pas
+    dans la feuille de présence, et rien ne leur est décompté. La première
+    prendra la place automatiquement dès qu'une se libère.
+  */}
+  {attente.length > 0 && (
+    <section class="mt-8">
+      <h2 class="mb-1 text-lg font-bold text-[var(--color-heading)]">
+        Liste d’attente
+        <span class="ml-2 text-sm font-normal text-[var(--color-text-light)]">{attente.length}</span>
+      </h2>
+      <p class="mb-3 text-sm text-[var(--color-text-light)]">
+        Dans l’ordre d’arrivée. La première personne prend la place dès qu’une se libère,
+        et reçoit un e-mail. Aucune séance ne leur est décomptée en attendant.
+      </p>
+      <ul class="space-y-2">
+        {attente.map((r: any, i: number) => (
+          <li class="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
+            <span class="text-sm text-[var(--color-text-light)]">{i + 1}.</span>
+            <span class="font-medium text-[var(--color-heading)]">
+              {r.participants?.first_name} {r.participants?.last_name}
+            </span>
+            {/*
+              Donner la place directement, sans attendre qu'une se libère.
+              Sans ce geste, quelqu'un déjà en attente était hors de portée :
+              le sélecteur d'inscription l'exclut — il a déjà une ligne — et
+              « Inscrire au-delà des places » ne pouvait donc pas le viser.
+            */}
+            <form method="post" class="ml-auto flex flex-wrap items-center gap-x-3">
+              <input type="hidden" name="action" value="promouvoir" />
+              <input type="hidden" name="participant" value={r.participants?.id} />
+              {etatInscription !== 'libre' && <input type="hidden" name="forcer" value="on" />}
+              <button type="submit"
+                      class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-1.5 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-bg-accent)]">
+                {etatInscription === 'libre' ? 'Donner la place' : 'Donner la place au-delà'}
+              </button>
+            </form>
+
+            <form method="post">
+              <input type="hidden" name="action" value="liberer" />
+              <input type="hidden" name="booking" value={r.id} />
+              <button type="submit" class="text-sm text-[var(--color-button)] underline">
+                Retirer de la liste
+              </button>
+            </form>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {/*
     Sur un stage dont les dates sont groupées, on N'INSCRIT PAS à la date.
     Le forfait s'achète en entier, et inscrire ici produirait exactement l'état
     que le groupement existe pour empêcher : quelqu'un présent au deuxième jour
@@ -369,13 +552,48 @@ const debut = new Date(seance.starts_at);
           ))}
         </select>
       </div>
-      <button type="submit" class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-5 py-2 font-medium text-white">
-        {groupees ? `Inscrire aux ${datesAVenir} dates` : 'Inscrire'}
+      {/*
+        Le bouton nomme ce qui va se produire. « Inscrire » sur une séance
+        pleine laisserait croire à une place obtenue : on découvrirait après coup
+        soit un refus, soit — pire — une mise en attente silencieuse.
+        Sur une séance saturée, on n'inscrit qu'en dépassant sciemment : le
+        drapeau part alors avec le formulaire.
+      */}
+      {!groupees && etatInscription === 'complet' && (
+        <input type="hidden" name="forcer" value="on" />
+      )}
+
+      <button type="submit"
+              class={`rounded-[var(--radius-button)] px-5 py-2 font-medium ${
+                !groupees && etatInscription !== 'libre'
+                  ? 'border-2 border-[var(--color-button)] text-[var(--color-button)]'
+                  : 'bg-[var(--color-button)] text-white'
+              }`}>
+        {groupees ? `Inscrire aux ${datesAVenir} dates`
+          : etatInscription === 'attente' ? 'Mettre en liste d’attente'
+          : etatInscription === 'complet' ? 'Inscrire au-delà des places'
+          : 'Inscrire'}
       </button>
+
       {groupees && (
         <p class="w-full text-sm text-[var(--color-text-light)]">
           Ce stage est un forfait : l’inscription porte sur toutes ses dates à venir, et
           échoue en bloc si l’une est complète.
+        </p>
+      )}
+
+      {!groupees && etatInscription === 'attente' && (
+        <p class="w-full text-sm text-[var(--color-text-light)]">
+          La séance est complète ({prises} / {seance.capacity}). La personne rejoindra la
+          liste d’attente : rien ne lui sera décompté, elle sera prévenue par e-mail dès
+          qu’une place se libère, et restera libre de la prendre ou non.
+        </p>
+      )}
+
+      {!groupees && etatInscription === 'complet' && (
+        <p class="w-full text-sm text-[var(--color-button)]">
+          La séance et sa liste d’attente sont pleines. Inscrire ici ajoute une place
+          au-delà de la capacité — à vous de juger si la salle le permet.
         </p>
       )}
       {inscriptibles.length === 0 && (
@@ -424,7 +642,8 @@ const debut = new Date(seance.starts_at);
 
       <p class="mt-2 text-sm text-[var(--color-text-light)]">
         Les personnes inscrites gardent leur place : c’est la même séance à une autre date,
-        pas une annulation. Prévenez-les, aucun message n’est envoyé.
+        pas une annulation. Chacune reçoit un e-mail rappelant l’ancienne date et la
+        nouvelle. Celles sans adresse sont à prévenir vous-même.
       </p>
 
       <button type="submit"
@@ -435,14 +654,34 @@ const debut = new Date(seance.starts_at);
   )}
 
   <div class="grid gap-6 md:grid-cols-2">
+    {/*
+      Places et liste d'attente ensemble : ce sont les deux moitiés de la même
+      question — combien de personnes cette séance-là peut accueillir, et
+      combien peuvent espérer une place. Les séparer obligerait à deux
+      enregistrements pour un seul arbitrage.
+    */}
     <form method="post" class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
       <input type="hidden" name="action" value="capacite" />
-      <label for="capacite" class="block text-sm font-medium mb-1">Nombre de places</label>
-      <input id="capacite" name="capacite" type="number" min="1" required value={seance.capacity}
-             class="champ" />
-      <p class="mt-1 text-sm text-[var(--color-text-light)]">
-        Impossible de descendre sous le nombre d’inscrits : libérez d’abord une place.
-      </p>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="capacite" class="block text-sm font-medium mb-1">Nombre de places</label>
+          <input id="capacite" name="capacite" type="number" min="1" required value={seance.capacity}
+                 class="champ" />
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Impossible de descendre sous le nombre d’inscrits : libérez d’abord une place.
+          </p>
+        </div>
+        <div>
+          <label for="attente" class="block text-sm font-medium mb-1">Liste d’attente</label>
+          <input id="attente" name="attente" type="number" min="0" required
+                 value={seance.places_attente} class="champ" />
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Pour cette séance seulement. {attente.length > 0
+              ? `${attente.length} personne${attente.length > 1 ? 's' : ''} en attente : réduire ne les retire pas, cela ferme seulement la file.`
+              : 'Le créneau en propose ' + (creneauAttente ?? 0) + ' par défaut.'}
+          </p>
+        </div>
+      </div>
       <button type="submit" class="mt-3 rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)]">
         Modifier
       </button>
@@ -478,8 +717,10 @@ const debut = new Date(seance.starts_at);
                 ? 'Une personne perdra sa place et récupérera sa séance :'
                 : `${prises} personnes perdront leur place et récupéreront leur séance :`}
             </p>
+            {/* Les inscrits seulement : quelqu'un en attente n'a pas de place
+                à perdre, et le compter ici gonflerait l'annonce. */}
             <ul class="mt-1 list-disc pl-5 text-sm text-[var(--color-text)]">
-              {(reservations ?? []).map((r: any) => (
+              {inscrits.map((r: any) => (
                 <li>{r.participants?.first_name} {r.participants?.last_name}</li>
               ))}
             </ul>
@@ -488,10 +729,20 @@ const debut = new Date(seance.starts_at);
           <p class="mt-2 text-sm text-[var(--color-text)]">Personne n’est inscrit.</p>
         )}
 
+        {attente.length > 0 && (
+          <p class="mt-2 text-sm text-[var(--color-text)]">
+            {attente.length === 1 ? 'Une personne quitte' : `${attente.length} personnes quittent`}
+            {' '}aussi la liste d’attente. Rien ne leur était décompté.
+          </p>
+        )}
+
         <p class="mt-3 text-sm text-[var(--color-text-light)]">
-          Cette action ne se défait pas : il faudrait recréer la séance et
-          réinscrire chacun. Prévenez les personnes concernées, aucun message
-          n’est envoyé pour l’instant.
+          Chaque personne inscrite reçoit un e-mail d’annulation, et sa séance lui est
+          intégralement rendue — y compris à qui s’était désisté trop tard. Celles sans
+          adresse sont à prévenir vous-même : leur nombre vous sera donné après coup.
+        </p>
+        <p class="mt-2 text-sm text-[var(--color-text-light)]">
+          Cette action ne se défait pas : il faudrait recréer la séance et réinscrire chacun.
         </p>
 
         <div class="mt-4 flex flex-wrap gap-3">

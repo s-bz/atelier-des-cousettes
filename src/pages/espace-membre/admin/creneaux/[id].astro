@@ -96,6 +96,7 @@ if (Astro.request.method === 'POST') {
         default_end_time: fin,
         default_location: lieu,
         default_capacity: Number(form.get('places')),
+        places_attente: Math.max(0, Number(form.get('attente') ?? 0)),
         default_unit_price_cents: Math.round(Number(form.get('prix')) * 100),
         ...(estStage
           ? { seances_par_stage: Math.max(1, Number(form.get('seances') ?? 1)) }
@@ -115,7 +116,7 @@ if (Astro.request.method === 'POST') {
 
 const { data: creneau } = await supabase
   .from('creneaux')
-  .select('id, label, kind, audience, group_id, seances_par_stage, jour_semaine, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, archived_at')
+  .select('id, label, kind, audience, group_id, seances_par_stage, jour_semaine, places_attente, default_start_time, default_end_time, default_location, default_capacity, default_unit_price_cents, archived_at')
   .eq('id', id)
   .maybeSingle();
 
@@ -294,7 +295,7 @@ const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (�
       </div>
     </div>
 
-    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
       <div>
         <label for="debut" class="block text-sm font-medium mb-1">Début</label>
         <input id="debut" name="debut" required class="champ"
@@ -311,6 +312,27 @@ const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (�
         <label for="places" class="block text-sm font-medium mb-1">Places</label>
         <input id="places" name="places" type="number" min="1" required
                value={creneau.default_capacity} class="champ" />
+      </div>
+      <div>
+        {/*
+          Au-delà des places, on peut accepter quelques inscriptions en
+          attente : elles prennent la place dès qu'une se libère, sans que
+          personne ait à y penser. À 0, une séance complète refuse comme avant.
+        */}
+        <label for="attente" class="block text-sm font-medium mb-1">Liste d’attente</label>
+        <input id="attente" name="attente" type="number" min="0" required
+               value={creneau.places_attente} class="champ" />
+        {/*
+          Le nombre de places suit le champ voisin, sans attendre
+          l'enregistrement : porter la valeur en base pendant qu'on en saisit
+          une autre à côté ferait mentir la phrase au moment précis où on la
+          lit. Sans JavaScript elle affiche la valeur enregistrée, qui reste
+          vraie tant qu'on n'a rien changé.
+        */}
+        <p class="mt-1 text-sm text-[var(--color-text-light)]">
+          Inscriptions acceptées au-delà des <span data-echo-places>{creneau.default_capacity}</span> places.
+          La première en attente prend la place dès qu’une se libère, et reçoit un e-mail.
+        </p>
       </div>
       <div>
         <label for="prix" class="block text-sm font-medium mb-1">{libellePrix}</label>
@@ -401,5 +423,15 @@ const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (�
         if (montant) prix.value = montant;
       });
     });
+
+    // La phrase sur la liste d'attente suit le nombre de places pendant qu'on
+    // le change, plutôt que d'annoncer la valeur enregistrée.
+    const places = document.querySelector<HTMLInputElement>('input[name="places"]');
+    const echo = document.querySelector<HTMLElement>('[data-echo-places]');
+    if (places && echo) {
+      places.addEventListener('input', () => {
+        echo.textContent = places.value || '0';
+      });
+    }
   </script>
 </AdminLayout>

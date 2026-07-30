@@ -70,6 +70,42 @@ export async function soldeDe(participantId: string) {
  * voir confirmé — celui après lequel on se demande si on a bien prévenu.
  * Le message part depuis la fonction partagée, donc depuis les deux écrans.
  */
+/**
+ * Annonce une place libre à toute la liste d'attente.
+ *
+ * Partagée parce que la place peut être rendue de deux endroits — l'espace
+ * adhérent et la feuille de présence d'Isabelle — et que l'annonce ne dépend
+ * pas de qui a rendu la place. Recopiée, elle finirait par ne partir que d'un
+ * des deux.
+ *
+ * Les envois sont séquentiels : une vingtaine d'adhérents au plus, et paralléliser
+ * exposerait à la limite de débit de Resend pour ne gagner qu'une seconde.
+ */
+export async function previenLaListe(
+  participants: string[],
+  seance: { starts_at: string; ends_at: string; location: string },
+): Promise<number> {
+  if (participants.length === 0) return 0;
+
+  const supabase = getAdminClient();
+  const { data: gens } = await supabase
+    .from('participants')
+    .select('id, first_name, accounts(email)')
+    .in('id', participants);
+
+  let partis = 0;
+  for (const p of (gens ?? []) as any[]) {
+    const ok = await notifier('promotion_attente', p.accounts?.email, variablesSeance({
+      prenom: p.first_name ?? '',
+      starts_at: seance.starts_at,
+      ends_at: seance.ends_at,
+      location: seance.location,
+    }));
+    if (ok) partis++;
+  }
+  return partis;
+}
+
 export async function libererPlace(
   reservationId: string,
   participantId: string,
@@ -93,13 +129,21 @@ export async function libererPlace(
     return { ok: false, message: 'Cette réservation ne vous appartient pas.' };
   }
 
-  const { error } = await supabase.rpc('release_booking', { p_booking: reservationId });
+  const { data: issue, error } = await supabase.rpc('release_booking', { p_booking: reservationId });
   if (error) return { ok: false, message: error.message };
+
+  const tardif = Boolean((issue as any)?.tardif);
+  const attente = ((issue as any)?.attente ?? []) as string[];
 
   const personne = (cible as any).participants;
   const seance = (cible as any).sessions;
   if (seance) {
-    await notifier('liberation', personne?.accounts?.email, variablesSeance({
+    // Deux gabarits, parce que les deux issues ne se ressemblent pas : l'un
+    // annonce que la séance revient au solde, l'autre qu'elle reste due.
+    // Envoyer le premier après un désistement tardif serait un mensonge que la
+    // facturation démentirait.
+    await notifier(tardif ? 'liberation_tardive' : 'liberation',
+      personne?.accounts?.email, variablesSeance({
       prenom: personne?.first_name ?? '',
       starts_at: seance.starts_at,
       ends_at: seance.ends_at,
@@ -117,8 +161,14 @@ export async function libererPlace(
       .eq('session_id', seance.id)
       .eq('status', 'booked');
 
-    await notifierAdmin('admin_liberation', variablesAdmin({
+    // Deux avis, comme pour l'adhérent : celui d'un désistement dans les temps
+    // annonce le retour au solde, celui d'un désistement tardif annonce que la
+    // séance reste due. Envoyer le premier dans les deux cas ferait croire à
+    // Isabelle que personne n'est décompté.
+    await notifierAdmin(tardif ? 'admin_liberation_tardive' : 'admin_liberation',
+      variablesAdmin({
       participant: `${personne?.first_name ?? ''} ${personne?.last_name ?? ''}`.trim(),
+      participant_id: participantId,
       starts_at: seance.starts_at,
       ends_at: seance.ends_at,
       location: seance.location,
@@ -128,7 +178,26 @@ export async function libererPlace(
     }));
   }
 
-  return { ok: true, message: 'Place libérée. La séance revient à votre solde.' };
+  // TOUTE la liste d'attente est prévenue, et personne n'est inscrit d'office.
+  // Promouvoir le premier présumerait de sa réponse : trois semaines après
+  // s'être mis en attente, on peut avoir pris un autre engagement — et se
+  // retrouver inscrit, donc décompté, à une séance qu'on ne peut plus faire.
+  // La place part ainsi à qui la veut, plutôt qu'à qui s'est inscrit le plus tôt.
+  if (attente.length > 0 && seance) {
+    await previenLaListe(attente, seance);
+  }
+
+  return {
+    ok: true,
+    // Le message dit ce qui vient de se passer, y compris quand ce n'est pas
+    // la bonne nouvelle attendue : annoncer « la séance revient à votre solde »
+    // après un désistement tardif serait faux, et la surprise viendrait à la
+    // facturation.
+    message: tardif
+      ? 'Place libérée : elle est proposée aux autres. Mais à moins de 48 h de la séance, '
+        + 'celle-ci reste due — elle ne revient pas à votre solde.'
+      : 'Place libérée. La séance revient à votre solde.',
+  };
 }
 
 export const dateLongue = new Intl.DateTimeFormat('fr-FR', {

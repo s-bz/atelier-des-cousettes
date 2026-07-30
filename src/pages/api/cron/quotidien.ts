@@ -5,7 +5,7 @@ import { notifier, notifierAdmin, variablesSeance, variablesSemaine } from '../.
 export const prerender = false;
 
 /**
- * Tâche quotidienne : auto-inscription, puis rappels à deux jours.
+ * Tâche quotidienne : auto-inscription, puis rappels à trois jours.
  *
  * Une seule route pour les deux, parce que le palier Hobby de Vercel n'autorise
  * qu'une exécution par jour. L'ordre compte : on inscrit d'abord, on prévient
@@ -13,7 +13,7 @@ export const prerender = false;
  * lendemain.
  *
  * La précision de déclenchement est de l'ordre de l'heure sur Hobby. Sans
- * importance pour un rappel à deux jours ; ce serait rédhibitoire pour un
+ * importance pour un rappel à trois jours ; ce serait rédhibitoire pour un
  * rappel à deux heures.
  */
 export const GET: APIRoute = async ({ request }) => {
@@ -42,14 +42,20 @@ export const GET: APIRoute = async ({ request }) => {
     bilan.inscriptions = (inscrites as number) ?? 0;
   }
 
-  // ── 2. Rappels à deux jours ────────────────────────────────────────────
+  // ── 2. Rappels à trois jours ───────────────────────────────────────────
+  //
+  // TROIS et non deux. L'annulation est libre jusqu'à 48 h avant la séance :
+  // un rappel à deux jours arrivait donc au moment précis où il devenait trop
+  // tard pour changer de date. Prévenir quelqu'un une fois le délai passé est
+  // pire que ne rien lui dire — il apprend en même temps l'échéance et qu'il
+  // l'a manquée. À trois jours, il reste une journée pleine pour décider.
   //
   // Fenêtre d'une journée entière, et non « exactement dans 48 h » : le cron ne
   // se déclenche pas à heure fixe, une fenêtre étroite laisserait passer des
   // séances au gré de la minute d'exécution.
   const debut = new Date();
   debut.setHours(0, 0, 0, 0);
-  debut.setDate(debut.getDate() + 2);
+  debut.setDate(debut.getDate() + 3);
   const fin = new Date(debut);
   fin.setDate(fin.getDate() + 1);
 

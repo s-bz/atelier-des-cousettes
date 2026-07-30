@@ -188,6 +188,33 @@ export function variablesSeance(c: Contexte): Valeurs {
   };
 }
 
+/**
+ * Valeurs du message annonçant qu'une séance change de date.
+ *
+ * Seul gabarit à porter DEUX dates. Sans l'ancienne, le message dirait « votre
+ * séance a lieu le 12 mars » sans qu'on sache laquelle a bougé — or on peut en
+ * avoir trois au calendrier, et c'est justement celle qu'on avait notée qu'il
+ * faut pouvoir corriger.
+ */
+export function variablesDeplacement(o: {
+  prenom: string;
+  avant_starts_at: string;
+  starts_at: string;
+  ends_at: string;
+  location: string;
+}): Valeurs {
+  return {
+    ...variablesSeance({
+      prenom: o.prenom,
+      starts_at: o.starts_at,
+      ends_at: o.ends_at,
+      location: o.location,
+    }),
+    date_avant: dateLongue.format(new Date(o.avant_starts_at)),
+    heure_avant: heure.format(new Date(o.avant_starts_at)),
+  };
+}
+
 /** Une séance, telle qu'elle apparaît dans la liste d'un message d'accueil. */
 export interface Ligne {
   starts_at: string;
@@ -234,6 +261,7 @@ export function variablesAccueil(o: {
  */
 export function variablesAdmin(o: {
   participant: string;
+  participant_id?: string;
   starts_at: string;
   ends_at: string;
   location: string;
@@ -243,6 +271,12 @@ export function variablesAdmin(o: {
 }): Valeurs {
   return {
     ...LIENS,
+    // Le lien vers la fiche : c'est de là qu'Isabelle agit — dispenser d'une
+    // séance due, appeler quelqu'un. Sans lui, l'avis se termine sur un constat
+    // et laisse retrouver la personne à la main.
+    lien_fiche: o.participant_id
+      ? `https://atelier-des-cousettes.fr/espace-membre/admin/participants/${o.participant_id}/`
+      : 'https://atelier-des-cousettes.fr/espace-membre/admin/participants/',
     participant: o.participant,
     date: dateLongue.format(new Date(o.starts_at)),
     heure_debut: heure.format(new Date(o.starts_at)),

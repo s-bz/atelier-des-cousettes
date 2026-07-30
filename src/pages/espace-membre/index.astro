@@ -67,9 +67,9 @@ if (choisie) {
 
   const { data } = await supabase
     .from('bookings')
-    .select('id, attendance, sessions(id, starts_at, ends_at, location, status, creneaux(label, kind))')
+    .select('id, status, attendance, sessions(id, starts_at, ends_at, location, status, creneaux(label, kind))')
     .eq('participant_id', choisie.id)
-    .eq('status', 'booked');
+    .in('status', ['booked', 'waiting']);
 
   prochaines = (data ?? [])
     .filter((r: any) => r.sessions && new Date(r.sessions.starts_at) >= new Date())
@@ -84,6 +84,7 @@ if (choisie) {
   //
   // Les places libérées n'apparaissent nulle part : elles n'ont rien consommé.
   passees = (data ?? [])
+    .filter((r: any) => r.status === 'booked')
     .filter((r: any) => r.sessions && new Date(r.sessions.starts_at) < new Date())
     .sort((a: any, b: any) => b.sessions.starts_at.localeCompare(a.sessions.starts_at));
 }
@@ -180,6 +181,18 @@ if (choisie) {
                   {r.sessions.creneaux?.kind === 'stage' && (
                     <span class="text-sm font-medium text-[var(--color-text-light)]">Stage</span>
                   )}
+
+                  {/*
+                    Une place en attente n'est pas une place. Le dire ici évite
+                    qu'on organise sa journée autour d'une séance à laquelle on
+                    n'est pas encore inscrit.
+                  */}
+                  {r.status === 'waiting' && (
+                    <span class="rounded-full bg-[var(--color-bg-accent)] px-3 py-1 text-xs font-medium text-[var(--color-heading)]">
+                      en attente d’une place
+                    </span>
+                  )}
+
                   {r.sessions.status === 'cancelled' ? (
                     <span class="ml-auto text-sm font-medium text-[var(--color-button)]">Annulée</span>
                   ) : r.sessions.creneaux?.kind === 'stage' ? (
