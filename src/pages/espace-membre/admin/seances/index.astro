@@ -51,7 +51,7 @@ const creneauFiltre = Astro.url.searchParams.get('creneau');
 
 let requete = supabase
   .from('sessions')
-  .select('id, creneau_id, starts_at, ends_at, capacity, status, bookings(status), creneaux(label, kind)');
+  .select('id, creneau_id, starts_at, ends_at, capacity, status, bookings(status), creneaux(label, kind, seances_par_stage)');
 
 if (creneauFiltre) requete = requete.eq('creneau_id', creneauFiltre);
 
@@ -115,6 +115,42 @@ for (const s of seances ?? []) {
   const cle = moisFr.format(new Date(s.starts_at));
   parMois.set(cle, [...(parMois.get(cle) ?? []), s]);
 }
+
+/**
+ * Les autres dates d'un forfait, rappelées sur chaque ligne.
+ *
+ * Une date d'un stage sur plusieurs jours ne se comprend pas seule : « jeudi
+ * 29 octobre, stage surjeteuse » ne dit pas que c'est le premier des deux
+ * jours, ni quand tombe le second. Or c'est ce qu'il faut savoir avant d'y
+ * inscrire quelqu'un — l'inscription porte sur les deux.
+ *
+ * Requête à part plutôt que jointure : la liste peut compter cent-vingt
+ * séances, dont une poignée de forfaits ; charger toutes les dates de tous les
+ * créneaux pour trois lignes serait cher pour rien.
+ */
+const idsForfaits = [...new Set(
+  (seances ?? [])
+    .filter((s: any) => (s.creneaux?.seances_par_stage ?? 1) > 1)
+    .map((s: any) => s.creneau_id),
+)];
+
+const { data: datesForfaits } = idsForfaits.length
+  ? await supabase
+      .from('sessions')
+      .select('id, creneau_id, starts_at')
+      .in('creneau_id', idsForfaits)
+      .eq('status', 'scheduled')
+      .order('starts_at')
+  : { data: [] };
+
+const forfaitParCreneau = new Map<string, { id: string; starts_at: string }[]>();
+for (const d of datesForfaits ?? []) {
+  forfaitParCreneau.set(d.creneau_id, [...(forfaitParCreneau.get(d.creneau_id) ?? []), d]);
+}
+
+const jourCourt = new Intl.DateTimeFormat('fr-FR', {
+  day: 'numeric', month: 'short', timeZone: 'Europe/Paris',
+});
 ---
 
 <AdminLayout
@@ -221,6 +257,11 @@ for (const s of seances ?? []) {
           const prises = occupees(s);
           const complet = prises >= s.capacity;
           const annulee = s.status === 'cancelled';
+
+          // Forfait : les dates du stage, et le rang de celle-ci parmi elles.
+          const fratrie = forfaitParCreneau.get(s.creneau_id) ?? [];
+          const rang = fratrie.findIndex((d) => d.id === s.id) + 1;
+
           return (
             <li>
               <a href={`/espace-membre/admin/seances/${s.id}/`}
@@ -237,6 +278,26 @@ for (const s of seances ?? []) {
                 <span class={`ml-auto text-sm font-medium ${complet && !annulee ? 'text-[var(--color-button)]' : 'text-[var(--color-text-light)]'}`}>
                   {annulee ? 'Annulée' : `${prises} / ${s.capacity}`}
                 </span>
+
+                {/*
+                  Sur une ligne à part, sous le reste : cette date n'est qu'un
+                  jour d'un stage, et l'inscription porte sur tous. Sans ce
+                  rappel, « jeudi 29 octobre, surjeteuse » ne dit ni que c'est le
+                  premier des deux jours, ni quand tombe le second.
+                */}
+                {fratrie.length > 1 && (
+                  <span class="w-full text-sm text-[var(--color-text-light)]">
+                    Jour {rang} sur {fratrie.length} —
+                    {' '}{fratrie.map((d, i) => (
+                      <>
+                        {i > 0 && ', '}
+                        <span class={d.id === s.id ? 'font-medium text-[var(--color-heading)]' : ''}>
+                          {jourCourt.format(new Date(d.starts_at))}
+                        </span>
+                      </>
+                    ))}
+                  </span>
+                )}
               </a>
             </li>
           );

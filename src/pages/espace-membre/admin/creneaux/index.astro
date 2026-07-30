@@ -183,9 +183,19 @@ function heuresDuStage(c: { seances_par_stage: number; sessions: { starts_at: st
                 <a href={`/espace-membre/admin/creneaux/${c.id}/`}
                    class="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md transition-opacity hover:opacity-80">
                   <span class="font-medium text-[var(--color-heading)]">{c.label}</span>
+                  {/*
+                    Pas d'horaire pour un forfait : ses journées n'ont pas la
+                    même durée — 10 h–12 h les deux premiers matins du stage
+                    découverte, 10 h–13 h le troisième — et l'horaire par défaut
+                    n'en décrit qu'une. Il sert à préremplir la création d'une
+                    date, pas à résumer le stage. Le total d'heures, lui, est
+                    calculé sur les dates réelles.
+                  */}
                   <span class="text-sm text-[var(--color-text-light)]">
                     {c.default_location} · {c.audience} ·
-                    {' '}{c.default_start_time.slice(0, 5)}–{c.default_end_time.slice(0, 5)} ·
+                    {c.seances_par_stage === 1 && (
+                      <> {c.default_start_time.slice(0, 5)}–{c.default_end_time.slice(0, 5)} ·</>
+                    )}
                     {' '}{c.default_capacity} place{c.default_capacity > 1 ? 's' : ''} ·
                     {' '}{euros(c.default_unit_price_cents)} €
                   </span>
