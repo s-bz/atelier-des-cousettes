@@ -214,28 +214,7 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
     par lieu puis sous les tarifs et la FAQ. Celui-ci arrivait avant qu'on ait lu
     de quoi décider — et un bouton répété six fois cesse d'être remarqué.
   */}
-  {page.introduction && (
-    <IntroSection text={page.introduction} cta={false}>
-      {/*
-        UN LIEN, PAS UN BOUTON. Le prix est la première question de beaucoup, et
-        rien ici n'y menait sans traverser sept créneaux. Mais en bouton coral il
-        aurait rivalisé avec les cinq « Demande d'information » tout en disant
-        autre chose — et repris la place d'où l'on vient de chasser un bouton
-        arrivé trop tôt.
-
-        Discret, il sert qui le cherche sans détourner qui lit dans l'ordre : les
-        créneaux d'abord, parce que la grille parle d'un rythme qu'il faut avoir
-        vu pour le choisir.
-      */}
-      {page.tarifsLienLabel && tarifs.length > 0 && (
-        <p class="mt-6">
-          <a href="#tarifs" class="font-medium text-[var(--color-button)] underline">
-            {page.tarifsLienLabel}
-          </a>
-        </p>
-      )}
-    </IntroSection>
-  )}
+  {page.introduction && <IntroSection text={page.introduction} cta={false} />}
 
   {groupes.length > 0 && (
     <section class="py-16 md:py-20">
@@ -333,6 +312,13 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
               écrire — et l'on écrit au sujet d'un atelier précis, pas de la page.
             */}
             <ContactCTA label={page.ctaLabel} />
+            {page.tarifsLienLabel && tarifs.length > 0 && (
+              <p class="-mt-6 text-center">
+                <a href="#tarifs" class="text-sm font-medium text-[var(--color-button)] underline">
+                  {page.tarifsLienLabel}
+                </a>
+              </p>
+            )}
           </div>
         ))}
       </div>
