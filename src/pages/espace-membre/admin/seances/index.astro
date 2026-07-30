@@ -63,6 +63,18 @@ const { data: creneauNomme } = creneauFiltre
   ? await supabase.from('creneaux').select('label, kind').eq('id', creneauFiltre).maybeSingle()
   : { data: null };
 
+// Tous les créneaux pour le sélecteur, archivés compris : leurs séances passées
+// restent consultables, et les exclure rendrait ce passé inatteignable.
+const { data: creneauxTous } = await supabase
+  .from('creneaux')
+  .select('id, label, kind, archived_at')
+  .order('label');
+
+const pourSelecteur = [
+  { titre: 'Ateliers réguliers', items: (creneauxTous ?? []).filter((c) => c.kind === 'atelier') },
+  { titre: 'Stages thématiques', items: (creneauxTous ?? []).filter((c) => c.kind === 'stage') },
+];
+
 // Compte de l'autre côté, pour que l'onglet annonce ce qu'il contient.
 let compte = supabase
   .from('sessions')
@@ -112,14 +124,6 @@ for (const s of seances ?? []) {
     : 'Le calendrier de la saison.'}
 >
 
-  {creneauFiltre && (
-    <p class="mb-6 flex flex-wrap items-center gap-3 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">
-      Vous ne voyez que ce créneau.
-      <a href="/espace-membre/admin/seances/" class="text-[var(--color-button)] underline">
-        Voir toute la saison
-      </a>
-    </p>
-  )}
 
   {message && (
     <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] p-4 text-sm text-[var(--color-text)]">{message}</p>
@@ -131,6 +135,12 @@ for (const s of seances ?? []) {
       Créer des séances
     </a>
 
+    {/*
+      « Inscrire d'office » lance maintenant ce que la tâche de nuit fera de
+      toute façon : placer chaque adhérent sur les prochaines séances de son
+      créneau attitré. Sans ce bouton, Isabelle ajoute des séances, n'y voit
+      personne, et doit attendre le lendemain pour savoir si ça a marché.
+    */}
     <form method="post">
       <button type="submit"
               class="rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-3 text-sm font-medium text-[var(--color-button)]">
@@ -155,6 +165,37 @@ for (const s of seances ?? []) {
       </a>
     </nav>
   </div>
+
+  {/*
+    Filtre par créneau, en GET : l'URL porte le choix, donc reste partageable et
+    survit à un rechargement. La bascule à venir/passé le conserve, et le bouton
+    « Filtrer » garde l'écran utilisable sans JavaScript — le script en dessous
+    ne fait que dispenser du clic.
+  */}
+  <form method="get" class="mb-8 flex flex-wrap items-end gap-3">
+    {passe && <input type="hidden" name="quand" value="passe" />}
+
+    <div class="min-w-[16rem] flex-1 sm:max-w-sm">
+      <label for="creneau" class="block text-sm font-medium mb-1">Afficher</label>
+      <select id="creneau" name="creneau" class="champ">
+        <option value="">Tous les ateliers et stages</option>
+        {pourSelecteur.map((groupe) => groupe.items.length > 0 && (
+          <optgroup label={groupe.titre}>
+            {groupe.items.map((c) => (
+              <option value={c.id} selected={c.id === creneauFiltre}>
+                {c.label}{c.archived_at ? ' (archivé)' : ''}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </div>
+
+    <button type="submit"
+            class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-5 py-2 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-bg-accent)]">
+      Filtrer
+    </button>
+  </form>
 
   {(seances ?? []).length === 0 && (
     <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
@@ -197,4 +238,11 @@ for (const s of seances ?? []) {
       </ul>
     </div>
   ))}
+
+  {/* Le filtre s'applique dès le choix. Confort seulement : le bouton
+      « Filtrer » reste là et fait foi. */}
+  <script>
+    const filtre = document.querySelector<HTMLSelectElement>('select#creneau');
+    filtre?.addEventListener('change', () => filtre.form?.submit());
+  </script>
 </AdminLayout>
