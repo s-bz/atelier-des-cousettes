@@ -24,9 +24,22 @@ interface Props {
   vide?: string;
   /** La base n'a pas répondu. À distinguer d'un calendrier réellement vide. */
   erreur?: boolean;
+  /**
+   * Proposer d'écrire à Isabelle sous un calendrier vide. Vrai par défaut.
+   *
+   * À mettre à faux pour les messages qui ne s'adressent pas au public — une
+   * anomalie de configuration, par exemple : inviter à écrire n'y répondrait à
+   * rien et déplacerait le problème sur Isabelle.
+   */
+  contact?: boolean;
 }
 
-const { seances, vide = 'Prochaines dates à venir — me contacter.', erreur = false } = Astro.props;
+const {
+  seances,
+  vide = 'Aucune date programmée pour l’instant.',
+  erreur = false,
+  contact = true,
+} = Astro.props;
 
 /**
  * Les dates d'un créneau, avec ce qu'il y reste de place.
@@ -91,7 +104,28 @@ const lignes = [...seances]
     Le calendrier n’a pas pu être chargé. Merci de réessayer dans quelques minutes.
   </p>
 ) : lignes.length === 0 ? (
-  <p class="text-sm text-[var(--color-text-light)]">{vide}</p>
+  <p class="text-sm text-[var(--color-text-light)]">
+    {/*
+      Un calendrier vide n'invite à rien. Sans une porte de sortie, il se lit
+      comme une fin de non-recevoir alors qu'une date se cale souvent d'un
+      message. Le lien ouvre le formulaire, et retombe sur /contact/ si le script
+      n'a pas chargé — une invitation qui ne s'ouvre pas vaudrait moins que rien.
+    */}
+    {vide}
+    {contact && (
+      <Fragment>
+        {' '}
+        <a
+          href="/contact/"
+          data-tally-fallback
+          class="font-medium text-[var(--color-button)] underline"
+        >
+          Contactez Isabelle
+        </a>
+        {' '}pour connaître les prochaines.
+      </Fragment>
+    )}
+  </p>
 ) : (
   <ul class="space-y-1.5 text-sm">
     {lignes.map((s) => (

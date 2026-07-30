@@ -15,8 +15,8 @@ datesLabel: 'Prochaines dates :'
 faqSectionTitle: Questions fréquentes
 stages:
   - name: Initiation machine à coudre
-    price: 45 €
-    duration: 3h
+    price: 38 € ou 45 €
+    duration: 2h30 ou 3h
     shortDescription: >-
       Découvrez les possibilités de votre machine grâce à des exercices
       pratiques : boutonnières, fermeture éclair, points décoratifs.
@@ -91,7 +91,7 @@ stages:
       Choisissez vos matières, vos tissus, votre style pour créer un accessoire qui vous accompagne au quotidien !
     dates: |-
       Mardi 28 avril de 14h à 18h
-    prerequisite: ''
+    prerequisite: Connaissance de base de la machine à coudre recommandée.
   - name: Stage sac et tote bag
     price: 45 €
     duration: 3h
@@ -103,7 +103,7 @@ stages:
     dates: |-
       Samedi 16 mai de 9h30 à 12h30
       Samedi 20 juin de 9h30 à 12h30
-    prerequisite: Savoir utiliser une machine à coudre.
+    prerequisite: Connaissance de base de la machine à coudre recommandée.
 faqItems:
   - question: Quels sont les tarifs des stages de couture ?
     answer: >-
@@ -140,7 +140,9 @@ crossLinksText: >-
   d'une séance ponctuelle sans thème imposé ? Essayez nos après-midi couture
   ouverts à tous.
 schemaOffers:
-  - name: Initiation machine à coudre
+  - name: Initiation machine à coudre — séance de 2 h 30
+    price: '38'
+  - name: Initiation machine à coudre — séance de 3 h
     price: '45'
   - name: Stage découverte de la couture
     price: '95'

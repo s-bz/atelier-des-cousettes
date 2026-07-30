@@ -80,29 +80,51 @@ const descriptions = page.stages ?? [];
 const descriptionDe = (label: string) =>
   descriptions.find((d) => label === d.name || label.startsWith(d.name)) ?? null;
 
-const avecDates = (stages ?? []).map((c) => {
-  const aVenir = ((c.sessions ?? []) as any[]).filter(
-    (s) => s.status === 'scheduled' && s.starts_at > maintenant,
-  );
+const minutesDe = (s: any) =>
+  (new Date(s.ends_at).getTime() - new Date(s.starts_at).getTime()) / 60000;
 
-  // Durée totale d'un stage : la somme de ses `seances_par_stage` premières
-  // dates. C'est le chiffre annoncé — « 95 € pour 7 h » — et il ne se lit nulle
-  // part ailleurs, les trois matinées faisant 2 h, 2 h et 3 h.
-  const pourUneSession = [...((c.sessions ?? []) as any[])]
-    .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
-    .slice(0, c.seances_par_stage);
-  const minutes = pourUneSession.reduce(
-    (n, s) => n + (new Date(s.ends_at).getTime() - new Date(s.starts_at).getTime()) / 60000,
-    0,
-  );
+const enHeures = (m: number) =>
+  m % 60 === 0 ? `${m / 60} h` : `${Math.floor(m / 60)} h ${m % 60}`;
+
+/** « A, B ou C » — on choisit entre des options, on ne parcourt pas une échelle. */
+const enumerer = (parts: string[]) =>
+  parts.length < 2 ? (parts[0] ?? '') : `${parts.slice(0, -1).join(', ')} ou ${parts.at(-1)}`;
+
+const avecDates = (stages ?? []).map((c) => {
+  const toutes = [...((c.sessions ?? []) as any[])]
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  const aVenir = toutes.filter((s) => s.status === 'scheduled' && s.starts_at > maintenant);
+
+  /**
+   * La durée annoncée, et elle ne se calcule pas de la même façon des deux côtés.
+   *
+   * FORFAIT (plusieurs séances) : la somme des séances du stage. C'est le chiffre
+   * annoncé — « 95 € pour 7 h » — et il ne se lit nulle part ailleurs, les trois
+   * matinées faisant 2 h, 2 h et 3 h.
+   *
+   * DATES INDÉPENDANTES : chaque date est une séance à part entière, et RIEN NE
+   * LES OBLIGE À DURER PAREIL. L'initiation machine à coudre le montre : trois
+   * jeudis de 2 h 30 et un samedi de 3 h. Prendre la durée de la première date
+   * pour celle du stage — ce que faisait ce calcul — annonçait 2 h 30 à qui
+   * venait le samedi.
+   */
+  const dureesSeules = [...new Set(aVenir.map(minutesDe))].sort((a, b) => a - b);
+  const minutesForfait = toutes
+    .slice(0, c.seances_par_stage)
+    .reduce((n, s) => n + minutesDe(s), 0);
+
+  const heures = c.seances_par_stage > 1
+    ? enHeures(minutesForfait)
+    : enumerer(dureesSeules.map(enHeures));
 
   return {
     ...c,
     aVenir,
     description: descriptionDe(c.label),
-    heures: minutes > 0
-      ? (minutes % 60 === 0 ? `${minutes / 60} h` : `${Math.floor(minutes / 60)} h ${minutes % 60}`)
-      : null,
+    heures: heures || null,
+    // Sert à ordonner les formules d'un même stage, de la plus courte à la plus
+    // longue. Pour des dates indépendantes, la plus brève fait référence.
+    minutes: c.seances_par_stage > 1 ? minutesForfait : (dureesSeules[0] ?? 0),
   };
 });
 
@@ -143,9 +165,35 @@ for (const c of avecDates) {
   if (famille) famille.formules.push(entree);
   else familles.push({ base: base.trim(), formules: [entree] });
 }
+// De la plus courte à la plus longue, sur le temps qu'elle demande — non sur le
+// nombre de séances, qui vaut 1 des deux côtés dès que les formules se
+// distinguent par la durée d'une séance unique.
 for (const f of familles) {
-  f.formules.sort((a, b) => a.seances_par_stage - b.seances_par_stage);
+  f.formules.sort((a, b) => a.minutes - b.minutes);
 }
+
+/**
+ * L'ORDRE DES STAGES SUIT CELUI DU CONTENU, et non l'alphabet.
+ *
+ * Isabelle range ses stages dans le CMS, et cet ordre veut dire quelque chose :
+ * l'initiation ouvre, la découverte suit, les stages techniques viennent après.
+ * Trier sur le libellé effaçait ce classement et remontait la banane en
+ * deuxième position, entre l'initiation et la découverte, pour la seule raison
+ * qu'elle commence par un B.
+ *
+ * Conséquence heureuse : les deux pages affichent enfin les stages dans le même
+ * ordre, ce qui rend la comparaison possible.
+ *
+ * Un stage que le contenu ne décrit pas passe à la fin, où il se remarque —
+ * c'est un stage à décrire, pas un stage à cacher.
+ */
+const rangDansLeContenu = (base: string) => {
+  const i = descriptions.findIndex((d) => base === d.name || base.startsWith(d.name));
+  return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+};
+familles.sort(
+  (a, b) => rangDansLeContenu(a.base) - rangDansLeContenu(b.base) || a.base.localeCompare(b.base),
+);
 
 /**
  * Le tarif d'une formule, son prix et sa durée appariés : « 70 € pour 5 h ».
@@ -158,10 +206,6 @@ const prixEtDuree = (c: Formule) =>
   c.heures
     ? `${euros(c.default_unit_price_cents)} € pour ${c.heures}`
     : `${euros(c.default_unit_price_cents)} €`;
-
-/** « A, B ou C » — on choisit entre les formules, on ne parcourt pas une échelle. */
-const enumerer = (parts: string[]) =>
-  parts.length < 2 ? (parts[0] ?? '') : `${parts.slice(0, -1).join(', ')} ou ${parts.at(-1)}`;
 
 const stagesGroupes = familles.map((f) => {
   const prix = f.formules.map((c) => c.default_unit_price_cents);
@@ -214,7 +258,7 @@ const stagesGroupes = familles.map((f) => {
       <div class="mx-auto max-w-3xl px-4">
         <div class="rounded-xl bg-[var(--color-bg-accent)] p-5">
           <CalendrierCreneau seances={[]} erreur={Boolean(error)}
-                             vide="Aucun stage programmé pour l’instant — me contacter." />
+                             vide="Aucun stage programmé pour l’instant." />
         </div>
       </div>
     </section>
@@ -304,8 +348,7 @@ const stagesGroupes = familles.map((f) => {
                         {c.seances_par_stage > 1 ? 'Dates du stage' : page.datesLabel}
                       </p>
                     )}
-                    <CalendrierCreneau seances={c.aVenir} erreur={Boolean(error)}
-                                       vide="Prochaine session à venir — me contacter." />
+                    <CalendrierCreneau seances={c.aVenir} erreur={Boolean(error)} />
                   </div>
                 ))}
               </div>

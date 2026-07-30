@@ -271,8 +271,7 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
         </div>
       ) : lieux.length === 0 ? (
         <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
-          <CalendrierCreneau seances={[]}
-                             vide="Aucune date programmée pour l’instant — me contacter." />
+          <CalendrierCreneau seances={[]} />
         </div>
       ) : (
         <div class="space-y-12">
@@ -296,27 +295,7 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
                         ` · ${p.items.length} date${p.items.length > 1 ? 's' : ''} à venir`}
                     </p>
                     <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
-                      {p.items.length === 0 ? (
-                        <p class="text-sm text-[var(--color-text-light)]">
-                          {/*
-                            Un calendrier vide n'invite à rien. Dire à qui écrire,
-                            et ouvrir le formulaire d'un clic, transforme une
-                            impasse en prise de contact — c'est le même parti que
-                            sur la page des ateliers, pour un créneau sans date.
-                          */}
-                          Aucune date programmée pour l’instant.{' '}
-                          <a
-                            href="/contact/"
-                            data-tally-fallback
-                            class="font-medium text-[var(--color-button)] underline"
-                          >
-                            Contactez Isabelle
-                          </a>
-                          {' '}pour connaître les prochaines.
-                        </p>
-                      ) : (
-                        <CalendrierCreneau seances={p.items} />
-                      )}
+<CalendrierCreneau seances={p.items} />
                     </div>
                   </div>
                 ))}
