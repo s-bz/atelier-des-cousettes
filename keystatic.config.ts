@@ -194,6 +194,13 @@ export default config({
          * montant que l'écran « à facturer » aurait démenti.
          */
         tarifsTitle: fields.text({ label: 'Titre section tarifs' }),
+        tarifsIntro: fields.text({
+          label: 'Phrase au-dessus des tarifs (saison, souplesse, adhésion)',
+          multiline: true,
+        }),
+        tarifsUniteQuestion: fields.text({
+          label: 'Amorce de la séance à l’unité (les prix sont ajoutés depuis la base)',
+        }),
         tarifsNote: fields.text({ label: 'Note sous les tarifs', multiline: true }),
         tarifs: fields.array(
           fields.object({
@@ -205,21 +212,29 @@ export default config({
               ],
               defaultValue: 'adultes',
             }),
-            creneaux: fields.text({
-              label: 'Créneaux concernés (ex : jeudi 17h30–19h30 ou samedi matin)',
-            }),
+            dureeSeance: fields.text({ label: 'Durée d’une séance (ex : Séances de 3 h)' }),
             formules: fields.array(
               fields.object({
-                label: fields.text({ label: 'Formule (ex : 10 séances)' }),
-                prix: fields.text({ label: 'Prix (ex : 275 €)' }),
-                mensuel: fields.text({
-                  label: 'Ou mensuellement (ex : 27,50 € par mois pendant 10 mois)',
+                /*
+                 * LE RYTHME D'ABORD, LE PRIX ENSUITE.
+                 *
+                 * « 10 séances » oblige à convertir : combien de fois par mois,
+                 * sur quelle période ? « Environ une fois par mois » est une
+                 * question à laquelle on sait déjà répondre — on choisit un
+                 * rythme de vie, pas un volume. Le nombre de séances et le prix
+                 * comptant restent visibles en dessous, en retrait : les
+                 * escamoter reviendrait à cacher le total.
+                 */
+                rythme: fields.text({ label: 'Rythme (ex : Environ une fois par mois)' }),
+                mensuel: fields.text({ label: 'Prix mis en avant (ex : 35,50 € par mois)' }),
+                detail: fields.text({
+                  label: 'Précision (ex : 10 séances sur la saison, ou 355 € réglés en une fois)',
                 }),
               }),
               {
                 label: 'Formules',
                 itemLabel: (props) =>
-                  `${props.fields.label.value || 'Formule'} — ${props.fields.prix.value || '?'}`,
+                  `${props.fields.rythme.value || 'Formule'} — ${props.fields.mensuel.value || '?'}`,
               },
             ),
           }),
