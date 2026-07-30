@@ -213,97 +213,6 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
     <IntroSection text={page.introduction} ctaLabel={page.ctaLabel} />
   )}
 
-  {tarifs.length > 0 && (
-    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
-      <div class="mx-auto max-w-2xl px-4">
-        <h2 class="mb-4 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
-          {page.tarifsTitle}
-        </h2>
-
-        {/*
-          La souplesse avant les chiffres. « Suis-je tenue de venir tel jour ? »
-          est la première inquiétude de qui lit une grille d'abonnement ; y
-          répondre d'abord retire l'objection avant qu'un prix ne l'installe.
-        */}
-        {page.tarifsIntro && (
-          <p class="mx-auto mb-10 max-w-xl text-center text-[var(--color-text)]">
-            {page.tarifsIntro}
-          </p>
-        )}
-
-        {/*
-          UNE SEULE COLONNE, adultes puis enfants. Côte à côte, les deux cartes
-          invitaient à une comparaison que personne ne fait : on sait pour qui
-          l'on vient. L'ordre suffit à hiérarchiser, à l'identique sur téléphone
-          et sur écran, sans dépliant ni bouton à découvrir.
-        */}
-        <div class="space-y-6">
-          {tarifs.map((t) => (
-            <div class="rounded-xl bg-white p-5 shadow-md dark:bg-[var(--color-card-bg)]">
-              <h3 class="text-lg font-bold text-[var(--color-heading)]">{t.titre}</h3>
-              {t.dureeSeance && (
-                <p class="mb-4 text-sm text-[var(--color-text-light)]">{t.dureeSeance}</p>
-              )}
-              <ul class="space-y-4">
-                {(t.formules ?? []).map((f) => (
-                  <li>
-                    {/*
-                      Ce qu'on achète et ce que ça coûte, côte à côte : le nombre
-                      de séances est le produit, le prix mensuel la façon de le
-                      régler. Séparés, on lisait un prix sans savoir de quoi.
-                      Un seul chiffre en couleur — six accents de même force ne
-                      donnaient à l'œil aucun endroit où se poser.
-                    */}
-                    <p class="flex flex-wrap items-baseline gap-x-3">
-                      <span class="text-lg font-semibold text-[var(--color-heading)]">
-                        {f.seances}
-                      </span>
-                      <span class="text-lg font-semibold text-[var(--color-button)]">
-                        {f.mensuel}
-                      </span>
-                    </p>
-                    {f.detail && (
-                      <p class="text-sm text-[var(--color-text-light)]">{f.detail}</p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        {/*
-          La séance à l'unité sort des cartes : c'est l'essai de qui hésite
-          encore, non une troisième formule à comparer aux deux autres. Les
-          montants viennent de la base, où ils facturent aussi les séances
-          au-delà du forfait.
-        */}
-        {page.tarifsUniteQuestion && tarifs.some((t) => t.prixSeance) && (
-          <p class="mt-8 text-center text-[var(--color-text)]">
-            {page.tarifsUniteQuestion}{' '}
-            La séance est à{' '}
-            {tarifs.filter((t) => t.prixSeance).map((t, i, liste) => (
-              <Fragment>
-                {i > 0 && (i === liste.length - 1 ? ' et ' : ', ')}
-                <span class="font-semibold text-[var(--color-button)]">{t.prixSeance}</span>
-                {' '}pour les {t.public}
-              </Fragment>
-            ))}.
-          </p>
-        )}
-
-        {page.tarifsNote && (
-          <p class="mt-4 text-center text-sm text-[var(--color-text-light)]">
-            {page.tarifsNote}
-          </p>
-        )}
-
-        {/* Agir sans avoir à repartir chercher un bouton plus bas. */}
-        <ContactCTA label={page.ctaLabel} />
-      </div>
-    </section>
-  )}
-
   {groupes.length > 0 && (
     <section class="py-16 md:py-20">
       <div class="mx-auto max-w-4xl px-4">
@@ -393,9 +302,105 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
                 </div>
               ))}
             </div>
+
+            {/*
+              Un bouton par groupe, au pied de ses cartes. Celui qui a trouvé son
+              créneau à Revel n'a plus à traverser Verdalle pour trouver de quoi
+              écrire — et l'on écrit au sujet d'un atelier précis, pas de la page.
+            */}
+            <ContactCTA label={page.ctaLabel} />
           </div>
         ))}
+      </div>
+    </section>
+  )}
 
+  {tarifs.length > 0 && (
+    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+      <div class="mx-auto max-w-2xl px-4">
+        <h2 class="mb-4 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+          {page.tarifsTitle}
+        </h2>
+
+        {/*
+          La souplesse avant les chiffres. « Suis-je tenue de venir tel jour ? »
+          est la première inquiétude de qui lit une grille d'abonnement ; y
+          répondre d'abord retire l'objection avant qu'un prix ne l'installe.
+        */}
+        {page.tarifsIntro && (
+          <p class="mx-auto mb-10 max-w-xl text-center text-[var(--color-text)]">
+            {page.tarifsIntro}
+          </p>
+        )}
+
+        {/*
+          UNE SEULE COLONNE, adultes puis enfants. Côte à côte, les deux cartes
+          invitaient à une comparaison que personne ne fait : on sait pour qui
+          l'on vient. L'ordre suffit à hiérarchiser, à l'identique sur téléphone
+          et sur écran, sans dépliant ni bouton à découvrir.
+        */}
+        <div class="space-y-6">
+          {tarifs.map((t) => (
+            <div class="rounded-xl bg-white p-5 shadow-md dark:bg-[var(--color-card-bg)]">
+              <h3 class="text-lg font-bold text-[var(--color-heading)]">{t.titre}</h3>
+              {t.dureeSeance && (
+                <p class="mb-4 text-sm text-[var(--color-text-light)]">{t.dureeSeance}</p>
+              )}
+              <ul class="space-y-4">
+                {(t.formules ?? []).map((f) => (
+                  <li>
+                    {/*
+                      Ce qu'on achète et ce que ça coûte, côte à côte : le nombre
+                      de séances est le produit, le prix mensuel la façon de le
+                      régler. Séparés, on lisait un prix sans savoir de quoi.
+                      Un seul chiffre en couleur — six accents de même force ne
+                      donnaient à l'œil aucun endroit où se poser.
+                    */}
+                    <p class="flex flex-wrap items-baseline gap-x-3">
+                      <span class="text-lg font-semibold text-[var(--color-heading)]">
+                        {f.seances}
+                      </span>
+                      <span class="text-lg font-semibold text-[var(--color-button)]">
+                        {f.mensuel}
+                      </span>
+                    </p>
+                    {f.detail && (
+                      <p class="text-sm text-[var(--color-text-light)]">{f.detail}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {/*
+          La séance à l'unité sort des cartes : c'est l'essai de qui hésite
+          encore, non une troisième formule à comparer aux deux autres. Les
+          montants viennent de la base, où ils facturent aussi les séances
+          au-delà du forfait.
+        */}
+        {page.tarifsUniteQuestion && tarifs.some((t) => t.prixSeance) && (
+          <p class="mt-8 text-center text-[var(--color-text)]">
+            {page.tarifsUniteQuestion}{' '}
+            La séance est à{' '}
+            {tarifs.filter((t) => t.prixSeance).map((t, i, liste) => (
+              <Fragment>
+                {i > 0 && (i === liste.length - 1 ? ' et ' : ', ')}
+                <span class="font-semibold text-[var(--color-button)]">{t.prixSeance}</span>
+                {' '}pour les {t.public}
+              </Fragment>
+            ))}.
+          </p>
+        )}
+
+        {page.tarifsNote && (
+          <p class="mt-4 text-center text-sm text-[var(--color-text-light)]">
+            {page.tarifsNote}
+          </p>
+        )}
+
+        {/* Agir sans avoir à repartir chercher un bouton plus bas. */}
         <ContactCTA label={page.ctaLabel} />
       </div>
     </section>
