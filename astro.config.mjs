@@ -79,6 +79,14 @@ const HORS_PLAN = [
   // Marquées `noIndex` de longue date : elles n'ont rien à dire à une recherche.
   '/mentions-legales/',
   '/confidentialite/',
+  // Les trois fichiers écrits pour les machines. Ils ne sont pas des pages : les
+  // annoncer au plan du site inviterait Google à indexer trois textes bruts qui
+  // répètent, sans mise en page, ce que les pages disent déjà — le doublon exact
+  // qu'une balise canonique sert d'ordinaire à éviter. Les robots qui les lisent
+  // vont les chercher à une adresse convenue, pas dans un plan de site.
+  '/llms.txt',
+  '/llms-full.txt',
+  '/tarifs.md',
 ];
 
 // https://astro.build/config

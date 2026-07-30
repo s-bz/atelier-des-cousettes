@@ -11,6 +11,26 @@ const coverImageFields = (slug: string) => ({
   coverImageAlt: fields.text({ label: 'Texte alternatif image de couverture' }),
 });
 
+/**
+ * Les questions fréquentes, définies une fois pour les cinq endroits qui en ont.
+ *
+ * Le même bloc était recopié à l'identique sur chaque page de formule ; le blog
+ * en ajoutait un sixième. Un champ recopié se met à diverger — un libellé ici,
+ * un `multiline` oublié là — et le rendu comme le schéma JSON-LD dépendent de sa
+ * forme exacte.
+ */
+const faqItemsField = () =>
+  fields.array(
+    fields.object({
+      question: fields.text({ label: 'Question' }),
+      answer: fields.text({ label: 'Réponse', multiline: true }),
+    }),
+    {
+      label: 'Questions fréquentes',
+      itemLabel: (props) => props.fields.question.value || 'Question',
+    },
+  );
+
 const schemaOffersField = () =>
   fields.array(
     fields.object({
@@ -82,6 +102,7 @@ export default config({
          * Vider le champ retire le bandeau — pas de case à cocher qui puisse
          * rester cochée sur un texte devenu faux.
          */
+
         avisProvisoire: fields.text({
           label: 'Bandeau d’avertissement (ateliers, stages, séances)',
           description:
@@ -194,16 +215,7 @@ export default config({
             itemLabel: (props) => props.fields.name.value || 'Stage',
           },
         ),
-        faqItems: fields.array(
-          fields.object({
-            question: fields.text({ label: 'Question' }),
-            answer: fields.text({ label: 'Réponse', multiline: true }),
-          }),
-          {
-            label: 'Questions fréquentes',
-            itemLabel: (props) => props.fields.question.value || 'Question',
-          },
-        ),
+        faqItems: faqItemsField(),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
@@ -312,16 +324,7 @@ export default config({
               `${props.fields.name.value || 'Créneau'} — ${props.fields.location.value || '?'}`,
           },
         ),
-        faqItems: fields.array(
-          fields.object({
-            question: fields.text({ label: 'Question' }),
-            answer: fields.text({ label: 'Réponse', multiline: true }),
-          }),
-          {
-            label: 'Questions fréquentes',
-            itemLabel: (props) => props.fields.question.value || 'Question',
-          },
-        ),
+        faqItems: faqItemsField(),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
         schemaOffers: schemaOffersField(),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
@@ -362,16 +365,7 @@ export default config({
         lienDates: fields.text({ label: 'Bouton vers les dates (ex : Voir les dates)' }),
         lienDeroulement: fields.text({ label: 'Bouton vers le déroulement (ex : Comment ça se passe)' }),
         faqSectionTitle: fields.text({ label: 'Titre section FAQ' }),
-        faqItems: fields.array(
-          fields.object({
-            question: fields.text({ label: 'Question' }),
-            answer: fields.text({ label: 'Réponse', multiline: true }),
-          }),
-          {
-            label: 'Questions fréquentes',
-            itemLabel: (props) => props.fields.question.value || 'Question',
-          },
-        ),
+        faqItems: faqItemsField(),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
@@ -438,6 +432,10 @@ export default config({
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
         readMoreLabel: fields.text({ label: 'Libellé « Lire l\'article »' }),
         relatedTitle: fields.text({ label: 'Titre « Articles connexes »' }),
+        // Le titre de la FAQ des articles : un seul pour les vingt-deux, comme
+        // « Articles connexes » juste au-dessus. Le porter par article
+        // reviendrait à le ressaisir vingt-deux fois pour lire la même chose.
+        faqSectionTitle: fields.text({ label: 'Titre section FAQ des articles' }),
         backToListLabel: fields.text({ label: 'Libellé « Retour à la liste »' }),
         emptyStateText: fields.text({ label: 'Texte aucun article' }),
       },
@@ -553,6 +551,41 @@ export default config({
         }),
         coverImageAlt: fields.text({ label: 'Texte alternatif image de couverture' }),
         content: fields.markdoc({ label: 'Contenu', components: markdocComponents }),
+
+        /*
+         * CE QUE LES MOTEURS DE RÉPONSE SAVENT EXTRAIRE D'UN ARTICLE.
+         *
+         * Les trois pages de formules portent une FAQ depuis longtemps, et c'est
+         * elle qui les fait citer : une question posée comme un visiteur la
+         * pose, une réponse qui tient seule, hors du paragraphe qui l'entoure.
+         * Les vingt-deux articles du blog — le gros du site — n'en avaient
+         * aucune, et rien à extraire qu'un texte suivi.
+         *
+         * Les deux champs sont FACULTATIFS et le resteront. Un article sans
+         * question ne porte pas de FAQ, un article qui n'explique pas un geste
+         * ne porte pas d'étapes ; leur schéma JSON-LD ne paraît que rempli.
+         * Un bloc vide vaudrait un balisage mensonger, que Google sanctionne.
+         */
+        faqItems: faqItemsField(),
+        howToSteps: fields.array(
+          fields.object({
+            name: fields.text({ label: 'Titre de l’étape' }),
+            text: fields.text({ label: 'Description de l’étape', multiline: true }),
+          }),
+          {
+            label: 'Étapes (tutoriels) — laisser vide si l’article n’en est pas un',
+            description:
+              'À ne remplir que si l’article explique une réalisation pas à pas. Les étapes doivent reprendre celles du texte, pas les remplacer.',
+            itemLabel: (props) => props.fields.name.value || 'Étape',
+          },
+        ),
+        howToDuree: fields.text({
+          label: 'Durée totale (ex : 2 h) — facultatif, pour les tutoriels',
+        }),
+        howToFournitures: fields.array(fields.text({ label: 'Fourniture' }), {
+          label: 'Fournitures nécessaires (tutoriels)',
+          itemLabel: (props) => props.value || 'Fourniture',
+        }),
       },
     }),
     creations: collection({

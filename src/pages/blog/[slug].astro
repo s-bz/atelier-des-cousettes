@@ -8,7 +8,8 @@ import { renderMarkdoc } from '../../utils/markdoc-components';
 import { resolveImage } from '../../utils/images';
 import { formatFrenchDate } from '../../utils/strings';
 import { filterPublishedPosts, pickRelatedPosts } from '../../utils/blog';
-import { buildBreadcrumbSchema } from '../../utils/schema';
+import { buildBreadcrumbSchema, buildFaqSchema, buildHowToSchema } from '../../utils/schema';
+import FaqSection from '../../components/FaqSection.astro';
 
 export async function getStaticPaths() {
   const posts = await reader.collections.blog.all();
@@ -42,6 +43,33 @@ const dateModified = post.lastModified || post.publishDate;
 // internal links and Google left them unindexed.
 const allPosts = await reader.collections.blog.all();
 const relatedPosts = pickRelatedPosts(slug!, filterPublishedPosts(allPosts));
+
+/*
+ * CE QU'UN MOTEUR DE RÉPONSE SAIT EXTRAIRE DE CET ARTICLE.
+ *
+ * Les deux schémas ne paraissent que remplis, et c'est délibéré : un FAQPage
+ * sans question ou un HowTo sans étape promet à Google une page qu'il ne
+ * trouvera pas, ce qu'il traite comme du balisage trompeur. Les vingt-deux
+ * articles partent donc sans, et chacun gagne le sien le jour où quelqu'un
+ * écrit les questions — le champ est là, vide, dans le CMS.
+ *
+ * La FAQ n'est PAS un ajout invisible : ce qui est balisé est affiché, à la
+ * suite de l'article. C'est la condition posée par Google, et de toute façon la
+ * seule qui vaille — des questions que personne ne lit ne valent pas d'être
+ * écrites.
+ */
+const pageUrl = new URL(Astro.url.pathname, Astro.site).toString();
+const faqItems = post.faqItems ?? [];
+const faqSchema = buildFaqSchema(faqItems);
+const howToSchema = buildHowToSchema({
+  name: post.title,
+  description: post.seoDescription ?? '',
+  pageUrl,
+  steps: post.howToSteps ?? [],
+  duree: post.howToDuree,
+  fournitures: post.howToFournitures,
+  image: ogImage,
+});
 ---
 
 <BaseLayout title={post.title} description={post.seoDescription} ogImage={ogImage} ogType="article" articlePublishedTime={post.publishDate ?? undefined} articleAuthor={authorName}>
@@ -73,7 +101,9 @@ const relatedPosts = pickRelatedPosts(slug!, filterPublishedPosts(allPosts));
         },
         "isPartOf": { "@id": `${siteUrl}/#website` },
         ...(ogImage ? { "image": ogImage } : {})
-      }
+      },
+      ...(faqSchema ? [faqSchema] : []),
+      ...(howToSchema ? [howToSchema] : []),
     ]).replace(/<\//g, '<\\/')} />
   </Fragment>
 
@@ -97,7 +127,10 @@ const relatedPosts = pickRelatedPosts(slug!, filterPublishedPosts(allPosts));
     </div>
   </section>
 
-  <!-- 3. Related articles -->
+  <!-- 3. FAQ de l'article (affichée seulement si l'article en porte une) -->
+  <FaqSection title={blogIndex?.faqSectionTitle} items={faqItems} cta={false} />
+
+  <!-- 4. Related articles -->
   {relatedPosts.length > 0 && (
     <section class="py-16 md:py-20">
       <div class="max-w-4xl mx-auto px-4">
@@ -119,7 +152,7 @@ const relatedPosts = pickRelatedPosts(slug!, filterPublishedPosts(allPosts));
     </section>
   )}
 
-  <!-- 4. CTA + Back to blog -->
+  <!-- 5. CTA + Back to blog -->
   <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
     <div class="max-w-3xl mx-auto px-4 text-center">
       {blogIndex?.ctaText && (
