@@ -325,7 +325,7 @@ export function faitsCles(f: FaitsPublics): string[] {
 
   return [
     f.noteGoogle ? `- **Note Google** : ${f.noteGoogle} sur 5` : null,
-    lieux.length ? `- **Lieux** : ${lieux.length} — ${lieux.join(' et ')}, dans le Tarn (81), à vingt minutes de Castres` : null,
+    lieux.length ? `- **Lieux** : ${lieux.length} — ${lieux.join(' et ')}. Revel est en Haute-Garonne (31), Verdalle dans le Tarn (81), à vingt minutes de Castres` : null,
     ateliers ? `- **Créneaux d'atelier au programme** : ${ateliers}` : null,
     stages ? `- **Stages au programme** : ${stages}` : null,
     durees.length ? `- **Durée d'une séance** : ${durees.join(', ')}` : null,
@@ -427,9 +427,9 @@ export function construireLlms(f: FaitsPublics): string {
 
   return `# ${f.siteName}
 
-> Cours de couture, ateliers réguliers, stages thématiques et séances sans engagement à Revel et Verdalle dans le Tarn (France), pour adultes et enfants.
+> Cours de couture, ateliers réguliers, stages thématiques et séances sans engagement à Revel (Haute-Garonne) et Verdalle (Tarn), en France, pour adultes et enfants.
 
-${f.siteName} est un atelier de couture animé par ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}, à Verdalle et Revel dans le Tarn (81), à vingt minutes de Castres. Les cours accueillent tous les niveaux, du grand débutant au couturier confirmé, en petits groupes. Adultes et enfants.
+${f.siteName} est un atelier de couture animé par ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}, à Revel (Haute-Garonne) et Verdalle (Tarn), à vingt minutes de Castres. Les cours accueillent tous les niveaux, du grand débutant au couturier confirmé, en petits groupes. Adultes et enfants.
 ${f.avisProvisoire ? `\n**À noter** : ${f.avisProvisoire}\n` : ''}
 ## Faits clés
 
@@ -524,7 +524,7 @@ export function construireTarifs(f: FaitsPublics): string {
 
   return `# Tarifs — ${f.siteName}
 
-Cours de couture à Revel et Verdalle (Tarn, France). Tous les montants sont en euros, toutes taxes comprises.
+Cours de couture à Revel (Haute-Garonne) et Verdalle (Tarn), France. Tous les montants sont en euros, toutes taxes comprises.
 Dernière source de vérité : ${siteUrl}/ateliers-reguliers/ et ${siteUrl}/stages-thematiques/.
 ${f.avisProvisoire ? `\n> ${f.avisProvisoire}\n` : ''}
 ## Ce que les prix comprennent
@@ -595,7 +595,7 @@ export function construireLlmsFull(f: FaitsPublics): string {
 
   return `# ${f.siteName} — informations complètes
 
-> Cours de couture, ateliers réguliers, stages thématiques et séances sans engagement à Revel et Verdalle dans le Tarn (France), pour adultes et enfants, animés par ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}.
+> Cours de couture, ateliers réguliers, stages thématiques et séances sans engagement à Revel (Haute-Garonne) et Verdalle (Tarn), en France, pour adultes et enfants, animés par ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}.
 
 ## Faits clés
 
@@ -603,7 +603,7 @@ ${faitsCles(f).join('\n')}
 
 ## À propos
 
-${f.siteName} est un atelier de couture animé par ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}. Les cours ont lieu à Verdalle et à Revel, dans le Tarn (81), à vingt minutes de Castres, et accueillent tous les niveaux — du grand débutant au couturier confirmé — en petits groupes pour garantir un accompagnement personnalisé. Adultes et enfants.
+${f.siteName} est un atelier de couture animé par ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}. Les cours ont lieu à Revel (Haute-Garonne, 31) et à Verdalle (Tarn, 81), à vingt minutes de Castres, et accueillent tous les niveaux — du grand débutant au couturier confirmé — en petits groupes pour garantir un accompagnement personnalisé. Adultes et enfants.
 
 Isabelle enseigne la couture depuis plus de dix ans. Son parcours mêle héritage familial (son arrière-grand-père était tailleur), passion pour le patronage et engagement artisanal.
 
