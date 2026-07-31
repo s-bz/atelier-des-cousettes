@@ -7,6 +7,7 @@ import CrossLinksSection from '../components/CrossLinksSection.astro';
 import { getPageContext, reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { buildPageSchemas } from '../utils/schema';
+import { splitParagraphs } from '../utils/strings';
 
 const page = await reader.singletons.mesCreations.read();
 if (!page) throw new Error('Mes créations content not found');
@@ -37,7 +38,11 @@ const schemaImages = allGalleryItems
     const url = new URL(item.src.src, Astro.site).toString();
     return {
       "@type": "ImageObject" as const,
-      "name": item.title,
+      // `title` est le champ de slug de la collection : il vaut « creation-robe ».
+      // C'est un identifiant de fichier, pas un nom d'image — le publier dans le
+      // schéma donnait à lire « creation-robe » là où Google attend de quoi la
+      // photo est faite. Le texte alternatif, lui, le dit déjà.
+      "name": item.alt,
       "contentUrl": url,
       "thumbnailUrl": url,
       "description": item.alt,
@@ -51,6 +56,20 @@ const schemas = buildPageSchemas({
   siteUrl,
   settings,
 });
+
+/*
+ * L'ALTERNANCE DES FONDS SE COMPTE, ELLE NE SE DEVINE PAS.
+ *
+ * La galerie juste au-dessus porte le fond chaud : la première section doit
+ * donc s'en passer, et ainsi de suite. Les liens croisés qui ferment la page
+ * prennent le fond que la dernière section n'a pas pris — sans quoi deux
+ * sections de même teinte se toucheraient, et la page perdrait le rythme que
+ * toutes les autres tiennent.
+ */
+const creationSections = page.sections ?? [];
+const derniereSectionEnAccent = creationSections.length > 0 && (creationSections.length - 1) % 2 === 1;
+const classeLiensCroises =
+  creationSections.length === 0 || derniereSectionEnAccent ? '' : 'bg-[var(--color-bg-accent)]';
 ---
 
 <BaseLayout title={page.title} description={page.seoDescription} ogImage={ogImage}>
@@ -116,9 +135,25 @@ const schemas = buildPageSchemas({
     </div>
   </section>
 
-  <!-- 4. Cross-links -->
+  <!-- 4. Sections de contenu -->
+  {creationSections.map((section, i) => (
+    <section class={i % 2 === 0 ? 'py-16 md:py-20' : 'bg-[var(--color-bg-accent)] py-16 md:py-20'}>
+      <div class="max-w-4xl mx-auto px-4">
+        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-8">
+          {section.title}
+        </h2>
+        <div class="prose max-w-3xl mx-auto">
+          {section.text && splitParagraphs(section.text).map((para) => (
+            <p>{para}</p>
+          ))}
+        </div>
+      </div>
+    </section>
+  ))}
+
+  <!-- 5. Cross-links -->
   {page.crossLinksText && (
-    <CrossLinksSection text={page.crossLinksText} />
+    <CrossLinksSection text={page.crossLinksText} class={classeLiensCroises} />
   )}
 
   <!-- Lightbox -->

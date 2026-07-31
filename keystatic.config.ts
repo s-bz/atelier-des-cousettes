@@ -543,6 +543,26 @@ export default config({
         gallerySectionTitle: fields.text({ label: 'Titre section galerie' }),
         emptyGalleryText: fields.text({ label: 'Texte galerie vide' }),
         missingImageText: fields.text({ label: 'Texte image manquante' }),
+        /*
+         * CE QUE LA GALERIE NE DIT PAS TOUTE SEULE.
+         *
+         * Trois photos et deux phrases : la page montrait des pièces sans rien
+         * apprendre à qui les regarde, et c'est à peu près ce que Google en
+         * retenait. Ces sections disent le geste derrière l'objet — pourquoi une
+         * jupe cercle se repose avant l'ourlet, ce qu'une encolure carrée
+         * demande de précision. C'est la même chose qui se joue dans les deux
+         * lectures : une galerie qui explique vaut mieux qu'une galerie muette.
+         */
+        sections: fields.array(
+          fields.object({
+            title: fields.text({ label: 'Titre de section' }),
+            text: fields.text({ label: 'Texte', multiline: true }),
+          }),
+          {
+            label: 'Sections de contenu',
+            itemLabel: (props) => props.fields.title.value || 'Section',
+          },
+        ),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
@@ -627,6 +647,28 @@ export default config({
           description:
             'Le numéro et WhatsApp suivent automatiquement. Ex. : « Vous préférez parler de vive voix ? »',
         }),
+        /*
+         * CE QU'ON CHERCHE SUR UNE PAGE DE CONTACT ET QU'ELLE NE DISAIT PAS.
+         *
+         * Le formulaire vit dans une iframe : pour un moteur de recherche, cette
+         * page ne contenait presque rien, et pour un visiteur elle ne répondait
+         * pas à la question qui vient juste après « je vais écrire » — où est-ce,
+         * au fait. « En Rivals » est un lieu-dit : l'adresse seule ne suffit pas
+         * à s'y rendre, et le dire ici épargne un appel.
+         *
+         * N'Y METTEZ QUE DU VÉRIFIABLE. Une page de contact est le mauvais
+         * endroit pour meubler : chaque phrase y est lue comme un engagement.
+         */
+        sections: fields.array(
+          fields.object({
+            title: fields.text({ label: 'Titre de section' }),
+            text: fields.text({ label: 'Texte', multiline: true }),
+          }),
+          {
+            label: 'Informations pratiques — sous le formulaire',
+            itemLabel: (props) => props.fields.title.value || 'Section',
+          },
+        ),
       },
     }),
     mentionsLegales: singleton({
@@ -722,6 +764,23 @@ export default config({
         publishDate: fields.date({ label: 'Date de publication' }),
         lastModified: fields.date({ label: 'Date de dernière modification (optionnel)' }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
+        /*
+         * LE TITRE TEL QUE GOOGLE L'AFFICHE — à ne remplir que s'il diffère.
+         *
+         * Le titre ci-dessus a deux métiers qui ne demandent pas la même
+         * longueur : il est la grande ligne en haut de l'article, où l'on peut
+         * respirer, et il est la source du slug — le raccourcir déplacerait
+         * l'adresse de la page, ce qui ne se fait pas pour gagner un mot.
+         *
+         * Ce champ ne sert donc qu'aux titres qui dépassent les ~60 caractères
+         * affichés par Google. Vide, c'est le titre de l'article qui part, et
+         * c'est le cas pour vingt des vingt-deux articles.
+         */
+        seoTitle: fields.text({
+          label: 'Titre SEO — vide sauf si le titre dépasse ~60 caractères',
+          description:
+            'Vide : le titre de l’article est utilisé tel quel. Le nom du site n’est pas ajouté derrière, sur le blog.',
+        }),
         coverImage: fields.image({
           label: 'Image de couverture',
           directory: 'src/assets/images/blog',
