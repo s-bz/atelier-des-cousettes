@@ -13,6 +13,7 @@ import { resolveImage, resolveImageUrl } from '../utils/images';
 import { filterPublishedPosts } from '../utils/blog';
 import {
   forfaitLePlusBas,
+  formuleLaMoinsChere,
   lireTarifs,
   prixDeuxPublics,
   remplacerPrix,
@@ -53,24 +54,40 @@ const fourchetteToutesFormules =
 /**
  * Le prix mis en avant sur chaque carte, par destination.
  *
- * « Dès » et le montant le plus bas : une carte se parcourt du coin de l'œil, et
- * le seul chiffre qu'on y cherche est celui à partir duquel on entre. Une
- * fourchette y demande de lire deux nombres pour n'en retenir qu'un ; le détail
- * — les deux formules, la durée — attend sur la page, à un clic.
+ * LE PUBLIC D'ABORD. Le montant le plus bas était celui des enfants, sans le
+ * dire : 28 €/mois et 35 € la séance, quand l'adulte qui cliquait trouvait 36 €
+ * et 45 €. Un prix d'appel qui s'adresse à quelqu'un d'autre que son lecteur
+ * n'est pas un ancrage, c'est un démenti différé.
  *
- * LE PUBLIC, LUI, NE PEUT PAS ATTENDRE. Le montant le plus bas était celui des
- * enfants, sans le dire : 28 €/mois et 35 € la séance, quand l'adulte qui
- * cliquait trouvait 36 € et 45 €. Un prix d'appel qui s'adresse à quelqu'un
- * d'autre que son lecteur n'est pas un ancrage, c'est un démenti différé.
+ * ENSUITE, CE QUE LE MONTANT ACHÈTE. Les trois cartes ouvraient par « Dès », et
+ * le mot ne servait bien nulle part : sur deux d'entre elles il était faux — un
+ * adulte paie 45 € une séance, pas « au moins » 45 € — et sur la troisième il
+ * laissait ignorer combien de fois on vient pour 36 €, ce qui est justement ce
+ * qu'on cherche à savoir. Chaque carte annonce donc son unité : le mois et son
+ * nombre de séances, la séance, le stage.
+ *
+ * LE NOMBRE DE SÉANCES VIENT DE LA MÊME FORMULE QUE LE MONTANT. L'écrire à côté
+ * à la main rendrait possible d'annoncer le prix d'un forfait avec le volume de
+ * l'autre — 36 € pour 20 séances — c'est-à-dire de promettre le double.
  */
+const forfaitAdulte = formuleLaMoinsChere(ateliers?.tarifs, 'adultes');
+
 const prixParPage: Record<string, string | null> = {
   '/ateliers-reguliers/': prixDeuxPublics(
-    forfaitLePlusBas(ateliers?.tarifs, 'adultes'),
+    forfaitAdulte?.mensuel,
     forfaitLePlusBas(ateliers?.tarifs, 'enfants'),
-    '/mois',
+    forfaitAdulte?.seances ? `/mois pour ${forfaitAdulte.seances}` : '/mois',
   ),
-  // Les stages n'ont qu'un public : la parenthèse n'aurait rien à annoncer.
-  '/stages-thematiques/': tarifs?.stages ? `Dès ${tarifs.stages.min} €` : null,
+  /*
+   * Les stages n'ont qu'un public — la parenthèse n'aurait rien à annoncer —
+   * mais ils ont une vraie fourchette : six stages, du plus court au plus
+   * long. C'est le seul des trois cas où deux nombres valent mieux qu'un,
+   * puisqu'ils recouvrent des contenus différents et non deux formules du
+   * même service.
+   */
+  '/stages-thematiques/': tarifs?.stages
+    ? `De ${tarifs.stages.min} € à ${tarifs.stages.max} € le stage`
+    : null,
   '/seances-sans-engagement/': prixDeuxPublics(
     tarifs?.seance.adultes,
     tarifs?.seance.enfants,
@@ -84,6 +101,12 @@ const prixParPage: Record<string, string | null> = {
  * Elle envoie vers la séance sans engagement : c'est la porte la moins chère et
  * la seule qui n'engage pas la saison. Le tarif adulte, donc — c'est le lecteur
  * de cette phrase-là, l'enfant vient avec un parent qui a déjà choisi.
+ *
+ * ELLE PRÉCÈDE LES CARTES, ET NON L'INVERSE. Placée dessous, elle arrivait
+ * après le choix qu'elle devait guider : celui qui ne sait pas trancher entre
+ * trois formules équivalentes a déjà décroché quand il l'atteint, et celui qui
+ * a tranché n'en a plus besoin. Une phrase d'orientation se lit avant la
+ * bifurcation.
  */
 const orientation = homepage.orientationText?.trim()
   ? remplacerPrix(homepage.orientationText, tarifs?.seance.adultes)
@@ -189,9 +212,21 @@ const siteUrl = Astro.site?.origin;
     ]).replace(/<\//g, '<\\/')} />
   </Fragment>
 
-  <!-- 1. Hero -->
+  {/*
+    1. Hero
+
+    LE H1 N'EST PAS LE NOM DE L'ATELIER, et `heroTitle` existe pour cela. Le
+    titre affiché disait « L'Atelier des Cousettes » — vrai, et sans aucune
+    information pour qui arrive d'une recherche : la seule phrase qui explique
+    ce qu'on trouve ici était reléguée en sous-titre. La marque n'est pas
+    perdue pour autant, elle ouvre la barre de navigation au-dessus.
+
+    `title` NE BOUGE PAS : il nomme l'entreprise dans le schéma LocalBusiness,
+    le catalogue d'offres et le titre de la vidéo. Une proposition de valeur y
+    remplacerait la raison sociale par un slogan aux yeux de Google.
+  */}
   <Hero
-    title={homepage.title}
+    title={homepage.heroTitle?.trim() || homepage.title}
     subtitle={homepage.subtitle}
     coverImage={resolvedCover ?? undefined}
     actionLabel={homepage.heroLinkLabel}
@@ -215,6 +250,11 @@ const siteUrl = Astro.site?.origin;
           <p class="mt-4 text-base md:text-lg leading-relaxed text-[var(--color-text)]">{homepage.introduction2}</p>
         )}
       </div>
+      {orientation && (
+        <p class="mx-auto mb-10 max-w-2xl rounded-xl bg-white p-5 text-center text-base leading-relaxed text-[var(--color-text)] shadow-md dark:bg-[var(--color-card-bg)]">
+          {orientation}
+        </p>
+      )}
       {resolvedCards.length > 0 && (
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
           {resolvedCards.map((card) => (
@@ -228,11 +268,6 @@ const siteUrl = Astro.site?.origin;
             />
           ))}
         </div>
-      )}
-      {orientation && (
-        <p class="mx-auto mt-10 max-w-2xl rounded-xl bg-white p-5 text-center text-base leading-relaxed text-[var(--color-text)] shadow-md dark:bg-[var(--color-card-bg)]">
-          {orientation}
-        </p>
       )}
       <ContactCTA label={homepage.ctaLabel} />
     </div>

@@ -157,6 +157,22 @@ export default config({
       previewUrl: '/',
       schema: {
         title: fields.text({ label: 'Titre' }),
+        /*
+         * LE TITRE AFFICHÉ, DISTINCT DU NOM DE L'ENTREPRISE.
+         *
+         * `title` sert de raison sociale : il nomme l'atelier dans le schéma
+         * LocalBusiness, dans le catalogue d'offres et sur la vidéo. Le grand
+         * titre de la page d'accueil, lui, n'a pas à répéter une marque que la
+         * barre de navigation affiche déjà trois centimètres plus haut — il a
+         * une seconde pour dire ce qu'on trouve ici.
+         *
+         * Vide, le nom de l'atelier reprend sa place : rien ne casse.
+         */
+        heroTitle: fields.text({
+          label: 'Grand titre affiché sur l’image — vide pour reprendre le titre',
+          description:
+            'Ce que voit un visiteur qui arrive d’une recherche. Ex. : « Apprenez à coudre en petits groupes, dans le Tarn ».',
+        }),
         subtitle: fields.text({ label: 'Sous-titre' }),
         seoTitle: fields.text({
           label: 'Titre SEO (balise <title>, indépendant du titre affiché)',
@@ -190,7 +206,18 @@ export default config({
               publicPath: '/src/assets/images/homepage/',
             }),
             imageAlt: fields.text({ label: 'Texte alternatif image' }),
-            priceRange: fields.text({ label: 'Fourchette de prix (ex: Dès 25 €/mois)' }),
+            /*
+             * Un REPLI, et rien de plus : ce qui s'affiche vient de la base et
+             * du CMS, recomposé à chaque construction. Ce champ ne paraît que
+             * si la base n'a pas répondu — d'où la consigne d'y écrire un prix
+             * juste plutôt qu'un chiffre d'appel qui, ce jour-là, serait le
+             * seul visible.
+             */
+            priceRange: fields.text({
+              label: 'Prix affiché — repli si la base ne répond pas',
+              description:
+                'Ex. : « 36 €/mois pour 10 séances (28 € enfant) ». Écrivez le prix réel, pas un prix d’appel.',
+            }),
             shortDescription: fields.text({ label: 'Description courte', multiline: true }),
           }),
           {
@@ -206,6 +233,9 @@ export default config({
          * formule qui vous correspond » l'affirme sans l'aider ; cette ligne-ci
          * nomme celle par où commencer, la moins engageante des trois.
          *
+         * ELLE PRÉCÈDE LES CARTES. Dessous, elle arrivait après le choix
+         * qu'elle devait guider.
+         *
          * LE MONTANT QU'ELLE CONTIENT EST RELU EN BASE avant affichage, comme
          * partout ailleurs sur cette page : une phrase d'orientation qui
          * annoncerait un prix périmé enverrait vers une page qui la dément.
@@ -216,7 +246,7 @@ export default config({
         orientationText: fields.text({
           label: 'Ligne « par où commencer » — vide pour masquer',
           description:
-            'Affichée sous les trois cartes. Le premier montant écrit est remplacé par le prix d’une séance adulte lu en base.',
+            'Affichée au-dessus des trois cartes. Le premier montant écrit est remplacé par le prix d’une séance adulte lu en base.',
           multiline: true,
         }),
         valuePropositionsTitle: fields.text({ label: 'Titre section « Pourquoi nous choisir »' }),
@@ -525,6 +555,28 @@ export default config({
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         ...coverImageFields('contact'),
         introduction: fields.text({ label: 'Introduction', multiline: true }),
+        /*
+         * LA SEULE PHRASE QUI TIENNE LIEU DE PROMESSE.
+         *
+         * « Nous vous répondrons dans les meilleurs délais » n'engage à rien :
+         * aucun envoi ne peut lui être opposé après coup. Une durée écrite, si.
+         * Elle s'affiche juste au-dessus du formulaire, là où l'on hésite.
+         *
+         * N'ANNONCEZ QUE CE QUE VOUS TENEZ. Ce champ vaut mieux vide qu'avec un
+         * délai que la vie de l'atelier dément une semaine sur deux : une
+         * promesse manquée coûte davantage que l'absence de promesse.
+         */
+        delaiReponse: fields.text({
+          label: 'Délai de réponse — vide pour masquer',
+          description:
+            'Affiché au-dessus du formulaire. Ex. : « Isabelle vous répond sous 48 h. »',
+          multiline: true,
+        }),
+        alternativeTexte: fields.text({
+          label: 'Phrase précédant le téléphone, sous le formulaire',
+          description:
+            'Le numéro et WhatsApp suivent automatiquement. Ex. : « Vous préférez parler de vive voix ? »',
+        }),
       },
     }),
     mentionsLegales: singleton({
@@ -603,8 +655,9 @@ export default config({
             { label: 'Ateliers réguliers', value: 'ateliers' },
             { label: 'Stages thématiques', value: 'stages' },
             { label: 'Séances sans engagement', value: 'seances' },
+            { label: 'Contact', value: 'contact' },
           ],
-          defaultValue: ['accueil', 'ateliers', 'stages', 'seances'],
+          defaultValue: ['accueil', 'ateliers', 'stages', 'seances', 'contact'],
         }),
       },
     }),
