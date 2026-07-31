@@ -2,7 +2,9 @@
 
 Issu du relevé concurrentiel du 13 juillet 2026 (`reports/seo-improver/2026-07-13-competitor-sweep/`) : une grande partie de la première page Google sur les requêtes locales (« cours de couture castres », « cours de couture verdalle »…) est occupée par des annuaires et plateformes, pas par des sites de concurrents. Être présent sur ces annuaires, c'est apparaître indirectement en première page — et chaque fiche cohérente renforce le référencement local de la fiche Google (Google Business Profile).
 
-**Règle d'or (cohérence NAP)** : utiliser partout exactement le même nom (« L'Atelier des Cousettes »), la même adresse à Verdalle, le même téléphone et le lien https://couture-tarn.fr/ — les incohérences diluent le signal local.
+**Règle d'or (cohérence NAP)** : utiliser partout exactement le même nom (« L'Atelier des Cousettes »), la même adresse à Verdalle, le même téléphone et le lien https://atelier-des-cousettes.fr/ — les incohérences diluent le signal local.
+
+> **Le domaine a changé.** Ce document indiquait `couture-tarn.fr` jusqu'au 31 juillet 2026, soit après la migration : toute fiche déposée entre-temps porte l'ancienne adresse. Elle redirige, donc rien n'est cassé, mais un lien redirigé pèse moins qu'un lien direct et, surtout, une fiche sur deux qui cite un autre domaine dilue exactement le signal que ces annuaires servent à concentrer. **Avant d'en créer de nouvelles, reprendre celles déjà déposées et y corriger l'URL.**
 
 ## Priorité 1 — gratuits, forte visibilité
 

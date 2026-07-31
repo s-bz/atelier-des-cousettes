@@ -68,6 +68,20 @@ export interface ArticlePublic {
   publieLe: string;
 }
 
+/** Une séance programmée, réduite à ce qui est public. */
+export interface SeancePublique {
+  /** Le nom du créneau ou du stage. */
+  creneau: string;
+  kind: string;
+  audience: string;
+  lieu: string;
+  /** Horodatage ISO 8601 avec fuseau, tel que la base le renvoie. */
+  debut: string;
+  fin: string;
+  prixCents: number;
+  capacite: number;
+}
+
 export interface FaitsPublics {
   siteUrl: string;
   siteName: string;
@@ -82,8 +96,12 @@ export interface FaitsPublics {
     codePostal?: string | null;
     region?: string | null;
   };
+  /** La note Google, telle que le CMS la porte — « 5,0 ». */
+  noteGoogle?: string | null;
   /** Les créneaux lus en base. Vide si elle n'a pas répondu. */
   creneaux: readonly CreneauPublic[];
+  /** Les séances programmées à venir. Vide si la base n'a pas répondu. */
+  seancesAVenir: readonly SeancePublique[];
   ateliers: {
     introduction?: string | null;
     tarifsIntro?: string | null;
@@ -156,6 +174,47 @@ export async function lireCreneauxPublics(): Promise<CreneauPublic[]> {
   }
 }
 
+/**
+ * Les séances programmées à venir — et jamais une erreur, comme au-dessus.
+ *
+ * POURQUOI LES PUBLIER. Le site tient un calendrier complet en base, et il ne se
+ * lisait que sur les pages, en HTML, au milieu de la mise en page. « Quand a lieu
+ * le prochain stage de couture près de Castres ? » est pourtant la question qu'un
+ * moteur de réponse pose à notre place, et la seule à laquelle rien d'écrit pour
+ * les machines ne répondait : ni llms.txt, ni tarifs.md ne portaient une date.
+ *
+ * Les créneaux archivés sont écartés : un créneau retiré du programme n'est plus
+ * proposé, et annoncer ses dates ferait espérer une inscription impossible.
+ */
+export async function lireProchainesSeances(limite = 200): Promise<SeancePublique[]> {
+  try {
+    const { data, error } = await getAdminClient()
+      .from('sessions')
+      .select(`
+        starts_at, ends_at, capacity,
+        creneaux!inner(label, kind, audience, default_location, default_unit_price_cents, archived_at)
+      `)
+      .eq('status', 'scheduled')
+      .is('creneaux.archived_at', null)
+      .gt('starts_at', new Date().toISOString())
+      .order('starts_at')
+      .limit(limite);
+    if (error || !data) return [];
+    return (data as any[]).map((s) => ({
+      creneau: s.creneaux?.label ?? '',
+      kind: s.creneaux?.kind ?? '',
+      audience: s.creneaux?.audience ?? '',
+      lieu: s.creneaux?.default_location ?? '',
+      debut: s.starts_at,
+      fin: s.ends_at,
+      prixCents: s.creneaux?.default_unit_price_cents ?? 0,
+      capacite: s.capacity,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 /** Le prix d'une séance hors forfait, par public. */
 export function prixSeance(creneaux: readonly CreneauPublic[], audience: string): number | null {
   const c = creneaux.find((x) => x.kind === 'atelier' && x.audience === audience && x.prixCents > 0);
@@ -199,6 +258,135 @@ function mensuels(grille: readonly GrilleAudience[]): number[] {
 const lignes = (...parts: (string | null | undefined | false)[]) =>
   parts.filter((p): p is string => typeof p === 'string' && p.length > 0).join('\n');
 
+/** « 2026-09-08 » — la date du jour à Paris, et non celle du serveur. */
+const jourIso = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit',
+});
+/** « mardi 8 septembre 2026 » — et « jeudi 1er octobre », voir plus bas. */
+const jourFrBrut = new Intl.DateTimeFormat('fr-FR', {
+  timeZone: 'Europe/Paris', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+});
+
+/**
+ * La date en toutes lettres, avec l'ordinal du premier du mois.
+ *
+ * `Intl` écrit « jeudi 1 octobre » ; le français écrit « 1er ». Seul le premier
+ * porte un ordinal — le 2 et le 21 s'écrivent bien 2 et 21 — d'où un remplacement
+ * qui exige que le 1 soit isolé, sans quoi « 21 » y perdrait son chiffre.
+ */
+const jourFr = (iso: string) => jourFrBrut.format(new Date(iso)).replace(/(^|\s)1 /, '$11er ');
+/** « 14h00 ». */
+const heureFr = (iso: string) =>
+  new Intl.DateTimeFormat('fr-FR', {
+    timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit',
+  }).format(new Date(iso)).replace(':', 'h');
+
+/**
+ * LES FAITS CHIFFRÉS, en tête des fichiers pour machines.
+ *
+ * POURQUOI DES NOMBRES. Un modèle qui doit choisir entre deux ateliers de
+ * couture pour quelqu'un reprend ce qu'il peut vérifier et attribuer : « des
+ * petits groupes » ne se compare à rien, « six participants au maximum » se
+ * compare, se cite et engage. C'est aussi ce qui distingue une fiche de la
+ * paraphrase publicitaire que ces moteurs écartent.
+ *
+ * Chaque ligne vient d'une source qui la tient — la base pour les comptages et
+ * les capacités, le CMS pour la note Google et les durées — et disparaît quand
+ * cette source est muette, plutôt que de retomber sur un chiffre écrit ici.
+ */
+export function faitsCles(f: FaitsPublics): string[] {
+  const ateliers = f.creneaux.filter((c) => c.kind === 'atelier').length;
+  const stages = f.creneaux.filter((c) => c.kind === 'stage').length;
+  const lieux = [...new Set(f.creneaux.map((c) => c.lieu.trim()).filter(Boolean))].sort();
+  const capacites = f.seancesAVenir.map((s) => s.capacite).filter((n) => n > 0);
+
+  const durees = f.ateliers.grille
+    .map((g) => {
+      const d = uneLigne(g.dureeSeance).replace(/^s[ée]ances? de\s*/i, '');
+      return d ? `${d} pour les ${g.audience === 'enfants' ? 'enfants' : 'adultes'}` : null;
+    })
+    .filter(Boolean);
+
+  return [
+    f.noteGoogle ? `- **Note Google** : ${f.noteGoogle} sur 5` : null,
+    lieux.length ? `- **Lieux** : ${lieux.length} — ${lieux.join(' et ')}, dans le Tarn (81), à vingt minutes de Castres` : null,
+    ateliers ? `- **Créneaux d'atelier au programme** : ${ateliers}` : null,
+    stages ? `- **Stages au programme** : ${stages}` : null,
+    durees.length ? `- **Durée d'une séance** : ${durees.join(', ')}` : null,
+    capacites.length ? `- **Taille des groupes** : ${Math.max(...capacites)} participants au maximum` : null,
+    `- **Saison** : de septembre à juin`,
+    `- **Niveaux accueillis** : tous, du grand débutant au couturier confirmé`,
+    f.auteur ? `- **Enseignante** : ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}, plus de dix ans d'enseignement` : null,
+    `- **Adhésion** : comprise dans tous les tarifs annoncés`,
+    f.articles.length ? `- **Articles de blog publiés** : ${f.articles.length}` : null,
+  ].filter((l): l is string => l !== null);
+}
+
+/**
+ * /dates.md — le calendrier, en clair.
+ *
+ * LES PLACES RESTANTES N'Y SONT PAS, volontairement. Elles changent d'une
+ * inscription à l'autre, et ce fichier est mis en cache une heure : y écrire
+ * « 3 places » reviendrait à promettre pendant une heure ce qui peut disparaître
+ * en une minute. Les dates et les prix, eux, ne bougent pas dans cet intervalle.
+ * Le nombre de places libres reste affiché sur les pages, calculé à chaque visite.
+ */
+export function construireDates(f: FaitsPublics): string {
+  const { siteUrl } = f;
+
+  const ligneSeance = (s: SeancePublique) => {
+    const debut = new Date(s.debut);
+    const prix = s.prixCents > 0
+      ? `, ${euros(s.prixCents)} €${s.kind === 'atelier' ? ' la séance hors forfait' : ''}`
+      : '';
+    return `- **${jourIso.format(debut)}** — ${jourFr(s.debut)}, ${heureFr(s.debut)}–${heureFr(s.fin)} — ${s.creneau} (${s.audience})${prix}`;
+  };
+
+  const parLieu = (seances: readonly SeancePublique[]) => {
+    const lieux = [...new Set(seances.map((s) => s.lieu.trim()).filter(Boolean))].sort();
+    return lieux
+      .map((lieu) => {
+        const items = seances.filter((s) => s.lieu.trim() === lieu).map(ligneSeance).join('\n');
+        return `### ${lieu}\n\n${items}`;
+      })
+      .join('\n\n');
+  };
+
+  const ateliers = f.seancesAVenir.filter((s) => s.kind === 'atelier');
+  const stages = f.seancesAVenir.filter((s) => s.kind === 'stage');
+
+  return `# Prochaines dates — ${f.siteName}
+
+Les séances programmées, telles que le calendrier de réservation les porte.
+Fuseau horaire : Europe/Paris. Les montants sont en euros, adhésion comprise.
+Source de vérité : ${siteUrl}/ateliers-reguliers/ et ${siteUrl}/stages-thematiques/.
+${f.avisProvisoire ? `\n> ${f.avisProvisoire}\n` : ''}
+## Ateliers réguliers et séances sans engagement
+
+${ateliers.length
+  ? `Les mêmes dates servent aux deux formules : on y vient avec un forfait de saison, ou à l'unité sans engagement.\n\n${parLieu(ateliers)}`
+  : 'Aucune date programmée pour le moment. Écrire à ' + f.email + ' pour être prévenu de leur publication.'}
+
+## Stages thématiques
+
+${stages.length
+  ? parLieu(stages)
+  : 'Aucune date programmée pour le moment. Écrire à ' + f.email + ' pour être prévenu de leur publication.'}
+
+## Places restantes
+
+Elles ne figurent pas dans ce fichier : elles changent à chaque inscription, et ce
+fichier est mis en cache une heure. Le nombre de places encore libres est affiché
+sur ${siteUrl}/ateliers-reguliers/ et ${siteUrl}/seances-sans-engagement/, recalculé à chaque visite.
+
+## Contact
+
+- Courriel : ${f.email}
+${f.telephones.map((t) => `- Téléphone : ${t}`).join('\n')}
+- Formulaire : ${siteUrl}/contact/
+`;
+}
+
 /**
  * /llms.txt — la fiche d'identité, au format llmstxt.org.
  *
@@ -227,6 +415,10 @@ export function construireLlms(f: FaitsPublics): string {
 
 ${f.siteName} est un atelier de couture animé par ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}, à Verdalle et Revel dans le Tarn (81), à vingt minutes de Castres. Les cours accueillent tous les niveaux, du grand débutant au couturier confirmé, en petits groupes. Adultes et enfants.
 ${f.avisProvisoire ? `\n**À noter** : ${f.avisProvisoire}\n` : ''}
+## Faits clés
+
+${faitsCles(f).join('\n')}
+
 ## Formules
 
 - **Ateliers réguliers** : forfait de séances posé sur la saison, de septembre à juin, dans le créneau de votre choix${tarifAteliers ? ` — ${tarifAteliers}` : ''}. [Détail](${siteUrl}/ateliers-reguliers/)
@@ -234,6 +426,12 @@ ${f.avisProvisoire ? `\n**À noter** : ${f.avisProvisoire}\n` : ''}
 - **Séances sans engagement** : une séance ponctuelle, sans inscription à la saison${tarifSeance ? ` — ${tarifSeance}` : ''}. [Détail](${siteUrl}/seances-sans-engagement/)
 
 Les tarifs détaillés, créneau par créneau, sont dans [/tarifs.md](${siteUrl}/tarifs.md).
+
+## Prochaines dates
+
+${f.seancesAVenir.length
+  ? `${f.seancesAVenir.slice(0, 5).map((s) => `- ${jourFr(s.debut)}, ${heureFr(s.debut)} — ${s.creneau}, ${s.lieu}`).join('\n')}\n\nLe calendrier complet, toutes formules confondues, est dans [/dates.md](${siteUrl}/dates.md).`
+  : `Le calendrier est publié dans [/dates.md](${siteUrl}/dates.md) au fil de la saison.`}
 
 ## Informations pratiques
 
@@ -256,6 +454,7 @@ ${f.facebookUrl ? `- **Facebook** : ${f.facebookUrl}` : ''}
 - [Blog couture](${siteUrl}/blog/)
 - [Contact](${siteUrl}/contact/)
 - [Tarifs, format lisible par machine](${siteUrl}/tarifs.md)
+- [Prochaines dates, format lisible par machine](${siteUrl}/dates.md)
 
 ## Blog couture
 
@@ -378,6 +577,10 @@ export function construireLlmsFull(f: FaitsPublics): string {
 
 > Cours de couture, ateliers réguliers, stages thématiques et séances sans engagement à Revel et Verdalle dans le Tarn (France), pour adultes et enfants, animés par ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}.
 
+## Faits clés
+
+${faitsCles(f).join('\n')}
+
 ## À propos
 
 ${f.siteName} est un atelier de couture animé par ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}. Les cours ont lieu à Verdalle et à Revel, dans le Tarn (81), à vingt minutes de Castres, et accueillent tous les niveaux — du grand débutant au couturier confirmé — en petits groupes pour garantir un accompagnement personnalisé. Adultes et enfants.
@@ -462,5 +665,6 @@ ${f.telephones.map((t) => `- Téléphone : ${t}`).join('\n')}
 - Formulaire de contact : ${siteUrl}/contact/
 ${f.facebookUrl ? `- Facebook : ${f.facebookUrl}` : ''}
 - Tarifs au format lisible par machine : ${siteUrl}/tarifs.md
+- Prochaines dates au format lisible par machine : ${siteUrl}/dates.md
 `;
 }

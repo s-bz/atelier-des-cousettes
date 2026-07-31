@@ -7,6 +7,7 @@
  */
 
 interface SiteSettings {
+  siteName?: string | null;
   authorName?: string | null;
   authorJobTitle?: string | null;
   facebookUrl?: string | null;
@@ -152,6 +153,171 @@ export function buildHowToSchema({
       "name": s.name,
       "text": s.text,
     })),
+  };
+}
+
+/** Une date programmée, réduite à ce qu'un moteur a besoin de savoir. */
+export interface SeanceSchema {
+  /** Le nom du créneau ou du stage — « Atelier du mardi après-midi ». */
+  nom: string;
+  /** Horodatage ISO 8601 avec fuseau, tel que la base le renvoie. */
+  debut: string;
+  fin: string;
+  lieu: string;
+  /** En euros. `null` quand la base n'en porte pas. */
+  prix?: number | null;
+}
+
+interface CourseOptions {
+  name: string;
+  description: string;
+  pageUrl: string;
+  siteUrl: string;
+  settings: SiteSettings | null;
+  seances: readonly SeanceSchema[];
+  /** Le repli quand aucune date n'est programmée : « Séances de 3 h ». */
+  charge?: string | null;
+  /** Le lieu par défaut du repli — « Revel », « Verdalle ». */
+  lieuParDefaut?: string | null;
+}
+
+/** « PT2H30M » entre deux horodatages. `null` si l'ordre est incohérent. */
+function dureeIsoEntre(debut: string, fin: string): string | null {
+  const minutes = Math.round((new Date(fin).getTime() - new Date(debut).getTime()) / 60000);
+  if (!Number.isFinite(minutes) || minutes <= 0) return null;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `PT${h ? `${h}H` : ''}${m ? `${m}M` : ''}`;
+}
+
+/**
+ * Le schéma `Course` d'une formule — et ses dates réelles en `CourseInstance`.
+ *
+ * POURQUOI EN PLUS DE `Service`. Les trois formules étaient décrites comme des
+ * services, ce qu'elles sont au sens commercial. Mais un service ne dit rien de
+ * ce qu'on y apprend, ni de qui enseigne, ni de quand ça a lieu : ce sont les
+ * trois questions qu'on pose d'un cours, et `Course` est le seul type de
+ * schema.org qui les porte. « Cours de couture » est par ailleurs la requête
+ * même qui mène ici — la décrire avec le vocabulaire du cours, et non celui du
+ * prestataire, est la traduction la plus littérale du contenu de la page.
+ *
+ * LES DATES VIENNENT DE LA BASE, celle qui facture. Les trois pages de formules
+ * sont rendues à chaque visite (`prerender = false`), donc une date passée ne
+ * peut pas survivre dans le balisage — elle disparaît en même temps qu'elle
+ * disparaît de la page. C'est ce qui autorise à les publier : un calendrier
+ * figé au build aurait annoncé des séances révolues.
+ *
+ * SANS DATE PROGRAMMÉE, une seule instance générique porte la durée d'une
+ * séance. Elle dit « ce cours a lieu sur place et dure 3 h », ce qui est vrai
+ * toute l'année, plutôt que de taire l'existence du cours jusqu'à ce que le
+ * calendrier soit arrêté.
+ */
+export function buildCourseSchema({
+  name,
+  description,
+  pageUrl,
+  siteUrl,
+  settings,
+  seances,
+  charge,
+  lieuParDefaut,
+}: CourseOptions): object {
+  const instructeur = {
+    "@type": "Person",
+    "name": settings?.authorName,
+    "jobTitle": settings?.authorJobTitle,
+    "url": `${siteUrl}/la-couturiere/`,
+  };
+
+  const lieuDe = (nom: string) => ({
+    "@type": "Place",
+    "name": nom,
+    "address": { "@type": "PostalAddress", "addressLocality": nom, "addressCountry": "FR" },
+  });
+
+  const datees = seances
+    .filter((s) => s.nom.trim().length > 0 && dureeIsoEntre(s.debut, s.fin) !== null)
+    /*
+     * TRIÉES ICI, et non par la requête qui les a lues.
+     *
+     * Les trois pages n'ordonnent pas leurs séances de la même façon — celle des
+     * ateliers les reçoit groupées par créneau, dans l'ordre où la base les rend.
+     * Sans ce tri, la coupe ci-dessous gardait vingt-cinq dates prises au hasard
+     * de la saison : le balisage annonçait un jeudi de février quand la prochaine
+     * séance était la semaine suivante. Or ce qu'un moteur vient chercher ici,
+     * c'est précisément la plus proche.
+     */
+    .sort((a, b) => new Date(a.debut).getTime() - new Date(b.debut).getTime())
+    /*
+     * LES VINGT-CINQ PREMIÈRES, et pas la saison entière.
+     *
+     * Une saison d'ateliers compte quatre-vingt-quatorze séances : les publier
+     * toutes ajoutait quarante-sept kilo-octets de JSON-LD dans le `<head>` d'une
+     * page rendue à chaque visite, pour un intérêt qui s'épuise bien avant. Ce
+     * qu'un moteur cherche ici, c'est la prochaine date, pas la dernière.
+     *
+     * Rien n'est perdu pour autant : /dates.md porte le calendrier complet, et
+     * c'est le fichier fait pour ça.
+     */
+    .slice(0, 25)
+    .map((s) => ({
+      "@type": "CourseInstance",
+      "name": s.nom,
+      "courseMode": "Onsite",
+      "courseWorkload": dureeIsoEntre(s.debut, s.fin),
+      "startDate": s.debut,
+      "endDate": s.fin,
+      "location": lieuDe(s.lieu),
+      "instructor": instructeur,
+      ...(typeof s.prix === 'number' && s.prix > 0
+        ? {
+            "offers": {
+              "@type": "Offer",
+              "price": s.prix,
+              "priceCurrency": "EUR",
+              "category": "Paid",
+              "url": pageUrl,
+            },
+          }
+        : {}),
+    }));
+
+  const generique = dureeIso(charge);
+  const instances = datees.length
+    ? datees
+    : generique
+      ? [{
+          "@type": "CourseInstance",
+          "courseMode": "Onsite",
+          "courseWorkload": generique,
+          "instructor": instructeur,
+          ...(lieuParDefaut ? { "location": lieuDe(lieuParDefaut) } : {}),
+        }]
+      : [];
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    "name": name,
+    "description": description,
+    "url": pageUrl,
+    "inLanguage": "fr",
+    /*
+     * L'IDENTIFIANT ET LE NOM, pas seulement l'identifiant.
+     *
+     * `#organization` est déclaré sur la page d'accueil, et les schémas de ce
+     * site s'y réfèrent d'une page à l'autre — c'est le graphe, et il est juste.
+     * Mais un validateur qui n'ouvre que cette page-ci ne peut pas le résoudre,
+     * et lit alors un cours sans organisme. Porter le nom en plus ne casse pas
+     * le lien : les deux se cumulent, et la fiche se tient toute seule.
+     */
+    "provider": {
+      "@type": "Organization",
+      "@id": `${siteUrl}/#organization`,
+      "name": settings?.siteName,
+      "url": siteUrl,
+    },
+    ...(instances.length ? { "hasCourseInstance": instances } : {}),
   };
 }
 

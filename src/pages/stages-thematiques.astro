@@ -14,7 +14,7 @@ import Temoignages from '../components/Temoignages.astro';
 import { getPageContext, reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { toSlug, splitParagraphs } from '../utils/strings';
-import { buildServicePageSchemas } from '../utils/schema';
+import { buildCourseSchema, buildServicePageSchemas } from '../utils/schema';
 import { getAdminClient } from '../utils/supabase';
 
 /**
@@ -168,6 +168,30 @@ const schemas = buildServicePageSchemas({
   faqItems: faqAJour,
 });
 
+/**
+ * Les stages en `Course`, chaque date programmée en `CourseInstance`.
+ *
+ * Un stage se prête mieux que tout au type `Course` : il a un début, une fin,
+ * une technique et une enseignante. `aVenir` est déjà filtré sur les séances
+ * programmées à venir — le balisage ne peut donc pas annoncer une date passée.
+ */
+const courseSchema = buildCourseSchema({
+  name: page.title,
+  description: page.seoDescription,
+  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
+  siteUrl,
+  settings,
+  seances: avecDates.flatMap((c) =>
+    c.aVenir.map((s: any) => ({
+      nom: c.label,
+      debut: s.starts_at,
+      fin: s.ends_at,
+      lieu: c.default_location,
+      prix: c.default_unit_price_cents / 100,
+    })),
+  ),
+});
+
 
 // « En N séances » et non « forfait de N séances ». Dans cette maison, un forfait
 // est un lot de séances d'atelier payé d'avance et posé sur les dates de son
@@ -274,7 +298,7 @@ const stagesGroupes = familles.map((f) => {
 <BaseLayout title={page.title} description={fourchette ? page.seoDescription.replace(/de\s+\d+\s*€\s+à\s+\d+\s*€/i, fourchette) : page.seoDescription}
             ogImage={ogImage}>
   <Fragment slot="head">
-    <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
+    <script type="application/ld+json" set:html={JSON.stringify([...schemas, courseSchema]).replace(/<\//g, '<\\/')} />
   </Fragment>
 
   <AvisProvisoire texte={settings?.avisProvisoire} />

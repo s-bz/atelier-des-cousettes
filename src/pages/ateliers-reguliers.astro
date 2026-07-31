@@ -13,7 +13,7 @@ import Temoignages from '../components/Temoignages.astro';
 import { getPageContext, reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { toSlug } from '../utils/strings';
-import { buildServicePageSchemas } from '../utils/schema';
+import { buildCourseSchema, buildServicePageSchemas } from '../utils/schema';
 import { fourchetteForfaits } from '../utils/tarifs';
 import { getAdminClient } from '../utils/supabase';
 import { ATELIER_GROUPS } from '../utils/ateliers';
@@ -57,9 +57,18 @@ const couverture = await resolveImage(page.coverImage, coverGlob);
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
 
 const faqItems = page.faqItems ?? [];
+/*
+ * `descriptionSeo` ET NON `page.seoDescription`, ici comme dans la balise meta.
+ *
+ * Le correctif ci-dessus ne portait que sur ce qu'un visiteur lit ; le JSON-LD,
+ * lui, continuait d'annoncer « De 25€ à 55€ par mois » à Google et aux moteurs
+ * de réponse — la grille d'avant, dans le seul endroit de la page que personne
+ * ne relit. Deux phrases pour un seul prix, et c'est la version fausse qui
+ * partait aux machines.
+ */
 const schemas = buildServicePageSchemas({
   title: page.title,
-  seoDescription: page.seoDescription,
+  seoDescription: descriptionSeo,
   pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
   siteUrl,
   settings,
@@ -206,12 +215,42 @@ const tarifs = (page.tarifs ?? []).map((t) => ({
   public: t.audience === 'enfants' ? 'enfants' : 'adultes',
   prixSeance: prixSeanceDe(t.audience),
 }));
+
+/**
+ * Le même calendrier que celui affiché, redit en `Course` — voir `schema.ts`.
+ *
+ * Les séances sont reprises de `enBase`, déjà chargé pour la page : le balisage
+ * décrit alors exactement ce que le visiteur voit, ce qui est la condition posée
+ * par Google et la seule qui garde les deux d'accord.
+ */
+const seancesSchema = (enBase ?? []).flatMap((c) =>
+  ((c.sessions ?? []) as any[])
+    .filter((s) => s.status === 'scheduled' && s.starts_at > maintenant)
+    .map((s) => ({
+      nom: c.label,
+      debut: s.starts_at,
+      fin: s.ends_at,
+      lieu: c.default_location,
+      prix: c.default_unit_price_cents / 100,
+    })),
+);
+
+const courseSchema = buildCourseSchema({
+  name: page.title,
+  description: descriptionSeo,
+  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
+  siteUrl,
+  settings,
+  seances: seancesSchema,
+  charge: page.tarifs?.[0]?.dureeSeance,
+  lieuParDefaut: 'Revel',
+});
 ---
 
 <BaseLayout title={page.title} description={descriptionSeo}
             ogImage={ogImage}>
   <Fragment slot="head">
-    <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
+    <script type="application/ld+json" set:html={JSON.stringify([...schemas, courseSchema]).replace(/<\//g, '<\\/')} />
   </Fragment>
 
   <AvisProvisoire texte={settings?.avisProvisoire} />

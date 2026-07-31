@@ -64,3 +64,4 @@ Allow: /
 #   https://atelier-des-cousettes.fr/llms.txt       — la fiche d'identité
 #   https://atelier-des-cousettes.fr/llms-full.txt  — le détail des formules
 #   https://atelier-des-cousettes.fr/tarifs.md      — les tarifs, avec leur périmètre
+#   https://atelier-des-cousettes.fr/dates.md       — les séances programmées à venir
