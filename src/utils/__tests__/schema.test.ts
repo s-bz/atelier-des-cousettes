@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildBreadcrumbSchema,
+  buildCourseSchema,
   buildFaqSchema,
   buildHowToSchema,
   buildPageSchemas,
@@ -58,7 +59,7 @@ describe('buildPageSchemas', () => {
       seoDescription: 'Description',
       pageUrl: 'https://example.com/test',
       siteUrl: 'https://example.com',
-      settings: baseSettings,
+      settings: { ...baseSettings, siteName: "L'Atelier des Cousettes" },
     });
 
     expect(schemas).toHaveLength(2);
@@ -87,7 +88,7 @@ describe('buildServicePageSchemas', () => {
     seoDescription: 'Desc',
     pageUrl: 'https://example.com/ateliers',
     siteUrl: 'https://example.com',
-    settings: baseSettings,
+    settings: { ...baseSettings, siteName: "L'Atelier des Cousettes" },
   };
 
   it('includes Service schema with parsed numeric prices', () => {
@@ -273,5 +274,133 @@ describe('buildHowToSchema', () => {
     expect(howTo.totalTime).toBe('PT1H30M');
     expect(howTo.supply).toHaveLength(2);
     expect(howTo.supply[0]).toEqual({ '@type': 'HowToSupply', name: 'Coton, 50 cm' });
+  });
+});
+
+describe('buildCourseSchema', () => {
+  const base = {
+    name: 'Ateliers réguliers',
+    description: 'Un forfait de séances sur la saison.',
+    pageUrl: 'https://example.com/ateliers-reguliers/',
+    siteUrl: 'https://example.com',
+    settings: { ...baseSettings, siteName: "L'Atelier des Cousettes" },
+  };
+
+  const seances = [
+    { nom: 'Atelier du mardi après-midi', debut: '2026-09-15T12:00:00+00:00', fin: '2026-09-15T15:00:00+00:00', lieu: 'Revel', prix: 45 },
+    { nom: 'Atelier de Verdalle', debut: '2026-09-10T07:30:00+00:00', fin: '2026-09-10T10:00:00+00:00', lieu: 'Verdalle', prix: 45 },
+  ];
+
+  it('rattache le cours à l’organisation par son identifiant, non par une copie', () => {
+    const course = buildCourseSchema({ ...base, seances }) as any;
+    expect(course['@type']).toBe('Course');
+    expect(course.provider).toEqual({
+      '@type': 'Organization',
+      '@id': 'https://example.com/#organization',
+      name: "L'Atelier des Cousettes",
+      url: 'https://example.com',
+    });
+    expect(course.inLanguage).toBe('fr');
+  });
+
+  it('publie une instance par date, avec sa durée réelle et son lieu', () => {
+    const course = buildCourseSchema({ ...base, seances }) as any;
+    expect(course.hasCourseInstance).toHaveLength(2);
+
+    // Verdalle d'abord : les instances sortent par date, non dans l'ordre reçu.
+    const [verdalle, mardi] = course.hasCourseInstance;
+    expect(mardi.courseWorkload).toBe('PT3H');
+    expect(mardi.courseMode).toBe('Onsite');
+    expect(mardi.startDate).toBe('2026-09-15T12:00:00+00:00');
+    expect(mardi.location.name).toBe('Revel');
+    expect(mardi.offers).toMatchObject({ price: 45, priceCurrency: 'EUR', category: 'Paid' });
+    // 2 h 30 : la durée se calcule, elle ne se recopie pas d'un créneau à l'autre.
+    expect(verdalle.courseWorkload).toBe('PT2H30M');
+  });
+
+  it('nomme l’enseignante sur chaque instance', () => {
+    const course = buildCourseSchema({ ...base, seances }) as any;
+    expect(course.hasCourseInstance[0].instructor).toMatchObject({
+      '@type': 'Person',
+      name: 'Isabelle Bultez',
+      jobTitle: 'Couturière diplômée CAP',
+    });
+  });
+
+  it('écarte une séance dont les horaires sont incohérents', () => {
+    const course = buildCourseSchema({
+      ...base,
+      seances: [
+        ...seances,
+        { nom: 'Séance à l’envers', debut: '2026-09-20T15:00:00+00:00', fin: '2026-09-20T12:00:00+00:00', lieu: 'Revel', prix: 45 },
+        { nom: '  ', debut: '2026-09-21T12:00:00+00:00', fin: '2026-09-21T15:00:00+00:00', lieu: 'Revel', prix: 45 },
+      ],
+    }) as any;
+    expect(course.hasCourseInstance).toHaveLength(2);
+  });
+
+  it('omet le prix d’une séance que la base ne tarife pas', () => {
+    const course = buildCourseSchema({
+      ...base,
+      seances: [{ nom: 'Atelier', debut: '2026-09-15T12:00:00+00:00', fin: '2026-09-15T15:00:00+00:00', lieu: 'Revel', prix: null }],
+    }) as any;
+    expect(course.hasCourseInstance[0]).not.toHaveProperty('offers');
+  });
+
+  it('retombe sur une instance générique quand aucune date n’est programmée', () => {
+    const course = buildCourseSchema({
+      ...base,
+      seances: [],
+      charge: 'Séances de 3 h',
+      lieuParDefaut: 'Revel',
+    }) as any;
+    expect(course.hasCourseInstance).toHaveLength(1);
+    expect(course.hasCourseInstance[0]).not.toHaveProperty('startDate');
+    expect(course.hasCourseInstance[0].courseWorkload).toBe('PT3H');
+    expect(course.hasCourseInstance[0].location.name).toBe('Revel');
+  });
+
+  it('n’annonce aucune instance quand ni date ni durée ne sont connues', () => {
+    const course = buildCourseSchema({ ...base, seances: [], charge: null }) as any;
+    expect(course).not.toHaveProperty('hasCourseInstance');
+  });
+
+  it('publie les dates dans l’ordre, quel que soit celui de la base', () => {
+    const desordre = [
+      { nom: 'Février', debut: '2027-02-18T12:00:00+00:00', fin: '2027-02-18T15:00:00+00:00', lieu: 'Revel', prix: 45 },
+      { nom: 'Septembre', debut: '2026-09-15T12:00:00+00:00', fin: '2026-09-15T15:00:00+00:00', lieu: 'Revel', prix: 45 },
+      { nom: 'Novembre', debut: '2026-11-03T12:00:00+00:00', fin: '2026-11-03T15:00:00+00:00', lieu: 'Revel', prix: 45 },
+    ];
+    const course = buildCourseSchema({ ...base, seances: desordre }) as any;
+    expect(course.hasCourseInstance.map((i: any) => i.name)).toEqual(['Septembre', 'Novembre', 'Février']);
+  });
+
+  it('garde les vingt-cinq dates les plus proches, non vingt-cinq au hasard', () => {
+    const saison = Array.from({ length: 40 }, (_, i) => ({
+      nom: `S${i}`,
+      // À rebours : la plus lointaine est lue en premier, comme peut le faire la base.
+      debut: `2026-${String(12 - Math.floor(i / 4)).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}T12:00:00+00:00`,
+      fin: `2026-${String(12 - Math.floor(i / 4)).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}T15:00:00+00:00`,
+      lieu: 'Revel',
+      prix: 45,
+    }));
+    const course = buildCourseSchema({ ...base, seances: saison }) as any;
+    const dates = course.hasCourseInstance.map((i: any) => i.startDate);
+    expect(dates).toEqual([...dates].sort());
+    // La plus lointaine de la saison ne peut pas figurer dans les vingt-cinq plus proches.
+    const plusLointaine = [...saison].sort((a, b) => b.debut.localeCompare(a.debut))[0].debut;
+    expect(dates).not.toContain(plusLointaine);
+  });
+
+  it('s’arrête à vingt-cinq instances — la saison entière alourdirait la page', () => {
+    const saison = Array.from({ length: 94 }, (_, i) => ({
+      nom: 'Atelier du mardi après-midi',
+      debut: `2026-09-${String((i % 28) + 1).padStart(2, '0')}T12:00:00+00:00`,
+      fin: `2026-09-${String((i % 28) + 1).padStart(2, '0')}T15:00:00+00:00`,
+      lieu: 'Revel',
+      prix: 45,
+    }));
+    const course = buildCourseSchema({ ...base, seances: saison }) as any;
+    expect(course.hasCourseInstance).toHaveLength(25);
   });
 });

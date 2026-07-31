@@ -1,13 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import {
+  construireDates,
   construireLlms,
   construireLlmsFull,
   construireTarifs,
+  faitsCles,
   fourchetteStages,
   prixSeance,
   prixStage,
   type CreneauPublic,
   type FaitsPublics,
+  type SeancePublique,
 } from '../faits-publics';
 
 const creneaux: CreneauPublic[] = [
@@ -19,6 +22,20 @@ const creneaux: CreneauPublic[] = [
   { label: 'Initiation machine à coudre — formule longue', kind: 'stage', audience: 'adultes', lieu: 'Revel', debut: '14:00:00', fin: '18:00:00', prixCents: 4500 },
 ];
 
+/**
+ * Des horodatages fixes, en heure d'été de Paris (UTC+2).
+ *
+ * Écrits en UTC pour que le test dise la même chose sur toutes les machines :
+ * `07:30Z` doit ressortir « 09h30 », et c'est précisément la conversion qu'on
+ * veut vérifier — un fuseau pris sur le serveur donnerait des heures fausses aux
+ * lecteurs, sans que rien ne le signale.
+ */
+const seancesAVenir: SeancePublique[] = [
+  { creneau: 'Atelier de Verdalle', kind: 'atelier', audience: 'adultes', lieu: 'Verdalle', debut: '2026-09-10T07:30:00+00:00', fin: '2026-09-10T10:30:00+00:00', prixCents: 4500, capacite: 6 },
+  { creneau: 'Atelier du mardi après-midi', kind: 'atelier', audience: 'adultes', lieu: 'Revel', debut: '2026-09-15T12:00:00+00:00', fin: '2026-09-15T15:00:00+00:00', prixCents: 4500, capacite: 8 },
+  { creneau: 'Stage surjeteuse', kind: 'stage', audience: 'adultes', lieu: 'Revel', debut: '2026-10-03T07:30:00+00:00', fin: '2026-10-03T14:30:00+00:00', prixCents: 7000, capacite: 5 },
+];
+
 const faits: FaitsPublics = {
   siteUrl: 'https://exemple.fr',
   siteName: "L'Atelier des Cousettes",
@@ -28,7 +45,9 @@ const faits: FaitsPublics = {
   auteur: 'Isabelle Bultez',
   auteurTitre: 'Couturière diplômée CAP',
   adresse: { rue: '118 lieu dit En Rivals', ville: 'Verdalle', codePostal: '81110', region: 'Tarn' },
+  noteGoogle: '5,0',
   creneaux,
+  seancesAVenir,
   ateliers: {
     introduction: 'Rejoignez un groupe convivial.',
     tarifsIntro: "L'adhésion est comprise.",
@@ -126,6 +145,71 @@ describe('construireLlms', () => {
   });
 });
 
+describe('faitsCles', () => {
+  it('compte les créneaux et les stages en base plutôt que de les annoncer à la main', () => {
+    const lignes = faitsCles(faits).join('\n');
+    expect(lignes).toContain("**Créneaux d'atelier au programme** : 3");
+    expect(lignes).toContain('**Stages au programme** : 3');
+  });
+
+  it('prend la taille des groupes sur la plus grande capacité programmée', () => {
+    expect(faitsCles(faits).join('\n')).toContain('**Taille des groupes** : 8 participants au maximum');
+  });
+
+  it('lit les durées dans la grille, sans recopier le préfixe « Séances de »', () => {
+    expect(faitsCles(faits).join('\n')).toContain(
+      "**Durée d'une séance** : 3 h pour les adultes, 2 h pour les enfants",
+    );
+  });
+
+  it('tait un fait que sa source ne porte pas, plutôt que d’en inventer un', () => {
+    const sansBase = faitsCles({ ...faits, noteGoogle: null, creneaux: [], seancesAVenir: [] }).join('\n');
+    expect(sansBase).not.toContain('Note Google');
+    expect(sansBase).not.toContain('Taille des groupes');
+    expect(sansBase).not.toContain('au programme');
+    // Ce qui ne dépend d'aucune source reste : la saison et les niveaux sont
+    // vrais même quand la base ne répond pas.
+    expect(sansBase).toContain('**Saison** : de septembre à juin');
+  });
+});
+
+describe('construireDates', () => {
+  const texte = construireDates(faits);
+
+  it('donne chaque date en ISO et en toutes lettres', () => {
+    expect(texte).toContain('**2026-09-15** — mardi 15 septembre 2026, 14h00–17h00');
+  });
+
+  it('convertit les heures en fuseau de Paris, pas en UTC', () => {
+    expect(texte).toContain('09h30–12h30');
+  });
+
+  it('sépare les ateliers des stages, et groupe les ateliers par lieu', () => {
+    const [avantStages, apresStages] = texte.split('## Stages thématiques');
+    expect(avantStages).toContain('### Revel');
+    expect(avantStages).toContain('### Verdalle');
+    expect(avantStages).toContain('Atelier du mardi après-midi');
+    expect(avantStages).not.toContain('Stage surjeteuse');
+    expect(apresStages).toContain('Stage surjeteuse');
+  });
+
+  it('précise le périmètre du prix des ateliers, qui n’est pas celui des stages', () => {
+    expect(texte).toContain('45 € la séance hors forfait');
+    expect(texte).toContain('70 €\n');
+  });
+
+  it('ne publie aucune place restante — elles changent plus vite que le cache', () => {
+    expect(texte).not.toMatch(/\d+ places? (restante|libre)/);
+    expect(texte).toContain('Elles ne figurent pas dans ce fichier');
+  });
+
+  it('invite à écrire quand aucune date n’est programmée', () => {
+    const vide = construireDates({ ...faits, seancesAVenir: [] });
+    expect(vide).toContain('Aucune date programmée pour le moment');
+    expect(vide).toContain('info@exemple.fr');
+  });
+});
+
 describe('construireTarifs', () => {
   const texte = construireTarifs(faits);
 
@@ -173,5 +257,21 @@ describe('construireLlmsFull', () => {
   it('répète les montants plutôt que de renvoyer à tarifs.md', () => {
     expect(texte).toContain('Adulte : 45 € la séance de 3 h, adhésion comprise');
     expect(texte).toContain('10 séances : 36 € par mois');
+  });
+});
+
+describe('les dates en toutes lettres', () => {
+  it('écrit « 1er » pour le premier du mois, et « 1 » nulle part', () => {
+    const texte = construireDates({
+      ...faits,
+      seancesAVenir: [
+        { creneau: 'Atelier', kind: 'atelier', audience: 'adultes', lieu: 'Revel', debut: '2026-10-01T12:00:00+00:00', fin: '2026-10-01T15:00:00+00:00', prixCents: 4500, capacite: 6 },
+        { creneau: 'Atelier', kind: 'atelier', audience: 'adultes', lieu: 'Revel', debut: '2026-10-21T12:00:00+00:00', fin: '2026-10-21T15:00:00+00:00', prixCents: 4500, capacite: 6 },
+      ],
+    });
+    expect(texte).toContain('jeudi 1er octobre 2026');
+    expect(texte).not.toContain('jeudi 1 octobre');
+    // Le 21 garde ses deux chiffres : seul un « 1 » isolé prend l'ordinal.
+    expect(texte).toContain('mercredi 21 octobre 2026');
   });
 });

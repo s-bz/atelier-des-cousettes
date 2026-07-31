@@ -8,16 +8,17 @@
 
 import { reader } from './reader';
 import { filterPublishedPosts } from './blog';
-import { lireCreneauxPublics, type FaitsPublics } from './faits-publics';
+import { lireCreneauxPublics, lireProchainesSeances, type FaitsPublics } from './faits-publics';
 
 export async function rassemblerFaitsPublics(site: URL | undefined): Promise<FaitsPublics> {
-  const [settings, ateliers, stages, seances, articles, creneaux] = await Promise.all([
+  const [settings, ateliers, stages, seances, articles, creneaux, seancesAVenir] = await Promise.all([
     reader.singletons.siteSettings.read(),
     reader.singletons.ateliersReguliers.read(),
     reader.singletons.stagesThematiques.read(),
     reader.singletons.apresMidiCouture.read(),
     reader.collections.blog.all(),
     lireCreneauxPublics(),
+    lireProchainesSeances(),
   ]);
 
   return {
@@ -34,7 +35,9 @@ export async function rassemblerFaitsPublics(site: URL | undefined): Promise<Fai
       codePostal: settings?.postalCode,
       region: settings?.addressRegion,
     },
+    noteGoogle: settings?.googleNote,
     creneaux,
+    seancesAVenir,
     ateliers: {
       introduction: ateliers?.introduction,
       tarifsIntro: ateliers?.tarifsIntro,

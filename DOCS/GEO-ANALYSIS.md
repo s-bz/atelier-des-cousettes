@@ -1,183 +1,89 @@
 # Analyse GEO — L'Atelier des Cousettes
 
-**Site :** https://couture-tarn.fr
-**Date :** 7 avril 2026 (mis à jour après implémentation)
+**Site :** <https://atelier-des-cousettes.fr>
+**Date :** 31 juillet 2026
+
+> Cette note remplace la version du 7 avril 2026, devenue trompeuse : elle citait
+> l'ancien domaine `couture-tarn.fr`, comptait 13 articles de blog quand il y en
+> a 22, et listait comme « à faire » des chantiers livrés depuis (llms-full.txt,
+> FAQ sur tout le blog, robots.txt aux noms de robots à jour).
 
 ---
 
-## Score GEO : 78/100 (était 62/100)
+## Ce qui est en place
 
-| Critère | Score | Poids | Pondéré |
-| --- | --- | --- | --- |
-| Citabilité | 20/25 | 25% | 20 |
-| Lisibilité structurelle | 18/20 | 20% | 18 |
-| Contenu multimodal | 10/15 | 15% | 10 |
-| Signaux d'autorité et de marque | 12/20 | 20% | 12 |
-| Accessibilité technique | 18/20 | 20% | 18 |
-| **Total** | | | **78/100** |
-
----
-
-## Répartition par plateforme
-
-| Plateforme | Score | Notes |
-| --- | --- | --- |
-| Google AI Overviews | 82/100 | Schéma local solide, contenu enrichi avec blocs de définition, FAQ structurées en H2 questions |
-| ChatGPT | 65/100 | llms.txt présent, GPTBot autorisé, 13 articles de blog citables. Pas de présence Wikipedia/Reddit |
-| Perplexity | 55/100 | PerplexityBot autorisé. Pas de citations Reddit/communautaires à exploiter |
-
----
-
-## Accès des robots IA
-
-| Robot | Statut |
+| Signal | État |
 | --- | --- |
-| GPTBot (OpenAI) | Autorisé |
-| ChatGPT-User (OpenAI) | Autorisé |
-| Claude-Web (Anthropic) | Autorisé |
-| PerplexityBot (Perplexity) | Autorisé |
-| Applebot-Extended (Apple) | Autorisé |
-| OAI-SearchBot (OpenAI) | Non listé (autorisé par défaut) |
-| ClaudeBot (Anthropic) | Non listé (autorisé par défaut) |
-| CCBot (Common Crawl) | Non listé (autorisé par défaut) |
+| Accès des robots IA | 12 robots nommés un par un dans `robots.txt` — GPTBot, OAI-SearchBot, ClaudeBot, Claude-SearchBot, Google-Extended, PerplexityBot, Applebot, MistralAI-User… |
+| Fichiers pour machines | `/llms.txt`, `/llms-full.txt`, `/tarifs.md`, `/dates.md` — **rendus depuis la base et le CMS**, jamais recopiés |
+| FAQ extractibles | 22 articles sur 22 portent leurs `faqItems` → `FAQPage` + `speakable`, affichés sur la page |
+| Tutoriels | 5 articles portent un `HowTo` avec durée, fournitures et étapes |
+| Formules | `Service` + **`Course` / `CourseInstance`** avec les dates réelles, le lieu, l'enseignante et le prix |
+| Graphe d'entités | `@id` `#organization` et `#website` résolus depuis toutes les pages |
+| Rendu | Aucune dépendance JavaScript pour le contenu ; les pages de formules sont rendues à chaque visite, donc jamais périmées |
 
-**Verdict :** Tous les robots IA majeurs sont explicitement autorisés.
-
----
-
-## Statut llms.txt
-
-**Présent :** Oui, à `/llms.txt`
-
-**Qualité :** Bon. Contient un résumé structuré, les services avec tarifs, adresses, coordonnées et liens vers les pages.
-
-**Améliorations possibles :**
-
-- Ajouter une section `## Faits clés` avec des chiffres spécifiques (années d'expérience, nombre d'élèves, etc.)
-- Ajouter les liens vers le blog pour enrichir le contenu indexable par les LLM
-- Envisager un `llms-full.txt` avec le contenu détaillé de toutes les pages
+**Le point fort du site** : plus rien de ce qu'un moteur lit n'est une copie.
+Les prix, les créneaux et les dates viennent de la base qui facture, ce qui
+supprime la faute la plus coûteuse du référencement génératif — un montant
+périmé récité par un modèle, qu'aucun visiteur ne peut corriger.
 
 ---
 
-## Analyse des mentions de marque
+## Ce qui reste ouvert
 
-| Plateforme | Présent | Impact |
-| --- | --- | --- |
-| Wikipedia | Non | Impact négatif élevé — Wikipedia est la source de citation #1 pour ChatGPT (47,9%) |
-| Reddit | Non | Impact négatif élevé — Reddit est #1 pour Perplexity (46,7%) et #2 pour ChatGPT (11,3%) |
-| YouTube | Oui (1 vidéo intégrée avec description) | Modéré — vidéo par un tiers, pas de chaîne propre |
-| LinkedIn | Inconnu | Modéré — aucun profil lié trouvé dans les données structurées |
-| Facebook | Oui | Impact faible pour la citation IA (Facebook n'est pas exploré par la plupart des IA) |
-| Google Business Profile | Inconnu | Critique pour les réponses IA locales |
+### 1. La présence hors du site (ÉLEVÉ)
 
-**Lacune critique :** Les mentions de marque corrèlent 3x plus avec la visibilité IA que les backlinks. Le site a une présence quasi nulle sur les plateformes dont les moteurs IA citent le contenu.
+C'est le plafond, et il n'est pas technique. Les moteurs de réponse citent 6,5
+fois plus une marque via un tiers que via son propre domaine.
 
----
+- **Google Business Profile** : 5★ pour 6 avis. La collecte d'avis reste
+  l'action la plus rentable du lot — voir `ANNUAIRES-LOCAUX.md`.
+- **Annuaires locaux** : PagesJaunes, Petit Futé, offices de tourisme, JDS,
+  IntraMuros occupent une grande partie de la première page sur les requêtes
+  locales. Plan détaillé dans `ANNUAIRES-LOCAUX.md`.
+- **Cohérence NAP** : les fiches déposées avant le 31 juillet 2026 citent
+  `couture-tarn.fr`. À reprendre avant d'en créer de nouvelles.
+- **Reddit / forums** : aucune présence. À pondérer — pour un atelier local, les
+  annuaires et le profil Google pèsent plus qu'un fil Reddit national.
 
-## Analyse de citabilité au niveau des passages
+### 2. Le contenu comparatif (MOYEN)
 
-### État actuel (amélioré)
+Les articles comparatifs représentent environ un tiers des citations des moteurs
+de réponse ; le blog n'en compte aucun sur 22 articles. Trois sujets attendent,
+et chacun répond à une question réellement posée avant de s'inscrire :
 
-Le contenu a été considérablement enrichi depuis l'analyse initiale :
+- « Atelier régulier ou stage thématique : lequel choisir ? »
+- « Surjeteuse ou machine à coudre » — l'article existant explique la
+  surjeteuse sans jamais poser la comparaison frontalement.
+- « Cours de couture ou apprendre seule avec des tutoriels »
 
-- **Page d'accueil** — Bloc de définition de 500+ mots avec « Qu'est-ce que L'Atelier des Cousettes ? », formules, animatrice, tarifs. Parfaitement citable.
-- **Stages thématiques** — Introduction de 150+ mots + 6 FAQ en H2 questions (« Qu'apprend-on lors d'une initiation ? », « Faut-il apporter sa machine ? », etc.). Forte citabilité.
-- **Ateliers réguliers** — Introduction structurée + FAQ (tarifs, matériel, niveau, inscription). Bonne citabilité.
-- **Un après-midi couture** — Introduction complète + 8 FAQ en H2 questions (déroulement, public, projets, matériel, annulation). Excellente citabilité.
-- **La couturière** — Bio structurée avec introduction factuelle (diplôme, années d'expérience, lieu). Accents corrigés. Bonne citabilité.
-- **Blog (13 articles)** — Contenu pratique riche en passages citables : guides, tutoriels, listes, conseils. Forte autorité thématique sur « couture débutant ».
+### 3. Les avis, en balisage (MOYEN, sous condition)
 
-### Passages citables identifiés
+La note Google (5,0) et les témoignages sont affichés, et ne sont balisés nulle
+part. **Attention** : Google interdit `aggregateRating` auto-attribué sur
+`LocalBusiness` et `Organization` — le baliser là exposerait à une action
+manuelle. Le type `Course`, désormais posé sur les trois pages de formules, y est
+en revanche éligible. À n'envisager qu'avec des avis réellement collectés et
+affichés, jamais recopiés.
 
-Chaque page de service contient désormais au moins un bloc de 134-167 mots répondant à une question spécifique avec des faits concrets (lieu, prix, durée, animatrice, niveau requis).
+### 4. Le `HowTo` sur les articles qui en sont (FAIBLE)
 
-Les 13 articles de blog fournissent des dizaines de passages citables sur des sujets pratiques (choix de machine, tissus, mesures, entretien, ourlets, patrons, etc.).
-
----
-
-## Vérification du rendu côté serveur
-
-**Statut : Excellent**
-
-- Astro avec pré-rendu statique (SSG) — toutes les pages sont pré-rendues en HTML au moment du build
-- Zéro dépendance JavaScript côté client pour le contenu
-- Tous les schémas rendus côté serveur dans le `<head>` HTML
-- Les robots IA voient l'intégralité du contenu sans exécution JavaScript
-
----
-
-## 5 changements à plus fort impact
-
-### 1. Construire une présence Reddit/communautaire (ÉLEVÉ)
-
-- Publier dans les subreddits de couture francophone (r/couture, r/france) ou forums
-- Répondre aux questions sur la couture dans la région du Tarn
-- Mentionner l'atelier naturellement dans des fils de discussion pertinents
-- Impact direct sur la probabilité de citation par Perplexity et ChatGPT
-
-### 2. Créer/optimiser la fiche Google Business Profile (ÉLEVÉ)
-
-- Vérifier que la fiche GBP est complète avec photos, horaires, avis
-- Ajouter l'URL GBP dans le `sameAs` du schéma LocalBusiness
-- Les réponses IA locales s'appuient fortement sur les données GBP
-
-### 3. Enrichir llms.txt avec le blog et les faits clés (MOYEN)
-
-- Ajouter les liens vers les 13 articles de blog
-- Ajouter une section « Faits clés » : années d'expérience, nombre d'élèves, spécialités
-- Envisager un `llms-full.txt` détaillé
-
-### 4. Ajouter `knowsAbout` au schéma Person (MOYEN)
-
-Le schéma Person d'Isabelle dans le LocalBusiness a déjà `knowsAbout` sur la page d'accueil, mais les autres pages (ContentPage, blog) n'incluent pas cette propriété. Harmoniser.
-
-### 5. Développer une chaîne YouTube (FAIBLE)
-
-- La vidéo existante est par un tiers — créer du contenu vidéo propre
-- Les tutoriels couture en vidéo sont fortement citables par les IA
-- Lier la chaîne dans le `sameAs` du schéma
+`prendre-ses-mesures` et `retouches-simples-ourlet-bouton-fermeture` décrivent
+des gestes pas à pas sans porter d'étapes structurées. Les autres articles sont
+des guides ou des listes : les baliser en `HowTo` promettrait des étapes que
+personne n'y trouverait.
 
 ---
 
-## Recommandations de schéma
+## Ce qu'il ne faut pas faire
 
-### Déjà implémenté
+Rappels, parce que chacun a déjà été tenté quelque part :
 
-- LocalBusiness avec fondateur, horaires, catalogue d'offres, adresse structurée depuis le CMS
-- Service schema sur 3 pages de services avec tarifs depuis le CMS
-- Article schema sur 13 articles de blog avec auteur et éditeur depuis le CMS
-- ImageGallery sur la page créations
-- BreadcrumbList sur toutes les pages de contenu
-- WebSite schema sur la page d'accueil
-- WebPage schema avec `dateModified` sur toutes les pages ContentPage
-- CollectionPage schema sur la page blog
-- `knowsAbout` sur le Person schema de la page d'accueil
-
-### Ajouts recommandés
-
-1. **`sameAs` étendu** sur LocalBusiness : ajouter LinkedIn, Google Business Profile URL, YouTube (si chaîne créée)
-2. **`knowsAbout`** harmonisé sur le Person schema dans ContentPage et les pages de blog
-3. **`datePublished`** sur les pages de services (via le WebPage schema)
-
----
-
-## Reformatage du contenu — État actuel
-
-### Page d'accueil — CORRIGÉ
-
-Bloc de définition factuel de 500+ mots avec sections structurées : « Pourquoi choisir L'Atelier des Cousettes ? », « Nos formules », « Votre animatrice », « Actualités ». Liens internes vers toutes les pages de services et le blog.
-
-### Pages de services — CORRIGÉ
-
-Chaque page de service a désormais :
-1. Introduction factuelle de 150+ mots (définition, lieu, public, prix, animatrice)
-2. FAQ en H2 sous forme de questions (5-8 questions par page)
-3. Liens internes vers les autres services et le blog
-
-### La couturière — CORRIGÉ
-
-Bio structurée avec introduction factuelle, accents corrigés, parcours détaillé. Page la plus riche en signaux E-E-A-T du site.
-
-### Blog — NOUVEAU
-
-13 articles de 700-800 mots ciblant le cluster « couture débutant ». Contenu pratique, structuré en H2/H3, avec liens internes vers les pages de services. Publication programmée avec gating par date.
+- **Pas de contenu écrit « pour l'IA »** séparé du contenu lu par les visiteurs.
+  Google le traite comme du *scaled content abuse*.
+- **Pas de découpage du contenu en fragments** pour aider l'extraction. Des
+  titres et des paragraphes normaux suffisent.
+- **Rien de balisé qui ne soit affiché.** La règle vaut déjà pour les FAQ ; elle
+  vaut pour les dates, les prix et les avis.
+- **Pas de blocage des robots de recherche IA.** Un robot bloqué ne peut pas
+  citer.
