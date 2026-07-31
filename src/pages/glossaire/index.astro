@@ -1,0 +1,115 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Hero from '../../components/Hero.astro';
+import IntroSection from '../../components/IntroSection.astro';
+import ContactCTA from '../../components/ContactCTA.astro';
+import CrossLinksSection from '../../components/CrossLinksSection.astro';
+import { getPageContext, reader } from '../../utils/reader';
+import { resolveImage, resolveImageUrl } from '../../utils/images';
+import { buildBreadcrumbSchema } from '../../utils/schema';
+import { CATEGORIES, parOrdreAlphabetique } from '../../utils/glossaire';
+
+/**
+ * LE MOYEU DU GLOSSAIRE.
+ *
+ * Quarante fiches qui ne seraient atteignables que par le plan du site
+ * resteraient quarante fiches non indexées : ce site en a fait l'expérience
+ * avec ses articles anciens. Cette page est ce qui les rend visitables — d'ici,
+ * du pied de page, et de chaque fiche vers ses voisines.
+ *
+ * ELLE NE REDIT PAS LES DÉFINITIONS. Une liste de quarante définitions
+ * complètes serait une page qui concurrence ses propres fiches sur quarante
+ * requêtes à la fois. Elle porte les termes, leur rangement et rien de plus.
+ */
+
+const page = await reader.singletons.glossaireIndex.read();
+if (!page) throw new Error('Contenu du glossaire introuvable');
+
+const { settings, siteUrl } = await getPageContext(Astro.site);
+
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const couverture = await resolveImage(page.coverImage, coverGlob);
+const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
+
+const termes = await reader.collections.glossaire.all();
+
+const parCategorie = CATEGORIES.map((c) => ({
+  ...c,
+  termes: termes.filter((t) => t.entry.categorie === c.cle).sort(parOrdreAlphabetique),
+})).filter((c) => c.termes.length > 0);
+
+const pageUrl = new URL(Astro.url.pathname, Astro.site).toString();
+
+/**
+ * `DefinedTermSet` porte ici l'ensemble, et chaque fiche s'y rattache par le
+ * même `@id`. C'est ce qui fait des quarante pages un lexique aux yeux d'un
+ * moteur, plutôt que quarante définitions sans lien entre elles.
+ */
+const schemas = [
+  buildBreadcrumbSchema([
+    { name: 'Accueil', url: siteUrl },
+    { name: page.title },
+  ]),
+  {
+    "@context": "https://schema.org",
+    "@type": "DefinedTermSet",
+    "@id": `${siteUrl}/glossaire/#glossaire`,
+    "name": page.title,
+    "description": page.seoDescription,
+    "url": pageUrl,
+    "inLanguage": "fr",
+    "publisher": { "@id": `${siteUrl}/#organization` },
+    "hasDefinedTerm": termes.sort(parOrdreAlphabetique).map((t) => ({
+      "@type": "DefinedTerm",
+      "name": t.entry.terme,
+      "description": t.entry.definitionCourte,
+      "url": `${siteUrl}/glossaire/${t.slug}/`,
+    })),
+  },
+];
+---
+
+<BaseLayout title={page.title} description={page.seoDescription} ogImage={ogImage}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
+  </Fragment>
+
+  <Hero flush title={page.title} subtitle={page.subtitle}
+        coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
+
+  {page.introduction && <IntroSection text={page.introduction} cta={false} fond />}
+
+  {parCategorie.map((c, i) => (
+    <section class={`py-16 md:py-20 ${i % 2 === 1 ? 'bg-[var(--color-bg-accent)]' : ''}`}>
+      <div class="mx-auto max-w-4xl px-4">
+        <h2 class="mb-8 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+          {c.label}
+        </h2>
+        <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {c.termes.map((t) => (
+            <li>
+              <a href={`/glossaire/${t.slug}/`}
+                 class="block h-full rounded-xl bg-white p-4 shadow-md transition-colors dark:bg-[var(--color-card-bg)]">
+                <span class="font-semibold text-[var(--color-heading)]">{t.entry.terme}</span>
+                <span class="mt-1 block text-sm text-[var(--color-text)]">
+                  {t.entry.definitionCourte}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  ))}
+
+  <section class={`py-16 md:py-20 ${parCategorie.length % 2 === 1 ? 'bg-[var(--color-bg-accent)]' : ''}`}>
+    <div class="mx-auto max-w-3xl px-4 text-center">
+      {page.ctaText && (
+        <p class="mb-2 text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.ctaText}</p>
+      )}
+      <ContactCTA label={page.ctaLabel} />
+    </div>
+  </section>
+
+  {page.crossLinksText && <CrossLinksSection text={page.crossLinksText} />}
+</BaseLayout>

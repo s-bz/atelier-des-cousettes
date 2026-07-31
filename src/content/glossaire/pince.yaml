@@ -1,0 +1,23 @@
+terme: Pince
+definitionCourte: |-
+  Une pince est un pli cousu en pointe qui retire de la largeur à un endroit précis pour donner du galbe à un vêtement plat. C'est ce qui transforme un rectangle en forme de corps.
+explication: |-
+  Un tissu sort du métier en deux dimensions ; un corps en a trois. La pince est la façon la plus simple de passer de l'un à l'autre : on prend un excédent de tissu, on le coud en triangle, et la surface se creuse là où il le faut — poitrine, taille, omoplates.
+
+  Elle se coud de la base vers la pointe, en s'affinant, et l'on ne fait pas de point d'arrêt à la pointe : on noue les fils à la main, ou l'on pique les derniers centimètres au ras du pli. Un arrêt machine y ferait une petite bosse visible sur l'endroit.
+
+  Elle se repasse ensuite couchée — vers le milieu pour les pinces verticales, vers le bas pour les horizontales.
+enAtelier: |-
+  La pointe est tout le sujet. Une pince qui s'arrête net fait un téton ; une pince qui file en douceur disparaît.
+
+  Le truc que je donne : ralentir sur les deux derniers centimètres et laisser la pointe s'échapper dans le tissu plutôt que de viser un point précis.
+categorie: patronage
+synonymes: []
+termesLies:
+  - patronage
+  - empiecement
+  - embu
+article: comprendre-patrons-couture
+stage: /stages-thematiques/stage-patronage/
+seoDescription: ''
+lastModified: '2026-07-31'

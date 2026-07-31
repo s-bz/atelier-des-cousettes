@@ -1,7 +1,15 @@
 ---
 interface Props {
   name: string;
-  anchorId: string;
+  /**
+   * L'adresse de la carte — une vraie page, non une ancre.
+   *
+   * Ces cartes ont d'abord pointé vers un `#identifiant` plus bas sur la même
+   * page : les six stages y tenaient leur description l'un sous l'autre, et
+   * cliquer ne faisait que descendre. Chaque stage ayant sa page, elles portent
+   * une URL, et le clic mène quelque part.
+   */
+  href: string;
   /** Primary badge (price, highlighted colour) */
   primaryBadge: string;
   /** Secondary badge (duration, time, muted colour) */
@@ -12,10 +20,10 @@ interface Props {
   note?: string;
 }
 
-const { name, anchorId, primaryBadge, secondaryBadge, details = [], note } = Astro.props;
+const { name, href, primaryBadge, secondaryBadge, details = [], note } = Astro.props;
 ---
 
-<a href={`#${anchorId}`} class="detail-card group flex flex-col rounded-xl bg-white dark:bg-[var(--color-card-bg)] overflow-hidden transition-all p-5 h-full" aria-label={name}>
+<a href={href} class="detail-card group flex flex-col rounded-xl bg-white dark:bg-[var(--color-card-bg)] overflow-hidden transition-all p-5 h-full" aria-label={name}>
   <h3 class="text-lg font-semibold text-[var(--color-heading)]">
     {name}
   </h3>

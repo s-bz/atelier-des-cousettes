@@ -1,0 +1,304 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Hero from '../../components/Hero.astro';
+import AvisProvisoire from '../../components/AvisProvisoire.astro';
+import CalendrierCreneau from '../../components/CalendrierCreneau.astro';
+import ContactCTA from '../../components/ContactCTA.astro';
+import BlogCard from '../../components/BlogCard.astro';
+import Temoignages from '../../components/Temoignages.astro';
+import { getPageContext, reader } from '../../utils/reader';
+import { resolveImage, resolveImageUrl } from '../../utils/images';
+import { splitParagraphs } from '../../utils/strings';
+import { buildBreadcrumbSchema, buildCourseSchema } from '../../utils/schema';
+import { chargerStages, euros, formule } from '../../utils/stages';
+
+/**
+ * LA FICHE D'UN STAGE — une page par technique enseignée.
+ *
+ * POURQUOI ELLES EXISTENT. « Stage surjeteuse », « cours de patronage »,
+ * « coudre un tote bag » sont trois recherches différentes, faites par trois
+ * personnes différentes, et elles tombaient toutes sur la même page : une liste
+ * de six stages où il fallait trouver le sien. Une page ne peut répondre qu'à
+ * une question à la fois — c'est vrai pour un moteur comme pour un lecteur.
+ *
+ * CE QU'ELLES N'ONT PAS. Ni la FAQ des stages, ni l'introduction du moyeu, ni
+ * les liens croisés : ce sont les textes de l'ENSEMBLE, et les recopier sur six
+ * fiches donnerait six pages dont les trois quarts seraient identiques. Ce que
+ * Google appelle du contenu dupliqué, et ce qu'un lecteur appelle du
+ * remplissage. La fiche renvoie à la FAQ du moyeu, elle ne la répète pas.
+ *
+ * TOUT LE RESTE VIENT D'OÙ IL VENAIT. La description et le prérequis du CMS,
+ * les dates, les prix et les places de la base — par `chargerStages`, le même
+ * calcul que le moyeu, pour que la grille et la fiche ne puissent pas annoncer
+ * deux prix différents pour un même stage.
+ */
+
+const page = await reader.singletons.stagesThematiques.read();
+if (!page) throw new Error('Contenu des stages introuvable');
+
+const { stages, error } = await chargerStages(page.stages ?? []);
+
+const attendu = `/stages-thematiques/${Astro.params.stage}/`;
+const stage = stages.find((s) => s.href === attendu);
+// Un slug inconnu renvoie au moyeu plutôt qu'à une erreur : c'est ce que fait
+// déjà le blog, et un stage retiré du catalogue laisse derrière lui des liens
+// qu'il vaut mieux faire atterrir sur la liste que dans le vide.
+if (!stage) return Astro.redirect('/stages-thematiques/');
+
+const { settings, siteUrl } = await getPageContext(Astro.site);
+
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const couverture = await resolveImage(page.coverImage, coverGlob);
+const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
+
+const pageUrl = new URL(Astro.url.pathname, Astro.site).toString();
+
+/**
+ * LE TITRE ET LA DESCRIPTION SE CONSTRUISENT, ils ne se saisissent pas.
+ *
+ * Six fiches veulent six titres et six descriptions distincts, et les demander
+ * au CMS reviendrait à demander douze champs de plus pour du texte qui se
+ * déduit : le nom du stage, son prix, sa commune, sa durée sont déjà là. Le prix
+ * vient de la base — une fiche ne peut donc pas promettre dans sa balise un
+ * tarif que sa page dément.
+ *
+ * La description courte d'Isabelle ouvre la phrase quand elle existe : c'est
+ * elle qui donne envie, et une méta-description qui n'énumère que des faits ne
+ * fait cliquer personne.
+ */
+const lieu = stage.lieuCommun ?? stage.formules[0].default_location;
+const prixTexte = stage.formules.length > 1
+  ? `à partir de ${euros(stage.prixMin)} €`
+  : `${euros(stage.prixMin)} €`;
+
+const accroche = stage.description?.shortDescription?.replace(/\s+/g, ' ').trim();
+const description = [
+  accroche,
+  `${stage.base} à ${lieu} (Tarn), près de Castres, avec Isabelle Bultez, couturière diplômée CAP. ${prixTexte}${stage.tarifSecondaire ? ` pour ${stage.tarifSecondaire}` : ''}.`,
+]
+  .filter(Boolean)
+  .join(' ')
+  .slice(0, 300);
+
+/**
+ * Le `Course` de CE stage, et de lui seul.
+ *
+ * Il se construisait sur le moyeu, toutes dates confondues : un cours unique
+ * dont une séance aurait été du patronage et la suivante de la surjeteuse. Ici
+ * chaque instance appartient bien au cours qu'elle sert, avec sa durée, son
+ * lieu et son prix. `aVenir` est déjà filtré sur les séances programmées à
+ * venir — le balisage ne peut pas annoncer une date passée, et la page étant
+ * rendue à chaque visite, il ne peut pas non plus se figer.
+ */
+const courseSchema = buildCourseSchema({
+  name: stage.base,
+  description: stage.description?.shortDescription ?? page.seoDescription,
+  pageUrl,
+  siteUrl,
+  settings,
+  seances: stage.formules.flatMap((c) =>
+    c.aVenir.map((s) => ({
+      nom: c.label,
+      debut: s.starts_at,
+      fin: s.ends_at,
+      lieu: c.default_location,
+      prix: c.default_unit_price_cents / 100,
+    })),
+  ),
+  charge: stage.tarifSecondaire,
+  lieuParDefaut: lieu,
+});
+
+const schemas = [
+  buildBreadcrumbSchema([
+    { name: 'Accueil', url: siteUrl },
+    { name: page.title, url: `${siteUrl}/stages-thematiques/` },
+    { name: stage.base },
+  ]),
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": stage.base,
+    "description": description,
+    "url": pageUrl,
+    "author": {
+      "@type": "Person",
+      "name": settings?.authorName,
+      "jobTitle": settings?.authorJobTitle,
+      "url": `${siteUrl}/la-couturiere/`,
+    },
+    "isPartOf": { "@id": `${siteUrl}/#website` },
+  },
+  courseSchema,
+];
+
+/** Les cinq autres stages — le maillage entre fiches, pour qu'aucune ne soit orpheline. */
+const autresStages = stages.filter((s) => s.href !== stage.href);
+
+/**
+ * Les articles que le CMS rattache à ce stage.
+ *
+ * Lus un par un et non filtrés depuis la collection entière : le champ porte
+ * des slugs, et un article renommé ou dépublié doit disparaître d'ici sans
+ * emporter la page avec lui — d'où le `filter(Boolean)`.
+ */
+const slugsArticles = (stage.description?.articles ?? []).filter((s): s is string => Boolean(s));
+const articles = (
+  await Promise.all(
+    slugsArticles.map(async (slug) => {
+      const entry = await reader.collections.blog.read(slug);
+      // Un article sans date de publication n'est pas encore paru : le montrer
+      // ici le sortirait avant l'heure, alors que le blog l'écarte encore.
+      return entry?.publishDate ? { slug, entry, publishDate: entry.publishDate } : null;
+    }),
+  )
+).filter((a): a is NonNullable<typeof a> => a !== null);
+
+const blogIndex = await reader.singletons.blogIndex.read();
+---
+
+<BaseLayout title={`${stage.base} — ${prixTexte}`} description={description} ogImage={ogImage}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
+  </Fragment>
+
+  <AvisProvisoire texte={settings?.avisProvisoire} />
+
+  <Hero flush title={stage.base} subtitle={stage.description?.shortDescription ?? undefined}
+        coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
+
+  {/*
+    Le fil d'Ariane est affiché, non seulement balisé. Une fiche atteinte
+    directement depuis Google n'offre sinon aucun moyen de savoir qu'elle
+    appartient à un catalogue de six — ni d'aller le voir.
+  */}
+  <nav aria-label="Fil d’Ariane" class="mx-auto max-w-3xl px-4 pt-8">
+    <ol class="flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-light)]">
+      <li><a href="/" class="hover:text-[var(--color-button)] transition-colors">Accueil</a></li>
+      <li aria-hidden="true">›</li>
+      <li><a href="/stages-thematiques/" class="hover:text-[var(--color-button)] transition-colors">{page.title}</a></li>
+      <li aria-hidden="true">›</li>
+      <li aria-current="page" class="text-[var(--color-text)]">{stage.base}</li>
+    </ol>
+  </nav>
+
+  <section class="pt-6 pb-16 md:pb-20">
+    <div class="mx-auto max-w-3xl px-4">
+      <p class="mb-6 text-sm text-[var(--color-text-light)]">
+        <span class="text-base font-semibold text-[var(--color-button)]">{stage.tarifPrincipal}</span>
+        {' · '}
+        {stage.formules.length > 1
+          ? `${stage.formules.length} formules au choix`
+          : formule(stage.formules[0].seances_par_stage)}
+        {stage.tarifSecondaire && ` · ${stage.tarifSecondaire}`}
+        {stage.lieuCommun && ` · ${stage.lieuCommun}`}
+        {stage.placesCommunes && ` · ${stage.placesCommunes} places`}
+        {stage.audience === 'enfants' && ' · enfants'}
+      </p>
+
+      {/*
+        Le prérequis avant la description : c'est la seule ligne qui peut faire
+        renoncer — ou rassurer. « Recommandée » n'est pas « exigée », et il vaut
+        mieux le lire avant de s'enthousiasmer que le découvrir après.
+      */}
+      {stage.description?.prerequisite && (
+        <p class="mb-6 border-l-4 border-[var(--color-button)] py-1 pl-4 text-sm text-[var(--color-text)]">
+          <span class="font-semibold text-[var(--color-heading)]">Prérequis</span>
+          {' — '}{stage.description.prerequisite}
+        </p>
+      )}
+
+      {stage.description?.fullDescription && (
+        <div class="prose">
+          {splitParagraphs(stage.description.fullDescription).map((para) => <p>{para}</p>)}
+        </div>
+      )}
+    </div>
+  </section>
+
+  <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+    <div class="mx-auto max-w-3xl space-y-4 px-4">
+      {stage.formules.map((c) => (
+        <div class="rounded-xl bg-white p-5 shadow-md md:p-6 dark:bg-[var(--color-card-bg)]">
+          {stage.formules.length > 1 ? (
+            <p class="mb-2 text-sm font-semibold text-[var(--color-heading)]">
+              {c.variante
+                ? c.variante.charAt(0).toUpperCase() + c.variante.slice(1)
+                : 'Autre formule'}
+              <span class="ml-2 font-medium text-[var(--color-button)]">
+                {euros(c.default_unit_price_cents)} €
+              </span>
+              <span class="ml-2 font-normal text-[var(--color-text-light)]">
+                {c.heures && `${c.heures} · `}{formule(c.seances_par_stage).toLowerCase()}
+                {!stage.lieuCommun && ` · ${c.default_location}`}
+                {!stage.placesCommunes && ` · ${c.default_capacity} places`}
+              </span>
+            </p>
+          ) : (
+            <p class="mb-2 text-sm font-semibold text-[var(--color-heading)]">
+              {c.seances_par_stage > 1 ? 'Dates du stage' : page.datesLabel}
+            </p>
+          )}
+          <CalendrierCreneau seances={c.aVenir} erreur={Boolean(error)} />
+        </div>
+      ))}
+
+      <div class="pt-2 text-center">
+        <ContactCTA label={page.ctaLabel} />
+      </div>
+    </div>
+  </section>
+
+  {articles.length > 0 && (
+    <section class="py-16 md:py-20">
+      <div class="mx-auto max-w-4xl px-4">
+        <h2 class="mb-8 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+          {page.articlesSectionTitle}
+        </h2>
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {articles.map((a) => (
+            <BlogCard
+              title={a.entry.title}
+              slug={a.slug}
+              publishDate={a.publishDate}
+              description={a.entry.seoDescription ?? ''}
+              readMoreLabel={blogIndex?.readMoreLabel ?? ''}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <Temoignages page="stages" fond={articles.length > 0} />
+
+  {autresStages.length > 0 && (
+    <section class={`py-16 md:py-20 ${articles.length > 0 ? '' : 'bg-[var(--color-bg-accent)]'}`}>
+      <div class="mx-auto max-w-4xl px-4">
+        <h2 class="mb-8 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+          {page.autresStagesTitle}
+        </h2>
+        <ul class="flex flex-wrap justify-center gap-3">
+          {autresStages.map((s) => (
+            <li>
+              <a href={s.href}
+                 class="inline-block rounded-[var(--radius-button)] bg-white px-4 py-2 text-sm font-semibold text-[var(--color-link)] shadow-md transition-colors hover:text-[var(--color-button)] dark:bg-[var(--color-card-bg)]">
+                {s.base}
+                <span class="ml-2 font-normal text-[var(--color-text-light)]">
+                  {euros(s.prixMin)} €
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+        <p class="mt-8 text-center text-sm">
+          <a href="/stages-thematiques/" class="font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+            {page.retourMoyeuLabel} &rarr;
+          </a>
+        </p>
+      </div>
+    </section>
+  )}
+</BaseLayout>

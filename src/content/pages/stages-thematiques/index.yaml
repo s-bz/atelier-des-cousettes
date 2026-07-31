@@ -12,6 +12,9 @@ introduction: >-
   finale. Débutants et confirmés bienvenus.
 stagesSectionTitle: Nos stages
 datesLabel: 'Prochaines dates :'
+articlesSectionTitle: À lire avant de venir
+autresStagesTitle: Les autres stages
+retourMoyeuLabel: Tous les stages et les questions fréquentes
 faqSectionTitle: Questions fréquentes
 stages:
   - name: Initiation machine à coudre
@@ -23,6 +26,10 @@ stages:
 
       Chaque machine étant différente, il est préférable d'apprendre sur sa propre machine et de venir avec tous les accessoires et sa notice. Je peux cependant prêter une machine (merci de me le demander au préalable). Prenez également un petit cahier pour prendre des notes afin de gagner en autonomie.
     prerequisite: ''
+    articles:
+      - choisir-machine-a-coudre
+      - entretenir-machine-a-coudre
+      - debuter-couture-conseils
   - name: Stage découverte de la couture
     shortDescription: >-
       Initiation complète à la machine à coudre avec mise en pratique directe
@@ -36,6 +43,10 @@ stages:
       Jeudi 23 avril de 14h30 à 17h
       Vendredi 24 avril de 14h30 à 17h
     prerequisite: ''
+    articles:
+      - debuter-couture-conseils
+      - coutures-de-base
+      - erreurs-debutant-couture
   - name: Stage surjeteuse
     shortDescription: >-
       Apprivoisez la surjeteuse : enfilage, réglages, points de base, puis
@@ -43,6 +54,9 @@ stages:
     fullDescription: |
       Ce stage propose une approche de cette étrange machine. Au programme : surmonter la première difficulté c'est-à-dire l'enfilage et le réglage, puis pratiquer quelques points de base et effectuer les corrections nécessaires et passer enfin à une réalisation simple pour apprivoiser la machine !
     prerequisite: Connaissance de base de la machine à coudre recommandée.
+    articles:
+      - surjeteuse-a-quoi-ca-sert
+      - choisir-fil-aiguille
   - name: Stage patronage
     shortDescription: >-
       Apprenez à tracer votre patron pour réaliser un buste de base à vos
@@ -52,6 +66,9 @@ stages:
 
       À partir de là, vous pourrez apprendre à faire vous-même les transformations pour créer votre modèle unique !
     prerequisite: Connaissance de base de la machine à coudre recommandée.
+    articles:
+      - comprendre-patrons-couture
+      - prendre-ses-mesures
   - name: Stage banane
     shortDescription: >-
       Choisissez vos matières, vos tissus, votre style pour créer un accessoire
@@ -59,6 +76,9 @@ stages:
     fullDescription: |
       Choisissez vos matières, vos tissus, votre style pour créer un accessoire qui vous accompagne au quotidien !
     prerequisite: Connaissance de base de la machine à coudre recommandée.
+    articles:
+      - coudre-trousse-fermeture-eclair
+      - couture-ete-accessoires-vacances
   - name: Stage sac et tote bag
     shortDescription: >-
       Réalisez un sac simple à vos mesures et dans le tissu de votre choix.
@@ -66,6 +86,9 @@ stages:
     fullDescription: |
       C'est un stage accessible aux débutants sachant utiliser une machine à coudre. Il offre la possibilité de réaliser un sac simple à vos mesures et dans le tissu de votre choix.
     prerequisite: Connaissance de base de la machine à coudre recommandée.
+    articles:
+      - coudre-tote-bag
+      - couture-zero-dechet-projets-pratiques
 faqItems:
   - question: Quels sont les tarifs des stages de couture ?
     answer: >-

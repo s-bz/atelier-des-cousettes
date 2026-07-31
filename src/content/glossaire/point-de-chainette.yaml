@@ -1,0 +1,23 @@
+terme: Point de chaînette
+definitionCourte: |-
+  Le point de chaînette est un point formé d'une boucle qui passe dans la précédente, comme les mailles d'une chaîne. C'est le point des surjeteuses et des recouvreuses, extensible par nature.
+explication: |-
+  Sa structure en boucles lui donne l'élasticité qu'un point droit n'a pas : il s'allonge avec le tissu et revient. C'est pourquoi il équipe les machines destinées aux mailles.
+
+  Une surjeteuse combine ce principe avec le surfilage et la coupe : elle coud, coupe et finit le bord en un seul passage, avec trois, quatre ou cinq fils selon le montage.
+
+  Il a une faiblesse connue : une boucle qui lâche peut entraîner les suivantes, comme une maille filée. D'où l'importance de sécuriser les extrémités — en rentrant la chaînette à l'aiguille, ou en la nouant.
+enAtelier: |-
+  La chaînette laissée pendante est ce qui distingue un ouvrage fini d'un ouvrage bâclé, et c'est aussi ce qui le fait tenir.
+
+  Un passe-lacet à chas large rentre la chaînette dans la couture en quelques secondes. On la coupe à ras : elle ne peut plus filer.
+categorie: machine
+synonymes: []
+termesLies:
+  - surfilage
+  - recouvreuse
+  - jersey
+article: surjeteuse-a-quoi-ca-sert
+stage: /stages-thematiques/stage-surjeteuse/
+seoDescription: ''
+lastModified: '2026-07-31'

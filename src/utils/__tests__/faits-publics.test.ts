@@ -87,6 +87,12 @@ const faits: FaitsPublics = {
   articles: [
     { slug: 'coudre-tote-bag', titre: 'Coudre un tote bag', description: 'Les étapes\n essentielles.', publieLe: '2026-03-01' },
   ],
+  glossaire: [
+    // La définition porte un retour à la ligne exprès : les fiches sont saisies
+    // en bloc littéral dans le CMS, et `uneLigne` doit les remettre à plat comme
+    // il le fait pour les descriptions d'articles.
+    { slug: 'droit-fil', terme: 'Droit fil', definition: 'La direction des fils\n de chaîne.' },
+  ],
   avisProvisoire: 'Tarifs provisoires.',
 };
 

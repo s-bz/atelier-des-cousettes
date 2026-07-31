@@ -1,0 +1,23 @@
+terme: Canette
+definitionCourte: |-
+  La canette est la petite bobine placée sous la plaque de la machine, qui fournit le fil du dessous. Une couture machine naît de l'entrelacement de ce fil avec celui de l'aiguille.
+explication: |-
+  Une machine à coudre ne coud pas avec un fil mais avec deux. Celui du haut descend par l'aiguille, celui du bas sort de la canette, et le crochet les noue à chaque point. C'est pourquoi une couture se défait par les deux bouts si l'on n'a pas fait de point d'arrêt.
+
+  La canette se remplit sur la machine elle-même, régulièrement et sans trop tirer : un remplissage irrégulier provoque des points sautés. On la place ensuite dans son boîtier ou son logement, dans le sens indiqué par la notice — le sens compte, il détermine la tension du fil inférieur.
+
+  Chaque machine a son type de canette. Une canette d'un autre modèle, même de diamètre voisin, tourne mal et déséquilibre le point.
+enAtelier: |-
+  Quand quelqu'un me dit « ma machine fait des nœuds dessous », c'est presque toujours le fil du haut qui est en cause, pas la canette : l'enfilage supérieur a sauté un guide, souvent le releveur de fil.
+
+  Le réflexe utile : réenfiler entièrement, pied-de-biche relevé. Relevé, les disques de tension s'ouvrent et le fil s'y loge ; baissé, il glisse à côté et rien ne le retient.
+categorie: machine
+synonymes: []
+termesLies:
+  - tension-du-fil
+  - pied-de-biche
+  - point-d-arret
+article: entretenir-machine-a-coudre
+stage: /stages-thematiques/initiation-machine-a-coudre/
+seoDescription: ''
+lastModified: '2026-07-31'

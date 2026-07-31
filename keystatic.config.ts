@@ -291,6 +291,10 @@ export default config({
         introduction: fields.text({ label: 'Introduction', multiline: true }),
         stagesSectionTitle: fields.text({ label: 'Titre section stages' }),
         datesLabel: fields.text({ label: 'Libellé « Prochaines dates : »' }),
+        /* Les trois titres des fiches de stage, une page par stage. */
+        articlesSectionTitle: fields.text({ label: 'Titre section articles liés (fiches)' }),
+        autresStagesTitle: fields.text({ label: 'Titre section autres stages (fiches)' }),
+        retourMoyeuLabel: fields.text({ label: 'Libellé du retour vers la liste des stages' }),
         faqSectionTitle: fields.text({ label: 'Titre section FAQ' }),
         /*
          * LE CONTENU DÉCRIT LES STAGES ; LA BASE DIT COMBIEN ET QUAND.
@@ -314,6 +318,26 @@ export default config({
             shortDescription: fields.text({ label: 'Description courte (carte)', multiline: true }),
             fullDescription: fields.text({ label: 'Description complète', multiline: true }),
             prerequisite: fields.text({ label: 'Pré-requis (optionnel)', multiline: true }),
+            /*
+             * LES ARTICLES QUI PRÉPARENT CE STAGE.
+             *
+             * Chaque stage a maintenant sa page, et une page qui ne mène nulle
+             * part est une impasse : on y arrive par « stage surjeteuse », on
+             * lit, et soit on écrit à Isabelle, soit on repart. Ces renvois
+             * ouvrent la troisième porte — lire d'abord, s'inscrire ensuite —
+             * et donnent au passage aux vingt-deux articles du blog des liens
+             * entrants depuis des pages que Google visite souvent.
+             *
+             * À choisir sur le SUJET, non sur la fraîcheur : l'article sur la
+             * surjeteuse appartient au stage surjeteuse, et à lui seul.
+             */
+            articles: fields.array(
+              fields.relationship({ label: 'Article', collection: 'blog' }),
+              {
+                label: 'Articles de blog liés (optionnel)',
+                itemLabel: (props) => props.value || 'Article',
+              },
+            ),
           }),
           {
             label: 'Stages',
@@ -523,6 +547,32 @@ export default config({
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
     }),
+    glossaireIndex: singleton({
+      label: 'Glossaire (page d’accueil)',
+      path: 'src/content/pages/glossaire/',
+      previewUrl: '/glossaire/',
+      schema: {
+        title: fields.text({ label: 'Titre' }),
+        subtitle: fields.text({ label: 'Sous-titre' }),
+        seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
+        ...coverImageFields('glossaire'),
+        introduction: fields.text({ label: 'Introduction', multiline: true }),
+        enAtelierTitre: fields.text({
+          label: 'Titre de la section « En atelier »',
+          description: 'Affiché sur chaque fiche, au-dessus de ce qu’Isabelle observe.',
+        }),
+        termesLiesTitre: fields.text({ label: 'Titre de la section « Termes liés »' }),
+        lireLabel: fields.text({
+          label: 'Libellé du renvoi vers un article',
+          description: 'Le titre de l’article est ajouté à la suite.',
+        }),
+        stageLabel: fields.text({ label: 'Libellé du renvoi vers un stage' }),
+        crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
+        ctaText: fields.text({ label: 'Texte au-dessus du bouton', multiline: true }),
+        ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
+        backToListLabel: fields.text({ label: 'Libellé du retour au glossaire' }),
+      },
+    }),
     blogIndex: singleton({
       label: 'Page blog',
       path: 'src/content/pages/blog/',
@@ -714,6 +764,106 @@ export default config({
           label: 'Fournitures nécessaires (tutoriels)',
           itemLabel: (props) => props.value || 'Fourniture',
         }),
+      },
+    }),
+    /*
+     * LE GLOSSAIRE DE LA COUTURE.
+     *
+     * POURQUOI UNE COLLECTION ET NON DES ARTICLES. Un article de blog se lit
+     * une fois, en entier, et porte une date ; une définition se consulte, au
+     * milieu d'autre chose, et ne vieillit pas. « Qu'est-ce que le droit fil »
+     * appelle quatre lignes exactes, pas un billet de mille mots — et c'est
+     * précisément ce qu'un moteur de réponse sait extraire et citer.
+     *
+     * LE CHAMP QUI COMPTE EST `definitionCourte`. Deux phrases qui tiennent
+     * seules, hors de la page qui les entoure : c'est ce qui est balisé, ce qui
+     * sert de méta-description, et ce qu'un lecteur pressé retient. Le reste de
+     * la fiche l'explique ; il ne la remplace pas.
+     *
+     * `enAtelier` EST CE QUI NOUS APPARTIENT. Une définition se recopie d'un
+     * dictionnaire ; ce qu'Isabelle voit rater sur ce geste précis, tous les
+     * mois, depuis des années, ne se recopie nulle part. Sans ce champ, ces
+     * quarante fiches seraient quarante paraphrases de Wikipédia, et le
+     * mériteraient.
+     */
+    glossaire: collection({
+      label: 'Glossaire',
+      slugField: 'terme',
+      path: 'src/content/glossaire/*',
+      format: { data: 'yaml' },
+      previewUrl: '/glossaire/{slug}/',
+      columns: ['terme', 'categorie'],
+      schema: {
+        terme: fields.slug({
+          name: { label: 'Terme' },
+          slug: { label: 'Identifiant (URL)' },
+        }),
+        definitionCourte: fields.text({
+          label: 'Définition courte',
+          description:
+            'Une à deux phrases qui se comprennent seules, sans le reste de la page. Sert de méta-description et de réponse extractible.',
+          multiline: true,
+        }),
+        explication: fields.text({
+          label: 'Explication',
+          description: 'Deux à quatre paragraphes, séparés par une ligne vide.',
+          multiline: true,
+        }),
+        enAtelier: fields.text({
+          label: 'En atelier (optionnel)',
+          description:
+            'Ce qu’Isabelle observe, corrige ou fait refaire sur ce geste. C’est la seule partie de la fiche qui ne se trouve nulle part ailleurs.',
+          multiline: true,
+        }),
+        categorie: fields.select({
+          label: 'Catégorie',
+          options: [
+            { label: 'Gestes et coutures', value: 'gestes' },
+            { label: 'Finitions', value: 'finitions' },
+            { label: 'Patronage et mesures', value: 'patronage' },
+            { label: 'Tissus et matières', value: 'tissus' },
+            { label: 'Machine et réglages', value: 'machine' },
+          ],
+          defaultValue: 'gestes',
+        }),
+        /*
+         * Les autres noms du même geste. « Marge de couture » et « valeur de
+         * couture » désignent la même chose : deux fiches se seraient annulées
+         * l'une l'autre dans les résultats. Une seule les porte, l'autre nom
+         * s'affiche et se balise comme variante.
+         */
+        synonymes: fields.array(fields.text({ label: 'Synonyme' }), {
+          label: 'Autres noms (optionnel)',
+          itemLabel: (props) => props.value || 'Synonyme',
+        }),
+        termesLies: fields.array(
+          fields.relationship({ label: 'Terme', collection: 'glossaire' }),
+          {
+            label: 'Termes liés',
+            description: 'Deux à quatre renvois, choisis sur le sens.',
+            itemLabel: (props) => props.value || 'Terme',
+          },
+        ),
+        article: fields.relationship({
+          label: 'Article de blog qui développe (optionnel)',
+          collection: 'blog',
+        }),
+        /*
+         * Le chemin est saisi à la main plutôt que choisi dans une liste : les
+         * stages vivent en base, pas dans le CMS, et Keystatic ne sait pas les
+         * proposer. Un stage renommé changerait son adresse et laisserait ce
+         * lien dans le vide — le contrôle des liens internes le verrait.
+         */
+        stage: fields.text({
+          label: 'Stage concerné (optionnel)',
+          description: 'Chemin complet, par exemple /stages-thematiques/stage-surjeteuse/',
+        }),
+        seoDescription: fields.text({
+          label: 'Description SEO (optionnel)',
+          description: 'Laisser vide pour reprendre la définition courte.',
+          multiline: true,
+        }),
+        lastModified: fields.date({ label: 'Dernière modification' }),
       },
     }),
     creations: collection({

@@ -1,0 +1,23 @@
+terme: Cranter
+definitionCourte: |-
+  Cranter, c'est pratiquer de petites entailles dans la marge de couture d'un arrondi, jusqu'à quelques millimètres de la piqûre, pour que la couture puisse se retourner à plat sans tirer.
+explication: |-
+  Une couture courbe pose un problème de géométrie : une fois retournée, la marge intérieure se retrouve sur un cercle plus petit que celui où elle a été coupée. Elle est donc trop longue, et fait des plis qui se voient sur l'endroit.
+
+  Sur une courbe rentrante — une encolure, une emmanchure — on entaille perpendiculairement au bord pour que la marge puisse s'ouvrir en éventail. Sur une courbe sortante — un col arrondi, une poche — on retire au contraire de petits triangles pour que la matière en trop disparaisse.
+
+  L'entaille s'arrête à deux ou trois millimètres de la piqûre. Plus près, la couture s'ouvre à l'usage.
+enAtelier: |-
+  C'est le geste qui fait le plus peur, parce qu'on donne un coup de ciseaux dans un ouvrage qu'on vient de réussir. Résultat : on crante trop timidement, à un centimètre de la couture, ce qui ne sert à rien du tout.
+
+  Je fais toujours essayer les deux sur une chute avant : un arrondi cranté, un arrondi non cranté, retournés côte à côte. La démonstration se passe de discours.
+categorie: gestes
+synonymes: []
+termesLies:
+  - marge-de-couture
+  - encolure
+  - emmanchure
+article: coutures-de-base
+stage: ''
+seoDescription: ''
+lastModified: '2026-07-31'

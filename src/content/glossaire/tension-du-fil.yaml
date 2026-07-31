@@ -1,0 +1,23 @@
+terme: Tension du fil
+definitionCourte: |-
+  La tension du fil est la force avec laquelle la machine retient le fil supérieur. Bien réglée, le nouage des deux fils se fait au milieu de l'épaisseur et le point est identique des deux côtés.
+explication: |-
+  Un point équilibré ne montre ni boucles ni fil tiré : dessus et dessous se ressemblent. Si des boucles apparaissent dessous, la tension du haut est trop faible — ou, bien plus souvent, l'enfilage supérieur est incorrect. Si le tissu fronce et que le fil du dessous remonte, elle est trop forte.
+
+  Le réglage dépend du tissu et du fil. Une popeline demande une tension moyenne, un jersey une tension plus douce, un tissu épais un point plus long autant qu'une tension différente.
+
+  On règle sur une chute pliée en deux, dans le tissu du projet, avec le fil du projet. Un essai fait sur autre chose ne dit rien d'utile.
+enAtelier: |-
+  Avant de toucher à la molette, réenfiler. Neuf problèmes de tension sur dix sont des problèmes d'enfilage, et tourner la molette ne fait qu'ajouter un second réglage faux au premier.
+
+  Et l'on note le réglage d'origine avant d'y toucher. Beaucoup de machines n'ont pas de repère net, et l'on cherche longtemps le point de départ.
+categorie: machine
+synonymes: []
+termesLies:
+  - canette
+  - point-d-arret
+  - jersey
+article: erreurs-debutant-couture
+stage: /stages-thematiques/initiation-machine-a-coudre/
+seoDescription: ''
+lastModified: '2026-07-31'

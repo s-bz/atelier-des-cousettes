@@ -321,6 +321,54 @@ export function buildCourseSchema({
   };
 }
 
+interface DefinedTermOptions {
+  terme: string;
+  definition: string;
+  pageUrl: string;
+  siteUrl: string;
+  /** Les autres noms du même geste — « valeur de couture » pour « marge de couture ». */
+  synonymes?: readonly string[] | null;
+}
+
+/**
+ * Le schéma d'une entrée de glossaire : `DefinedTerm` dans son `DefinedTermSet`.
+ *
+ * POURQUOI PAS `Article`. Un article a un auteur, une date, un fil de lecture ;
+ * une définition n'a rien de tout ça et se consulte au milieu d'autre chose.
+ * `DefinedTerm` est le type que schema.org réserve exactement à ce cas, et il
+ * porte ce qu'aucun autre ne porte : l'appartenance à un ENSEMBLE. Déclarer les
+ * quarante fiches comme membres d'un même `DefinedTermSet` dit à un moteur
+ * qu'elles forment un lexique et non quarante pages éparses — c'est la
+ * différence entre un glossaire et un tas de définitions.
+ *
+ * `termCode` reçoit le slug : c'est l'identifiant stable du terme, celui qui
+ * survit à une reformulation du libellé.
+ */
+export function buildDefinedTermSchema({
+  terme,
+  definition,
+  pageUrl,
+  siteUrl,
+  synonymes,
+}: DefinedTermOptions): object {
+  const autresNoms = (synonymes ?? []).map((s) => s.trim()).filter(Boolean);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "DefinedTerm",
+    "name": terme,
+    "description": definition,
+    "url": pageUrl,
+    "inDefinedTermSet": {
+      "@type": "DefinedTermSet",
+      "@id": `${siteUrl}/glossaire/#glossaire`,
+      "name": "Glossaire de la couture",
+      "url": `${siteUrl}/glossaire/`,
+    },
+    ...(autresNoms.length ? { "alternateName": autresNoms } : {}),
+  };
+}
+
 /**
  * Builds a BreadcrumbList schema from an ordered list of items.
  * The last item is treated as the current page (no URL).

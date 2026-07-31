@@ -11,15 +11,17 @@ import { filterPublishedPosts } from './blog';
 import { lireCreneauxPublics, lireProchainesSeances, type FaitsPublics } from './faits-publics';
 
 export async function rassemblerFaitsPublics(site: URL | undefined): Promise<FaitsPublics> {
-  const [settings, ateliers, stages, seances, articles, creneaux, seancesAVenir] = await Promise.all([
-    reader.singletons.siteSettings.read(),
-    reader.singletons.ateliersReguliers.read(),
-    reader.singletons.stagesThematiques.read(),
-    reader.singletons.apresMidiCouture.read(),
-    reader.collections.blog.all(),
-    lireCreneauxPublics(),
-    lireProchainesSeances(),
-  ]);
+  const [settings, ateliers, stages, seances, articles, creneaux, seancesAVenir, glossaire] =
+    await Promise.all([
+      reader.singletons.siteSettings.read(),
+      reader.singletons.ateliersReguliers.read(),
+      reader.singletons.stagesThematiques.read(),
+      reader.singletons.apresMidiCouture.read(),
+      reader.collections.blog.all(),
+      lireCreneauxPublics(),
+      lireProchainesSeances(),
+      reader.collections.glossaire.all(),
+    ]);
 
   return {
     siteUrl: site?.origin ?? 'https://atelier-des-cousettes.fr',
@@ -63,6 +65,18 @@ export async function rassemblerFaitsPublics(site: URL | undefined): Promise<Fai
         titre: p.entry.title,
         description: p.entry.seoDescription ?? '',
         publieLe: p.entry.publishDate,
+      })),
+    /*
+     * Par ordre alphabétique français, et non par catégorie : un modèle qui
+     * cherche un mot le cherche par son nom. « éclair » se range à E, ce que
+     * seul `localeCompare` en français sait faire.
+     */
+    glossaire: [...glossaire]
+      .sort((a, b) => a.entry.terme.localeCompare(b.entry.terme, 'fr', { sensitivity: 'base' }))
+      .map((t) => ({
+        slug: t.slug,
+        terme: t.entry.terme,
+        definition: t.entry.definitionCourte,
       })),
     avisProvisoire: settings?.avisProvisoire,
   };

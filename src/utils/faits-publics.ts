@@ -68,6 +68,20 @@ export interface ArticlePublic {
   publieLe: string;
 }
 
+/**
+ * Un terme du glossaire, réduit à ce qui se cite.
+ *
+ * La définition courte et rien d'autre : c'est le seul morceau du site écrit
+ * pour tenir hors de sa page. Un modèle qui répond « qu'est-ce que le droit
+ * fil » n'a que faire des trois paragraphes qui suivent — il a besoin d'une
+ * phrase juste, attribuable, et d'une adresse où l'envoyer.
+ */
+export interface TermePublic {
+  slug: string;
+  terme: string;
+  definition: string;
+}
+
 /** Une séance programmée, réduite à ce qui est public. */
 export interface SeancePublique {
   /** Le nom du créneau ou du stage. */
@@ -119,6 +133,8 @@ export interface FaitsPublics {
     publics: readonly string[];
   };
   articles: readonly ArticlePublic[];
+  /** Le glossaire, par ordre alphabétique. Vide tant qu'aucune fiche n'existe. */
+  glossaire: readonly TermePublic[];
   /** L'avertissement du CMS quand la saison n'est pas encore arrêtée. */
   avisProvisoire?: string | null;
 }
@@ -459,7 +475,11 @@ ${f.facebookUrl ? `- **Facebook** : ${f.facebookUrl}` : ''}
 ## Blog couture
 
 ${f.articles.map((a) => `- [${a.titre}](${siteUrl}/blog/${a.slug}/) — ${uneLigne(a.description)}`).join('\n')}
-`;
+${f.glossaire.length ? `
+## Glossaire de la couture
+
+${f.glossaire.map((t) => `- [${t.terme}](${siteUrl}/glossaire/${t.slug}/) — ${uneLigne(t.definition)}`).join('\n')}
+` : ''}`;
 }
 
 /**
@@ -657,7 +677,14 @@ Parking gratuit à proximité des deux lieux.
 ## Blog couture
 
 ${f.articles.map((a) => `- [${a.titre}](${siteUrl}/blog/${a.slug}/) — ${uneLigne(a.description)}`).join('\n')}
+${f.glossaire.length ? `
+## Glossaire de la couture
 
+Quarante termes définis par Isabelle Bultez. Chaque définition tient seule ; la
+page correspondante l'explique et donne ce qu'elle fait rater en atelier.
+
+${f.glossaire.map((t) => `**${t.terme}** — ${uneLigne(t.definition)}\n${siteUrl}/glossaire/${t.slug}/`).join('\n\n')}
+` : ''}
 ## Contact
 
 - Courriel : ${f.email}

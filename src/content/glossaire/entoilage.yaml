@@ -1,0 +1,23 @@
+terme: Entoilage
+definitionCourte: |-
+  L'entoilage est une toile fine ajoutée à l'envers du tissu pour le rigidifier ou l'empêcher de se détendre. On l'utilise sur les cols, les poignets, les ceintures et les parementures.
+explication: |-
+  Il existe en version thermocollante, qu'on fixe au fer, et en version à coudre, qu'on assemble dans la couture. Le premier est plus simple et convient à presque tout ; le second reste préférable sur les matières qui n'aiment pas la chaleur.
+
+  Son rôle n'est pas seulement de raidir. Sur une encolure ou une boutonnière, il empêche surtout le tissu de s'étirer à l'usage : c'est lui qui fait qu'un devant de chemise reste droit après vingt lavages.
+
+  On le choisit toujours plus léger que le tissu. Un entoilage plus lourd prend le dessus et donne une pièce cartonnée qui ne bouge plus avec le reste du vêtement.
+enAtelier: |-
+  Le réflexe le plus utile est de tester sur une chute avant. Trente secondes au fer, et l'on voit tout de suite si le tissu godaille, s'il brille ou si l'entoilage transparaît.
+
+  Sur les tissus clairs et fins, l'entoilage blanc se voit par transparence. On prend alors un entoilage de la couleur du tissu, ou l'on double la parementure du tissu lui-même.
+categorie: tissus
+synonymes: []
+termesLies:
+  - thermocollant
+  - parementure
+  - boutonniere
+article: tissus-debutants
+stage: ''
+seoDescription: ''
+lastModified: '2026-07-31'

@@ -1,0 +1,24 @@
+terme: Patronage
+definitionCourte: |-
+  Le patronage est l'art de tracer soi-même les patrons d'un vêtement, à partir de mesures et de règles de construction, plutôt que d'utiliser un patron tout fait.
+explication: |-
+  On part d'un buste de base, tracé aux mesures de la personne : un patron sans style, ajusté, qui sert de matrice. De là, tout devient transformation — déplacer une pince, élargir une jupe, creuser une encolure, ajouter un empiècement.
+
+  C'est de la géométrie appliquée, avec quelques règles simples et beaucoup de vérification. Le tracé se contrôle en toile avant de toucher au tissu définitif.
+
+  L'intérêt n'est pas seulement de créer : c'est aussi de comprendre ce que l'on fait quand on modifie un patron du commerce, et de cesser de subir des tailles qui ne correspondent à personne en particulier.
+enAtelier: |-
+  La géométrie fait fuir la moitié des gens, et c'est dommage — il s'agit de tracer des perpendiculaires et de reporter des mesures, rien de plus.
+
+  Ce que je vois surtout, c'est le moment où quelqu'un comprend qu'un vêtement du commerce qui ne lui va pas n'est pas un problème de corps, mais de patron. Ce basculement vaut le stage à lui seul.
+categorie: patronage
+synonymes:
+  - modélisme
+termesLies:
+  - pince
+  - marge-de-couture
+  - cran-de-montage
+article: comprendre-patrons-couture
+stage: /stages-thematiques/stage-patronage/
+seoDescription: ''
+lastModified: '2026-07-31'
