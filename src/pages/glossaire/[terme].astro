@@ -67,7 +67,7 @@ const schemas = [
 const synonymes = (fiche.synonymes ?? []).filter(Boolean);
 ---
 
-<BaseLayout title={`${fiche.terme} : définition couture`} description={description}>
+<BaseLayout title={`${fiche.terme} : définition couture`} description={description} appendSiteName={false}>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
   </Fragment>
