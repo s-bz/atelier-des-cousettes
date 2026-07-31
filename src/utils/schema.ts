@@ -441,7 +441,25 @@ export function buildServicePageSchemas({
       "name": title,
       "description": seoDescription,
       "provider": { "@id": `${siteUrl}/#organization` },
-      "areaServed": { "@type": "AdministrativeArea", "name": "Tarn" },
+      /*
+       * DEUX DÉPARTEMENTS, PARCE QUE LES COURS SE TIENNENT DANS LES DEUX.
+       *
+       * `areaServed` a longtemps dit « Tarn », seul, et c'était faux là où ça
+       * compte le plus : quatorze créneaux sur seize se tiennent à Revel, qui
+       * est en HAUTE-GARONNE. Le Tarn n'est le bon département que pour
+       * l'atelier privé de Verdalle — et pour l'adresse de l'entreprise, qui
+       * reste déclarée là (`addressRegion`), ce qui est exact et distinct.
+       *
+       * Les deux communes sont nommées avant les départements : c'est ainsi
+       * qu'on les cherche. « couture revel » se mesure à 50 recherches par
+       * mois, « cours de couture haute-garonne » à 10.
+       */
+      "areaServed": [
+        { "@type": "City", "name": "Revel" },
+        { "@type": "City", "name": "Verdalle" },
+        { "@type": "AdministrativeArea", "name": "Haute-Garonne" },
+        { "@type": "AdministrativeArea", "name": "Tarn" },
+      ],
       "serviceType": "Cours de couture",
       "offers": offers.map((o) => {
         const numericPrice = parseFloat(o.price);

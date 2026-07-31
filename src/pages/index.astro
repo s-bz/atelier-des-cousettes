@@ -169,9 +169,13 @@ const siteUrl = Astro.site?.origin;
           "latitude": 43.5208069,
           "longitude": 2.1482666
         },
+        // Revel d'abord : c'est là que se tiennent quatorze créneaux sur seize.
+        // La Haute-Garonne manquait, alors que c'est le département de Revel —
+        // seul `addressRegion` reste le Tarn, celui de l'adresse déclarée.
         "areaServed": [
-          { "@type": "City", "name": "Verdalle" },
           { "@type": "City", "name": "Revel" },
+          { "@type": "City", "name": "Verdalle" },
+          { "@type": "AdministrativeArea", "name": "Haute-Garonne" },
           { "@type": "AdministrativeArea", "name": "Tarn" }
         ],
         "priceRange": forfaitMin && tarifs?.stages ? `${forfaitMin}€–${tarifs.stages.max}€` : undefined,
