@@ -1,0 +1,23 @@
+terme: Point zigzag
+definitionCourte: |-
+  Le point zigzag est un point qui alterne à gauche et à droite. Il sert à surfiler les bords, à coudre les tissus extensibles et à fixer les élastiques.
+explication: |-
+  Deux réglages le définissent : la largeur, qui donne l'écart entre les deux extrêmes, et la longueur, qui donne l'espacement. Un zigzag large et espacé surfile ; un zigzag étroit et serré fait un point de bourdon, celui des appliqués et des boutonnières.
+
+  Sur les mailles, il remplace le point droit : ses obliques lui permettent de s'allonger avec le tissu au lieu de casser. Un zigzag étroit, presque droit, suffit pour une couture d'assemblage sur jersey.
+
+  Il tend à faire rouler le bord des tissus fins. On le règle alors moins large, ou l'on surfile après avoir assemblé plutôt qu'avant.
+enAtelier: |-
+  C'est le point qui rend une machine simple presque aussi polyvalente qu'une machine chère, et il est très sous-utilisé.
+
+  Beaucoup de gens achètent une surjeteuse pour surfiler alors qu'un zigzag bien réglé leur suffirait. La surjeteuse se justifie par la vitesse et par le jersey, pas par le surfilage seul.
+categorie: machine
+synonymes: []
+termesLies:
+  - surfilage
+  - jersey
+  - boutonniere
+article: coutures-de-base
+stage: /stages-thematiques/initiation-machine-a-coudre/
+seoDescription: ''
+lastModified: '2026-07-31'

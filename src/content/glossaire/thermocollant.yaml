@@ -1,0 +1,23 @@
+terme: Thermocollant
+definitionCourte: |-
+  Un thermocollant est un support enduit d'une colle qui fond à la chaleur du fer. Il se fixe à l'envers du tissu sans couture, et sert d'entoilage ou de renfort.
+explication: |-
+  La colle se trouve sur une seule face, reconnaissable à ses petits points brillants — c'est cette face qui va contre l'envers du tissu, et l'inverser colle la semelle du fer.
+
+  La pose se fait par pression et non par glissement : on pose le fer, on compte quelques secondes, on soulève, on décale. Un fer promené fait glisser le support et forme des bulles.
+
+  On laisse refroidir à plat avant de manipuler la pièce. La colle prend en refroidissant, et une pièce déplacée trop tôt se décolle par endroits.
+enAtelier: |-
+  Le papier sulfurisé ou une pattemouille entre le fer et l'ouvrage évite le drame de la semelle encollée. Je le fais poser systématiquement, même par ceux qui savent.
+
+  Et l'on vérifie la tenue en tirant doucement sur un coin après refroidissement. Un thermocollant mal fixé lâche au premier lavage, quand la pièce est déjà montée.
+categorie: tissus
+synonymes: []
+termesLies:
+  - entoilage
+  - parementure
+  - popeline
+article: tissus-debutants
+stage: ''
+seoDescription: ''
+lastModified: '2026-07-31'

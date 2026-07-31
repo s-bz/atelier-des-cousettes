@@ -1,0 +1,23 @@
+terme: Droit fil
+definitionCourte: |-
+  Le droit fil est la direction des fils de chaîne du tissu, parallèle à la lisière. Chaque pièce d'un patron porte une flèche qui doit être posée exactement dans cette direction.
+explication: |-
+  Un tissu tissé est fait de fils de chaîne, tendus sur le métier dans le sens de la longueur, et de fils de trame qui les traversent. La chaîne ne s'étire pratiquement pas, la trame un peu, la diagonale beaucoup : trois comportements dans un même morceau d'étoffe.
+
+  La flèche du patron sert à décider lequel de ces trois comportements ira dans la hauteur du vêtement. Droit fil, un pantalon garde sa longueur ; posé de travers, il vrille sur la jambe au bout de quelques heures de port.
+
+  On vérifie en mesurant la distance entre la flèche et la lisière en deux points éloignés : les deux mesures doivent être identiques.
+enAtelier: |-
+  C'est l'économie la plus tentante quand il manque dix centimètres de tissu, et la plus coûteuse. Une jupe posée de travers ne se rattrape pas — elle tournera toujours.
+
+  Deux mesures au mètre ruban avant d'épingler, en haut et en bas de la flèche. C'est le seul contrôle que je demande systématiquement à la coupe.
+categorie: patronage
+synonymes: []
+termesLies:
+  - lisiere
+  - biais
+  - laize
+article: tissus-debutants
+stage: ''
+seoDescription: ''
+lastModified: '2026-07-31'

@@ -1,0 +1,135 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Hero from '../../components/Hero.astro';
+import AvisProvisoire from '../../components/AvisProvisoire.astro';
+import DetailCard from '../../components/DetailCard.astro';
+import IntroSection from '../../components/IntroSection.astro';
+import CrossLinksSection from '../../components/CrossLinksSection.astro';
+import CalendrierCreneau from '../../components/CalendrierCreneau.astro';
+import FaqSection from '../../components/FaqSection.astro';
+import Temoignages from '../../components/Temoignages.astro';
+import { getPageContext, reader } from '../../utils/reader';
+import { resolveImage, resolveImageUrl } from '../../utils/images';
+import { buildServicePageSchemas } from '../../utils/schema';
+import { chargerStages, euros, formule, fourchetteAJour } from '../../utils/stages';
+
+/**
+ * LE MOYEU DES STAGES — la grille, et plus le détail.
+ *
+ * Cette page a tout porté : les six descriptions longues, les prérequis, les
+ * formules et les calendriers, à la suite. C'était une page seule en
+ * concurrence avec elle-même sur six intentions de recherche distinctes —
+ * « stage surjeteuse », « cours de patronage », « coudre un tote bag » — dont
+ * aucune ne pouvait la faire remonter, puisque aucune n'y trouvait de page qui
+ * lui réponde. Un visiteur venu pour le patronage arrivait en haut d'un rouleau
+ * de six stages et devait y chercher le sien.
+ *
+ * Le détail est parti sur `/stages-thematiques/{stage}/`. Il ne reste ici que
+ * ce qui parle de l'ENSEMBLE : l'introduction, la grille, les témoignages, la
+ * FAQ. Redire ici ce que disent les fiches serait le vrai danger — un moyeu qui
+ * duplique ses filles se classe à leur place, ou à la place de personne.
+ *
+ * LE `Course` A SUIVI LE DÉTAIL. Il se construisait ici sur les dates de tous
+ * les stages confondus, ce qui décrivait un cours unique dont les séances
+ * auraient été tantôt du patronage, tantôt de la surjeteuse. Chaque fiche porte
+ * maintenant le sien, avec ses seules dates : c'est la même intention, à la
+ * bonne échelle.
+ */
+
+const page = await reader.singletons.stagesThematiques.read();
+if (!page) throw new Error('Contenu des stages introuvable');
+
+const { settings, siteUrl } = await getPageContext(Astro.site);
+
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+const couverture = await resolveImage(page.coverImage, coverGlob);
+const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
+
+const { stages, fourchette, offresBrutes, error } = await chargerStages(page.stages ?? []);
+
+const faqAJour = fourchetteAJour(page.faqItems ?? [], fourchette);
+
+/**
+ * Les offres du schéma restent CELLES DE LA BASE, formule par formule.
+ *
+ * La grille n'affiche que six cartes, mais la base porte huit produits : les
+ * deux formules de l'initiation et les deux du stage découverte ont chacune
+ * leur prix. Un `Service` qui n'en déclarerait que six annoncerait à Google un
+ * catalogue plus pauvre que le vrai, et un plancher de prix faux.
+ */
+const schemas = buildServicePageSchemas({
+  title: page.title,
+  seoDescription: page.seoDescription,
+  pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
+  siteUrl,
+  settings,
+  offers: offresBrutes.map((c) => ({
+    name: c.label,
+    price: euros(c.default_unit_price_cents),
+  })),
+  faqItems: faqAJour,
+});
+---
+
+<BaseLayout title={page.title} description={fourchette ? page.seoDescription.replace(/de\s+\d+\s*€\s+à\s+\d+\s*€/i, fourchette) : page.seoDescription}
+            ogImage={ogImage}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
+  </Fragment>
+
+  <AvisProvisoire texte={settings?.avisProvisoire} />
+
+  {/* `flush` : la marge basse du héros doublait celle de l'introduction. */}
+  <Hero flush title={page.title} subtitle={page.subtitle}
+        coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
+
+  {page.introduction && (
+    <IntroSection text={page.introduction} cta={false} fond />
+  )}
+
+  {stages.length === 0 ? (
+    <section class="py-16 md:py-20">
+      <div class="mx-auto max-w-3xl px-4">
+        <div class="rounded-xl bg-[var(--color-bg-accent)] p-5">
+          <CalendrierCreneau seances={[]} erreur={Boolean(error)}
+                             vide="Aucun stage programmé pour l’instant."
+                             contactSuite="pour connaître les prochaines dates." />
+        </div>
+      </div>
+    </section>
+  ) : (
+    <section class="pt-10 pb-16 md:pt-12 md:pb-20">
+      <div class="mx-auto max-w-4xl px-4">
+        <h2 class="mb-10 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+          {page.stagesSectionTitle}
+        </h2>
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {stages.map((f) => (
+            <DetailCard
+              name={f.base}
+              href={f.href}
+              primaryBadge={f.tarifPrincipal}
+              secondaryBadge={f.tarifSecondaire ?? undefined}
+              details={[
+                f.description?.shortDescription,
+                f.formules.length > 1
+                  ? `${f.formules.length} formules${f.lieuCommun ? ` · ${f.lieuCommun}` : ''}`
+                  : `${formule(f.formules[0].seances_par_stage)}${f.lieuCommun ? ` · ${f.lieuCommun}` : ''}`,
+              ].filter((l): l is string => Boolean(l))}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <Temoignages page="stages" />
+
+  <FaqSection title={page.faqSectionTitle} items={faqAJour} ctaLabel={page.ctaLabel} fond />
+
+  {page.crossLinksText && (
+    <CrossLinksSection text={page.crossLinksText} excludeHref="/stages-thematiques/" />
+  )}
+</BaseLayout>

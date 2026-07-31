@@ -1,10 +1,12 @@
 ---
 import { reader } from '../utils/reader';
-import { navLinks } from '../utils/navLinks';
+import { footerLinks } from '../utils/navLinks';
 
 const settings = await reader.singletons.siteSettings.read();
-const navLeft = navLinks.slice(0, 3);
-const navRight = navLinks.slice(3);
+// Sept liens sur deux colonnes : la première en prend quatre, pour que la
+// seconde ne dépasse jamais la première en hauteur.
+const navLeft = footerLinks.slice(0, 4);
+const navRight = footerLinks.slice(4);
 
 /*
  * wa.me n'accepte que des chiffres, indicatif pays compris et sans « + ».

@@ -7,6 +7,7 @@ import sitemap from '@astrojs/sitemap';
 import vercel from '@astrojs/vercel';
 import tailwindcss from '@tailwindcss/vite';
 import { readFileSync, readdirSync } from 'node:fs';
+import { toSlug } from './src/utils/strings';
 
 /**
  * Les fichiers de contenu à embarquer dans la fonction Vercel.
@@ -69,6 +70,28 @@ for (const entry of readdirSync('src/content/blog', { withFileTypes: true })) {
  * Aucune ne devient pour autant inaccessible : elles répondent comme avant, et
  * les mentions légales gardent leur lien en pied de page.
  */
+/**
+ * Les fiches de stage, ajoutées au plan du site à la main.
+ *
+ * ELLES SONT RENDUES À LA REQUÊTE — elles lisent les dates en base — et
+ * `@astrojs/sitemap` ne voit que les routes prérendues. Sans cette liste, six
+ * pages neuves n'existeraient pour Google que par les liens du moyeu, ce qui
+ * les ferait découvrir tard et indexer plus tard encore.
+ *
+ * La liste vient du CMS et non de la base : le plan du site se construit sans
+ * réseau ni identifiants, et le contenu porte déjà le nom de chaque stage. Ce
+ * nom est celui qui fait la jointure avec la base — c'est écrit dans le
+ * formulaire Keystatic — donc `toSlug` y donne la même adresse des deux côtés.
+ *
+ * Un stage renommé d'un seul côté sortirait du plan et se signalerait par une
+ * redirection vers le moyeu, ce qui se voit dans la Search Console.
+ */
+function fichesDeStage() {
+  const yaml = readFileSync('src/content/pages/stages-thematiques/index.yaml', 'utf8');
+  const noms = [...yaml.matchAll(/^  - name:\s*(.+)$/gm)].map((m) => m[1].trim());
+  return noms.map((nom) => `${SITE}/stages-thematiques/${toSlug(nom)}/`);
+}
+
 const HORS_PLAN = [
   // Douze adresses, dont les neuf écrans d'administration. Pour un visiteur
   // anonyme — donc pour Google — toutes répondent 302 vers la connexion.
@@ -94,6 +117,7 @@ export default defineConfig({
   site: SITE,
   adapter: vercel({ includeFiles: contenuKeystatic() }),
   integrations: [react(), markdoc(), keystatic(), sitemap({
+    customPages: fichesDeStage(),
     filter: (page) => !HORS_PLAN.some((motif) => page.includes(motif)),
     serialize(item) {
       const lastmod = blogLastmod.get(item.url);

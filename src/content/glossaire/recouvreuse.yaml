@@ -1,0 +1,23 @@
+terme: Recouvreuse
+definitionCourte: |-
+  Une recouvreuse est une machine spécialisée qui réalise les ourlets extensibles des t-shirts : deux ou trois lignes parallèles sur l'endroit, une chaînette sur l'envers.
+explication: |-
+  C'est la finition que l'on voit au bas de tous les t-shirts industriels, et celle que la machine familiale imite mal. Elle coud sans couper, contrairement à la surjeteuse, et son point s'allonge avec la maille sans casser.
+
+  Certaines surjeteuses proposent une fonction recouvrement, au prix d'un remontage complet de la machine. Les ateliers qui font beaucoup de jersey préfèrent deux machines distinctes.
+
+  Elle n'est pas indispensable : une aiguille jumelée sur une machine ordinaire donne un résultat proche, un peu moins extensible.
+enAtelier: |-
+  C'est le troisième achat, jamais le premier. Une machine à coudre, puis éventuellement une surjeteuse, puis une recouvreuse si l'on coud vraiment beaucoup de mailles.
+
+  Je vois régulièrement des gens équipés de trois machines qui n'ont jamais pris le temps de bien régler la première.
+categorie: machine
+synonymes: []
+termesLies:
+  - point-de-chainette
+  - jersey
+  - ourlet
+article: surjeteuse-a-quoi-ca-sert
+stage: /stages-thematiques/stage-surjeteuse/
+seoDescription: ''
+lastModified: '2026-07-31'

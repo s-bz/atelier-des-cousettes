@@ -1,0 +1,178 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Hero from '../../components/Hero.astro';
+import ContactCTA from '../../components/ContactCTA.astro';
+import { getPageContext, reader } from '../../utils/reader';
+import { splitParagraphs } from '../../utils/strings';
+import { buildBreadcrumbSchema, buildDefinedTermSchema } from '../../utils/schema';
+import { completerTermesLies, labelCategorie } from '../../utils/glossaire';
+
+/**
+ * UNE FICHE DE GLOSSAIRE.
+ *
+ * Prérendue, contrairement aux pages de stage : rien ici ne vient de la base,
+ * et une définition ne change pas entre deux visites. Le contenu suffit à la
+ * calculer à la construction.
+ *
+ * LA DÉFINITION COURTE EST LE CŒUR DE LA PAGE, et elle est répétée à trois
+ * endroits pour trois lecteurs différents : en tête pour celui qui lit, dans la
+ * méta-description pour celui qui hésite à cliquer, dans le `DefinedTerm` pour
+ * celui qui n'est pas humain. C'est la seule répétition volontaire du site, et
+ * elle est voulue : ces trois-là ne se rencontrent jamais.
+ */
+
+export async function getStaticPaths() {
+  const termes = await reader.collections.glossaire.all();
+  return termes.map((t) => ({ params: { terme: t.slug } }));
+}
+
+const { terme: slug } = Astro.params;
+const fiche = await reader.collections.glossaire.read(slug!);
+if (!fiche) return Astro.redirect('/glossaire/');
+
+const page = await reader.singletons.glossaireIndex.read();
+const { settings, siteUrl } = await getPageContext(Astro.site);
+
+const toutes = await reader.collections.glossaire.all();
+
+const slugsLies = completerTermesLies(
+  slug!,
+  (fiche.termesLies ?? []).filter((s): s is string => Boolean(s)),
+  toutes,
+);
+const termesLies = slugsLies
+  .map((s) => toutes.find((t) => t.slug === s))
+  .filter((t): t is NonNullable<typeof t> => Boolean(t));
+
+const article = fiche.article ? await reader.collections.blog.read(fiche.article) : null;
+
+const pageUrl = new URL(Astro.url.pathname, Astro.site).toString();
+const description = (fiche.seoDescription || fiche.definitionCourte).replace(/\s+/g, ' ').trim();
+
+const schemas = [
+  buildBreadcrumbSchema([
+    { name: 'Accueil', url: siteUrl },
+    { name: page?.title ?? 'Glossaire', url: `${siteUrl}/glossaire/` },
+    { name: fiche.terme },
+  ]),
+  buildDefinedTermSchema({
+    terme: fiche.terme,
+    definition: description,
+    pageUrl,
+    siteUrl,
+    synonymes: fiche.synonymes,
+  }),
+];
+
+const synonymes = (fiche.synonymes ?? []).filter(Boolean);
+---
+
+<BaseLayout title={`${fiche.terme} : définition couture`} description={description}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
+  </Fragment>
+
+  <Hero flush title={fiche.terme} subtitle={labelCategorie(fiche.categorie)} />
+
+  <nav aria-label="Fil d’Ariane" class="mx-auto max-w-3xl px-4 pt-8">
+    <ol class="flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-light)]">
+      <li><a href="/" class="hover:text-[var(--color-button)] transition-colors">Accueil</a></li>
+      <li aria-hidden="true">›</li>
+      <li><a href="/glossaire/" class="hover:text-[var(--color-button)] transition-colors">{page?.title}</a></li>
+      <li aria-hidden="true">›</li>
+      <li aria-current="page" class="text-[var(--color-text)]">{fiche.terme}</li>
+    </ol>
+  </nav>
+
+  <section class="pt-6 pb-16 md:pb-20">
+    <div class="mx-auto max-w-3xl px-4">
+      {/*
+        La définition en tête, détachée du reste et non noyée dans le premier
+        paragraphe : c'est le bloc qu'un moteur de réponse extrait, et il ne
+        peut l'extraire que s'il tient seul.
+      */}
+      <p class="rounded-xl border-l-4 border-[var(--color-button)] bg-[var(--color-bg-accent)] p-5 text-base md:text-lg leading-relaxed text-[var(--color-text)]">
+        {fiche.definitionCourte}
+      </p>
+
+      {synonymes.length > 0 && (
+        <p class="mt-4 text-sm text-[var(--color-text-light)]">
+          Aussi appelé{synonymes.length > 1 ? 's' : ''} : {synonymes.join(', ')}.
+        </p>
+      )}
+
+      {fiche.explication && (
+        <div class="prose mt-8">
+          {splitParagraphs(fiche.explication).map((para) => <p>{para}</p>)}
+        </div>
+      )}
+    </div>
+  </section>
+
+  {fiche.enAtelier && (
+    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+      <div class="mx-auto max-w-3xl px-4">
+        <h2 class="mb-6 text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+          {page?.enAtelierTitre}
+        </h2>
+        <div class="prose">
+          {splitParagraphs(fiche.enAtelier).map((para) => <p>{para}</p>)}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="py-16 md:py-20">
+    <div class="mx-auto max-w-3xl px-4">
+      <h2 class="mb-6 text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+        {page?.termesLiesTitre}
+      </h2>
+      <ul class="flex flex-wrap gap-3">
+        {termesLies.map((t) => (
+          <li>
+            <a href={`/glossaire/${t.slug}/`}
+               class="inline-block rounded-[var(--radius-button)] bg-white px-4 py-2 text-sm font-semibold text-[var(--color-link)] shadow-md transition-colors hover:text-[var(--color-button)] dark:bg-[var(--color-card-bg)]">
+              {t.entry.terme}
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      {/*
+        Les deux sorties de la fiche : lire plus long, ou venir le faire. Sans
+        elles, une page de glossaire est un cul-de-sac où l'on répond à la
+        question de quelqu'un sans jamais lui proposer la suite.
+      */}
+      {(article || fiche.stage) && (
+        <ul class="mt-8 space-y-2 text-sm">
+          {article && (
+            <li>
+              <a href={`/blog/${fiche.article}/`} class="font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+                {page?.lireLabel} {article.title} &rarr;
+              </a>
+            </li>
+          )}
+          {fiche.stage && (
+            <li>
+              <a href={fiche.stage} class="font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+                {page?.stageLabel} &rarr;
+              </a>
+            </li>
+          )}
+        </ul>
+      )}
+    </div>
+  </section>
+
+  <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+    <div class="mx-auto max-w-3xl px-4 text-center">
+      {page?.ctaText && (
+        <p class="mb-2 text-base md:text-lg leading-relaxed text-[var(--color-text)]">{page.ctaText}</p>
+      )}
+      <ContactCTA label={page?.ctaLabel} />
+      <a href="/glossaire/" class="mt-6 inline-block text-sm font-semibold text-[var(--color-link)] hover:text-[var(--color-button)] transition-colors">
+        &larr; {page?.backToListLabel}
+      </a>
+    </div>
+  </section>
+</BaseLayout>

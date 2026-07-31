@@ -1,0 +1,23 @@
+terme: Cran de montage
+definitionCourte: |-
+  Les crans de montage sont les petits repères marqués sur les bords d'un patron. Reportés sur le tissu, ils indiquent quels points de deux pièces doivent se rencontrer à l'assemblage.
+explication: |-
+  Deux bords qui se cousent ensemble ont rarement la même longueur exacte : l'un porte de l'embu, l'autre non, ou la courbe se répartit inégalement. Les crans disent où faire coïncider quoi, et le surplus se répartit entre eux.
+
+  Ils indiquent aussi le sens. Un cran sur une tête de manche, deux crans sur l'autre bord, et l'on ne peut plus monter la manche à l'envers — ce qui, sans repère, arrive très régulièrement.
+
+  On les reporte par une petite entaille de trois millimètres dans la marge, ou par un trait de craie. Jamais par une entaille profonde : elle affaiblirait la couture.
+enAtelier: |-
+  Ce sont les repères que l'on saute quand on est pressé, et que l'on regrette à l'assemblage — il faut alors épingler au jugé et répartir à l'œil.
+
+  Trois millimètres, dans la marge, aux ciseaux. Quinze secondes par pièce, et le montage se fait tout seul.
+categorie: patronage
+synonymes: []
+termesLies:
+  - marge-de-couture
+  - embu
+  - emmanchure
+article: comprendre-patrons-couture
+stage: /stages-thematiques/stage-patronage/
+seoDescription: ''
+lastModified: '2026-07-31'

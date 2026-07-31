@@ -1,0 +1,23 @@
+terme: Griffes d’entraînement
+definitionCourte: |-
+  Les griffes d'entraînement sont les petites dents métalliques qui dépassent de la plaque et font avancer le tissu à chaque point. Leur hauteur et la longueur du point déterminent cette avancée.
+explication: |-
+  Elles montent, avancent, descendent et reviennent, en rythme avec l'aiguille : le tissu ne progresse que lorsque l'aiguille est sortie. C'est ce cycle qui rend inutile — et nuisible — le fait de tirer sur le tissu en cousant.
+
+  On peut les abaisser sur la plupart des machines. C'est nécessaire pour la couture libre, le reprisage et le matelassage, où c'est la main qui décide du déplacement.
+
+  Elles n'entraînent que l'épaisseur du dessous. Sur plusieurs couches, la couche inférieure avance donc plus vite que la supérieure, ce qui décale les bords : d'où les pieds à double entraînement.
+enAtelier: |-
+  Tirer sur le tissu pour l'aider est le geste que je corrige le plus souvent. Il fausse la longueur du point, dévie la couture, et casse des aiguilles.
+
+  On accompagne, on ne tire pas. Les mains posées de part et d'autre, sans force — la machine avance toute seule.
+categorie: machine
+synonymes: []
+termesLies:
+  - pied-de-biche
+  - molleton
+  - tension-du-fil
+article: entretenir-machine-a-coudre
+stage: /stages-thematiques/initiation-machine-a-coudre/
+seoDescription: ''
+lastModified: '2026-07-31'

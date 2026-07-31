@@ -1,0 +1,23 @@
+terme: Point d’arrêt
+definitionCourte: |-
+  Le point d'arrêt bloque le début et la fin d'une couture pour l'empêcher de se défaire. À la machine, il s'obtient en piquant deux ou trois points en marche arrière.
+explication: |-
+  Une couture machine n'est qu'un entrelacement de deux fils : rien ne la retient à ses extrémités, et il suffit de tirer sur le fil de canette pour la voir se démonter comme une fermeture de sac de farine.
+
+  Deux ou trois points en arrière suffisent. Davantage épaissit l'amorce, la rend visible et, sur un tissu fin, finit par le perforer.
+
+  Certaines machines proposent un point d'arrêt automatique, qui pique plusieurs points sur place. Il tient mieux sur les mailles, où la marche arrière a tendance à mâcher le tissu.
+enAtelier: |-
+  C'est l'oubli le plus fréquent des premières séances, et le plus discret : la couture est belle en sortant de la machine, et se rouvre au premier essayage.
+
+  Le réflexe s'installe en une séance dès qu'on l'associe non pas à la fin de la couture, mais au geste de relever le pied-de-biche : on ne relève jamais le pied sans avoir arrêté.
+categorie: gestes
+synonymes: []
+termesLies:
+  - tension-du-fil
+  - batir
+  - surpiqure
+article: coutures-de-base
+stage: /stages-thematiques/initiation-machine-a-coudre/
+seoDescription: ''
+lastModified: '2026-07-31'

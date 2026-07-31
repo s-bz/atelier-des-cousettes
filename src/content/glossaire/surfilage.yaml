@@ -1,0 +1,23 @@
+terme: Surfilage
+definitionCourte: |-
+  Le surfilage est la finition du bord coupé d'un tissu pour l'empêcher de s'effilocher. Il se fait à la surjeteuse, ou à la machine avec un point zigzag ou un point overlock.
+explication: |-
+  Un tissu tissé perd ses fils de trame par les bords dès qu'on le manipule, et le phénomène ne s'arrête pas au lavage : une couture non surfilée s'effrange jusqu'à la piqûre et finit par lâcher.
+
+  Trois solutions, par ordre de propreté. La surjeteuse coupe et surfile en un passage, c'est ce que fait le prêt-à-porter. Le point overlock de la machine familiale imite ce résultat. Le zigzag, réglé large et pas trop serré, fait le travail sur les tissus moyens.
+
+  Tous les tissus n'en ont pas besoin : les mailles ne s'effilochent pas, et une couture anglaise enferme les bords sans qu'il faille les finir.
+enAtelier: |-
+  La question qui revient à chaque stage surjeteuse : faut-il surfiler avant ou après avoir assemblé ? Après, presque toujours — on surfile les deux marges ensemble, ce qui va deux fois plus vite et couche la couture du bon côté.
+
+  Avant, uniquement quand on sait que les pièces vont être manipulées longtemps avant l'assemblage.
+categorie: gestes
+synonymes: []
+termesLies:
+  - point-zigzag
+  - point-de-chainette
+  - couture-anglaise
+article: coutures-de-base
+stage: /stages-thematiques/stage-surjeteuse/
+seoDescription: ''
+lastModified: '2026-07-31'
