@@ -38,6 +38,11 @@ const schemas = buildPageSchemas({
   settings,
 });
 
+// Les témoignages, désormais sous le formulaire, portent le fond chaud : les
+// informations pratiques qui les suivent s'en passent donc, pour que deux
+// sections de même teinte ne se touchent pas.
+const contactSections = page.sections ?? [];
+
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
 const resolvedCover = await resolveImage(page.coverImage, coverGlob);
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
@@ -62,17 +67,7 @@ const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
     </section>
   )}
 
-  {/*
-    3. Ce que disent les élèves — AVANT le formulaire, non après.
-
-    Une preuve placée sous le champ à remplir arrive une fois la décision
-    prise : elle ne rassure plus que ceux qui n'avaient pas besoin d'être
-    rassurés. La note Google, elle, est vérifiable d'un clic — c'est ce qui la
-    distingue de tout ce que nous écririons nous-mêmes sur notre propre page.
-  */}
-  <Temoignages page="contact" fond />
-
-  <!-- 4. Tally embedded form -->
+  <!-- 3. Tally embedded form -->
   <section class="py-16 md:py-20">
     <div class="max-w-3xl mx-auto px-4">
       {/*
@@ -130,6 +125,36 @@ const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
       )}
     </div>
   </section>
+
+  {/*
+    4. Ce que disent les élèves — SOUS le formulaire.
+
+    La note Google est vérifiable d'un clic, et c'est ce qui la distingue de tout
+    ce que nous écririons nous-mêmes sur notre propre page : elle vaut d'être
+    montrée où qu'elle soit.
+
+    Elle était au-dessus du formulaire, au motif qu'une preuve lue après la
+    décision ne rassure plus personne. Elle passe dessous sur demande — et l'un
+    des deux placements se mesure : si le taux d'envoi du formulaire ne bouge
+    pas, c'est que l'ordre n'était pas ce qui retenait les visiteurs.
+  */}
+  <Temoignages page="contact" fond />
+
+  <!-- 5. Informations pratiques -->
+  {contactSections.map((section, i) => (
+    <section class={i % 2 === 0 ? 'py-16 md:py-20' : 'bg-[var(--color-bg-accent)] py-16 md:py-20'}>
+      <div class="max-w-4xl mx-auto px-4">
+        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-heading)] text-center mb-8">
+          {section.title}
+        </h2>
+        <div class="prose max-w-3xl mx-auto">
+          {section.text && splitParagraphs(section.text).map((para) => (
+            <p>{para}</p>
+          ))}
+        </div>
+      </div>
+    </section>
+  ))}
 </BaseLayout>
 
 {/*

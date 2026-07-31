@@ -15,6 +15,33 @@ introduction: >-
 gallerySectionTitle: Galerie
 emptyGalleryText: Galerie en cours de construction.
 missingImageText: Image manquante
+sections:
+  - title: Le geste derrière chaque pièce
+    text: |-
+      Une jupe cercle est coupée en partie dans le biais du tissu, et le bas
+      s'allonge de lui-même dans les heures qui suivent la coupe. On la laisse
+      donc pendre une nuit, parfois deux, avant de tracer l'ourlet. Tracé trop
+      tôt, il ondule — et rien, ensuite, ne le rattrape.
+
+      Une encolure carrée se juge à ses deux angles. Ils demandent d'être crantés
+      au plus près du fil, puis tenus par une sous-piqûre qui empêche la doublure
+      de remonter sur l'endroit. C'est l'affaire de quelques minutes, et elle
+      décide si l'encolure reste à plat ou bâille à chaque mouvement.
+
+      Une casquette gavroche, elle, se joue à l'assemblage : plusieurs panneaux
+      se rejoignent en un même point au sommet, où la moindre couture décalée se
+      voit. La visière ne vient qu'après, prise entre deux épaisseurs.
+  - title: Pourquoi le lin revient si souvent
+    text: |-
+      Le lin domine dans ces pièces, et ce n'est pas qu'une affaire de goût : il
+      tient le pli qu'on lui donne au fer, ce qui pardonne beaucoup à une couture
+      débutante, et il s'assouplit à chaque lavage au lieu de s'user.
+
+      Il impose en échange une précaution qu'on ne peut pas rattraper : le laver
+      avant de le couper. Un lin qui n'a jamais vu l'eau rétrécit au premier
+      lavage, et il le fait davantage dans la longueur que dans la largeur — un
+      vêtement coupé dans un coupon neuf revient donc du lave-linge plus court,
+      sans avoir changé de taille.
 crossLinksText: >-
   Envie d'apprendre à réaliser vos propres créations ? Découvrez les
   différentes formules proposées par L'Atelier des Cousettes.

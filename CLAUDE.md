@@ -100,6 +100,7 @@ All redesigned pages follow a consistent section-based pattern using `BaseLayout
 - Dynamic glob import pattern: `import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/...')`.
 - Image resolution: use `resolveImage()` and `resolveImageUrl()` from `src/utils/images.ts`.
 - After modifying image files (rotation, resize), clear Astro's image cache: `rm -rf node_modules/.astro .astro`.
+- Blog cover images (`src/assets/images/blog/{slug}/cover.webp`) are **generated**, not photographs of the atelier. Before adding or replacing one, follow `DOCS/RUNBOOK-couvertures-blog.md` — it holds the exact style prompt that keeps the 22 covers a single series, the webp pipeline, and the three rules they must respect (no people, no piece attributed to Isabelle, alt text describing the image rather than the article).
 
 ## Components
 

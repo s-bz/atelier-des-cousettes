@@ -19,12 +19,26 @@ interface Props {
   ogType?: 'website' | 'article';
   articlePublishedTime?: string;
   articleAuthor?: string;
+  /**
+   * Le suffixe « | L'Atelier des Cousettes » derrière le titre. Vrai par défaut.
+   *
+   * IL COÛTE VINGT-SIX CARACTÈRES, sur les soixante que Google affiche. Les
+   * pages du site ont des titres courts et s'en accommodent ; les articles du
+   * blog, non — vingt et un des vingt-deux dépassaient la limite, et c'était
+   * chaque fois la fin du titre qui tombait, celle qui dit de quoi l'article
+   * parle. « Coudre une trousse à fermeture éclair (20 cm) : tutoriel… »
+   *
+   * Le supprimer ne perd pas la marque : Google affiche le nom du site à part,
+   * sous l'adresse, et l'ajoute de lui-même au titre quand il le juge utile.
+   * On ne le répète donc que là où la place ne manque pas.
+   */
+  appendSiteName?: boolean;
 }
 
-const { title, description = "Cours de couture, ateliers et stages dans le Tarn — L'Atelier des Cousettes à Revel et Verdalle", ogImage, noIndex = false, ogType = 'website', articlePublishedTime, articleAuthor } = Astro.props;
+const { title, description = "Cours de couture, ateliers et stages dans le Tarn — L'Atelier des Cousettes à Revel et Verdalle", ogImage, noIndex = false, ogType = 'website', articlePublishedTime, articleAuthor, appendSiteName = true } = Astro.props;
 const pathname = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`;
 const canonicalURL = new URL(pathname, Astro.site);
-const fullTitle = title === "L'Atelier des Cousettes" ? title : `${title} | L'Atelier des Cousettes`;
+const fullTitle = !appendSiteName || title === "L'Atelier des Cousettes" ? title : `${title} | L'Atelier des Cousettes`;
 const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toString();
 ---
 

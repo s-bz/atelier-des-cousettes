@@ -18,10 +18,27 @@ const sortedPosts = filterPublishedPosts(posts)
 
 const { settings, siteUrl } = await getPageContext(Astro.site);
 
-const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+/*
+ * Les deux dossiers : `covers/blog/` pour la couverture de CETTE page,
+ * `blog/<slug>/` pour celles des articles. Voir la même remarque, plus
+ * détaillée, dans `blog/[slug].astro` : le motif qui n'en lisait qu'un rendait
+ * les couvertures introuvables sans le moindre message.
+ */
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>([
+  '/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}',
+  '/src/assets/images/blog/**/*.{jpg,jpeg,png,webp}',
+]);
 const resolvedCover = await resolveImage(page.coverImage, coverGlob);
 const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
 const pageUrl = new URL('/blog/', Astro.site).toString();
+
+// Les couvertures des articles, résolues une fois pour toute la liste.
+const postsAvecCouverture = await Promise.all(
+  sortedPosts.map(async (post) => ({
+    post,
+    cover: await resolveImage(post.entry.coverImage, coverGlob),
+  })),
+);
 
 const schemas = buildPageSchemas({
   title: page.title,
@@ -66,13 +83,15 @@ const schemas = buildPageSchemas({
     <div class="max-w-4xl mx-auto px-4">
       {sortedPosts.length > 0 ? (
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {sortedPosts.map((post) => (
+          {postsAvecCouverture.map(({ post, cover }) => (
             <BlogCard
               title={post.entry.title}
               slug={post.slug}
               publishDate={post.entry.publishDate}
               description={post.entry.seoDescription}
               readMoreLabel={page.readMoreLabel ?? ''}
+              coverImage={cover ?? undefined}
+              coverImageAlt={post.entry.coverImageAlt ?? undefined}
             />
           ))}
         </div>

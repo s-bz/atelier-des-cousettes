@@ -30,7 +30,20 @@ const { settings, siteUrl } = await getPageContext(Astro.site);
 
 const formattedDate = post.publishDate ? formatFrenchDate(post.publishDate) : '';
 
-const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
+/*
+ * LES DEUX DOSSIERS OÙ PEUT VIVRE LA COUVERTURE D'UN ARTICLE.
+ *
+ * Le champ Keystatic écrit dans `src/assets/images/blog/`, ce motif ne lisait
+ * que `covers/` : une image déposée depuis le CMS n'était jamais retrouvée.
+ * `resolveImage` renvoyait null, et null ne casse rien — pas de balise `<img>`,
+ * pas d'`image` dans le schéma Article, l'og:image qui retombe sur celle par
+ * défaut. L'avertissement, lui, n'existe qu'en développement. On pouvait donc
+ * téléverser vingt-deux couvertures et n'en voir aucune, sans un message.
+ */
+const coverGlob = import.meta.glob<{ default: ImageMetadata }>([
+  '/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}',
+  '/src/assets/images/blog/**/*.{jpg,jpeg,png,webp}',
+]);
 const resolvedCover = await resolveImage(post.coverImage, coverGlob);
 const ogImage = resolvedCover ? new URL(resolvedCover.src, Astro.site).toString() : undefined;
 
@@ -72,7 +85,7 @@ const howToSchema = buildHowToSchema({
 });
 ---
 
-<BaseLayout title={post.title} description={post.seoDescription} ogImage={ogImage} ogType="article" articlePublishedTime={post.publishDate ?? undefined} articleAuthor={authorName}>
+<BaseLayout title={post.seoTitle || post.title} description={post.seoDescription} ogImage={ogImage} ogType="article" articlePublishedTime={post.publishDate ?? undefined} articleAuthor={authorName} appendSiteName={false}>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify([
       buildBreadcrumbSchema([
