@@ -73,14 +73,31 @@ const prixTexte = stage.formules.length > 1
   ? `à partir de ${euros(stage.prixMin)} €`
   : `${euros(stage.prixMin)} €`;
 
+/**
+ * LA MÉTA-DESCRIPTION SE COMPOSE DANS 160 CARACTÈRES, elle ne s'y coupe pas.
+ *
+ * Cette description a d'abord été bâtie par concaténation puis tronquée à 300 :
+ * l'accroche, la commune, le département, la couturière, son diplôme et le prix.
+ * Google en affiche environ 160 — le reste ne servait à personne, et la coupe
+ * tombait au milieu d'un mot.
+ *
+ * On assemble donc du plus utile au moins utile, et l'on s'arrête avant la
+ * limite. L'accroche d'Isabelle d'abord : c'est elle qui donne envie de cliquer.
+ * Le prix et la commune ensuite, parce qu'ils décident. Le reste — le
+ * département, le diplôme — est déjà dans le titre, le fil d'Ariane et le
+ * schéma ; le répéter ici coûtait la moitié de la place.
+ */
 const accroche = stage.description?.shortDescription?.replace(/\s+/g, ' ').trim();
-const description = [
-  accroche,
-  `${stage.base} à ${lieu} (Tarn), près de Castres, avec Isabelle Bultez, couturière diplômée CAP. ${prixTexte}${stage.tarifSecondaire ? ` pour ${stage.tarifSecondaire}` : ''}.`,
-]
-  .filter(Boolean)
-  .join(' ')
-  .slice(0, 300);
+const situation = `${prixTexte} à ${lieu}, près de Castres.`;
+
+const description = ((): string => {
+  const complet = accroche ? `${accroche} ${situation}` : situation;
+  if (complet.length <= 160) return complet;
+  // L'accroche seule tient-elle ? Mieux vaut perdre le prix que couper une phrase.
+  if (accroche && accroche.length <= 160) return accroche;
+  // Accroche à rallonge : on coupe au dernier mot entier avant la limite.
+  return (accroche ?? situation).slice(0, 157).replace(/\s+\S*$/, '') + '…';
+})();
 
 /**
  * Le `Course` de CE stage, et de lui seul.
@@ -159,7 +176,7 @@ const articles = (
 const blogIndex = await reader.singletons.blogIndex.read();
 ---
 
-<BaseLayout title={`${stage.base} — ${prixTexte}`} description={description} ogImage={ogImage}>
+<BaseLayout title={`${stage.base} — ${prixTexte}`} description={description} ogImage={ogImage} appendSiteName={false}>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(schemas).replace(/<\//g, '<\\/')} />
   </Fragment>
