@@ -115,7 +115,9 @@ export function remplacerPrix(texte: string, prix: number | null | undefined): s
 type GrilleTarifs =
   | readonly {
       readonly audience?: string | null;
-      readonly formules?: readonly { readonly mensuel?: string | null }[] | null;
+      readonly formules?:
+        | readonly { readonly mensuel?: string | null; readonly seances?: string | null }[]
+        | null;
     }[]
   | null
   | undefined;
@@ -134,27 +136,58 @@ export function forfaitLePlusBas(tarifs: GrilleTarifs, audience?: string): numbe
 }
 
 /**
- * Le prix d'appel d'une carte, quand deux publics n'ont pas le même tarif.
+ * Le forfait le moins cher, ET CE QU'IL ACHÈTE.
+ *
+ * « 36 €/mois » ne dit pas combien de fois on vient ; « 36 €/mois pour
+ * 10 séances » le dit, et c'est la seule des deux phrases dont on puisse juger
+ * si elle est chère. Le nombre de séances est déjà écrit dans la grille du CMS,
+ * à côté du montant — les deux sortent donc d'ici ensemble, et aucune carte ne
+ * peut annoncer le prix d'une formule avec le volume d'une autre.
+ */
+export function formuleLaMoinsChere(
+  tarifs: GrilleTarifs,
+  audience?: string,
+): { mensuel: number; seances: string | null } | null {
+  const formules = (tarifs ?? [])
+    .filter((t) => !audience || t.audience === audience)
+    .flatMap((t) => t.formules ?? [])
+    .map((f) => ({
+      mensuel: Number(f.mensuel?.match(/\d+/)?.[0]),
+      seances: f.seances?.trim() || null,
+    }))
+    .filter((f) => Number.isFinite(f.mensuel) && f.mensuel > 0);
+
+  if (!formules.length) return null;
+  return formules.reduce((moins, f) => (f.mensuel < moins.mensuel ? f : moins));
+}
+
+/**
+ * Le prix d'une carte, quand deux publics n'ont pas le même tarif.
  *
  * « DÈS 28 € » ÉTAIT UN PRIX D'ENFANT. Les cartes affichaient le plus bas des
  * montants, tous publics confondus : 28 €/mois pour les ateliers, 35 € pour une
  * séance. Un adulte qui cliquait découvrait 36 € et 45 €. L'écart n'est pas une
  * variante de formule qu'on découvre à la lecture — c'est un autre public, et
- * la carte ne disait pas lequel.
+ * la carte ne disait pas lequel. Le tarif adulte ouvre donc, le tarif enfant
+ * suit entre parenthèses ; si l'un des deux manque, la phrase se réduit à celui
+ * qui reste plutôt que d'inventer une parenthèse vide.
  *
- * L'ancrage bas est conservé, mais il annonce désormais à qui il s'adresse :
- * le tarif adulte ouvre, le tarif enfant suit entre parenthèses. Si l'un des
- * deux manque, la phrase se réduit à celui qui reste plutôt que d'inventer une
- * parenthèse vide.
+ * « DÈS » A DISPARU, et le suffixe dit désormais ce que le montant achète.
+ * Sur deux des trois cartes le mot était faux : 45 € n'est pas un prix
+ * d'appel, c'est LE prix d'une séance adulte, et rien au-dessus ne l'attend.
+ * Ailleurs il était vrai mais creux — « dès 36 €/mois » laisse ignorer combien
+ * de fois on vient pour ce montant, ce qui est précisément ce dont on a besoin
+ * pour juger s'il est cher. Une fourchette réelle, elle, s'écrit en toutes
+ * lettres par l'appelant (« de 45 € à 95 € »), sans passer par ici.
  */
 export function prixDeuxPublics(
   adultes: number | null | undefined,
   enfants: number | null | undefined,
   suffixe = '',
 ): string | null {
-  if (!adultes) return enfants ? `Dès ${enfants} €${suffixe}` : null;
-  if (!enfants || enfants === adultes) return `Dès ${adultes} €${suffixe}`;
-  return `Dès ${adultes} €${suffixe} (${enfants} € enfant)`;
+  if (!adultes) return enfants ? `${enfants} €${suffixe}` : null;
+  if (!enfants || enfants === adultes) return `${adultes} €${suffixe}`;
+  return `${adultes} €${suffixe} (${enfants} € enfant)`;
 }
 
 /** « De 28€ à 58€ » — du forfait le plus bas au plus élevé de la grille. */

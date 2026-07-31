@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { forfaitLePlusBas, fourchette, fourchetteForfaits, remplacerFourchette } from '../tarifs';
+import {
+  forfaitLePlusBas,
+  formuleLaMoinsChere,
+  fourchette,
+  fourchetteForfaits,
+  prixDeuxPublics,
+  remplacerFourchette,
+} from '../tarifs';
 
 describe('fourchette', () => {
   it('écrit la tournure employée dans les phrases', () => {
@@ -61,6 +68,76 @@ describe('forfaitLePlusBas', () => {
     expect(forfaitLePlusBas([])).toBeNull();
     expect(forfaitLePlusBas(null)).toBeNull();
     expect(forfaitLePlusBas([{ formules: [{ mensuel: '' }] }])).toBeNull();
+  });
+});
+
+describe('formuleLaMoinsChere', () => {
+  const grille = [
+    {
+      audience: 'adultes',
+      formules: [
+        { mensuel: '36 € par mois', seances: '10 séances' },
+        { mensuel: '58 € par mois', seances: '20 séances' },
+      ],
+    },
+    {
+      audience: 'enfants',
+      formules: [
+        { mensuel: '28 € par mois', seances: '10 séances' },
+        { mensuel: '45 € par mois', seances: '20 séances' },
+      ],
+    },
+  ];
+
+  it('rend le montant AVEC le volume de la même formule', () => {
+    // Tout l'intérêt de la fonction : 36 € et « 10 séances » sortent de la même
+    // ligne. Les lire séparément permettrait d'annoncer 36 € pour 20 séances.
+    expect(formuleLaMoinsChere(grille, 'adultes')).toEqual({
+      mensuel: 36,
+      seances: '10 séances',
+    });
+  });
+
+  it('ne mélange pas les publics', () => {
+    expect(formuleLaMoinsChere(grille, 'enfants')?.mensuel).toBe(28);
+    // Sans public demandé, le moins cher de toute la grille — un prix d'enfant.
+    expect(formuleLaMoinsChere(grille)?.mensuel).toBe(28);
+  });
+
+  it('renvoie la formule même si son volume n’est pas renseigné', () => {
+    // Le suffixe se réduit alors à « /mois » côté page : un prix sans son
+    // volume reste juste, un volume inventé ne le serait pas.
+    expect(formuleLaMoinsChere([{ formules: [{ mensuel: '36 € par mois' }] }])).toEqual({
+      mensuel: 36,
+      seances: null,
+    });
+  });
+
+  it('ne renvoie rien plutôt qu’une formule à zéro euro', () => {
+    expect(formuleLaMoinsChere([])).toBeNull();
+    expect(formuleLaMoinsChere(null)).toBeNull();
+    expect(formuleLaMoinsChere([{ formules: [{ mensuel: '' }] }])).toBeNull();
+  });
+});
+
+describe('prixDeuxPublics', () => {
+  it('ouvre sur le tarif adulte et range l’enfant entre parenthèses', () => {
+    expect(prixDeuxPublics(36, 28, '/mois pour 10 séances'))
+      .toBe('36 €/mois pour 10 séances (28 € enfant)');
+  });
+
+  it('n’annonce plus « Dès » — 45 € est le prix, pas un plancher', () => {
+    expect(prixDeuxPublics(45, 35, ' la séance')).toBe('45 € la séance (35 € enfant)');
+  });
+
+  it('ne fabrique pas de parenthèse quand un seul public est tarifé', () => {
+    expect(prixDeuxPublics(45, null, ' la séance')).toBe('45 € la séance');
+    expect(prixDeuxPublics(45, 45, ' la séance')).toBe('45 € la séance');
+    expect(prixDeuxPublics(null, 35, ' la séance')).toBe('35 € la séance');
+  });
+
+  it('se tait complètement plutôt que d’afficher un prix vide', () => {
+    expect(prixDeuxPublics(null, null, ' la séance')).toBeNull();
   });
 });
 

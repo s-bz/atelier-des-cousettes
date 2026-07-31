@@ -1,15 +1,34 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
+import Temoignages from '../components/Temoignages.astro';
 import { getPageContext, reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { buildPageSchemas } from '../utils/schema';
 import { splitParagraphs } from '../utils/strings';
+import { lienWhatsApp } from '../utils/contact';
 
 const page = await reader.singletons.contact.read();
 if (!page) throw new Error('Contact content not found');
 
 const { settings, siteUrl } = await getPageContext(Astro.site);
+
+/*
+ * LE POINT LE PLUS ÉTROIT DU SITE ÉTAIT LE MOINS ÉQUIPÉ.
+ *
+ * Tous les boutons du site aboutissent ici, et cette page n'offrait qu'une
+ * iframe : pas un numéro, pas un avis, pas un délai. Or c'est le moment où
+ * l'on hésite le plus — on s'apprête à écrire à quelqu'un qu'on ne connaît
+ * pas, sans savoir quand ni si l'on obtiendra une réponse. Les trois choses
+ * qui manquaient existaient déjà ailleurs sur le site.
+ *
+ * LE NUMÉRO N'EST PAS UN SECOND BOUTON qui disputerait le premier. Il est sous
+ * le formulaire, pour qui ne veut pas écrire — une partie du public de
+ * l'atelier appelle plutôt qu'elle ne tape.
+ */
+const mobile = settings?.phones?.[0];
+const telHref = mobile ? `tel:${mobile.replace(/[-.\s]/g, '')}` : null;
+const whatsapp = lienWhatsApp(settings?.whatsappNumber ?? mobile);
 
 const schemas = buildPageSchemas({
   title: page.title,
@@ -43,9 +62,33 @@ const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
     </section>
   )}
 
-  <!-- 3. Tally embedded form -->
-  <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+  {/*
+    3. Ce que disent les élèves — AVANT le formulaire, non après.
+
+    Une preuve placée sous le champ à remplir arrive une fois la décision
+    prise : elle ne rassure plus que ceux qui n'avaient pas besoin d'être
+    rassurés. La note Google, elle, est vérifiable d'un clic — c'est ce qui la
+    distingue de tout ce que nous écririons nous-mêmes sur notre propre page.
+  */}
+  <Temoignages page="contact" fond />
+
+  <!-- 4. Tally embedded form -->
+  <section class="py-16 md:py-20">
     <div class="max-w-3xl mx-auto px-4">
+      {/*
+        LE DÉLAI DE RÉPONSE, JUSTE AU-DESSUS DU FORMULAIRE.
+
+        « Nous vous répondrons dans les meilleurs délais » ne promet rien : il
+        n'existe aucun envoi dont on puisse dire après coup qu'il a manqué à
+        cette phrase. Une durée écrite, elle, est une promesse — et c'est la
+        seule chose qu'attend celui qui hésite à cliquer sur « Envoyer ».
+      */}
+      {page.delaiReponse?.trim() && (
+        <p class="mx-auto mb-8 max-w-xl rounded-xl bg-[var(--color-bg-accent)] px-5 py-4 text-center text-sm leading-relaxed text-[var(--color-text)]">
+          {page.delaiReponse}
+        </p>
+      )}
+
       <iframe
         id="tally-formulaire"
         data-tally-src="https://tally.so/embed/wvGxVA?hideTitle=1&transparentBackground=1&dynamicHeight=1&formEventsForwarding=1"
@@ -57,6 +100,34 @@ const ogImage = await resolveImageUrl(page.coverImage, coverGlob, Astro.site);
         marginwidth="0"
         title="Demande d'informations"
       ></iframe>
+
+      {/*
+        LA SORTIE DE SECOURS DE CELUI QUI N'ÉCRIRA PAS.
+
+        Elle est sous le formulaire et non au-dessus : proposée en premier, elle
+        détournerait ceux que le formulaire n'arrêtait pas. Sous lui, elle ne
+        récupère que ceux qui allaient partir.
+
+        Elle survit à une iframe qui ne charge pas — le seul contenu de cette
+        page venait d'un tiers, et une panne chez Tally n'y laissait rien du
+        tout.
+      */}
+      {telHref && mobile && (
+        <p class="mt-8 text-center text-sm text-[var(--color-text)]">
+          {page.alternativeTexte?.trim() || 'Vous préférez parler de vive voix ?'}{' '}
+          <a href={telHref} class="font-medium text-[var(--color-button)]">
+            {mobile}
+          </a>
+          {whatsapp && (
+            <Fragment>
+              {' — '}
+              <a href={whatsapp} class="font-medium text-[var(--color-button)]">
+                aussi sur WhatsApp
+              </a>
+            </Fragment>
+          )}
+        </p>
+      )}
     </div>
   </section>
 </BaseLayout>

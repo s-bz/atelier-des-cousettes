@@ -1,5 +1,6 @@
 title: L'Atelier des Cousettes
-subtitle: Cours de couture en petits groupes à Revel et Verdalle, à 20 min de Castres
+heroTitle: Apprenez à coudre en petits groupes, dans le Tarn
+subtitle: À Revel et Verdalle, à 20 min de Castres — débutants bienvenus
 seoTitle: Cours de couture à Revel et Verdalle, près de Castres
 seoDescription: >-
   Cours de couture, ateliers et stages à Revel et Verdalle (Tarn), à 20 minutes
@@ -18,19 +19,19 @@ serviceCards:
     href: /ateliers-reguliers/
     image: /src/assets/images/homepage/serviceCards/0/image.jpg
     imageAlt: Ateliers réguliers
-    priceRange: Dès 25 €/mois
+    priceRange: 36 €/mois pour 10 séances (28 € enfant)
     shortDescription: Progressez en petits groupes, une à deux fois par mois, de septembre à juin.
   - label: Stages thématiques
     href: /stages-thematiques/
     image: /src/assets/images/homepage/serviceCards/1/image.jpg
     imageAlt: Stages thématiques
-    priceRange: De 45 € à 95 €
+    priceRange: De 45 € à 95 € le stage
     shortDescription: 'Apprenez une technique précise : machine à coudre, surjeteuse, patronage.'
   - label: Séances sans engagement
     href: /seances-sans-engagement/
     image: /src/assets/images/homepage/serviceCards/2/image.jpg
     imageAlt: Une séance de couture sans engagement
-    priceRange: 40 € les 3 h
+    priceRange: 45 € la séance (35 € enfant)
     shortDescription: >-
       Sans engagement, avancez sur votre projet personnel avec l'aide
       d'Isabelle.
@@ -49,6 +50,12 @@ valuePropositions:
     description: >-
       Des grands débutants qui n'ont jamais touché une machine à coudre aux
       couturiers confirmés souhaitant se perfectionner, chacun trouve sa place.
+  - title: Pas de machine ? Isabelle en prête
+    description: >-
+      Vous n'avez pas encore de machine à coudre, ou vous n'osez pas investir
+      avant d'avoir essayé ? Isabelle en prête une, sur simple demande au moment
+      de l'inscription. Vous pouvez donc venir les mains vides à votre première
+      séance.
   - title: Des formules pour tous
     description: >-
       Ateliers réguliers une à deux fois par mois, stages thématiques ponctuels
@@ -86,4 +93,4 @@ youtubeCredit: Un grand merci à Yan Kwai Maurel pour sa vidéo !
 actualitesTitle: Actualités de l'atelier
 blogSectionTitle: Derniers articles du blog
 actualitesBlogLabel: Voir tous les articles
-ctaLabel: Demande d'information
+ctaLabel: Écrire à Isabelle
