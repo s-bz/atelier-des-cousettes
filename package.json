@@ -17,7 +17,7 @@
     "test:watch": "vitest",
     "prepare": "husky"
   },
-  "packageManager": "pnpm@11.17.0",
+  "packageManager": "pnpm@11.18.0",
   "dependencies": {
     "@astrojs/check": "^0.9.8",
     "@astrojs/markdoc": "^2.0.0",
