@@ -36,10 +36,24 @@ import { createClient } from '@supabase/supabase-js';
  */
 const CALENDRIER = [
   {
+    /*
+     * DEUX MARDIS ONT ÉTÉ RETIRÉS : le 29/12 et le 02/03.
+     *
+     * Ce sont les deux seules dates de stage tombant un mardi, et toutes deux
+     * atterrissaient pile sur cet atelier, aux mêmes heures (14 h – 17 h) et
+     * dans la même salle : le stage trousse le 29/12, le stage sac le 02/03.
+     * Isabelle ne peut pas tenir les deux, et les capacités se seraient
+     * additionnées à neuf personnes. Le stage l'emporte, l'atelier saute.
+     *
+     * RETIRÉS D'ICI, ET NON SEULEMENT ANNULÉS EN BASE. Marquer les séances
+     * `cancelled` sans toucher à cette liste les aurait fait renaître
+     * `scheduled` au prochain passage du script — le calendrier a une source,
+     * et c'est ce fichier.
+     */
     creneau: 'atelier-du-mardi-apres-midi',
     jour: 2, // mardi
-    dates: ['29/09', '13/10', '17/11', '08/12', '29/12',
-            '12/01', '02/02', '02/03', '16/03', '27/04', '25/05', '08/06'],
+    dates: ['29/09', '13/10', '17/11', '08/12',
+            '12/01', '02/02', '16/03', '27/04', '25/05', '08/06'],
   },
   {
     creneau: 'atelier-du-jeudi-matin',
