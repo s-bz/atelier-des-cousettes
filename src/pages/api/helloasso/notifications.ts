@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getAdminClient } from '../../../utils/supabase';
-import { lireNotification, jetonValide } from '../../../utils/helloasso';
+import { lireNotification, jetonValide, lireIntention } from '../../../utils/helloasso';
+import { lireCommande, provisionner } from '../../../utils/provisionnement';
 
 export const prerender = false;
 
@@ -46,11 +47,12 @@ export const POST: APIRoute = async ({ request }) => {
     charge = { illisible: true, brut: texte };
   }
 
+  const supabase = getAdminClient();
   const { type, identifiant, cle } = lireNotification(charge);
   const authentifie = jetonValide(request.url, env('HELLOASSO_WEBHOOK_SECRET'));
 
   try {
-    const { error } = await getAdminClient()
+    const { error } = await supabase
       .from('helloasso_events')
       .upsert(
         { cle, type, identifiant, authentifie, charge_utile: charge },
@@ -74,6 +76,22 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   console.info(`[helloasso] ${cle} enregistré (authentifié : ${authentifie})`);
+
+  /*
+   * LE PROVISIONNEMENT VIENT APRÈS L'ENREGISTREMENT, JAMAIS AVANT.
+   *
+   * L'événement est en base : la notification ne peut plus se perdre, et le 200
+   * est acquis quoi qu'il advienne ensuite. Ce qui suit peut donc échouer sans
+   * conséquence — la ligne reste `traite_le is null` et ressort dans la file
+   * « à traiter ». L'inverse, provisionner puis enregistrer, ferait réémettre
+   * HelloAsso sur une commande déjà provisionnée.
+   *
+   * ON NE FAIT PAS CONFIANCE À LA CHARGE UTILE : elle n'est pas signée. C'est
+   * l'intention relue par l'API qui fait foi, exactement comme au retour du
+   * payeur, et par la même fonction.
+   */
+  await provisionnerSiPossible(supabase, cle, charge);
+
   return new Response(null, { status: 200 });
 };
 
@@ -82,3 +100,55 @@ export const POST: APIRoute = async ({ request }) => {
  * Une route muette en GET la ferait passer pour morte.
  */
 export const GET: APIRoute = () => new Response('OK', { status: 200 });
+
+/**
+ * Provisionne ce qui peut l'être, et ne fait jamais échouer l'accusé de
+ * réception.
+ *
+ * Seules les notifications de commande mènent quelque part : un paiement
+ * d'échéance ou une campagne créée n'ont rien à provisionner, et rester
+ * `traite_le is null` serait alors trompeur — la file « à traiter » doit ne
+ * contenir que ce qui attend vraiment quelqu'un.
+ */
+async function provisionnerSiPossible(
+  supabase: ReturnType<typeof getAdminClient>,
+  cle: string,
+  charge: unknown,
+): Promise<void> {
+  const idIntention = (charge as { data?: { checkoutIntentId?: unknown } })?.data?.checkoutIntentId;
+
+  try {
+    if (idIntention === undefined || idIntention === null) {
+      // Rien à provisionner : on classe, sans encombrer la file.
+      await supabase.from('helloasso_events')
+        .update({ traite_le: new Date().toISOString() }).eq('cle', cle);
+      return;
+    }
+
+    const intention = await lireIntention(String(idIntention));
+    if (!intention.ok) {
+      console.error(`[helloasso] ${cle} : relecture impossible — ${intention.erreur}`);
+      return;
+    }
+
+    const commande = lireCommande(intention.valeur);
+    if (!commande.ok) {
+      console.error(`[helloasso] ${cle} : ${commande.erreur}`);
+      return;
+    }
+
+    const fait = await provisionner(supabase, commande.valeur);
+    if (!fait.ok) {
+      console.error(`[helloasso] ${cle} : ${fait.erreur}`);
+      return;
+    }
+
+    await supabase.from('helloasso_events')
+      .update({ traite_le: new Date().toISOString() }).eq('cle', cle);
+    console.info(`[helloasso] ${cle} provisionné (créé : ${fait.valeur.cree})`);
+  } catch (e) {
+    // Une exception ici ne doit pas empêcher le 200 : l'événement est stocké,
+    // la file le rattrapera.
+    console.error(`[helloasso] ${cle} : provisionnement interrompu`, e);
+  }
+}

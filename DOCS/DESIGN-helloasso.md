@@ -407,8 +407,16 @@ abandonne. Tout le dispositif tient à cette phrase.
   une clé constante ferait passer toute notification illisible pour un doublon de
   la précédente, et la commande qu'elle portait disparaîtrait en silence. La
   contrainte `unique` sur `helloasso_events.cle` fait le reste.
-- **La route n'interprète rien.** Elle stocke la charge utile brute et s'arrête.
-  Plus le traitement est court, moins il peut échouer.
+- **La route enregistre AVANT d'interpréter.** L'événement en base, la
+  notification ne peut plus se perdre et le 200 est acquis quoi qu'il advienne
+  ensuite ; le provisionnement peut alors échouer sans conséquence — la ligne
+  reste `traite_le is null` et ressort dans la file. L'ordre inverse ferait
+  réémettre HelloAsso sur une commande déjà provisionnée.
+- **Elle ne fait pas confiance à ce qu'elle reçoit.** La charge utile n'est pas
+  signée : c'est l'intention relue par l'API qui fait foi, et c'est la même
+  fonction — `provisionner` — qui sert au retour du payeur et à la notification.
+  Le PRD §6 exige qu'ils « écrivent exactement les mêmes lignes » ; cela ne se
+  tient qu'en n'en ayant qu'une seule.
 - **Un échec d'écriture répond 500, délibérément.** Répondre 200 sans avoir rien
   enregistré ferait cesser les réémissions et perdrait la notification pour de
   bon. Un 500 fait revenir HelloAsso pendant 48 h : c'est la seule chance de
