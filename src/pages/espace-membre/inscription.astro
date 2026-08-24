@@ -31,9 +31,28 @@ const [{ data: participants }, formules, { data: creneaux }] = await Promise.all
   supabase.from('participants').select('id, first_name, last_name, audience')
     .eq('account_id', account.id).order('first_name'),
   lireCatalogueFormules(supabase),
-  supabase.from('creneaux').select('id, label, audience, default_start_time, default_end_time')
+  supabase.from('creneaux').select('id, label, audience, default_location, default_start_time, default_end_time')
     .eq('kind', 'atelier').eq('au_forfait', true).is('archived_at', null).order('label'),
 ]);
+
+/*
+ * ON NE VEND QUE LES CRÉNEAUX QUI ONT DES DATES.
+ *
+ * Verdalle n'en a aucune — ses séances « se calent avec le groupe ». Y vendre
+ * un forfait ferait payer une saison qu'aucune inscription d'office ne pourrait
+ * honorer : le planning resterait vide, faute de séance où poser une place.
+ *
+ * La règle vaut pour tous, pas pour Verdalle seul : un créneau retrouve sa
+ * place dans la liste dès qu'on lui programme des dates, sans qu'on y touche.
+ */
+const { data: avecDates } = await supabase
+  .from('sessions')
+  .select('creneau_id')
+  .eq('status', 'scheduled')
+  .gt('starts_at', new Date().toISOString());
+
+const ouvrables = new Set((avecDates ?? []).map((s) => s.creneau_id));
+const creneauxVendables = (creneaux ?? []).filter((c) => ouvrables.has(c.id));
 
 // L'adhésion se lit UNE FOIS, avant d'afficher : elle décide du montant annoncé
 // autant que de celui qui sera prélevé.
@@ -49,7 +68,7 @@ if (Astro.request.method === 'POST') {
     prenom: String(form.get('prenom') ?? ''),
     audience: String(form.get('audience') ?? 'adulte'),
     formule: formules.find((f) => f.id === String(form.get('formule') ?? '')),
-    creneau: (creneaux ?? []).find((c) => c.id === String(form.get('creneau') ?? '')),
+    creneau: creneauxVendables.find((c) => c.id === String(form.get('creneau') ?? '')),
     comptant: form.get('reglement') === 'comptant',
     origine: Astro.url.origin,
     site: Astro.site,
@@ -131,9 +150,9 @@ const euros = (c: number) => (c / 100).toFixed(2).replace('.', ',').replace(',00
       <div>
         <label for="creneau" class="block text-sm font-medium mb-1">Créneau</label>
         <select id="creneau" name="creneau" required class="champ">
-          {(creneaux ?? []).map((c) => (
+          {creneauxVendables.map((c) => (
             <option value={c.id} data-public={c.audience}>
-              {c.label} — {heureCourte(c.default_start_time)} à {heureCourte(c.default_end_time)}
+              {c.label} — {c.default_location} — {heureCourte(c.default_start_time)} à {heureCourte(c.default_end_time)}
             </option>
           ))}
         </select>
