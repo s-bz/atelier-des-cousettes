@@ -1,0 +1,171 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../utils/guards';
+import { getAdminClient } from '../../../utils/supabase';
+import { lireIntention } from '../../../utils/helloasso';
+import { lireCommande, provisionner } from '../../../utils/provisionnement';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const supabase = getAdminClient();
+
+/*
+ * LA FILE « À TRAITER ».
+ *
+ * Toute notification HelloAsso est enregistrée brute avant d'être comprise.
+ * Celles qui ont pu être provisionnées portent une date dans `traite_le` ; les
+ * autres restent ici, avec leur charge utile, jusqu'à ce que quelqu'un s'en
+ * occupe. C'est la contrepartie de la règle du PRD §6 : aucune commande n'est
+ * jamais silencieusement ignorée — encore faut-il un endroit où la voir.
+ *
+ * Le bouton « Réessayer » rejoue le MÊME chemin que le retour du payeur et que
+ * la notification : relire l'intention par l'API, puis `provisionner`. Rien
+ * n'est réparé à la main ici, sans quoi cet écran deviendrait une troisième
+ * façon d'écrire les mêmes lignes.
+ */
+
+let message: string | null = null;
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const cle = String(form.get('cle') ?? '');
+  const action = String(form.get('action') ?? '');
+
+  const { data: evenement } = await supabase
+    .from('helloasso_events').select('cle, charge_utile').eq('cle', cle).maybeSingle();
+
+  if (!evenement) {
+    erreur = 'Événement introuvable.';
+  } else if (action === 'classer') {
+    // Classer sans provisionner : pour ce qui n'avait rien à provisionner, ou
+    // ce qu'Isabelle a réglé autrement.
+    const { error } = await supabase.from('helloasso_events')
+      .update({ traite_le: new Date().toISOString() }).eq('cle', cle);
+    erreur = error ? `Impossible : ${error.message}` : null;
+    if (!error) message = 'Classé.';
+  } else {
+    const idIntention =
+      (evenement.charge_utile as { data?: { checkoutIntentId?: unknown } })?.data?.checkoutIntentId;
+
+    if (idIntention === undefined || idIntention === null) {
+      erreur = 'Cette notification ne porte aucune intention de paiement à relire.';
+    } else {
+      const intention = await lireIntention(String(idIntention));
+      if (!intention.ok) {
+        erreur = intention.erreur;
+      } else {
+        const commande = lireCommande(intention.valeur);
+        if (!commande.ok) {
+          erreur = commande.erreur;
+        } else {
+          const fait = await provisionner(supabase, commande.valeur);
+          if (!fait.ok) {
+            erreur = fait.erreur;
+          } else {
+            await supabase.from('helloasso_events')
+              .update({ traite_le: new Date().toISOString() }).eq('cle', cle);
+            message = fait.valeur.cree
+              ? 'Provisionné : compte, participant et abonnement créés.'
+              : 'La commande était déjà provisionnée ; l’événement est classé.';
+          }
+        }
+      }
+    }
+  }
+}
+
+const { data: enAttente } = await supabase
+  .from('helloasso_events')
+  .select('cle, type, identifiant, authentifie, charge_utile, recu_le')
+  .is('traite_le', null)
+  .order('recu_le');
+
+const { data: recents } = await supabase
+  .from('helloasso_events')
+  .select('cle, type, recu_le, traite_le')
+  .not('traite_le', 'is', null)
+  .order('recu_le', { ascending: false })
+  .limit(10);
+
+const quand = new Intl.DateTimeFormat('fr-FR', {
+  dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Paris',
+});
+---
+
+<AdminLayout title="Paiements" soustitre="Ce que HelloAsso a envoyé, et ce qui attend">
+  {message && (
+    <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] px-4 py-3">{message}</p>
+  )}
+  {erreur && (
+    <p class="mb-6 rounded-xl bg-[var(--color-bg-pink)] px-4 py-3 text-white">{erreur}</p>
+  )}
+
+  <h2 class="text-xl font-bold" style="font-family: var(--font-heading)">
+    À traiter {enAttente?.length ? `(${enAttente.length})` : ''}
+  </h2>
+
+  {!enAttente?.length ? (
+    <p class="mt-3 text-[var(--color-text-light)]">
+      Rien en attente. Tout ce que HelloAsso a envoyé a été rattaché.
+    </p>
+  ) : (
+    <ul class="mt-4 space-y-4">
+      {enAttente.map((e) => (
+        <li class="rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
+          <div class="flex flex-wrap items-baseline gap-x-3">
+            <span class="font-medium text-[var(--color-heading)]">{e.type}</span>
+            <span class="text-sm text-[var(--color-text-light)]">{e.identifiant ?? '—'}</span>
+            <span class="ml-auto text-sm text-[var(--color-text-light)]">
+              reçu le {quand.format(new Date(e.recu_le))}
+            </span>
+          </div>
+
+          {!e.authentifie && (
+            <p class="mt-2 text-sm text-[var(--color-text-light)]">
+              Jeton absent ou invalide — la charge utile n’est pas authentifiée. Elle n’est de
+              toute façon jamais crue : c’est la relecture par l’API qui fait foi.
+            </p>
+          )}
+
+          <details class="mt-3">
+            <summary class="cursor-pointer text-sm text-[var(--color-text-light)]">
+              Voir ce que HelloAsso a envoyé
+            </summary>
+            <pre class="mt-2 overflow-x-auto rounded-lg bg-[var(--color-bg)] p-3 text-xs">{JSON.stringify(e.charge_utile, null, 2)}</pre>
+          </details>
+
+          <form method="post" class="mt-3 flex flex-wrap gap-2">
+            <input type="hidden" name="cle" value={e.cle} />
+            <button type="submit" name="action" value="reessayer"
+                    class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-4 py-2 text-sm font-medium text-white">
+              Réessayer
+            </button>
+            <button type="submit" name="action" value="classer"
+                    class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-4 py-2 text-sm font-medium">
+              Classer sans suite
+            </button>
+          </form>
+        </li>
+      ))}
+    </ul>
+  )}
+
+  <h2 class="mt-12 text-xl font-bold" style="font-family: var(--font-heading)">Derniers traités</h2>
+
+  {!recents?.length ? (
+    <p class="mt-3 text-[var(--color-text-light)]">Aucun encore.</p>
+  ) : (
+    <ul class="mt-4 space-y-2">
+      {recents.map((e) => (
+        <li class="flex flex-wrap gap-x-3 text-sm text-[var(--color-text-light)]">
+          <span class="text-[var(--color-text)]">{e.cle}</span>
+          <span class="ml-auto">{quand.format(new Date(e.traite_le as string))}</span>
+        </li>
+      ))}
+    </ul>
+  )}
+</AdminLayout>
