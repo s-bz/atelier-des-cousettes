@@ -40,6 +40,24 @@ const parPersonne = new Map(AUDIENCES.map((a) => [a.personne, a]));
  * retomber sur « adulte » : mieux vaut une valeur que la base refusera qu'une
  * requête silencieusement adressée au mauvais public.
  */
+/**
+ * Une personne et un créneau relèvent-ils du même public ?
+ *
+ * C'EST LA RÈGLE QUE L'AUTO-INSCRIPTION APPLIQUE en base — « adulte » pour la
+ * personne, « adultes » pour le groupe — mais elle l'applique en silence : un
+ * abonnement mal apparié ne produit aucune place et n'émet aucune erreur. Un
+ * enfant inscrit sur un créneau ados garde donc un planning vide sans que rien
+ * n'en dise la raison. Cette fonction sert à l'empêcher à la saisie, et à le
+ * signaler là où c'est déjà arrivé.
+ *
+ * UN PUBLIC INCONNU EST REFUSÉ, jamais accepté par défaut : mieux vaut arrêter
+ * une saisie douteuse que créer un abonnement que rien n'inscrira.
+ */
+export function memePublic(personne: string, creneau: string): boolean {
+  const connu = parCreneau.get(creneau as AudienceCreneau);
+  return connu !== undefined && connu.personne === personne;
+}
+
 export function personneDe(audience: string): string {
   return parCreneau.get(audience as AudienceCreneau)?.personne ?? audience;
 }

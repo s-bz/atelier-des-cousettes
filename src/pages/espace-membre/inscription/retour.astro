@@ -1,0 +1,112 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getAdminClient } from '../../../utils/supabase';
+import { lireIntention } from '../../../utils/helloasso';
+import { lireCommande, provisionner } from '../../../utils/provisionnement';
+
+/*
+ * LE RETOUR DU PAYEUR.
+ *
+ * HelloAsso ajoute `checkoutIntentId`, `code` et `orderId` à cette URL. Sa
+ * documentation les signale falsifiables : ils servent à savoir QUOI relire,
+ * jamais à décider. Rien n'est provisionné sans avoir relu l'intention par
+ * l'API, où la commande n'apparaît qu'une fois le paiement autorisé.
+ *
+ * CE CHEMIN FAIT DOUBLE EMPLOI AVEC LA NOTIFICATION, et c'est voulu : on ferme
+ * des onglets après avoir payé, et une notification se perd. Les deux appellent
+ * `provisionner`, dont l'idempotence tient à l'unicité de
+ * `subscriptions.helloasso_order_id` — c'est la base qui arbitre, pas l'ordre
+ * d'arrivée.
+ */
+
+const { session, account } = Astro.locals;
+if (!session || !account) return Astro.redirect('/espace-membre/connexion/');
+
+const supabase = getAdminClient();
+const idIntention = Astro.url.searchParams.get('checkoutIntentId');
+
+let titre = 'Votre inscription';
+let message: string | null = null;
+let ennui: string | null = null;
+
+if (!idIntention) {
+  ennui = 'Nous n’avons pas retrouvé le paiement. Si vous avez été débité, écrivez-nous.';
+} else {
+  const intention = await lireIntention(idIntention);
+
+  if (!intention.ok) {
+    ennui = intention.erreur;
+  } else {
+    const commande = lireCommande(intention.valeur);
+
+    if (!commande.ok) {
+      /*
+       * ON NE DIT JAMAIS « ERREUR » À QUELQU'UN QUI VIENT DE PAYER. Son
+       * règlement est passé ; c'est notre rattachement qui manque. L'événement
+       * est consigné pour qu'Isabelle le reprenne, et la personne est prévenue
+       * sans être inquiétée.
+       */
+      await supabase.from('helloasso_events').upsert(
+        {
+          cle: `Retour:${idIntention}`,
+          type: 'Retour',
+          identifiant: String(idIntention),
+          authentifie: true,
+          charge_utile: intention.valeur as never,
+        },
+        { onConflict: 'cle', ignoreDuplicates: true },
+      );
+      console.error(`[inscription] ${idIntention} non provisionnée : ${commande.erreur}`);
+      ennui = 'Votre règlement est bien enregistré. Il nous reste à finir de vous inscrire — '
+        + 'Isabelle s’en occupe et vous recevrez une confirmation.';
+    } else {
+      const fait = await provisionner(supabase, commande.valeur);
+
+      if (!fait.ok) {
+        console.error(`[inscription] ${idIntention} : ${fait.erreur}`);
+        ennui = 'Votre règlement est bien enregistré. Il nous reste à finir de vous inscrire — '
+          + 'Isabelle s’en occupe et vous recevrez une confirmation.';
+      } else {
+        titre = 'C’est réglé, et vous êtes inscrit';
+        message = fait.valeur.cree
+          ? 'Votre forfait est enregistré et vos premières séances sont déjà posées sur votre créneau. '
+            + 'Vous pouvez les modifier depuis votre espace.'
+          // Le second passage — retour et notification arrivent souvent tous
+          // deux. Rien à refaire, et rien d'inquiétant à annoncer.
+          : 'Votre forfait était déjà enregistré. Tout est en ordre.';
+      }
+    }
+  }
+}
+---
+
+<BaseLayout title={titre} description="Confirmation de votre inscription." noIndex>
+  <section class="mx-auto max-w-3xl px-4 py-16 md:py-20">
+    <h1 class="text-2xl md:text-3xl font-bold" style="font-family: var(--font-heading)">{titre}</h1>
+
+    {message && <p class="mt-4 text-[var(--color-text)]">{message}</p>}
+
+    {ennui && (
+      <p class="mt-4 rounded-xl bg-[var(--color-bg-accent)] px-4 py-3 text-[var(--color-text)]">
+        {ennui}
+      </p>
+    )}
+
+    <div class="mt-8 flex flex-wrap gap-3">
+      <a href="/espace-membre/"
+         class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
+        Voir mes séances
+      </a>
+      <a href="/espace-membre/inscription/"
+         class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-6 py-3 font-medium">
+        Inscrire quelqu’un d’autre
+      </a>
+    </div>
+
+    <p class="mt-6 text-sm text-[var(--color-text-light)]">
+      L’adhésion vaut pour toute la famille : elle ne sera pas redemandée cette saison.
+    </p>
+  </section>
+</BaseLayout>

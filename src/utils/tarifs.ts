@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { getAdminClient } from './supabase';
 import { AUDIENCES, type AudienceCreneau } from './ateliers';
 
@@ -190,6 +191,64 @@ export async function lireFormules(): Promise<FormuleBase[] | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Une formule telle que l'ADMINISTRATION la manipule : avec son identifiant et
+ * son libellé, que `FormuleBase` n'a pas — la grille publique apparie sur le
+ * couple (public, nombre de séances) et n'a que faire d'une clé primaire.
+ */
+export interface FormuleCatalogue {
+  id: string;
+  libelle: string;
+  audience: string;
+  seances: number;
+  prixCents: number;
+  /** Nombre de versements si le forfait n'est pas réglé en une fois. */
+  mensualites: number;
+}
+
+/**
+ * Le catalogue des formules, pour les écrans qui en font choisir une.
+ *
+ * Le client est passé en paramètre, et non pris ici : les écrans d'admin ont
+ * déjà le leur, ouvert derrière `requireAdmin`.
+ */
+export async function lireCatalogueFormules(
+  supabase: SupabaseClient,
+): Promise<FormuleCatalogue[]> {
+  const { data, error } = await supabase
+    .from('formules')
+    .select('id, libelle, audience, seances, prix_cents, mensualites')
+    .is('archived_at', null)
+    .order('audience')
+    .order('seances');
+
+  if (error || !data) return [];
+  return data.map((f) => ({
+    id: f.id,
+    libelle: f.libelle,
+    audience: f.audience,
+    seances: f.seances,
+    prixCents: f.prix_cents,
+    mensualites: f.mensualites,
+  }));
+}
+
+/**
+ * « adultes — 18 séances · 531 € (29,50 € la séance en plus) ».
+ *
+ * LE PRIX DIVISÉ EST LA RAISON D'ÊTRE DE CETTE ÉTIQUETTE : c'est lui qui
+ * facture un dépassement depuis `20260824200000`, et il ne se lit nulle part
+ * ailleurs. Les deux décimales sont conservées même sur un compte rond — un
+ * « 25 € » et un « 29,50 € » côte à côte dans une liste se comparent mal.
+ */
+export function libelleFormule(
+  f: { libelle: string; audience: string; seances: number; prixCents: number },
+): string {
+  const total = (f.prixCents / 100).toFixed(0);
+  const divise = (f.prixCents / f.seances / 100).toFixed(2).replace('.', ',');
+  return `${f.audience} — ${f.libelle} · ${total} € (${divise} € la séance en plus)`;
 }
 
 /** Le premier nombre d'un texte — « 9 séances » → 9, « 324 € » → 324. */

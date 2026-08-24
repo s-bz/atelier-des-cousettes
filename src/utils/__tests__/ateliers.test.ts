@@ -3,6 +3,7 @@ import {
   ATELIER_GROUPS,
   ATELIER_GROUP_LABELS,
   AUDIENCES,
+  memePublic,
   PRIX_SEANCE_PAR_DEFAUT,
   creneauDe,
   groupeDe,
@@ -120,5 +121,30 @@ describe('libelleAudience / titreAudience', () => {
 describe('groupeDe, pour le public ados', () => {
   it('reconnaît le croisement Revel × ados', () => {
     expect(groupeDe('Revel', 'ados')).toBe('revel-ados');
+  });
+});
+
+describe('memePublic', () => {
+  it('apparie la personne au groupe correspondant', () => {
+    expect(memePublic('adulte', 'adultes')).toBe(true);
+    expect(memePublic('ado', 'ados')).toBe(true);
+    expect(memePublic('enfant', 'enfants')).toBe(true);
+  });
+
+  it('refuse un public contre un autre', () => {
+    // LE CAS RÉEL : un enfant inscrit sur un créneau ados avec un forfait
+    // adultes. L'auto-inscription écarte l'abonnement « sans bruit », et
+    // personne ne voit pourquoi le planning reste vide.
+    expect(memePublic('enfant', 'ados')).toBe(false);
+    expect(memePublic('adulte', 'ados')).toBe(false);
+    expect(memePublic('ado', 'adultes')).toBe(false);
+  });
+
+  it('refuse ce qu’elle ne connaît pas plutôt que de l’accepter', () => {
+    // Un public inventé ne doit pas passer par défaut : mieux vaut refuser une
+    // saisie douteuse que créer un abonnement que rien n'inscrira jamais.
+    expect(memePublic('adulte', 'adulte')).toBe(false);
+    expect(memePublic('', 'adultes')).toBe(false);
+    expect(memePublic('senior', 'seniors')).toBe(false);
   });
 });

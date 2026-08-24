@@ -5,7 +5,11 @@ import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
 import { notifier, variablesSeance } from '../../../../utils/emails';
-import { AUDIENCES } from '../../../../utils/ateliers';
+import { AUDIENCES, memePublic } from '../../../../utils/ateliers';
+import { trouverOuCreerCompte, inscrireDOffice, saisonDe, bornesSaison,
+  premierJourDuMois, dernierJourDuMois }
+  from '../../../../utils/inscriptions';
+import { lireCatalogueFormules, libelleFormule } from '../../../../utils/tarifs';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -16,10 +20,20 @@ const supabase = getAdminClient();
 // Le sort du message d'accueil est dit explicitement : sans adresse e-mail,
 // personne n'a été prévenu, et Isabelle doit savoir qu'elle a ce relais à
 // faire elle-même plutôt que de le découvrir à la première séance.
+// LE MESSAGE DIT CE QUI S'EST PASSÉ, et non ce qu'on espérait. Il annonçait
+// « inscrit d'office aux prochaines séances » quoi qu'il arrive — y compris
+// quand aucune place n'avait été posée, ce qui est le cas normal d'une
+// inscription prise avant le début de l'abonnement : sans crédit octroyé, il
+// n'y a rien à dépenser. Isabelle ouvrait alors la fiche, n'y voyait aucune
+// séance, et n'avait aucun moyen de savoir si c'était normal.
+const posees = Number(Astro.url.searchParams.get('posees') ?? '-1');
+
 let message: string | null = Astro.url.searchParams.has('inscrit')
-  ? 'Adhérent créé, et inscrit d’office aux prochaines séances de son créneau. '
+  ? (posees > 0
+      ? `Adhérent créé, et inscrit d’office à ${posees} séance${posees > 1 ? 's' : ''} de son créneau. `
+      : 'Adhérent créé. Aucune séance ne lui est encore attribuée. ')
     + (Astro.url.searchParams.has('accueil')
-        ? 'Un message de bienvenue lui a été envoyé, avec la liste de ses dates.'
+        ? 'Un message de bienvenue lui a été envoyé.'
         : 'Sans adresse e-mail, aucun message n’a pu partir : prévenez-le vous-même.')
   : null;
 let erreur: string | null = null;
@@ -66,13 +80,12 @@ if (Astro.request.method === 'POST') {
       } else {
         // Même raison qu'à la création : le résultat doit être visible
         // immédiatement, pas le lendemain matin.
-        const { data: posees, error: e3 } =
-          await supabase.rpc('run_auto_enrolment', { p_horizon_days: 60 });
-        if (e3) {
-          console.error('[abonnement] auto-inscription :', e3);
+        const auto = await inscrireDOffice(supabase);
+        if (!auto.ok) {
+          console.error('[abonnement] auto-inscription :', auto.erreur);
           message = 'Abonnement enregistré.';
         } else {
-          const n = (posees as number) ?? 0;
+          const n = auto.valeur;
           message = n > 0
             ? `Abonnement enregistré. ${n} place${n > 1 ? 's ont été réservées' : ' a été réservée'} d’office.`
             : 'Abonnement enregistré. Aucune séance à venir sur ce créneau pour l’instant.';
@@ -89,8 +102,24 @@ if (Astro.request.method === 'POST') {
   // qu'il faut pour réparer une faute de frappe, et exactement ce qu'il ne faut
   // pas pour acter une évolution réelle — l'écran le dit.
   if (action === 'corriger-abonnement') {
-    const debut = String(form.get('debut') ?? '');
-    const fin = String(form.get('fin') ?? '');
+    /*
+     * ON CHOISIT UN MOIS, MAIS ON NE PERD PAS LE JOUR.
+     *
+     * Cet écran répare une saisie fautive, et une saison va du 1er septembre au
+     * 30 juin : le jour n'y a pas de sens, et le faire saisir n'apporte qu'une
+     * faute possible. Mais « Ajouter un abonnement » peut, lui, créer un
+     * abonnement qui commence en cours de mois — c'est ainsi qu'on acte un
+     * changement de formule. Réparer un tel abonnement ne doit pas le ramener
+     * au premier du mois sans le dire : tant que le mois n'est pas modifié, la
+     * date d'origine est conservée telle quelle.
+     */
+    const garderLeJour = (mois: string, origine: string, bord: (m: string) => string) =>
+      origine.startsWith(mois) ? origine : bord(mois);
+
+    const debut = garderLeJour(String(form.get('debut') ?? ''),
+                               String(form.get('debut-origine') ?? ''), premierJourDuMois);
+    const fin = garderLeJour(String(form.get('fin') ?? ''),
+                             String(form.get('fin-origine') ?? ''), dernierJourDuMois);
 
     if (debut > fin) {
       erreur = 'Le dernier mois ne peut pas précéder le premier.';
@@ -240,25 +269,9 @@ if (Astro.request.method === 'POST') {
       if (error) erreur = `Détachement impossible : ${error.message}`;
       else message = 'Accès retiré. L’historique est conservé.';
     } else {
-      const { data: existant } = await supabase
-        .from('accounts').select('id').eq('email', email).maybeSingle();
-
-      let compteId = existant?.id ?? null;
-
-      if (!compteId) {
-        const { data: authUser, error: authError } =
-          await supabase.auth.admin.createUser({ email, email_confirm: true });
-        if (authError || !authUser?.user) {
-          erreur = `Création de l’accès impossible : ${authError?.message ?? 'erreur inconnue'}`;
-        } else {
-          const { data: compte, error: e } = await supabase
-            .from('accounts')
-            .insert({ email, auth_user_id: authUser.user.id, role: 'member' })
-            .select('id').single();
-          if (e) erreur = `Création du compte impossible : ${e.message}`;
-          else compteId = compte.id;
-        }
-      }
+      const compte = await trouverOuCreerCompte(supabase, email);
+      const compteId = compte.ok ? compte.valeur : null;
+      if (!compte.ok) erreur = compte.erreur;
 
       if (!erreur && compteId) {
         const { error } = await supabase
@@ -286,22 +299,29 @@ if (!participant) return new Response('Participant introuvable', { status: 404 }
  * tenir d'accord. Il s'affiche ici parce que c'est le moment où Isabelle en a
  * besoin : choisir la formule, c'est choisir ce que coûtera la séance en plus.
  */
-const { data: formules } = await supabase
-  .from('formules')
-  .select('id, libelle, audience, seances, prix_cents')
-  .is('archived_at', null)
-  .order('audience')
-  .order('seances');
-
-const libelleFormule = (f: { libelle: string; audience: string; seances: number; prix_cents: number }) =>
-  `${f.audience} — ${f.libelle} · ${(f.prix_cents / 100).toFixed(0)} € ` +
-  `(${(f.prix_cents / f.seances / 100).toFixed(2).replace('.', ',')} € la séance en plus)`;
+const formules = await lireCatalogueFormules(supabase);
 
 const { data: abonnements } = await supabase
   .from('subscriptions')
-  .select('id, season, home_creneau_id, credits_per_month, total_credits, formule_id, starts_on, ends_on, helloasso_order_id, creneaux(label)')
+  .select('id, season, home_creneau_id, credits_per_month, total_credits, formule_id, starts_on, ends_on, helloasso_order_id, creneaux(label, audience)')
   .eq('participant_id', id)
   .order('starts_on');
+
+// La raison d'une fiche vide, quand on la connaît : un abonnement qui n'a pas
+// encore commencé n'octroie aucun crédit, donc ne pose aucune place. Le dire
+// évite de faire chercher une panne là où il n'y en a pas.
+if (message && posees === 0) {
+  const aVenir = (abonnements ?? [])
+    .map((a) => a.starts_on as string)
+    .filter((d) => d > new Date().toISOString().slice(0, 10))
+    .sort()[0];
+  if (aVenir) {
+    const quand = new Date(aVenir).toLocaleDateString('fr-FR', {
+      day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+    });
+    message += ` Son abonnement commence le ${quand} : ses séances seront posées à partir de cette date.`;
+  }
+}
 
 const { data: solde } = await supabase.rpc('balance', { p_participant: id });
 const { data: octroye } = await supabase.rpc('granted_credits', {
@@ -309,10 +329,35 @@ const { data: octroye } = await supabase.rpc('granted_credits', {
 });
 const { data: consomme } = await supabase.rpc('consumed_credits', { p_participant: id });
 
+/*
+ * SEULS LES CRÉNEAUX QU'UNE INSCRIPTION D'OFFICE PEUT HONORER.
+ *
+ * La liste proposait tout ce que porte la table : les stages, la séance du
+ * jeudi soir vendue à l'unité, et les créneaux archivés. Or `run_auto_enrolment`
+ * exige `kind = 'atelier'` ET `au_forfait` — un abonnement attaché à l'un des
+ * autres ne pose jamais aucune place, en silence. Offrir un choix impossible,
+ * c'est le faire faire tôt ou tard.
+ */
 const { data: creneaux } = await supabase
   .from('creneaux')
   .select('id, label, audience')
+  .eq('kind', 'atelier')
+  .eq('au_forfait', true)
+  .is('archived_at', null)
   .order('label');
+
+/*
+ * LES LISTES SE BORNENT AU PUBLIC DU PARTICIPANT.
+ *
+ * Trois listes indépendantes — le public de la personne, celui du créneau,
+ * celui de la formule — permettaient d'assembler un abonnement qu'aucune
+ * inscription d'office ne pourrait honorer : l'auto-inscription exige que le
+ * créneau soit celui du public de la personne, et écarte le reste en silence.
+ * On a ainsi créé un enfant sur un créneau ados avec un forfait adultes, dont
+ * le planning est resté vide sans explication.
+ */
+const creneauxDuPublic = (creneaux ?? []).filter((c) => memePublic(participant.audience, c.audience));
+const formulesDuPublic = formules.filter((f) => memePublic(participant.audience, f.audience));
 
 const { data: reservations } = await supabase
   .from('bookings')
@@ -377,8 +422,16 @@ const placesAttitrees = dispoParCreneau.reduce((n, d) => n + d.libres, 0);
 const resteAPlacer = Math.max(0, (solde as number) ?? 0);
 const ailleurs = resteAPlacer - placesAttitrees;
 const dateFr = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
-const anneeCourante = new Date().getFullYear();
-const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
+/*
+ * LA SAISON PAR DÉFAUT SUIT LA RÈGLE DE `saisonDe`, et non l'année civile.
+ *
+ * Elle valait `${année}-${année + 1}` : juste de septembre à décembre, faux de
+ * janvier à juillet — un abonnement ajouté en janvier 2027 s'annonçait de la
+ * saison 2027-2028, alors que celle en cours est 2026-2027. Le seuil est août,
+ * comme partout ailleurs.
+ */
+const saisonDefaut = saisonDe(new Date());
+const bornesDefaut = bornesSaison(saisonDefaut);
 ---
 
 <AdminLayout
@@ -469,6 +522,15 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
             <p class="mt-1 text-xs text-[var(--color-text-light)]">Saisi à la main</p>
           )}
 
+          {a.home_creneau_id && !memePublic(participant.audience, (a.creneaux as any)?.audience) && (
+            <p class="mt-2 rounded-lg bg-[var(--color-bg-pink)] px-3 py-2 text-sm text-white">
+              <strong>Aucune séance ne sera posée d’office.</strong>{' '}
+              {participant.first_name} est inscrit comme « {participant.audience} », mais ce
+              créneau accueille le public « {(a.creneaux as any)?.audience} ». Corrigez l’un
+              ou l’autre ci-dessous.
+            </p>
+          )}
+
           <details class="mt-3">
             <summary class="cursor-pointer text-sm text-[var(--color-text-light)]">
               Corriger cet abonnement
@@ -491,7 +553,7 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
                   <label for={`c-creneau-${a.id}`} class="block text-sm font-medium mb-1">Créneau habituel</label>
                   <select id={`c-creneau-${a.id}`} name="creneau" class="champ">
                     <option value="">Aucun</option>
-                    {(creneaux ?? []).map((c) => (
+                    {creneauxDuPublic.map((c) => (
                       <option value={c.id} selected={c.id === a.home_creneau_id}>
                         {c.label} — {c.audience}
                       </option>
@@ -502,7 +564,7 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
                   <label for={`c-formule-${a.id}`} class="block text-sm font-medium mb-1">Formule</label>
                   <select id={`c-formule-${a.id}`} name="formule" class="champ">
                     <option value="">Aucune — saisie libre ci-dessous</option>
-                    {(formules ?? []).map((f) => (
+                    {formulesDuPublic.map((f) => (
                       <option value={f.id} selected={f.id === a.formule_id}>{libelleFormule(f)}</option>
                     ))}
                   </select>
@@ -525,13 +587,15 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
                 </div>
                 <div>
                   <label for={`c-debut-${a.id}`} class="block text-sm font-medium mb-1">Premier mois</label>
-                  <input id={`c-debut-${a.id}`} name="debut" type="date" required
-                         value={a.starts_on} class="champ" />
+                  <input id={`c-debut-${a.id}`} name="debut" type="month" required
+                         value={String(a.starts_on).slice(0, 7)} class="champ" />
+                  <input type="hidden" name="debut-origine" value={a.starts_on} />
                 </div>
                 <div>
                   <label for={`c-fin-${a.id}`} class="block text-sm font-medium mb-1">Dernier mois</label>
-                  <input id={`c-fin-${a.id}`} name="fin" type="date" required
-                         value={a.ends_on} class="champ" />
+                  <input id={`c-fin-${a.id}`} name="fin" type="month" required
+                         value={String(a.ends_on).slice(0, 7)} class="champ" />
+                  <input type="hidden" name="fin-origine" value={a.ends_on} />
                 </div>
               </div>
 
@@ -594,14 +658,14 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
           <select id="creneau" name="creneau"
                   class="champ">
             <option value="">Aucun</option>
-            {(creneaux ?? []).map((c) => <option value={c.id}>{c.label} — {c.audience}</option>)}
+            {creneauxDuPublic.map((c) => <option value={c.id}>{c.label} — {c.audience}</option>)}
           </select>
         </div>
         <div class="sm:col-span-2">
           <label for="formule" class="block text-sm font-medium mb-1">Formule</label>
           <select id="formule" name="formule" class="champ">
             <option value="">Aucune — saisie libre ci-dessous</option>
-            {(formules ?? []).map((f) => <option value={f.id}>{libelleFormule(f)}</option>)}
+            {formulesDuPublic.map((f) => <option value={f.id}>{libelleFormule(f)}</option>)}
           </select>
           <p class="mt-1 text-sm text-[var(--color-text-light)]">
             Choisir une formule fixe le nombre de séances et le prix d’un dépassement.
@@ -631,10 +695,14 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
           <label for="debut" class="block text-sm font-medium mb-1">Premier mois</label>
           <input id="debut" name="debut" type="date" required
                  class="champ" />
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Le jour compte ici : un changement de formule en cours de saison
+            commence à sa date, et clôture le précédent la veille.
+          </p>
         </div>
         <div>
           <label for="fin" class="block text-sm font-medium mb-1">Dernier mois</label>
-          <input id="fin" name="fin" type="date" required
+          <input id="fin" name="fin" type="date" required value={bornesDefaut?.fin ?? ''}
                  class="champ" />
         </div>
       </div>

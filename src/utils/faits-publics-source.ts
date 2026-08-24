@@ -81,6 +81,5 @@ export async function rassemblerFaitsPublics(site: URL | undefined): Promise<Fai
       })),
     avisProvisoire: settings?.avisProvisoire,
     adhesionAnnuelle: settings?.adhesionAnnuelle,
-    adhesionPonctuelle: settings?.adhesionPonctuelle,
   };
 }

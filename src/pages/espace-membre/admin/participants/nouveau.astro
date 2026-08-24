@@ -5,7 +5,11 @@ import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
 import { notifier, variablesAccueil } from '../../../../utils/emails';
-import { AUDIENCES } from '../../../../utils/ateliers';
+import { AUDIENCES, memePublic } from '../../../../utils/ateliers';
+import { trouverOuCreerCompte, creerParticipant, creerAbonnement, inscrireDOffice,
+  saisonDe, bornesSaison, premierJourDuMois, dernierJourDuMois }
+  from '../../../../utils/inscriptions';
+import { lireCatalogueFormules, libelleFormule } from '../../../../utils/tarifs';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -31,15 +35,40 @@ if (compteExistant) {
   emailCompteExistant = data?.email ?? null;
 }
 
+/*
+ * SEULS LES CRÉNEAUX QU'UNE INSCRIPTION D'OFFICE PEUT HONORER.
+ *
+ * La liste proposait tout ce que porte la table : les stages, la séance du
+ * jeudi soir vendue à l'unité, et les créneaux archivés. Or `run_auto_enrolment`
+ * exige `kind = 'atelier'` ET `au_forfait` — un abonnement attaché à l'un des
+ * autres ne pose jamais aucune place, en silence. Offrir un choix impossible,
+ * c'est le faire faire tôt ou tard.
+ */
 const { data: creneaux } = await supabase
   .from('creneaux')
   .select('id, label, audience')
-  .is('archived_at', null)   // un créneau archivé n'est plus proposé
+  .eq('kind', 'atelier')
+  .eq('au_forfait', true)
+  .is('archived_at', null)
   .order('label');
+
+const formules = await lireCatalogueFormules(supabase);
+
+/*
+ * LES DEUX MOIS SE DÉDUISENT DE LA SAISON, ils ne se saisissent plus.
+ *
+ * Ils étaient à taper pour chaque adhérent, à l'identique, avec le risque
+ * qu'une saisie s'écarte d'un jour et rogne la saison sans que rien ne le dise.
+ * Ils restent modifiables : quelqu'un qui arrive en janvier a bien un premier
+ * mois à lui.
+ */
+const saison = bornesSaison(saisonDe(new Date()));
 
 const champs = {
   prenom: '', nom: '', telephone: '', email: '', notes: '', audience: 'adulte',
-  creneau: '', type: 'forfait', credits: '20', debut: '', fin: '',
+  creneau: '', formule: '', type: 'forfait', credits: '',
+  debut: saison?.debut.slice(0, 7) ?? '',
+  fin: saison?.fin.slice(0, 7) ?? '',
 };
 let erreur: string | null = null;
 
@@ -51,85 +80,73 @@ if (Astro.request.method === 'POST') {
 
   const email = champs.email.toLowerCase();
 
+  const creneauChoisi = (creneaux ?? []).find((c) => c.id === champs.creneau);
+  const formuleChoisie = formules.find((f) => f.id === champs.formule);
+
   if (!champs.prenom || !champs.nom) {
     erreur = 'Le prénom et le nom sont nécessaires.';
   } else if (!champs.debut || !champs.fin) {
     erreur = 'Indiquez le premier et le dernier mois.';
   } else if (champs.debut > champs.fin) {
     erreur = 'Le dernier mois ne peut pas précéder le premier.';
+  } else if (creneauChoisi && !memePublic(champs.audience, creneauChoisi.audience)) {
+    // L'AUTO-INSCRIPTION EXIGE QUE LES DEUX PUBLICS S'ACCORDENT, et écarte le
+    // reste sans rien dire. Laisser passer l'assemblage, c'est créer un
+    // abonnement dont le planning restera vide sans qu'on sache pourquoi.
+    erreur = `Ce créneau accueille le public « ${creneauChoisi.audience} », `
+      + `mais la personne est inscrite comme « ${champs.audience} ». `
+      + `Choisissez un créneau de son public, ou corrigez le public.`;
+  } else if (formuleChoisie && !memePublic(champs.audience, formuleChoisie.audience)) {
+    erreur = `Cette formule est celle du public « ${formuleChoisie.audience} », `
+      + `mais la personne est inscrite comme « ${champs.audience} ».`;
   } else {
     let accountId: string | null = compteExistant;
 
     if (!accountId && email) {
-      const { data: existant } = await supabase
-        .from('accounts').select('id').eq('email', email).maybeSingle();
-
-      if (existant) {
-        accountId = existant.id;
-      } else {
-        // L'utilisateur d'authentification ET la ligne accounts, ensemble.
-        // Sans le premier, la connexion échouerait et l'écran afficherait
-        // « Compte non reconnu » alors que le compte existe.
-        const { data: authUser, error: authError } =
-          await supabase.auth.admin.createUser({ email, email_confirm: true });
-        if (authError || !authUser?.user) {
-          erreur = `Création de l’accès impossible : ${authError?.message ?? 'erreur inconnue'}`;
-        } else {
-          const { data: compte, error: e } = await supabase
-            .from('accounts')
-            .insert({ email, auth_user_id: authUser.user.id, role: 'member' })
-            .select('id').single();
-          if (e) erreur = `Création du compte impossible : ${e.message}`;
-          else accountId = compte.id;
-        }
-      }
+      const compte = await trouverOuCreerCompte(supabase, email);
+      if (compte.ok) accountId = compte.valeur;
+      else erreur = compte.erreur;
     }
 
     if (!erreur) {
-      const { data: personne, error: e1 } = await supabase
-        .from('participants')
-        .insert({
-          account_id: accountId,
-          first_name: champs.prenom,
-          last_name: champs.nom,
-          phone: champs.telephone || null,
-          audience: champs.audience,
-          notes: champs.notes || null,
-        })
-        .select('id').single();
+      const nouvelle = await creerParticipant(supabase, {
+        compteId: accountId,
+        prenom: champs.prenom,
+        nom: champs.nom,
+        telephone: champs.telephone,
+        audience: champs.audience,
+        notes: champs.notes,
+      });
 
-      if (e1) {
-        erreur = `Création impossible : ${e1.message}`;
+      if (!nouvelle.ok) {
+        erreur = nouvelle.erreur;
       } else {
-        // La saison court de septembre à juin : un début en janvier appartient
-        // à la saison ouverte l'automne précédent.
-        const debut = new Date(champs.debut);
-        const anneeSaison = debut.getUTCMonth() >= 7
-          ? debut.getUTCFullYear()
-          : debut.getUTCFullYear() - 1;
+        const personne = { id: nouvelle.valeur };
 
-        const { error: e2 } = await supabase.from('subscriptions').insert({
-          participant_id: personne.id,
-          season: `${anneeSaison}-${anneeSaison + 1}`,
-          home_creneau_id: champs.creneau || null,
-          // Exactement l'un des deux : la contrainte en base refuse les deux
-          // à la fois, et un abonnement sans droit n'a pas de sens.
-          credits_per_month: champs.type === 'forfait' ? null : Number(champs.credits),
-          total_credits: champs.type === 'forfait' ? Number(champs.credits) : null,
-          starts_on: champs.debut,
-          ends_on: champs.fin,
+        const abonnement = await creerAbonnement(supabase, {
+          participantId: personne.id,
+          creneauId: champs.creneau,
+          debut: premierJourDuMois(champs.debut),
+          fin: dernierJourDuMois(champs.fin),
+          // La formule l'emporte : elle fixe le nombre de séances (par le
+          // déclencheur en base) ET le prix d'un dépassement. Les crédits
+          // saisis à la main ne servent qu'à l'abonnement qui ne correspond à
+          // aucune formule du catalogue.
+          formuleId: champs.formule || null,
+          creditsParMois: champs.type === 'forfait' ? null : Number(champs.credits || 0),
+          totalCredits: champs.type === 'forfait' ? Number(champs.credits || 0) : null,
         });
 
-        if (e2) {
-          erreur = `Personne créée, mais abonnement impossible : ${e2.message}`;
+        if (!abonnement.ok) {
+          erreur = `Personne créée, mais ${abonnement.erreur.charAt(0).toLowerCase()}${abonnement.erreur.slice(1)}`;
         } else {
           // Inscrire d'office TOUT DE SUITE, sans attendre le cron du
           // lendemain. Sans cela, Isabelle crée quelqu'un, ouvre la feuille de
           // présence, n'y voit personne, et conclut que ça ne marche pas.
           // La fonction est idempotente : l'appeler ici ne fait pas double
           // emploi avec la tâche quotidienne.
-          const { error: e3 } = await supabase.rpc('run_auto_enrolment', { p_horizon_days: 60 });
-          if (e3) console.error('[inscription] auto-inscription :', e3);
+          const auto = await inscrireDOffice(supabase);
+          if (!auto.ok) console.error('[inscription] auto-inscription :', auto.erreur);
 
           // Message d'accueil, APRÈS l'auto-inscription : il porte la liste des
           // séances retenues, et l'envoyer avant donnerait une liste vide.
@@ -141,26 +158,35 @@ if (Astro.request.method === 'POST') {
           // le champ n'y figure même pas : elle vient du compte.
           const destinataire = email || emailCompteExistant;
 
+          // LES PLACES RÉELLEMENT POSÉES, lues qu'il y ait un e-mail ou non.
+          // Cette requête ne servait qu'au message d'accueil ; l'écran suivant,
+          // lui, annonçait « inscrit d'office aux prochaines séances » sans
+          // rien savoir. Quand l'abonnement commence plus tard — le cas de
+          // toute inscription prise avant la rentrée — il n'y a aucun crédit à
+          // dépenser, donc aucune place posée, et l'écran affirmait le
+          // contraire.
+          const { data: retenues } = await supabase
+            .from('bookings')
+            .select('sessions!inner(starts_at, ends_at, location)')
+            .eq('participant_id', personne.id)
+            .eq('status', 'booked')
+            .order('starts_at', { referencedTable: 'sessions' });
+
           if (accountId && destinataire) {
-            const { data: retenues } = await supabase
-              .from('bookings')
-              .select('sessions!inner(starts_at, ends_at, location)')
-              .eq('participant_id', personne.id)
-              .eq('status', 'booked')
-              .order('starts_at', { referencedTable: 'sessions' });
-
-            const creneauChoisi = (creneaux ?? []).find((c) => c.id === champs.creneau);
-
             await notifier('bienvenue', destinataire, variablesAccueil({
               prenom: champs.prenom,
               creneau: creneauChoisi?.label ?? null,
               seances: (retenues ?? []).map((r: any) => r.sessions),
-              solde: Number(champs.credits),
+              // LE SOLDE ANNONCÉ SUIT LA FORMULE quand il y en a une : les
+              // crédits saisis à la main sont alors vides, et le message
+              // d'accueil dirait « 0 séance » à quelqu'un qui vient d'en
+              // acheter dix-huit.
+              solde: formuleChoisie?.seances ?? Number(champs.credits || 0),
             }));
           }
 
           return Astro.redirect(
-            `/espace-membre/admin/participants/${personne.id}/?inscrit=1`
+            `/espace-membre/admin/participants/${personne.id}/?inscrit=1&posees=${(retenues ?? []).length}`
             + (accountId && destinataire ? '&accueil=1' : ''),
           );
         }
@@ -242,7 +268,9 @@ if (Astro.request.method === 'POST') {
           <select id="creneau" name="creneau" class="champ">
             <option value="">Aucun créneau attitré</option>
             {(creneaux ?? []).map((c) => (
-              <option value={c.id} selected={c.id === champs.creneau}>{c.label} — {c.audience}</option>
+              <option value={c.id} data-public={c.audience} selected={c.id === champs.creneau}>
+                {c.label} — {c.audience}
+              </option>
             ))}
           </select>
           <p class="mt-1 text-sm text-[var(--color-text-light)]">
@@ -251,25 +279,45 @@ if (Astro.request.method === 'POST') {
         </div>
 
         <div class="sm:col-span-2">
-          <label for="type" class="block text-sm font-medium mb-1">Type de forfait</label>
-          <select id="type" name="type" required class="champ">
+          <label for="formule" class="block text-sm font-medium mb-1">Formule</label>
+          <select id="formule" name="formule" class="champ">
+            <option value="">Aucune — saisie libre ci-dessous</option>
+            {formules.map((f) => (
+              <option value={f.id} data-public={f.audience} selected={f.id === champs.formule}>
+                {libelleFormule(f)}
+              </option>
+            ))}
+          </select>
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Choisir une formule fixe le nombre de séances et le prix d’un dépassement.
+            Sans formule, une séance en plus se facture au tarif d’une séance sans engagement.
+          </p>
+        </div>
+
+        <div class="sm:col-span-2">
+          <label for="type" class="block text-sm font-medium mb-1">
+            Sans formule — type de forfait
+          </label>
+          <select id="type" name="type" class="champ">
             <option value="forfait" selected={champs.type === 'forfait'}>
-              Forfait pour la saison — 10 ou 20 séances, disponibles dès le début
+              Forfait pour la saison — tout est disponible dès le début
             </option>
             <option value="mensuel" selected={champs.type !== 'forfait'}>
               Tant de séances par mois — elles s’acquièrent au fil des mois
             </option>
           </select>
           <p class="mt-1 text-sm text-[var(--color-text-light)]">
-            Un forfait affiche d’emblée tout ce qui a été acheté et se place où l’on veut dans
-            la saison. Un forfait mensuel ouvre son quota chaque mois. Dans les deux cas,
+            Sans effet si une formule est choisie. Un forfait affiche d’emblée tout ce qui a
+            été acheté ; un forfait mensuel ouvre son quota chaque mois. Dans les deux cas,
             l’inscription d’office étale les séances sur l’année.
           </p>
         </div>
 
         <div>
-          <label for="credits" class="block text-sm font-medium mb-1">Nombre de séances</label>
-          <input id="credits" name="credits" type="number" min="0" required
+          <label for="credits" class="block text-sm font-medium mb-1">
+            Sans formule — nombre de séances
+          </label>
+          <input id="credits" name="credits" type="number" min="0"
                  value={champs.credits} class="champ" />
           <p class="mt-1 text-sm text-[var(--color-text-light)]">
             Pour la saison, ou par mois, selon le type choisi.
@@ -279,11 +327,14 @@ if (Astro.request.method === 'POST') {
 
         <div>
           <label for="debut" class="block text-sm font-medium mb-1">Premier mois</label>
-          <input id="debut" name="debut" type="date" required value={champs.debut} class="champ" />
+          <input id="debut" name="debut" type="month" required value={champs.debut} class="champ" />
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Pré-rempli sur la saison en cours. Modifiable pour qui arrive en cours d’année.
+          </p>
         </div>
         <div>
           <label for="fin" class="block text-sm font-medium mb-1">Dernier mois</label>
-          <input id="fin" name="fin" type="date" required value={champs.fin} class="champ" />
+          <input id="fin" name="fin" type="month" required value={champs.fin} class="champ" />
         </div>
       </div>
     </fieldset>
@@ -301,3 +352,40 @@ if (Astro.request.method === 'POST') {
     </button>
   </form>
 </AdminLayout>
+
+<script>
+  /*
+   * LES LISTES SUIVENT LE PUBLIC CHOISI.
+   *
+   * Sur la fiche d'un participant, le public est déjà connu et les listes se
+   * filtrent côté serveur. Ici il se choisit dans le même formulaire : c'est
+   * donc au navigateur de suivre. Le contrôle côté serveur reste la garantie —
+   * ce script n'est qu'une commodité, et son absence ne laisse rien passer.
+   */
+  const publics: Record<string, string> = { adulte: 'adultes', ado: 'ados', enfant: 'enfants' };
+  const audience = document.getElementById('audience');
+  const listes = ['creneau', 'formule']
+    .map((id) => document.getElementById(id))
+    .filter((el): el is HTMLSelectElement => el instanceof HTMLSelectElement);
+
+  function accorder() {
+    if (!(audience instanceof HTMLSelectElement)) return;
+    const attendu = publics[audience.value];
+    for (const liste of listes) {
+      for (const option of liste.options) {
+        const sien = option.dataset.public;
+        // L'option vide (« Aucun créneau attitré ») n'a pas de public : elle reste.
+        const garde = !sien || sien === attendu;
+        option.hidden = !garde;
+        option.disabled = !garde;
+      }
+      // Un choix devenu impossible ne doit pas rester sélectionné en silence.
+      if (liste.selectedOptions[0]?.disabled) liste.selectedIndex = 0;
+    }
+  }
+
+  if (audience && listes.length) {
+    audience.addEventListener('change', accorder);
+    accorder();
+  }
+</script>
