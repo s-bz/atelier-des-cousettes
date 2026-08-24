@@ -9,6 +9,7 @@ import { AUDIENCES } from '../../utils/ateliers';
 import { saisonDe } from '../../utils/inscriptions';
 import { ADHESION_CENTS } from '../../utils/helloasso';
 import { demarrerAchat, adhesionDuePour } from '../../utils/achat';
+import { mesurer } from '../../utils/mesure';
 
 /*
  * L'ACHAT D'UN FORFAIT, DEPUIS L'ESPACE ADHÉRENT.
@@ -76,13 +77,22 @@ if (Astro.request.method === 'POST') {
     cheminRetour: '/espace-membre/inscription/retour/',
   });
 
-  if (!r.ok) erreur = r.erreur;
+  if (!r.ok) {
+    erreur = r.erreur;
+    // Le motif dit pourquoi une famille s'arrête là. Voir /ateliers-reguliers/inscription/.
+    await mesurer('achat_refuse', account.email, { motif: r.erreur, depuis: '/espace-membre/inscription/' });
+  }
   // `redirectUrl` ne vaut que quinze minutes : on y va tout de suite.
   else return Astro.redirect(r.valeur.redirectUrl, 303);
 }
 
 if (Astro.url.searchParams.has('echec')) {
   erreur = 'Le paiement n’a pas abouti. Rien n’a été prélevé — vous pouvez réessayer.';
+  // HelloAsso renvoie ici quand le paiement n'a pas abouti. Rien n'a été
+  // prélevé ; ce qui se mesure, c'est le renoncement au moment de payer.
+  await mesurer('paiement_echoue', Astro.locals.account?.email ?? null, {
+    depuis: '/espace-membre/inscription/',
+  });
 }
 
 const euros = (c: number) => (c / 100).toFixed(2).replace('.', ',').replace(',00', '');

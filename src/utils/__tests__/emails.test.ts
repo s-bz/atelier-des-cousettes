@@ -132,6 +132,25 @@ describe('habillage HTML', () => {
     expect(html).toContain('Bonjour &lt;b&gt;vous&lt;/b&gt; &amp; compagnie');
   });
 
+  it('échappe le guillemet, qu’un nom de participant peut porter', () => {
+    // Le prénom vient du formulaire public : il traverse `{{prenom}}` puis
+    // `lienDansTexte`, dont la classe d'URL acceptait le guillemet. Un nom
+    // contenant une adresse suivie d'un guillemet refermait donc l'attribut
+    // `href` et en ouvrait un autre, choisi par l'inscrivant, dans le message
+    // qu'Isabelle reçoit.
+    const html = enHtml('Objet', 'Bonjour https://a.co/"style="display:none');
+    expect(html).not.toContain('"style="display:none');
+    expect(html).toContain('&quot;');
+  });
+
+  it('garde l’adresse entière quand elle porte plusieurs paramètres', () => {
+    // Garde-fou de la correction ci-dessus : exclure le « & » de l'adresse
+    // aurait clos l'injection tout aussi bien, mais en coupant tout lien à son
+    // premier paramètre.
+    const html = enHtml('Objet', 'Voir https://exemple.fr/p/?a=1&b=2 merci');
+    expect(html).toContain('href="https://exemple.fr/p/?a=1&amp;b=2"');
+  });
+
   it('fait un bouton d’un bloc réduit à une adresse', () => {
     const html = enHtml('Objet', 'Bonjour\n\nhttps://exemple.fr/espace/\n\nÀ bientôt');
     expect(html).toContain('href="https://exemple.fr/espace/"');

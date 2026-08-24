@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Resultat } from './inscriptions';
 import { compterUsage } from './codes-promo';
+import { mesurer } from './mesure';
 import {
   trouverOuCreerCompte, creerParticipant, creerAbonnement,
   enregistrerAdhesion, inscrireDOffice, bornesSaison,
@@ -24,17 +25,45 @@ import {
 const echec = (erreur: string): Resultat<never> => ({ ok: false, erreur });
 const succes = <T>(valeur: T): Resultat<T> => ({ ok: true, valeur });
 
-export interface Commande {
+interface CommandeBase {
   orderId: string;
   codePromo: string | null;
   email: string;
   prenom: string;
   nom: string;
   saison: string;
-  formuleId: string;
   creneauId: string;
+  /**
+   * Ce que la commande rapporte en tout, en centimes. Zéro pour les intentions
+   * créées avant que le champ existe : la mesure d'audience s'en accommode, le
+   * provisionnement ne s'en sert pas.
+   */
+  montantCents: number;
+}
+
+/** La saison entière, réglée d'avance ou par mensualités. */
+export interface CommandeForfait extends CommandeBase {
+  produit: 'forfait';
+  formuleId: string;
+  /** L'adhésion annuelle de la famille, quand elle restait due. */
   adhesionCents: number;
 }
+
+/**
+ * Une place, à une date.
+ *
+ * Stages et séances sans engagement se vendent ainsi. PAS D'ADHÉSION : les
+ * pages publiques annoncent qu'elle est comprise dans le prix — « il n'y a rien
+ * à régler en plus » — et le champ n'existe donc pas ici, plutôt que d'exister
+ * à zéro et de laisser croire qu'il pourrait valoir autre chose.
+ */
+export interface CommandeUnite extends CommandeBase {
+  produit: 'seance';
+  /** La date précise. Un stage en a plusieurs au catalogue ; on en achète une. */
+  sessionId: string;
+}
+
+export type Commande = CommandeForfait | CommandeUnite;
 
 /**
  * Ce que porte une intention payée, ou la raison de n'en rien faire.
@@ -60,7 +89,19 @@ export function lireCommande(intention: {
   const m = (intention.metadata ?? {}) as Record<string, unknown>;
   const texte = (cle: string) => (typeof m[cle] === 'string' ? (m[cle] as string).trim() : '');
 
-  const manquants = ['saison', 'formule_id', 'creneau_id', 'participant'].filter((c) => !texte(c));
+  /*
+   * LE PRODUIT DÉCIDE DE CE QU'IL FAUT LIRE. Absent, c'est un forfait : les
+   * intentions créées avant la vente à l'unité n'en portaient pas, et une
+   * famille qui règle le lendemain de la mise en ligne ne doit pas tomber dans
+   * la file « à traiter » pour un champ qui n'existait pas encore.
+   */
+  const produit = texte('produit') === 'seance' ? 'seance' : 'forfait';
+
+  const requis = produit === 'seance'
+    ? ['saison', 'session_id', 'creneau_id', 'participant']
+    : ['saison', 'formule_id', 'creneau_id', 'participant'];
+
+  const manquants = requis.filter((c) => !texte(c));
   if (manquants.length) return echec(`Métadonnées incomplètes : ${manquants.join(', ')}.`);
 
   /*
@@ -70,16 +111,26 @@ export function lireCommande(intention: {
    */
   const [prenom, ...reste] = texte('participant').split(/\s+/);
 
-  return succes({
+  const commun = {
     orderId: String(order.id),
     email,
     prenom,
     nom: reste.join(' '),
     saison: texte('saison'),
-    formuleId: texte('formule_id'),
     creneauId: texte('creneau_id'),
-    adhesionCents: typeof m.adhesion_cents === 'number' ? m.adhesion_cents : 0,
     codePromo: typeof m.code_promo === 'string' ? m.code_promo : null,
+    montantCents: typeof m.montant_cents === 'number' ? m.montant_cents : 0,
+  };
+
+  if (produit === 'seance') {
+    return succes({ ...commun, produit, sessionId: texte('session_id') });
+  }
+
+  return succes({
+    ...commun,
+    produit,
+    formuleId: texte('formule_id'),
+    adhesionCents: typeof m.adhesion_cents === 'number' ? m.adhesion_cents : 0,
   });
 }
 
@@ -91,15 +142,157 @@ export interface Provisionnement {
 }
 
 /**
- * Crée le compte, le participant, l'abonnement et l'adhésion d'une commande.
+ * Retrouve la personne inscrite, ou la crée.
+ *
+ * RATTACHEMENT PLUTÔT QUE CRÉATION (PRD §6). Si Isabelle a déjà créé la
+ * personne à la main en septembre, la commande doit lui être rattachée et non
+ * en créer une seconde. Le rapprochement se fait sur le nom au sein du même
+ * compte : deux homonymes dans une même famille sont assez improbables pour
+ * que l'inverse — deux fiches pour la même enfant — soit le vrai risque.
+ */
+async function trouverOuCreerParticipant(
+  supabase: SupabaseClient,
+  o: { compteId: string; prenom: string; nom: string; audience: () => Promise<Resultat<string>> },
+): Promise<Resultat<string>> {
+  const { data: connue } = await supabase
+    .from('participants')
+    .select('id')
+    .eq('account_id', o.compteId)
+    .ilike('first_name', o.prenom)
+    .ilike('last_name', o.nom)
+    .maybeSingle();
+
+  if (connue?.id) return succes(connue.id as string);
+
+  // Le public ne se lit QUE pour une création : une personne déjà connue garde
+  // le sien, et le déduire du catalogue pourrait le contredire.
+  const public_ = await o.audience();
+  if (!public_.ok) return public_;
+
+  return creerParticipant(supabase, {
+    compteId: o.compteId,
+    prenom: o.prenom,
+    nom: o.nom,
+    audience: public_.valeur,
+  });
+}
+
+/** « adultes » → « adulte » : le public d'une personne est le singulier de celui de son groupe. */
+const auSingulier = (public_: string) => public_.replace(/s$/, '');
+
+/**
+ * Crée les lignes d'une commande payée.
  *
  * IDEMPOTENT PAR LA BASE, et non par le code : `subscriptions.helloasso_order_id`
- * est unique. Le retour du payeur et la notification arrivent souvent tous deux,
- * parfois en même temps ; c'est la contrainte qui décide, pas l'ordre d'arrivée.
+ * et `bookings.helloasso_order_id` sont uniques. Le retour du payeur et la
+ * notification arrivent souvent tous deux, parfois en même temps ; c'est la
+ * contrainte qui décide, pas l'ordre d'arrivée.
  */
 export async function provisionner(
   supabase: SupabaseClient,
   commande: Commande,
+): Promise<Resultat<Provisionnement>> {
+  const fait = commande.produit === 'seance'
+    ? await provisionnerUnite(supabase, commande)
+    : await provisionnerForfait(supabase, commande);
+
+  /*
+   * LA VENTE SE MESURE ICI, ET NULLE PART AILLEURS.
+   *
+   * Trois chemins mènent à un encaissement — le retour du payeur sans compte,
+   * celui de l'adhérent connecté, la notification HelloAsso — et deux d'entre
+   * eux se produisent souvent pour la MÊME commande. Mesurer chez l'appelant
+   * compterait donc la moitié des ventes en double, et manquerait celles dont
+   * personne n'a vu le retour.
+   *
+   * `cree` tranche : il ne vaut vrai qu'au passage qui a réellement inscrit,
+   * l'unicité de `helloasso_order_id` en base en étant l'arbitre. Le doublon
+   * est réglé par la même contrainte qui protège l'inscription elle-même,
+   * plutôt que par une déduplication propre à la mesure.
+   */
+  if (fait.ok && fait.valeur.cree) {
+    await mesurer('achat_abouti', commande.email, {
+      produit: commande.produit,
+      montant_cents: commande.montantCents,
+      saison: commande.saison,
+      creneau_id: commande.creneauId,
+      code_promo: commande.codePromo,
+      places_posees: fait.valeur.placesPosees ?? 0,
+      ...(commande.produit === 'forfait'
+        ? { formule_id: commande.formuleId, adhesion_cents: commande.adhesionCents }
+        : { session_id: commande.sessionId }),
+      // Un code à 100 % ne passe pas par HelloAsso : la référence le dit, et
+      // sans elle une inscription offerte gonflerait le chiffre d'affaires.
+      gratuit: commande.orderId.startsWith('GRATUIT-'),
+    });
+  }
+
+  return fait;
+}
+
+/**
+ * Une place payée, à une date.
+ *
+ * LA PLACE SE POSE PAR `book_participant`, comme toutes les autres. Cette
+ * fonction tient le verrou sur la séance, le compte des places, la liste
+ * d'attente, le refus des séances annulées et le contrôle du public : les
+ * réécrire ici aurait fait deux règles là où il n'en faut qu'une.
+ *
+ * SI LA SÉANCE EST COMPLÈTE, ON REND UN ÉCHEC MOTIVÉ — et l'appelant range la
+ * commande dans la file « à traiter » avec sa charge utile. Quelqu'un a payé :
+ * la place lui revient, ou son argent. Les deux se règlent à la main, aucun
+ * des deux ne se règle en silence.
+ */
+async function provisionnerUnite(
+  supabase: SupabaseClient,
+  commande: CommandeUnite,
+): Promise<Resultat<Provisionnement>> {
+  const { data: deja } = await supabase
+    .from('bookings')
+    .select('id, participant_id')
+    .eq('helloasso_order_id', commande.orderId)
+    .maybeSingle();
+
+  if (deja) return succes({ cree: false, participantId: deja.participant_id as string });
+
+  const compte = await trouverOuCreerCompte(supabase, commande.email);
+  if (!compte.ok) return compte;
+
+  const participant = await trouverOuCreerParticipant(supabase, {
+    compteId: compte.valeur,
+    prenom: commande.prenom,
+    nom: commande.nom,
+    audience: async () => {
+      const { data: creneau } = await supabase
+        .from('creneaux').select('audience').eq('id', commande.creneauId).maybeSingle();
+      if (!creneau) return echec(`Créneau inconnu : ${commande.creneauId}.`);
+      return succes(auSingulier(String(creneau.audience)));
+    },
+  });
+  if (!participant.ok) return participant;
+
+  const { data: place, error } = await supabase.rpc('book_participant', {
+    p_session: commande.sessionId,
+    p_participant: participant.valeur,
+    p_source: 'achat',
+    p_forcer: false,
+    p_commande: commande.orderId,
+  });
+
+  if (error) return echec(`Place impossible à poser : ${error.message}`);
+  if (!place) return echec('La réservation n’a rien rendu.');
+
+  if (commande.codePromo) await compterUsage(supabase, commande.codePromo);
+
+  return succes({ cree: true, participantId: participant.valeur, placesPosees: 1 });
+}
+
+/**
+ * Le forfait d'une saison : compte, participant, abonnement et adhésion.
+ */
+async function provisionnerForfait(
+  supabase: SupabaseClient,
+  commande: CommandeForfait,
 ): Promise<Resultat<Provisionnement>> {
   const { data: deja } = await supabase
     .from('subscriptions')
@@ -112,47 +305,24 @@ export async function provisionner(
   const compte = await trouverOuCreerCompte(supabase, commande.email);
   if (!compte.ok) return compte;
 
-  /*
-   * RATTACHEMENT PLUTÔT QUE CRÉATION (PRD §6). Si Isabelle a déjà créé la
-   * personne à la main en septembre, la commande doit lui être rattachée et non
-   * en créer une seconde. Le rapprochement se fait sur le nom au sein du même
-   * compte : deux homonymes dans une même famille sont assez improbables pour
-   * que l'inverse — deux fiches pour la même enfant — soit le vrai risque.
-   */
-  const { data: connue } = await supabase
-    .from('participants')
-    .select('id, audience')
-    .eq('account_id', compte.valeur)
-    .ilike('first_name', commande.prenom)
-    .ilike('last_name', commande.nom)
-    .maybeSingle();
-
-  let participantId = connue?.id as string | undefined;
-
-  if (!participantId) {
-    const { data: formule } = await supabase
-      .from('formules').select('audience').eq('id', commande.formuleId).maybeSingle();
-    if (!formule) return echec(`Formule inconnue : ${commande.formuleId}.`);
-
-    // « adultes » → « adulte » : le public d'une personne est le singulier de
-    // celui de son groupe.
-    const personne = String(formule.audience).replace(/s$/, '');
-
-    const nouvelle = await creerParticipant(supabase, {
-      compteId: compte.valeur,
-      prenom: commande.prenom,
-      nom: commande.nom,
-      audience: personne,
-    });
-    if (!nouvelle.ok) return nouvelle;
-    participantId = nouvelle.valeur;
-  }
+  const participant = await trouverOuCreerParticipant(supabase, {
+    compteId: compte.valeur,
+    prenom: commande.prenom,
+    nom: commande.nom,
+    audience: async () => {
+      const { data: formule } = await supabase
+        .from('formules').select('audience').eq('id', commande.formuleId).maybeSingle();
+      if (!formule) return echec(`Formule inconnue : ${commande.formuleId}.`);
+      return succes(auSingulier(String(formule.audience)));
+    },
+  });
+  if (!participant.ok) return participant;
 
   const bornes = bornesSaison(commande.saison);
   if (!bornes) return echec(`Saison illisible : ${commande.saison}.`);
 
   const abonnement = await creerAbonnement(supabase, {
-    participantId,
+    participantId: participant.valeur,
     formuleId: commande.formuleId,
     creneauId: commande.creneauId,
     debut: bornes.debut,
@@ -188,7 +358,7 @@ export async function provisionner(
 
   return succes({
     cree: true,
-    participantId,
+    participantId: participant.valeur,
     placesPosees: auto.ok ? auto.valeur : undefined,
   });
 }

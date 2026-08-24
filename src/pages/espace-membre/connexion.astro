@@ -4,6 +4,7 @@ export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getRequestClient, getAdminClient } from '../../utils/supabase';
 import { lienWhatsApp } from '../../utils/contact';
+import { mesurer } from '../../utils/mesure';
 
 // Reprises de src/content/site-settings.yaml. Le mobile est celui qui porte
 // WhatsApp ; le fixe de l'atelier n'y répondrait pas.
@@ -90,14 +91,35 @@ if (Astro.request.method === 'POST') {
             'Un code vient déjà d’être envoyé. Attendez une minute avant d’en demander un nouveau, ' +
             'et pensez à regarder dans vos indésirables.';
           etape = 'code';
+          await mesurer('connexion_refusee', email, { motif: 'cadence', etape: 'envoi' });
         } else {
           // Toute autre cause reste indistincte, pour ne pas révéler qui est
           // adhérent.
           erreur = 'Compte non reconnu. Contactez Isabelle pour obtenir un accès.';
+          /*
+           * LE MOTIF MESURÉ EST PLUS PRÉCIS QUE LE MESSAGE AFFICHÉ, et c'est
+           * volontaire : l'écran tait la cause pour ne pas révéler qui est
+           * adhérent, mais confondre au tableau de bord une adresse inconnue
+           * avec une panne de SMTP rendrait la seconde invisible des semaines.
+           * La mesure ne s'affiche à personne.
+           */
+          await mesurer('connexion_refusee', email, {
+            motif: 'refus_supabase',
+            etape: 'envoi',
+            code: error.code ?? null,
+            statut: error.status ?? null,
+          });
         }
       } else {
         etape = 'code';
         info = `Un code vient d’être envoyé à ${email}.`;
+        /*
+         * LE PREMIER PAS DE LA CONNEXION. Sans lui, on ne verrait que les
+         * connexions abouties, et jamais les adhérents qui demandent un code
+         * puis ne reviennent pas — le courriel tombé dans les indésirables ne
+         * laisse aucune autre trace.
+         */
+        await mesurer('connexion_code_demande', email);
       }
     }
   } else {
@@ -118,6 +140,7 @@ if (Astro.request.method === 'POST') {
       });
       etape = 'code';
       erreur = 'Code incorrect ou expiré. Demandez-en un nouveau si besoin.';
+      await mesurer('connexion_refusee', email, { motif: 'code_invalide', etape: 'verification' });
     } else {
       // Rattachement de l’identité au compte, à la première connexion.
       const admin = getAdminClient();
@@ -133,13 +156,19 @@ if (Astro.request.method === 'POST') {
         await supabase.auth.signOut();
         etape = 'email';
         erreur = 'Compte non reconnu. Contactez Isabelle pour obtenir un accès.';
+        await mesurer('connexion_refusee', email, { motif: 'sans_compte', etape: 'verification' });
       } else {
-        if (!compte.auth_user_id) {
+        const premiere = !compte.auth_user_id;
+        if (premiere) {
           await admin
             .from('accounts')
             .update({ auth_user_id: data.user.id })
             .eq('id', compte.id);
         }
+        // `premiere` distingue l'adhérent qui ouvre son accès pour la première
+        // fois de celui qui revient : le premier vient d'acheter et découvre
+        // son planning, le second en fait un usage courant.
+        await mesurer('connexion_reussie', email, { methode: 'code', premiere });
         return Astro.redirect('/espace-membre/');
       }
     }

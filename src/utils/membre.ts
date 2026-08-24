@@ -130,7 +130,12 @@ export async function libererPlace(
   }
 
   const { data: issue, error } = await supabase.rpc('release_booking', { p_booking: reservationId });
-  if (error) return { ok: false, message: error.message };
+  if (error) {
+    // Le texte de Postgres nomme la fonction et ses contraintes : il va au
+    // journal, d'où Isabelle peut le lire, et non à l'écran de l'adhérent.
+    console.error('[libererPlace] release_booking a refusé :', error.message);
+    return { ok: false, message: 'La place n’a pas pu être libérée.' };
+  }
 
   const tardif = Boolean((issue as any)?.tardif);
   const attente = ((issue as any)?.attente ?? []) as string[];

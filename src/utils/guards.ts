@@ -13,9 +13,17 @@ import type { AstroGlobal } from 'astro';
  * provient jamais d'une revendication du jeton : les métadonnées d'un
  * utilisateur Supabase sont modifiables par l'utilisateur lui-même.
  *
- * Cette garde est une commodité, pas la sécurité : celle-ci tient aux
- * politiques RLS et aux droits d'exécution des fonctions. Une page qui
- * oublierait de l'appeler ne doit pas pouvoir exposer les données de tous.
+ * CETTE GARDE EST LA SÉCURITÉ, ET NON UNE COMMODITÉ.
+ *
+ * On a longtemps écrit ici l'inverse — que le RLS rattraperait une page
+ * distraite. Ce n'est pas vrai du système déployé : `getServerClient`, le seul
+ * client porté par le jeton de l'adhérent et donc soumis aux politiques, n'est
+ * appelé nulle part. Toutes les routes lisent avec `getAdminClient`, dont la
+ * clé secrète contourne le RLS par construction.
+ *
+ * Une page d'administration qui oublierait cet appel exposerait donc les
+ * données de tous, sans filet. Le RLS reste une défense en profondeur pour un
+ * accès direct à PostgREST ; il n'en est pas une pour nos propres routes.
  */
 export function requireAdmin(astro: AstroGlobal): Response | null {
   const { session, account, isAdmin } = astro.locals;

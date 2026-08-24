@@ -85,8 +85,22 @@ const schemas = buildServicePageSchemas({
   <Hero flush title={page.title} subtitle={page.subtitle}
         coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
 
+  {/*
+    Le bouton vit DANS la section d'introduction, jamais après : posé dehors,
+    il tombe sur la couture entre le fond chaud et la section suivante, et la
+    limite des deux couleurs le coupe en deux.
+  */}
   {page.introduction && (
-    <IntroSection text={page.introduction} cta={false} fond />
+    <IntroSection text={page.introduction} cta={false} fond>
+      {page.inscriptionLabel && page.inscriptionUrl && (
+        <p class="mt-8">
+          <a href={page.inscriptionUrl}
+             class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 font-medium text-white">
+            {page.inscriptionLabel}
+          </a>
+        </p>
+      )}
+    </IntroSection>
   )}
 
   {stages.length === 0 ? (

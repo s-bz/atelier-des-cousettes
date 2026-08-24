@@ -11,6 +11,18 @@ import '../styles/global.css';
 const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
 const posthogHost = import.meta.env.PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com';
 
+/*
+ * QUI EST CONNECTÉ, POUR LE DIRE À LA MESURE.
+ *
+ * `Astro.locals` n'est renseigné que sur /espace-membre/ — le middleware sort
+ * avant pour tout le reste — et les pages publiques sont prérendues, où il vaut
+ * null au moment du build. Aucune adresse ne peut donc se retrouver figée dans
+ * une page publique : le rendu qui en porte une est toujours un rendu à la
+ * demande, pour la personne concernée.
+ */
+const membreEmail = Astro.locals.account?.email ?? null;
+const membreRole = Astro.locals.account?.role ?? null;
+
 interface Props {
   title: string;
   description?: string;
@@ -83,43 +95,74 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
     <script async src="https://tally.so/widgets/embed.js"></script>
 
     {/*
-      PostHog, cloud UE, sans cookie.
+      PostHog, cloud UE.
 
-      `persistence: 'memory'` supprime tout stockage persistant : aucun cookie,
-      rien dans localStorage. Sans cookie ni identifiant durable, la mesure
-      d'audience n'exige pas de bandeau de consentement — ce qui évite d'en
-      construire un, et rend la politique de confidentialité exacte.
+      LE SITE DÉPOSE UN COOKIE DE MESURE, ET IDENTIFIE L'ADHÉRENT CONNECTÉ.
+      Ce n'était pas le cas : la mesure tournait en `cookieless_mode`, sans rien
+      écrire sur l'appareil, ce qui la dispensait de bandeau de consentement mais
+      lui interdisait `identify()` — un adhérent connecté était indistinguable
+      d'un visiteur de passage, et le parcours « je découvre, je paie, je réserve
+      mes dates » se lisait en trois morceaux sans lien entre eux.
 
-      Le comptage des visiteurs reste juste malgré l'absence de stockage :
-      PostHog calcule un condensat préservant la vie privée sur ses serveurs.
-      C'est ce qui distingue ce mode d'une simple persistance en mémoire, qui
-      aurait fait repartir chaque page vue d'un identifiant neuf et rendu toute
-      métrique de visiteurs uniques absurde.
+      Le cookie tient un an, plafond que la CNIL fixe à treize mois.
 
-      `identify()` est impossible dans ce mode — un identifiant durable serait
-      une donnée personnelle. On n'identifie personne ici, la contrainte est
-      donc sans effet.
+      LA CONTREPARTIE EST ASSUMÉE, ET ELLE EST JURIDIQUE : mesure d'audience avec
+      cookie ET rapprochement avec un compte, cela sort de l'exemption de
+      consentement. Aucun bandeau n'est affiché — c'est une décision de
+      l'association, pas un oubli. La politique de confidentialité décrit ce qui
+      est réellement déposé, sans prétendre que le consentement ne serait pas dû.
 
-      PRÉREQUIS : « Cookieless server hash mode » doit être activé dans les
-      réglages du projet PostHog (Project settings → Web analytics). Sans lui,
-      rien n'est compté.
-
-      L'enregistrement de session est coupé : il capterait le contenu saisi
-      dans l'espace membre.
+      L'enregistrement de session reste coupé, et la capture automatique aussi :
+      l'un filmerait ce qui se saisit dans l'espace adhérent, l'autre remonterait
+      le texte des boutons — dont des noms de participants. Ce qui est mesuré est
+      donc uniquement ce que ce fichier et les pages nomment explicitement.
 
       Le bloc ne s'affiche que si la clé est définie, pour que rien ne casse
       tant que le projet PostHog n'existe pas.
     */}
     {posthogKey && (
-      <script is:inline define:vars={{ posthogKey, posthogHost }}>
+      <script is:inline define:vars={{ posthogKey, posthogHost, membreEmail, membreRole }}>
         !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug getPageViewId captureTraceFeedback captureTraceMetric".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
         posthog.init(posthogKey, {
           api_host: posthogHost,
-          cookieless_mode: 'always',
           defaults: '2026-01-30',
+          // Un an, sous le plafond de treize mois. Au-delà, un visiteur revenu
+          // après deux saisons serait compté comme le même — ce qu'il n'est
+          // plus vraiment — et la durée cesserait d'être défendable.
+          cookie_expiration: 365,
+          // `defaults` vaut ici `person_profiles: 'identified_only'` : un
+          // visiteur anonyme est compté sans qu'une fiche naisse à son nom.
+          // Seules les personnes identifiées ci-dessous en ont une.
           disable_session_recording: true,
           autocapture: false,
         });
+
+        /*
+         * LA DÉCONNEXION EFFACE L'IDENTITÉ, ET ELLE SEULE.
+         *
+         * Sans cela, l'ordinateur familial attribuerait à la mère les pages lues
+         * ensuite par la fille. `reset()` n'a pas sa place ailleurs : appelé sur
+         * chaque page anonyme, il redonnerait un identifiant neuf à chaque
+         * chargement et rendrait tout comptage de visiteurs absurde.
+         *
+         * Le paramètre vient de /espace-membre/deconnexion/, qui redirige ici.
+         */
+        if (new URLSearchParams(location.search).get('deconnecte') === '1') {
+          posthog.reset();
+        }
+
+        /*
+         * L'ADHÉRENT CONNECTÉ SE NOMME, ET C'EST SON ADRESSE QUI LE NOMME.
+         *
+         * Le serveur a déjà résolu la session ; la page ne fait que reprendre
+         * ce qu'il en dit. L'adresse sert d'identifiant plutôt que l'UUID du
+         * compte parce que la moitié du parcours se joue AVANT le compte : une
+         * famille achète sans être connue, et le serveur ne dispose alors que
+         * de son adresse. Les deux moitiés se rejoignent sur cette clé.
+         */
+        if (membreEmail) {
+          posthog.identify(membreEmail, { email: membreEmail, role: membreRole });
+        }
       </script>
     )}
 
@@ -182,6 +225,88 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
         iframe.allowFullscreen = true;
         container.replaceChildren(iframe);
       });
+    </script>
+
+    {/*
+      LES DÉPARTS VERS L'ACHAT.
+
+      L'autocapture est coupée : sans elle, plus rien ne relie « a lu la page
+      des ateliers » à « a ouvert le formulaire d'inscription », et le premier
+      décrochage du parcours — de loin le plus gros — est invisible. Plutôt que
+      de rallumer une capture qui remonterait le texte de tous les boutons, y
+      compris les noms de participants de l'espace adhérent, on ne nomme que
+      les liens qui mènent à un achat.
+
+      Un écouteur délégué sur le document : les liens sont nombreux, dispersés
+      dans une douzaine de composants, et aucun n'a à savoir qu'il est mesuré.
+    */}
+    <script is:inline>
+      (function () {
+        var VERS_ACHAT = /^\/(ateliers-reguliers|espace-membre)\/inscription\/$|^\/(stages-thematiques|seances-sans-engagement)\/reserver\/$/;
+
+        document.addEventListener('click', function (e) {
+          if (typeof window.posthog === 'undefined') return;
+          if (!e.target || !e.target.closest) return;
+
+          /*
+           * LE BOUTON FLOTTANT OUVRE UN FORMULAIRE, PAS UNE PAGE. Tally
+           * l'intercepte et retire le `href` ; sans ce cas, le seul geste de
+           * contact visible depuis n'importe quelle page ne serait mesuré nulle
+           * part. Les événements du formulaire lui-même viennent de /contact/.
+           */
+          var tally = e.target.closest('[data-tally-open], [data-tally-fallback]');
+          if (tally) {
+            window.posthog.capture('contact_ouvert', { depuis: location.pathname });
+            return;
+          }
+
+          var lien = e.target.closest('a[href]');
+          if (!lien) return;
+
+          var brut = lien.getAttribute('href') || '';
+
+          /*
+           * APPELER, ÉCRIRE, ENVOYER UN MESSAGE : trois conversions qui quittent
+           * le site sans laisser la moindre trace. Une page vue de plus ne dit
+           * pas qu'on a décroché son téléphone.
+           */
+          var direct = brut.slice(0, 7).toLowerCase();
+          if (direct.indexOf('tel:') === 0 || direct.indexOf('mailto:') === 0) {
+            window.posthog.capture('contact_direct', {
+              moyen: direct.indexOf('tel:') === 0 ? 'telephone' : 'courriel',
+              depuis: location.pathname,
+            });
+            return;
+          }
+
+          var url;
+          try {
+            url = new URL(brut, location.href);
+          } catch (err) {
+            return;
+          }
+
+          if (url.hostname === 'wa.me' || url.hostname === 'api.whatsapp.com') {
+            window.posthog.capture('contact_direct', {
+              moyen: 'whatsapp',
+              depuis: location.pathname,
+            });
+            return;
+          }
+
+          if (url.origin !== location.origin) return;
+          if (!VERS_ACHAT.test(url.pathname)) return;
+
+          window.posthog.capture('depart_vers_achat', {
+            destination: url.pathname,
+            depuis: location.pathname,
+            // Le libellé du lien, borné : « Réserver ma place » et « S'inscrire »
+            // ne se valent pas, et savoir lequel décide vaut la peine. Les
+            // liens visés sont publics, aucun ne porte de nom de personne.
+            libelle: (lien.textContent || '').trim().slice(0, 60),
+          });
+        });
+      })();
     </script>
   </body>
 </html>

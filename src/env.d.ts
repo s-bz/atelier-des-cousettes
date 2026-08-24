@@ -27,6 +27,12 @@ interface ImportMetaEnv {
   readonly ADMIN_EMAILS: string;
   readonly PUBLIC_POSTHOG_KEY: string;
   readonly PUBLIC_POSTHOG_HOST: string;
+  /**
+   * L'hôte PostHog joint par le SERVEUR. Facultatif : à défaut, le cloud UE.
+   * Distinct de PUBLIC_POSTHOG_HOST, qui est le proxy inverse first-party dont
+   * seul le navigateur a besoin.
+   */
+  readonly POSTHOG_HOST_SERVEUR: string;
 }
 
 interface ImportMeta {

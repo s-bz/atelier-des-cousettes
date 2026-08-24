@@ -85,4 +85,6 @@ faqItems:
 crossLinksText: >-
   Envie d'un engagement régulier ? Découvrez nos ateliers réguliers. Pour
   apprendre une technique précise, consultez nos stages thématiques.
-ctaLabel: Réserver ma place
+ctaLabel: Nous écrire
+inscriptionLabel: Réserver une date
+inscriptionUrl: /seances-sans-engagement/reserver/

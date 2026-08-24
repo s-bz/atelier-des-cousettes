@@ -353,10 +353,25 @@ export function remplir(gabarit: string, valeurs: Valeurs): string {
   );
 }
 
+/*
+ * LE GUILLEMET COMPTE AUTANT QUE LE CHEVRON.
+ *
+ * Une partie de ce qui passe ici vient du formulaire public — le prénom d'un
+ * participant, recopié dans le récapitulatif envoyé à Isabelle. Sans le
+ * guillemet, un nom contenant une adresse suivie d'un `"` refermait l'attribut
+ * `href` du lien construit plus bas et en ouvrait un autre, choisi par
+ * l'inscrivant. L'apostrophe suit, pour les attributs écrits en `'`.
+ */
 const echapper = (t: string) =>
-  t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  t.replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
-const URL_SEULE = /^https?:\/\/\S+$/;
+// Le guillemet et l'apostrophe sont exclus de l'adresse elle-même : une URL
+// n'en contient pas, et les y accepter rouvrirait l'attribut par la bande.
+const URL_SEULE = /^https?:\/\/[^\s<>"']+$/;
 
 /**
  * Habille un texte simple aux couleurs de l'atelier.
@@ -491,6 +506,10 @@ function bouton(url: string): string {
 
 const lienDansTexte = (ligne: string) =>
   echapper(ligne).replace(
+    // Le `&` reste dans l'adresse : l'échappement l'a déjà transformé en
+    // `&amp;`, et l'exclure ici couperait le lien à son premier paramètre.
+    // Le guillemet, lui, est devenu `&quot;` — il ne peut plus refermer
+    // l'attribut, si bien que l'échappement suffit à clore l'injection.
     /(https?:\/\/[^\s<]+)/g,
     `<a class="e-lien" href="$1" style="color:${COULEURS.accent};">$1</a>`,
   );

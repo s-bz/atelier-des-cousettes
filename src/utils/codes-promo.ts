@@ -104,6 +104,28 @@ export async function lireCode(
  * Idempotent par l'appelant : le provisionnement ne s'exécute qu'une fois par
  * commande, l'unicité de `subscriptions.helloasso_order_id` s'en portant garante.
  */
-export async function compterUsage(supabase: SupabaseClient, code: string): Promise<void> {
-  await supabase.rpc('incrementer_usage_code', { p_code: normaliserCode(code) });
+export async function compterUsage(supabase: SupabaseClient, code: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('incrementer_usage_code', {
+    p_code: normaliserCode(code),
+  });
+
+  /*
+   * UN USAGE NON COMPTÉ NE DOIT PAS PASSER INAPERÇU.
+   *
+   * Le plafond `usages_max` se lit contre un compteur dont cet appel est le
+   * SEUL rédacteur. Avaler son échec — un droit retiré, la fonction renommée —
+   * transformait en silence chaque code limité en code illimité. Le paiement,
+   * lui, reste acquis : on journalise, on ne lève pas.
+   */
+  if (error) {
+    console.error(`[codes-promo] usage de ${normaliserCode(code)} non compté :`, error.message);
+    return false;
+  }
+  if (data === false) {
+    // La base a refusé : code épuisé, expiré ou archivé entre le devis et le
+    // paiement. La réduction a bien été accordée ; Isabelle doit le savoir.
+    console.warn(`[codes-promo] ${normaliserCode(code)} accordé mais non décompté (épuisé ou expiré).`);
+    return false;
+  }
+  return true;
 }

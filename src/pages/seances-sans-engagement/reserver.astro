@@ -1,0 +1,83 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FormulaireReservation from '../../components/FormulaireReservation.astro';
+import { getAdminClient } from '../../utils/supabase';
+import {
+  seancesAchetables, demarrerAchatUnite,
+  lireFormulaireReservation, participantDe, saisieVide,
+} from '../../utils/achat-unite';
+import { mesurer } from '../../utils/mesure';
+
+/*
+ * RÉSERVER UNE PLACE, À UNE DATE.
+ *
+ * Jumelle de l'autre page de réservation : elles ne diffèrent que par le genre
+ * demandé — les stages d'un côté, les séances sans engagement de l'autre — et
+ * par leurs mots. Tout le reste vit dans `achat-unite.ts` et dans le formulaire
+ * partagé, y compris avec l'inscription au forfait, qui demande la même chose
+ * aux mêmes gens.
+ */
+
+const supabase = getAdminClient();
+const seances = await seancesAchetables(supabase, 'seance');
+
+let erreur: string | null = null;
+let saisi = saisieVide();
+
+if (Astro.request.method === 'POST') {
+  saisi = lireFormulaireReservation(await Astro.request.formData());
+
+  const r = await demarrerAchatUnite(supabase, {
+    email: saisi.email,
+    payeurPrenom: saisi.payeurPrenom,
+    payeurNom: saisi.payeurNom,
+    prenom: participantDe(saisi),
+    sessionId: saisi.session,
+    codePromo: saisi.code,
+    origine: Astro.url.origin,
+    site: Astro.site,
+    cheminAchat: '/seances-sans-engagement/reserver/',
+    cheminRetour: '/reserver/retour/',
+  });
+
+  if (!r.ok) {
+    erreur = r.erreur;
+    // Le motif dit pourquoi une famille s'arrête là. Voir /ateliers-reguliers/inscription/.
+    await mesurer('achat_refuse', saisi.email, { motif: r.erreur, depuis: '/seances-sans-engagement/reserver/' });
+  }
+  // `redirectUrl` ne vaut que quinze minutes : on y va tout de suite.
+  else return Astro.redirect(r.valeur.redirectUrl, 303);
+}
+
+if (Astro.url.searchParams.has('echec')) {
+  erreur = 'Le paiement n’a pas abouti. Rien n’a été prélevé — vous pouvez réessayer.';
+  // HelloAsso renvoie ici quand le paiement n'a pas abouti. Rien n'a été
+  // prélevé ; ce qui se mesure, c'est le renoncement au moment de payer.
+  await mesurer('paiement_echoue', Astro.locals.account?.email ?? null, {
+    depuis: '/seances-sans-engagement/reserver/',
+  });
+}
+---
+
+<BaseLayout
+  title="Réserver une séance sans engagement"
+  description="Choisir sa date et régler sa place en ligne."
+  noIndex
+>
+  <section class="mx-auto max-w-3xl px-4 py-16 md:py-20">
+    <h1 class="text-2xl md:text-3xl font-bold" style="font-family: var(--font-heading)">
+      Réserver une séance sans engagement
+    </h1>
+
+    <p class="mt-4 rounded-xl bg-[var(--color-bg-accent)] px-4 py-3 text-sm">
+      Le règlement se fait sur la page sécurisée de <strong>HelloAsso</strong>, qui encaisse pour
+      l’association <strong>Les P’tits Piafs</strong> — c’est ce nom qui figurera sur votre relevé
+      bancaire. <strong>L’adhésion à l’association est comprise dans le tarif</strong> : il n’y a
+      rien à régler en plus le jour venu.
+    </p>
+
+    <FormulaireReservation seances={seances} erreur={erreur} saisi={saisi} nomProduit="cette séance" />
+  </section>
+</BaseLayout>

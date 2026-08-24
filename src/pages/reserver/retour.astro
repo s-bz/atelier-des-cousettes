@@ -1,0 +1,38 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RetourPaiement from '../../components/RetourPaiement.astro';
+
+/*
+ * Le retour d'une place achetée à la date — stage ou séance sans engagement.
+ * Une seule page pour les deux : ce qu'on y dit ne dépend pas du produit, et
+ * l'identifiant de l'intention suffit à retrouver ce qui a été payé.
+ */
+---
+
+<BaseLayout title="Votre réservation" description="Confirmation de votre réservation." noIndex>
+  <RetourPaiement
+    contexte="réservation publique"
+    messageCree="Votre place est réservée. Vous recevrez un rappel quelques jours avant la date."
+    messageDeja="Votre place était déjà réservée. Tout est en ordre."
+    messageGratuit="Votre code couvrait la totalité : il n’y a rien eu à régler, et votre place est réservée."
+  >
+    <div class="mt-8 rounded-xl bg-[var(--color-bg-accent)] px-4 py-4">
+      <h2 class="font-bold text-[var(--color-heading)]">Ce qu’il reste à prévoir</h2>
+      <p class="mt-2 text-[var(--color-text)]">
+        Venez avec votre machine à coudre, ses accessoires et sa notice, ainsi que vos
+        fournitures — tissu, fils, ciseaux, épingles. Si vous n’avez pas de machine, Isabelle
+        peut vous en prêter une : dites-le-nous avant la séance.
+      </p>
+      <a href="/espace-membre/connexion/"
+         class="mt-4 inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
+        Voir ma réservation
+      </a>
+      <p class="mt-3 text-sm text-[var(--color-text-light)]">
+        Votre accès est ouvert à l’adresse que vous venez d’indiquer : un code vous sera envoyé
+        par courriel, il n’y a pas de mot de passe à retenir.
+      </p>
+    </div>
+  </RetourPaiement>
+</BaseLayout>

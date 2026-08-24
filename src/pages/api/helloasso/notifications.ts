@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { getAdminClient } from '../../../utils/supabase';
 import { lireNotification, jetonValide, lireIntention } from '../../../utils/helloasso';
 import { lireCommande, provisionner } from '../../../utils/provisionnement';
+import { mesurer } from '../../../utils/mesure';
 
 export const prerender = false;
 
@@ -48,8 +49,24 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const supabase = getAdminClient();
-  const { type, identifiant, cle } = lireNotification(charge);
+  const { type, identifiant, cle: cleBrute } = lireNotification(charge);
   const authentifie = jetonValide(request.url, env('HELLOASSO_WEBHOOK_SECRET'));
+
+  /*
+   * UNE NOTIFICATION NON AUTHENTIFIÉE NE PEUT PAS PRENDRE LA CLÉ D'UNE VRAIE.
+   *
+   * Cette route s'appelle sans preuve, et la clé se déduit de la charge utile.
+   * Quiconque devinait l'identifiant d'une commande pouvait donc déposer sa
+   * propre charge sous la clé que la vraie notification allait porter : arrivée
+   * ensuite, celle-ci était écartée comme doublon par `ignoreDuplicates`, et la
+   * ligne restait celle du falsificateur — déjà marquée traitée, donc absente
+   * de la file « à traiter ». Exactement la commande payée qui n'apparaît
+   * nulle part que ce fichier cherche à éviter.
+   *
+   * Le provisionnement, lui, n'a jamais été en cause : il relit l'intention
+   * auprès de HelloAsso et ne croit pas un mot de ce qui arrive ici.
+   */
+  const cle = authentifie ? cleBrute : `na:${cleBrute}`;
 
   try {
     const { error } = await supabase
@@ -115,17 +132,28 @@ async function provisionnerSiPossible(
   cle: string,
   charge: unknown,
 ): Promise<void> {
-  const idIntention = (charge as { data?: { checkoutIntentId?: unknown } })?.data?.checkoutIntentId;
+  /*
+   * LA CHARGE UTILE N'EST PAS SIGNÉE, ET CET IDENTIFIANT PART DANS UNE URL.
+   *
+   * Il sert de segment de chemin à un appel authentifié chez HelloAsso. Une
+   * chaîne fantaisiste — `../../organizations/autre/orders` — y désignerait
+   * une autre ressource, avec notre jeton. Seul un nombre est recevable ; tout
+   * le reste est traité comme « rien à provisionner ».
+   */
+  const brut = (charge as { data?: { checkoutIntentId?: unknown } })?.data?.checkoutIntentId;
+  const idIntention = typeof brut === 'number' || (typeof brut === 'string' && /^\d{1,20}$/.test(brut))
+    ? String(brut)
+    : null;
 
   try {
-    if (idIntention === undefined || idIntention === null) {
+    if (idIntention === null) {
       // Rien à provisionner : on classe, sans encombrer la file.
       await supabase.from('helloasso_events')
         .update({ traite_le: new Date().toISOString() }).eq('cle', cle);
       return;
     }
 
-    const intention = await lireIntention(String(idIntention));
+    const intention = await lireIntention(idIntention);
     if (!intention.ok) {
       console.error(`[helloasso] ${cle} : relecture impossible — ${intention.erreur}`);
       return;
@@ -134,12 +162,31 @@ async function provisionnerSiPossible(
     const commande = lireCommande(intention.valeur);
     if (!commande.ok) {
       console.error(`[helloasso] ${cle} : ${commande.erreur}`);
+      /*
+       * LA LIGNE RESTE `traite_le is null` — elle est dans la file d'Isabelle,
+       * et c'est ce qui compte pour la commande elle-même. Le signal, lui, sert
+       * à savoir que la file se remplit sans attendre que quelqu'un pense à la
+       * regarder. « Le paiement n'est pas encore acquis » y passe aussi : une
+       * notification arrive parfois avant l'autorisation, et se rattrape à la
+       * réémission suivante.
+       */
+      await mesurer('paiement_a_rattacher', null, {
+        contexte: 'notification',
+        intention: idIntention,
+        motif: commande.erreur,
+      });
       return;
     }
 
     const fait = await provisionner(supabase, commande.valeur);
     if (!fait.ok) {
       console.error(`[helloasso] ${cle} : ${fait.erreur}`);
+      await mesurer('paiement_a_rattacher', commande.valeur.email, {
+        contexte: 'notification',
+        intention: idIntention,
+        motif: fait.erreur,
+        produit: commande.valeur.produit,
+      });
       return;
     }
 

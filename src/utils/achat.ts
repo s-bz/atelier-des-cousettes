@@ -5,7 +5,8 @@ import { memePublic } from './ateliers';
 import { preparerAchat, creerIntention, construireEcheancier, ADHESION_CENTS } from './helloasso';
 import type { FormuleCatalogue } from './tarifs';
 import { lireCode, reductionDe, normaliserCode } from './codes-promo';
-import { lireCommande, provisionner } from './provisionnement';
+import { provisionner } from './provisionnement';
+import { mesurer } from './mesure';
 
 /**
  * Le parcours d'achat, avant le paiement.
@@ -251,8 +252,10 @@ export async function demarrerAchat(
    */
   if (achat.totalCents + (achat.supplementInitialCents ?? 0) === 0) {
     const commande = {
+      produit: 'forfait' as const,
       orderId: `GRATUIT-${crypto.randomUUID()}`,
       codePromo: codeApplique,
+      montantCents: 0,
       email,
       prenom: o.prenom.trim().split(/\s+/)[0],
       nom: o.prenom.trim().split(/\s+/).slice(1).join(' '),
@@ -272,6 +275,29 @@ export async function demarrerAchat(
 
   const intention = await creerIntention(achat);
   if (!intention.ok) return intention;
+
+  /*
+   * L'ACHAT EST ENGAGÉ, PAS CONCLU. C'est l'événement qui manquait le plus :
+   * sans lui, un panier abandonné sur la page HelloAsso ne laisse aucune trace,
+   * et l'on ne sait pas distinguer « personne ne veut de cette formule » de
+   * « tout le monde renonce devant l'échéancier ». Son pendant est
+   * `achat_abouti`, émis par le provisionnement ; l'écart entre les deux EST le
+   * taux d'abandon du paiement.
+   */
+  await mesurer('achat_engage', email, {
+    produit: 'forfait',
+    montant_cents: achat.totalCents + (achat.supplementInitialCents ?? 0),
+    versements: achat.versements,
+    comptant: o.comptant,
+    saison,
+    formule_id: o.formule!.id,
+    creneau_id: o.creneau!.id,
+    code_promo: codeApplique,
+    reduction_cents: reductionCents,
+    adhesion_due: adhesionDue,
+    depuis: o.cheminAchat,
+  });
+
   return succes({ redirectUrl: intention.valeur.redirectUrl });
 }
 

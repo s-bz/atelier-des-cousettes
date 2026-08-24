@@ -329,16 +329,21 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
           dans la FAQ. Le proposer ici faisait franchir une étape avant d'avoir
           de quoi la décider.
 
-          Le plein pour les dates, le contour pour le déroulement : à l'œil, l'un
-          est l'action, l'autre le complément.
+          DEPUIS QU'ON VEND EN LIGNE, la réservation répond mieux au « quand ? »
+          que l'ancre ne le faisait : elle montre les mêmes dates, avec le prix
+          et les places qui restent, et permet d'en prendre une. Elle prend donc
+          le plein, et le calendrier de la page reste à un lien d'ici pour qui
+          veut seulement regarder.
         */}
-        <div class="mt-8 mb-8 flex flex-wrap justify-center gap-3 not-prose">
-          <a
-            href="#dates"
-            class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 text-sm font-medium text-white no-underline transition-all hover:scale-[1.02] hover:bg-[var(--color-button-hover)]"
-          >
-            {page.lienDates}
-          </a>
+        <div class="mt-8 flex flex-wrap justify-center gap-3 not-prose">
+          {page.inscriptionLabel && page.inscriptionUrl && (
+            <a
+              href={page.inscriptionUrl}
+              class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 text-sm font-medium text-white no-underline transition-all hover:scale-[1.02] hover:bg-[var(--color-button-hover)]"
+            >
+              {page.inscriptionLabel}
+            </a>
+          )}
           <a
             href="#deroulement"
             class="inline-block rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-8 py-3 text-sm font-medium text-[var(--color-button)] no-underline transition-colors hover:bg-[var(--color-button)] hover:text-white"
@@ -346,6 +351,10 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
             {page.lienDeroulement}
           </a>
         </div>
+
+        <p class="mt-4 mb-8 text-sm not-prose">
+          <a href="#dates" class="text-[var(--color-text-light)] underline">{page.lienDates}</a>
+        </p>
       </div>
     </section>
   )}

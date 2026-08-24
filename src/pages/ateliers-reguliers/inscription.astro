@@ -9,6 +9,7 @@ import { AUDIENCES, personneDe } from '../../utils/ateliers';
 import { saisonDe } from '../../utils/inscriptions';
 import { demarrerAchat } from '../../utils/achat';
 import { ADHESION_CENTS } from '../../utils/helloasso';
+import { mesurer } from '../../utils/mesure';
 
 /*
  * L'INSCRIPTION, POUR QUI N'A PAS ENCORE DE COMPTE.
@@ -108,13 +109,27 @@ if (Astro.request.method === 'POST') {
     cheminRetour: '/ateliers-reguliers/inscription/retour/',
   });
 
-  if (!r.ok) erreur = r.erreur;
+  if (!r.ok) {
+    erreur = r.erreur;
+    /*
+     * UN ACHAT REFUSÉ EST UN ACHAT PERDU, et le motif dit pourquoi. C'est le
+     * seul endroit où l'on apprend qu'un code de réduction expiré, ou une date
+     * devenue complète entre l'affichage et l'envoi, renvoie des familles. Le
+     * motif est un message écrit par nous, jamais une saisie de l'internaute.
+     */
+    await mesurer('achat_refuse', saisi.email, { motif: r.erreur, depuis: '/ateliers-reguliers/inscription/' });
+  }
   // `redirectUrl` ne vaut que quinze minutes : on y va tout de suite.
   else return Astro.redirect(r.valeur.redirectUrl, 303);
 }
 
 if (Astro.url.searchParams.has('echec')) {
   erreur = 'Le paiement n’a pas abouti. Rien n’a été prélevé — vous pouvez réessayer.';
+  // HelloAsso renvoie ici quand le paiement n'a pas abouti. Rien n'a été
+  // prélevé ; ce qui se mesure, c'est le renoncement au moment de payer.
+  await mesurer('paiement_echoue', Astro.locals.account?.email ?? null, {
+    depuis: '/ateliers-reguliers/inscription/',
+  });
 }
 
 const euros = (c: number) => String(c / 100);
