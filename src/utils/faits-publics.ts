@@ -672,7 +672,7 @@ Sans inscription à la saison, à l'unité.
 
 ${lignes(...seances) || '- Prix communiqué sur demande.'}
 
-Une séance venant en plus d'un forfait se facture au tarif de SON atelier — 45 € pour un adulte, 35 € pour un ado ou un enfant — et non à celui d'une séance courte, qui ne se forfaitise pas.
+Une séance venant en plus d'un forfait ne se facture PAS à ces tarifs : elle revient au prix du forfait divisé par son nombre de séances, moins cher. Les montants ci-dessus valent pour qui vient sans forfait.
 
 ## Stages thématiques
 

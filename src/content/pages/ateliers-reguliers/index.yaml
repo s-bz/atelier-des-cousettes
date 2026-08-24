@@ -116,8 +116,9 @@ faqItems:
       ponctuelle : il n'y a rien à régler en plus.
   - question: Que se passe-t-il si je viens plus souvent que mon forfait ?
     answer: >-
-      Les séances en plus se règlent à l'unité : 45 € pour les adultes, 35 €
-      pour les ados et les enfants. Elles se facturent en fin de saison.
+      Les séances en plus se facturent au tarif de votre forfait — son prix
+      divisé par son nombre de séances — et non à celui d'une séance sans
+      engagement, qui est plus élevé. Elles se règlent en fin de saison.
   - question: Faut-il apporter son matériel ?
     answer: >-
       Chaque participant vient avec sa propre machine à coudre, ses accessoires
