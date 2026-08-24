@@ -16,7 +16,7 @@ tarifsLienLabel: Voir les tarifs
 tarifsIntro: >-
   Un forfait s'achète pour la saison, de septembre à juin, et se pose sur les
   dates de votre choix, dans le créneau qui vous convient. S'y ajoute l'adhésion
-  à l'association Les P'tits Piafs, 15 € par an, réglée une seule fois pour la
+  à l'association Les P'tits Piafs, 15 € par an et par famille, réglée une seule fois pour la
   saison.
 tarifsUniteQuestion: Vous préférez venir une seule fois, sans vous engager ?
 tarifsNote: Le tissu et les fournitures restent à votre charge.
@@ -97,11 +97,11 @@ faqItems:
     answer: >-
       La grille ci-dessus donne le détail : un forfait par public, de 9, 16 ou
       18 séances selon la formule, réglé en une fois ou en mensualités.
-      S'ajoute l'adhésion à l'association Les P'tits Piafs, 15 € par an. Le
+      S'ajoute l'adhésion à l'association Les P'tits Piafs, 15 € par an et par famille. Le
       tissu et les fournitures restent à votre charge.
   - question: L'adhésion à l'association est-elle comprise dans le forfait ?
     answer: >-
-      Non. L'adhésion à l'association Les P'tits Piafs coûte 15 € par an et
+      Non. L'adhésion à l'association Les P'tits Piafs coûte 15 € par an et par famille, et
       s'ajoute au forfait ; elle se règle une seule fois pour la saison. Les
       stages et les séances sans engagement, eux, comprennent déjà leur adhésion
       ponctuelle : il n'y a rien à régler en plus.

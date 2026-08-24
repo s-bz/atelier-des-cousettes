@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Resultat } from './inscriptions';
 import { adhesionReglee, saisonDe } from './inscriptions';
 import { memePublic } from './ateliers';
-import { preparerAchat, creerIntention } from './helloasso';
+import { preparerAchat, creerIntention, construireEcheancier, ADHESION_CENTS } from './helloasso';
 import type { FormuleCatalogue } from './tarifs';
 
 /**
@@ -50,6 +50,48 @@ export function origineJoignable(origine: string, site: URL | undefined): string
     /* origine illisible : on tentera le repli */
   }
   return site ? sans(String(site)) : sans(origine);
+}
+
+export interface Devis {
+  adhesionCents: number;
+  /** Ce qui sera prélevé aujourd'hui. */
+  premierCents: number;
+  /** Le montant de chacune des échéances suivantes. */
+  suivantsCents: number;
+  nbEcheances: number;
+  totalCents: number;
+}
+
+/**
+ * Ce qu'il en coûtera, avant de payer.
+ *
+ * CALCULÉ CÔTÉ SERVEUR, et non dans le navigateur : c'est le même
+ * `construireEcheancier` qui produira l'échéancier réellement envoyé à
+ * HelloAsso. Refaire l'arithmétique en JavaScript donnerait deux calculs à
+ * tenir d'accord, et le jour où ils divergeraient, la page annoncerait un
+ * montant que le prélèvement démentirait.
+ */
+export function devis(o: {
+  formule: { prixCents: number; mensualites: number };
+  adhesionDue: boolean;
+  comptant: boolean;
+  achatLe: Date;
+}): Devis {
+  const adhesionCents = o.adhesionDue ? ADHESION_CENTS : 0;
+  const e = construireEcheancier({
+    totalCents: o.formule.prixCents,
+    versements: o.comptant ? 1 : o.formule.mensualites,
+    achatLe: o.achatLe,
+    supplementInitialCents: adhesionCents,
+  });
+
+  return {
+    adhesionCents,
+    premierCents: e.initialAmount,
+    suivantsCents: e.terms[0]?.amount ?? 0,
+    nbEcheances: e.terms.length,
+    totalCents: e.totalAmount,
+  };
 }
 
 /**

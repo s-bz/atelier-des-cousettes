@@ -1,9 +1,10 @@
 ---
 export const prerender = false;
 
+import DevisEnDirect from '../../components/DevisEnDirect.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getAdminClient } from '../../utils/supabase';
-import { lireCatalogueFormules, libelleFormule } from '../../utils/tarifs';
+import { lireCatalogueFormules, libelleFormule, heureCourte } from '../../utils/tarifs';
 import { AUDIENCES } from '../../utils/ateliers';
 import { saisonDe } from '../../utils/inscriptions';
 import { ADHESION_CENTS } from '../../utils/helloasso';
@@ -30,7 +31,7 @@ const [{ data: participants }, formules, { data: creneaux }] = await Promise.all
   supabase.from('participants').select('id, first_name, last_name, audience')
     .eq('account_id', account.id).order('first_name'),
   lireCatalogueFormules(supabase),
-  supabase.from('creneaux').select('id, label, audience')
+  supabase.from('creneaux').select('id, label, audience, default_start_time, default_end_time')
     .eq('kind', 'atelier').eq('au_forfait', true).is('archived_at', null).order('label'),
 ]);
 
@@ -122,7 +123,7 @@ const euros = (c: number) => (c / 100).toFixed(2).replace('.', ',').replace(',00
         <label for="formule" class="block text-sm font-medium mb-1">Formule</label>
         <select id="formule" name="formule" required class="champ">
           {formules.map((f) => (
-            <option value={f.id} data-public={f.audience}>{libelleFormule(f)}</option>
+            <option value={f.id} data-public={f.audience}>{libelleFormule(f, { prixDivise: false })}</option>
           ))}
         </select>
       </div>
@@ -131,7 +132,9 @@ const euros = (c: number) => (c / 100).toFixed(2).replace('.', ',').replace(',00
         <label for="creneau" class="block text-sm font-medium mb-1">Créneau</label>
         <select id="creneau" name="creneau" required class="champ">
           {(creneaux ?? []).map((c) => (
-            <option value={c.id} data-public={c.audience}>{c.label}</option>
+            <option value={c.id} data-public={c.audience}>
+              {c.label} — {heureCourte(c.default_start_time)} à {heureCourte(c.default_end_time)}
+            </option>
           ))}
         </select>
       </div>
@@ -147,6 +150,8 @@ const euros = (c: number) => (c / 100).toFixed(2).replace('.', ',').replace(',00
           <span>En une seule fois</span>
         </label>
       </fieldset>
+
+      <DevisEnDirect email={account.email} />
 
       <button type="submit"
               class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">

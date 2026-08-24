@@ -245,10 +245,29 @@ export async function lireCatalogueFormules(
  */
 export function libelleFormule(
   f: { libelle: string; audience: string; seances: number; prixCents: number },
+  o: { prixDivise?: boolean } = {},
 ): string {
   const total = (f.prixCents / 100).toFixed(0);
+  const base = `${f.audience} — ${f.libelle} · ${total} €`;
+
+  /*
+   * LE PRIX DIVISÉ NE S'AFFICHE PAS À L'ACHETEUR. Il sert à Isabelle, qui
+   * corrige un abonnement et doit savoir à quel tarif se facturera un
+   * dépassement. À quelqu'un qui choisit sa formule, c'est un second montant
+   * qui brouille le premier — celui qu'il va effectivement payer.
+   */
+  if (o.prixDivise === false) return base;
+
   const divise = (f.prixCents / f.seances / 100).toFixed(2).replace('.', ',');
-  return `${f.audience} — ${f.libelle} · ${total} € (${divise} € la séance en plus)`;
+  return `${base} (${divise} € la séance en plus)`;
+}
+
+/** « 09:30:00 » → « 9h30 », « 14:00:00 » → « 14h ». */
+export function heureCourte(heure: string): string {
+  const m = heure.match(/^(\d{2}):(\d{2})/);
+  if (!m) return heure;
+  const [, h, min] = m;
+  return `${Number(h)}h${min === '00' ? '' : min}`;
 }
 
 /** Le premier nombre d'un texte — « 9 séances » → 9, « 324 € » → 324. */

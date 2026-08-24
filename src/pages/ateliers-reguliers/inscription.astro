@@ -1,9 +1,10 @@
 ---
 export const prerender = false;
 
+import DevisEnDirect from '../../components/DevisEnDirect.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getAdminClient } from '../../utils/supabase';
-import { lireCatalogueFormules, libelleFormule } from '../../utils/tarifs';
+import { lireCatalogueFormules, libelleFormule, heureCourte } from '../../utils/tarifs';
 import { AUDIENCES } from '../../utils/ateliers';
 import { saisonDe } from '../../utils/inscriptions';
 import { demarrerAchat } from '../../utils/achat';
@@ -28,7 +29,7 @@ const saison = saisonDe(new Date());
 
 const [formules, { data: creneaux }] = await Promise.all([
   lireCatalogueFormules(supabase),
-  supabase.from('creneaux').select('id, label, audience')
+  supabase.from('creneaux').select('id, label, audience, default_start_time, default_end_time')
     .eq('kind', 'atelier').eq('au_forfait', true).is('archived_at', null).order('label'),
 ]);
 
@@ -174,7 +175,7 @@ const euros = (c: number) => String(c / 100);
         <select id="formule" name="formule" required class="champ">
           {formules.map((f) => (
             <option value={f.id} data-public={f.audience} selected={f.id === saisi.formule}>
-              {libelleFormule(f)}
+              {libelleFormule(f, { prixDivise: false })}
             </option>
           ))}
         </select>
@@ -185,7 +186,7 @@ const euros = (c: number) => String(c / 100);
         <select id="creneau" name="creneau" required class="champ">
           {(creneaux ?? []).map((c) => (
             <option value={c.id} data-public={c.audience} selected={c.id === saisi.creneau}>
-              {c.label}
+              {c.label} — {heureCourte(c.default_start_time)} à {heureCourte(c.default_end_time)}
             </option>
           ))}
         </select>
@@ -205,6 +206,8 @@ const euros = (c: number) => String(c / 100);
           <span>En une seule fois</span>
         </label>
       </fieldset>
+
+      <DevisEnDirect />
 
       <button type="submit"
               class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">

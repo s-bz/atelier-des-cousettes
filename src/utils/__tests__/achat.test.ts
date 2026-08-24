@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { verifierAchat, origineJoignable } from '../achat';
+import { verifierAchat, origineJoignable, devis } from '../achat';
 
 const formule = {
   id: '2026-2027-adultes-9', libelle: '9 séances', audience: 'adultes',
@@ -96,5 +96,46 @@ describe('origineJoignable', () => {
     // Rien de mieux à proposer : l'erreur de l'API sera plus parlante qu'un
     // repli inventé.
     expect(origineJoignable('http://localhost:4321', undefined)).toBe('http://localhost:4321');
+  });
+});
+
+describe('devis', () => {
+  const f = { id: '2026-2027-adultes-9', libelle: '9 séances', audience: 'adultes',
+              seances: 9, prixCents: 32400, mensualites: 9 };
+
+  it('chiffre un forfait échelonné, adhésion comprise', () => {
+    const d = devis({ formule: f, adhesionDue: true, comptant: false, achatLe: new Date('2026-08-25T00:00:00Z') });
+    expect(d).toEqual({
+      adhesionCents: 1500,
+      premierCents: 5100,      // 36 € + 15 € d'adhésion
+      suivantsCents: 3600,
+      nbEcheances: 8,
+      totalCents: 33900,
+    });
+  });
+
+  it('n’ajoute rien quand l’adhésion est déjà réglée', () => {
+    const d = devis({ formule: f, adhesionDue: false, comptant: false, achatLe: new Date('2026-08-25T00:00:00Z') });
+    expect(d.adhesionCents).toBe(0);
+    expect(d.premierCents).toBe(3600);
+    expect(d.totalCents).toBe(32400);
+  });
+
+  it('chiffre un règlement en une fois', () => {
+    const d = devis({ formule: f, adhesionDue: true, comptant: true, achatLe: new Date('2026-08-25T00:00:00Z') });
+    expect(d.nbEcheances).toBe(0);
+    expect(d.premierCents).toBe(33900);
+    expect(d.totalCents).toBe(33900);
+  });
+
+  it('donne toujours un premier versement égal au total moins les échéances', () => {
+    // C'est l'invariant que l'API vérifie : un devis qui ne le respecte pas
+    // annoncerait un montant que le paiement démentirait.
+    for (const comptant of [true, false]) {
+      for (const adhesionDue of [true, false]) {
+        const d = devis({ formule: f, adhesionDue, comptant, achatLe: new Date('2026-08-25T00:00:00Z') });
+        expect(d.premierCents + d.nbEcheances * d.suivantsCents).toBe(d.totalCents);
+      }
+    }
   });
 });

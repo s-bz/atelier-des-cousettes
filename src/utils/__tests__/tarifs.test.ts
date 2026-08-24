@@ -7,6 +7,7 @@ import {
   prixParPublic,
   grilleAvecPrixDeLaBase,
   libelleFormule,
+  heureCourte,
   montantFr,
   remplacerFourchette,
 } from '../tarifs';
@@ -279,5 +280,34 @@ describe('libelleFormule', () => {
       libelle: '9 séances',
       audience: 'ados', seances: 9, prixCents: 22500,
     })).toBe('ados — 9 séances · 225 € (25,00 € la séance en plus)');
+  });
+});
+
+describe('libelleFormule — version publique', () => {
+  const f = { libelle: '18 séances', audience: 'adultes', seances: 18, prixCents: 53100 };
+
+  it('tait le prix d’un dépassement, qui ne regarde pas l’acheteur', () => {
+    // « 29,50 € la séance en plus » sert à Isabelle quand elle corrige un
+    // abonnement. À quelqu'un qui choisit sa formule, c'est un second prix qui
+    // brouille le premier.
+    expect(libelleFormule(f, { prixDivise: false }))
+      .toBe('adultes — 18 séances · 531 €');
+  });
+
+  it('le garde par défaut, pour les écrans d’administration', () => {
+    expect(libelleFormule(f)).toBe('adultes — 18 séances · 531 € (29,50 € la séance en plus)');
+  });
+});
+
+describe('heureCourte', () => {
+  it('abrège une heure de base de données', () => {
+    expect(heureCourte('09:30:00')).toBe('9h30');
+    expect(heureCourte('14:00:00')).toBe('14h');
+    expect(heureCourte('10:05:00')).toBe('10h05');
+  });
+
+  it('rend ce qu’elle ne sait pas lire, plutôt que rien', () => {
+    expect(heureCourte('')).toBe('');
+    expect(heureCourte('n’importe quoi')).toBe('n’importe quoi');
   });
 });

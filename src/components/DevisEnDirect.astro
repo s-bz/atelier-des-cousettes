@@ -1,0 +1,98 @@
+---
+interface Props {
+  /** L'adresse connue d'avance, pour un adhérent déjà connecté. */
+  email?: string | null;
+}
+const { email } = Astro.props;
+---
+
+{/*
+  CE QUE ÇA VA COÛTER, PENDANT QU'ON REMPLIT.
+
+  Le formulaire annonçait une règle — « 15 € s'ajoutent, sauf si… » — et laissait
+  chacun faire le calcul. Or c'est le montant prélevé aujourd'hui qui décide,
+  et il dépend de trois choses qu'on choisit ici : la formule, l'échelonnement,
+  et l'adhésion déjà réglée ou non.
+
+  LE CHIFFRAGE VIENT DU SERVEUR, jamais d'un calcul refait ici : c'est le même
+  `construireEcheancier` qui produira l'échéancier envoyé à HelloAsso. Deux
+  arithmétiques finiraient par diverger, et la page annoncerait alors un montant
+  que le prélèvement démentirait.
+
+  Sans JavaScript, ce bloc reste vide et le formulaire fonctionne : le devis est
+  un confort, pas une étape.
+*/}
+<div
+  id="devis"
+  data-email={email ?? ''}
+  hidden
+  class="rounded-xl bg-[var(--color-bg-accent)] px-4 py-3"
+>
+  <p class="font-medium text-[var(--color-heading)]" id="devis-aujourdhui"></p>
+  <p class="mt-1 text-sm text-[var(--color-text)]" id="devis-suite"></p>
+  <p class="mt-1 text-sm text-[var(--color-text-light)]" id="devis-adhesion"></p>
+</div>
+
+<script>
+  const bloc = document.getElementById('devis');
+  const champEmail = document.getElementById('email') as HTMLInputElement | null;
+  const formule = document.getElementById('formule') as HTMLSelectElement | null;
+  const reglements = [...document.querySelectorAll<HTMLInputElement>('input[name="reglement"]')];
+
+  const aujourdhui = document.getElementById('devis-aujourdhui');
+  const suite = document.getElementById('devis-suite');
+  const adhesion = document.getElementById('devis-adhesion');
+
+  if (bloc && formule && aujourdhui && suite && adhesion) {
+    const euros = (c: number) =>
+      (c / 100).toFixed(2).replace('.', ',').replace(',00', '') + ' €';
+
+    let enVol: AbortController | null = null;
+    let minuterie: ReturnType<typeof setTimeout> | undefined;
+
+    async function chiffrer() {
+      const id = formule!.value;
+      if (!id) { bloc!.hidden = true; return; }
+
+      // L'adresse connue d'avance l'emporte : sur l'espace adhérent, il n'y a
+      // pas de champ à saisir.
+      const email = bloc!.dataset.email || champEmail?.value || '';
+      const comptant = reglements.find((r) => r.checked)?.value === 'comptant';
+
+      const params = new URLSearchParams({ formule: id, comptant: comptant ? '1' : '0' });
+      if (email.includes('@')) params.set('email', email);
+
+      // Une réponse tardive ne doit pas écraser une plus récente.
+      enVol?.abort();
+      enVol = new AbortController();
+
+      try {
+        const r = await fetch(`/api/devis.json?${params}`, { signal: enVol.signal });
+        if (!r.ok) { bloc!.hidden = true; return; }
+        const d = await r.json();
+
+        aujourdhui!.textContent = `À régler aujourd’hui : ${euros(d.premierCents)}`;
+        suite!.textContent = d.nbEcheances
+          ? `puis ${d.nbEcheances} versements de ${euros(d.suivantsCents)} — soit ${euros(d.totalCents)} en tout.`
+          : `C’est le montant total.`;
+        adhesion!.textContent = d.adhesionCents
+          ? `Dont ${euros(d.adhesionCents)} d’adhésion à l’association, pour toute la famille et toute la saison.`
+          : `L’adhésion de votre famille est déjà réglée pour cette saison : elle n’est pas recomptée.`;
+        bloc!.hidden = false;
+      } catch (e) {
+        // Une requête annulée n'est pas une panne : on laisse l'affichage en place.
+        if ((e as Error)?.name !== 'AbortError') bloc!.hidden = true;
+      }
+    }
+
+    formule.addEventListener('change', chiffrer);
+    for (const r of reglements) r.addEventListener('change', chiffrer);
+    // On ne chiffre pas à chaque touche : l'adresse n'est utile que complète.
+    champEmail?.addEventListener('input', () => {
+      clearTimeout(minuterie);
+      minuterie = setTimeout(chiffrer, 400);
+    });
+
+    chiffrer();
+  }
+</script>
