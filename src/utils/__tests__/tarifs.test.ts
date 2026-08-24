@@ -5,6 +5,8 @@ import {
   fourchette,
   fourchetteForfaits,
   prixParPublic,
+  grilleAvecPrixDeLaBase,
+  montantFr,
   remplacerFourchette,
 } from '../tarifs';
 
@@ -172,5 +174,91 @@ describe('fourchetteForfaits', () => {
 
   it('ne renvoie rien sans grille', () => {
     expect(fourchetteForfaits(null)).toBeNull();
+  });
+});
+
+
+describe('montantFr', () => {
+  it('écrit la virgule française, et pas de centimes inutiles', () => {
+    expect(montantFr(3600)).toBe('36');
+    expect(montantFr(2950)).toBe('29,50');
+    expect(montantFr(2125)).toBe('21,25');
+  });
+});
+
+describe('grilleAvecPrixDeLaBase', () => {
+  const formules = [
+    { audience: 'adultes', seances: 9, prixCents: 32400, mensualites: 9 },
+    { audience: 'adultes', seances: 18, prixCents: 53100, mensualites: 9 },
+    { audience: 'enfants', seances: 16, prixCents: 34000, mensualites: 10 },
+  ];
+
+  const grille = [
+    {
+      audience: 'adultes',
+      formules: [
+        {
+          seances: '9 séances',
+          mensuel: '36 € par mois',
+          detail: 'environ une fois par mois sur la saison ; 324 €, en 9 mensualités ou en une fois',
+        },
+      ],
+    },
+  ];
+
+  /*
+   * LA PHRASE APPARTIENT À ISABELLE, LES NOMBRES À LA BASE — le geste de
+   * `remplacerFourchette`, appliqué à la grille. Depuis que la séance en
+   * dépassement se facture au prix divisé du forfait, ces montants facturent :
+   * les laisser dans le CMS en aurait fait un prix affiché et un prix facturé.
+   */
+  it('reprend le mensuel, le total et le nombre d’échéances', () => {
+    const dehors = [{ audience: 'adultes', seances: 9, prixCents: 36000, mensualites: 10 }];
+    const [t] = grilleAvecPrixDeLaBase(grille, dehors);
+    expect(t.formules[0].mensuel).toBe('36 € par mois');   // 360 / 10
+    expect(t.formules[0].detail).toContain('360 €');
+    expect(t.formules[0].detail).toContain('en 10 mensualités');
+  });
+
+  it('garde les mots autour des nombres', () => {
+    const [t] = grilleAvecPrixDeLaBase(grille, formules);
+    expect(t.formules[0].mensuel).toBe('36 € par mois');
+    expect(t.formules[0].detail).toBe(
+      'environ une fois par mois sur la saison ; 324 €, en 9 mensualités ou en une fois',
+    );
+  });
+
+  it('écrit les centimes quand le mensuel n’est pas rond', () => {
+    const [t] = grilleAvecPrixDeLaBase(
+      [{ audience: 'adultes', formules: [{ seances: '18 séances', mensuel: '59 € par mois', detail: null }] }],
+      [{ audience: 'adultes', seances: 18, prixCents: 53100, mensualites: 18 }],
+    );
+    expect(t.formules[0].mensuel).toBe('29,50 € par mois');
+  });
+
+  it('apparie sur le public ET le nombre de séances', () => {
+    // 16 séances existe chez les enfants, pas chez les adultes : la ligne
+    // adulte ne doit pas hériter du tarif enfant.
+    const [t] = grilleAvecPrixDeLaBase(
+      [{ audience: 'adultes', formules: [{ seances: '16 séances', mensuel: '99 € par mois', detail: null }] }],
+      formules,
+    );
+    expect(t.formules[0].mensuel).toBe('99 € par mois');
+  });
+
+  it('laisse la grille intacte si la base ne répond pas', () => {
+    // Le repli de tout ce fichier : un tarif périmé affiché vaut mieux qu'une
+    // page sans prix, et mieux qu'une construction qui échoue.
+    expect(grilleAvecPrixDeLaBase(grille, null)[0].formules[0].mensuel).toBe('36 € par mois');
+    expect(grilleAvecPrixDeLaBase(grille, [])[0].formules[0].mensuel).toBe('36 € par mois');
+  });
+
+  it('ne perd pas une ligne du CMS qu’aucune formule ne porte', () => {
+    const [t] = grilleAvecPrixDeLaBase(
+      [{ audience: 'ados', formules: [{ seances: '9 séances', mensuel: '25 € par mois', detail: null }] }],
+      formules,
+    );
+    expect(t.formules).toHaveLength(1);
+    expect(t.formules[0].mensuel).toBe('25 € par mois');
   });
 });

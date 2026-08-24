@@ -14,24 +14,54 @@ import { AUDIENCES, type AudienceCreneau } from './ateliers';
  * stage. Ce sont les montants qui SERVENT À FACTURER ; les afficher d'après une
  * autre source reviendrait à promettre un prix que la facture démentirait.
  *
- * Ce qui n'en vient pas : les forfaits de saison. Ils n'existent pas en base —
- * on n'y facture pas un abonnement — et restent donc éditoriaux, dans le CMS.
- * Ce fichier sait seulement en lire les montants pour les résumer.
+ * LES FORFAITS EN VIENNENT MAINTENANT AUSSI. Ils sont longtemps restés
+ * éditoriaux, et à juste titre : on ne facturait pas un abonnement. Depuis que
+ * la séance en dépassement se facture au prix divisé du forfait, ces montants
+ * facturent à leur tour — la table `formules` les porte, et
+ * `grilleAvecPrixDeLaBase` les substitue dans les phrases du CMS, qui gardent
+ * leurs mots. Ce qui reste au CMS : la durée d'une séance, la glose du rythme,
+ * l'ordre des cartes.
  */
+
+/** Une séance achetable à l'unité : une durée, un prix. */
+export interface OffreSeance {
+  duree: string | null;
+  prix: number;
+}
 
 export interface Tarifs {
   /**
-   * Prix d'une séance hors forfait, par public.
+   * LES SÉANCES ACHETABLES À L'UNITÉ, la plus chère d'abord.
    *
-   * Une entrée par public connu, y compris ceux qu'aucun créneau ne porte
-   * encore — elles valent alors `null`. Énumérer les publics plutôt que d'en
-   * nommer deux à la main évite qu'un troisième arrive sans que ce fichier
-   * l'apprenne : c'est exactement ainsi que les ados auraient pu naître en base
-   * tout en restant invisibles sur les pages qui affichent les prix.
+   * C'ÉTAIT UN PRIX PAR PUBLIC, et deux hypothèses s'y cachaient, toutes deux
+   * devenues fausses la même saison :
+   *
+   *   — que tout créneau se vende à la séance. Les ateliers ados et enfants ne
+   *     le sont plus. Leur `default_unit_price_cents` demeure — la colonne est
+   *     obligatoire — mais il n'achète plus rien : depuis la table des
+   *     formules, un dépassement se facture au prix divisé du forfait. Faute de
+   *     filtrer sur `a_l_unite`, l'accueil a continué d'annoncer « 45 € la
+   *     séance (35 € ado et enfant) », un tarif que personne ne peut ni acheter
+   *     ni se voir facturer.
+   *
+   *   — qu'un public n'ait qu'un prix. Les adultes en ont deux depuis la séance
+   *     du jeudi soir : 45 € les 3 h, 22 € l'heure et demie. Interrogée par
+   *     public, la table rendait le premier des deux — l'ordre de la base,
+   *     c'est-à-dire le hasard.
+   *
+   * Une offre est donc un couple (durée, prix), et non un public. Deux créneaux
+   * qui durent autant et coûtent autant n'en font qu'une, quel que soit le jour.
    */
-  seance: Record<AudienceCreneau, number | null>;
+  seances: OffreSeance[];
   /** Le moins cher et le plus cher des stages. */
   stages: { min: number; max: number } | null;
+}
+
+/** « 3 h », « 1 h 30 » — la durée lue sur les horaires du créneau. */
+function dureeDe(debut: string, fin: string): string | null {
+  const min = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const m = min(fin) - min(debut);
+  return m <= 0 ? null : m % 60 === 0 ? `${m / 60} h` : `${Math.floor(m / 60)} h ${m % 60}`;
 }
 
 const euros = (cents: number) => Math.round(cents / 100);
@@ -47,25 +77,28 @@ export async function lireTarifs(): Promise<Tarifs | null> {
   try {
     const { data, error } = await getAdminClient()
       .from('creneaux')
-      .select('kind, audience, default_unit_price_cents')
+      .select('kind, a_l_unite, default_start_time, default_end_time, default_unit_price_cents')
       .is('archived_at', null);
     if (error || !data?.length) return null;
 
-    const prixDe = (kind: string, audience?: string) =>
-      data
-        .filter((c) => c.kind === kind && (!audience || c.audience === audience))
-        .map((c) => c.default_unit_price_cents)
-        .filter((n): n is number => typeof n === 'number' && n > 0);
+    const stages = data
+      .filter((c) => c.kind === 'stage' && c.default_unit_price_cents > 0)
+      .map((c) => c.default_unit_price_cents);
 
-    const stages = prixDe('stage');
+    // Une offre par couple (durée, prix) : les cinq créneaux adultes de 3 h à
+    // 45 € n'en font qu'une.
+    const offres = new Map<string, OffreSeance>();
+    for (const c of data) {
+      if (c.kind !== 'atelier' || !c.a_l_unite || !(c.default_unit_price_cents > 0)) continue;
+      const duree = dureeDe(c.default_start_time, c.default_end_time);
+      const cle = `${c.default_unit_price_cents}|${duree ?? ''}`;
+      if (!offres.has(cle)) offres.set(cle, { duree, prix: euros(c.default_unit_price_cents) });
+    }
 
     return {
-      seance: Object.fromEntries(
-        AUDIENCES.map((a) => {
-          const prix = prixDe('atelier', a.creneau)[0];
-          return [a.creneau, prix ? euros(prix) : null];
-        }),
-      ) as Record<AudienceCreneau, number | null>,
+      // La plus chère d'abord : c'est la formule principale, la courte se lit
+      // ensuite comme ce qu'elle est, une porte d'entrée.
+      seances: [...offres.values()].sort((a, b) => b.prix - a.prix),
       stages: stages.length
         ? { min: euros(Math.min(...stages)), max: euros(Math.max(...stages)) }
         : null,
@@ -114,6 +147,111 @@ export function remplacerFourchette(texte: string, nouvelle: string | null): str
 export function remplacerPrix(texte: string, prix: number | null | undefined): string {
   if (!prix) return texte;
   return texte.replace(/\d+(?:[.,]\d+)?\s*€/, `${prix} €`);
+}
+
+/**
+ * UNE FORMULE DE SAISON, telle que la base la porte.
+ *
+ * Les forfaits sont longtemps restés éditoriaux, et à juste titre : on ne
+ * facturait pas un abonnement, ils n'existaient donc pas en base. Depuis que
+ * la séance en dépassement se facture au prix divisé du forfait
+ * (20260824200000), ces montants FACTURENT — et ce fichier existe précisément
+ * pour que ce qui facture ne soit écrit qu'une fois.
+ */
+export interface FormuleBase {
+  audience: string;
+  seances: number;
+  prixCents: number;
+  mensualites: number;
+}
+
+/**
+ * Les formules au catalogue. Null si la base est injoignable.
+ *
+ * PAS DE FILTRE SUR LA SAISON, et c'est délibéré : déduire la saison courante
+ * d'une date se trompe entre juillet et septembre, où l'on prépare déjà la
+ * suivante — nous sommes le 24 août 2026 et les formules affichées sont celles
+ * de 2026-2027. `archived_at` est ce qui termine une saison, comme pour les
+ * créneaux.
+ */
+export async function lireFormules(): Promise<FormuleBase[] | null> {
+  try {
+    const { data, error } = await getAdminClient()
+      .from('formules')
+      .select('audience, seances, prix_cents, mensualites')
+      .is('archived_at', null);
+    if (error || !data) return null;
+    return data.map((f) => ({
+      audience: f.audience,
+      seances: f.seances,
+      prixCents: f.prix_cents,
+      mensualites: f.mensualites,
+    }));
+  } catch {
+    return null;
+  }
+}
+
+/** Le premier nombre d'un texte — « 9 séances » → 9, « 324 € » → 324. */
+const premierNombre = (texte: string | null | undefined): number | null => {
+  const n = Number(texte?.match(/\d+/)?.[0]);
+  return Number.isFinite(n) ? n : null;
+};
+
+/** « 29.5 » → « 29,50 », « 36 » → « 36 ». La virgule, et pas de zéro inutile. */
+export function montantFr(cents: number): string {
+  const euros = cents / 100;
+  return Number.isInteger(euros) ? String(euros) : euros.toFixed(2).replace('.', ',');
+}
+
+/**
+ * LA GRILLE DU CMS, SES NOMBRES REPRIS DE LA BASE.
+ *
+ * Même geste que `remplacerFourchette` et `remplacerPrix`, appliqué à la
+ * grille : la phrase appartient à Isabelle — c'est elle qui écrit « environ une
+ * fois par mois sur la saison » — et les trois nombres qu'elle contient
+ * viennent de `formules`. Le montant mensuel, le total et le nombre
+ * d'échéances se déduisent tous du prix et des mensualités ; les recopier dans
+ * le CMS en aurait fait des chiffres qu'un changement de tarif oublierait.
+ *
+ * L'APPARIEMENT SE FAIT SUR LE PUBLIC ET LE NOMBRE DE SÉANCES — « adultes » et
+ * le 9 de « 9 séances ». C'est ce couple qui identifie une formule, et il est
+ * déjà écrit des deux côtés. Une ligne du CMS qu'aucune formule ne porte
+ * garde ses nombres tels quels plutôt que de disparaître : mieux vaut un tarif
+ * périmé affiché qu'une formule absente de la page, qui ne se remarque pas.
+ */
+export function grilleAvecPrixDeLaBase<
+  T extends {
+    audience?: string | null;
+    formules?: readonly { seances?: string | null; mensuel?: string | null; detail?: string | null }[] | null;
+  },
+>(tarifs: readonly T[] | null | undefined, formules: readonly FormuleBase[] | null): T[] {
+  const grille = [...(tarifs ?? [])];
+  if (!formules?.length) return grille;
+
+  return grille.map((t) => ({
+    ...t,
+    formules: (t.formules ?? []).map((f) => {
+      const seances = premierNombre(f.seances);
+      const base = formules.find((b) => b.audience === t.audience && b.seances === seances);
+      if (!base) return f;
+
+      const mensuel = Math.round(base.prixCents / base.mensualites);
+      return {
+        ...f,
+        // « 36 € par mois » — seul le nombre change, les mots restent.
+        mensuel: f.mensuel ? f.mensuel.replace(/\d+(?:[.,]\d+)?/, montantFr(mensuel)) : f.mensuel,
+        // « … ; 324 €, en 9 mensualités ou en une fois » — le total puis le
+        // nombre d'échéances, dans cet ordre. Le premier nombre suivi d'un €
+        // est le total ; celui qui précède « mensualité » est le compte.
+        detail: f.detail
+          ? f.detail
+              .replace(/\d+(?:[.,]\d+)?\s*€/, `${montantFr(base.prixCents)} €`)
+              .replace(/\d+(\s*mensualit)/, `${base.mensualites}$1`)
+          : f.detail,
+      };
+    }),
+  }));
 }
 
 /**
@@ -236,6 +374,26 @@ export function prixParPublic(
     .join(', ');
 
   return `${tete.montant} €${suffixe} (${parenthese})`;
+}
+
+/**
+ * « 45 € la séance de 3 h (22 € en 1 h 30) » — les offres à l'unité en une phrase.
+ *
+ * Même hiérarchie que `prixParPublic` : la principale ouvre, les autres suivent
+ * entre parenthèses. Ce qui les distingue n'est plus le public — elles
+ * s'adressent toutes aux mêmes personnes — mais la durée, seule à justifier
+ * l'écart de prix. La taire ferait de « 22 € » un rabais inexpliqué sur le même
+ * service.
+ */
+export function prixDesOffres(offres: readonly OffreSeance[] | null | undefined): string | null {
+  const liste = (offres ?? []).filter((o) => o.prix > 0);
+  if (!liste.length) return null;
+
+  const [tete, ...suite] = liste;
+  const principal = `${tete.prix} € la séance${tete.duree ? ` de ${tete.duree}` : ''}`;
+  if (!suite.length) return principal;
+
+  return `${principal} (${suite.map((o) => `${o.prix} €${o.duree ? ` en ${o.duree}` : ''}`).join(', ')})`;
 }
 
 /** « De 28€ à 58€ » — du forfait le plus bas au plus élevé de la grille. */

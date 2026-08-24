@@ -226,7 +226,7 @@ describe('construireDates', () => {
   });
 
   it('précise le périmètre du prix des ateliers, qui n’est pas celui des stages', () => {
-    expect(texte).toContain('45 € la séance hors forfait');
+    expect(texte).toContain('45 € la séance');
     expect(texte).toContain('70 €\n');
   });
 
@@ -263,7 +263,23 @@ describe('construireTarifs', () => {
   it('groupe les créneaux par lieu avec leur prix à l’unité', () => {
     expect(texte).toContain('### Revel');
     expect(texte).toContain('### Verdalle');
-    expect(texte).toContain('**Atelier enfants du jeudi** — enfants, 17h30–19h30, 35 € la séance hors forfait');
+    expect(texte).toContain('**Atelier enfants du jeudi** — enfants, 17h30–19h30, 35 € la séance');
+  });
+
+  /*
+   * « HORS FORFAIT » A DISPARU DU LIBELLÉ, et pas seulement par concision : la
+   * formule laissait entendre que ce montant facture les dépassements. Depuis
+   * la table des formules, un dépassement se règle au prix divisé du forfait.
+   * Ce prix-ci n'achète plus qu'une séance prise seule.
+   */
+  it('dit comment se prend un créneau qui ne se vend pas à la séance', () => {
+    const auForfait = creneaux.map((c) =>
+      c.audience === 'enfants' ? { ...c, aLUnite: false } : c,
+    );
+    const texte = construireTarifs({ ...faits, creneaux: auForfait });
+    expect(texte).toContain('**Atelier enfants du jeudi** — enfants, 17h30–19h30, au forfait de saison uniquement');
+    // Le montant inachetable ne paraît nulle part sur cette ligne.
+    expect(texte).not.toContain('17h30–19h30, 35 €');
   });
 
   it('reste servable quand la base ne répond pas', () => {
