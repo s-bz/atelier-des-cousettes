@@ -42,20 +42,24 @@ export const GET: APIRoute = async ({ request }) => {
     bilan.inscriptions = (inscrites as number) ?? 0;
   }
 
-  // ── 2. Rappels à trois jours ───────────────────────────────────────────
+  // ── 2. Rappels à onze jours ────────────────────────────────────────────
   //
-  // TROIS et non deux. L'annulation est libre jusqu'à 48 h avant la séance :
-  // un rappel à deux jours arrivait donc au moment précis où il devenait trop
-  // tard pour changer de date. Prévenir quelqu'un une fois le délai passé est
-  // pire que ne rien lui dire — il apprend en même temps l'échéance et qu'il
-  // l'a manquée. À trois jours, il reste une journée pleine pour décider.
+  // ONZE, PARCE QUE L'ANNULATION EST LIBRE JUSQU'À DIX. Le rappel a toujours
+  // été calé sur ce délai, jamais choisi pour lui-même : prévenir quelqu'un une
+  // fois l'échéance passée est pire que ne rien lui dire — il apprend d'un même
+  // souffle qu'il y avait une date limite et qu'il l'a manquée. Il reste ainsi
+  // une journée pleine pour décider.
   //
-  // Fenêtre d'une journée entière, et non « exactement dans 48 h » : le cron ne
+  // Il valait trois jours quand la règle en valait deux (20260730071219). Le
+  // passage à dix jours (20260824240000) l'a donc emporté avec elle : à trois
+  // jours d'une échéance à dix, le rappel serait arrivé une semaine trop tard.
+  //
+  // Fenêtre d'une journée entière, et non « exactement dans 11 jours » : le cron ne
   // se déclenche pas à heure fixe, une fenêtre étroite laisserait passer des
   // séances au gré de la minute d'exécution.
   const debut = new Date();
   debut.setHours(0, 0, 0, 0);
-  debut.setDate(debut.getDate() + 3);
+  debut.setDate(debut.getDate() + 11);
   const fin = new Date(debut);
   fin.setDate(fin.getDate() + 1);
 

@@ -169,7 +169,7 @@ if (Astro.request.method === 'POST') {
       }
 
       message = (tardif
-        ? 'Place libérée. À moins de 48 h, la séance reste due — utilisez « Rendre malgré le délai » sur sa fiche pour la lui rendre.'
+        ? 'Place libérée. À moins de 10 jours, la séance reste due — utilisez « Rendre malgré le délai » sur sa fiche pour la lui rendre.'
         : 'Place libérée, le crédit est rendu.')
         + (attente.length > 0
             ? ` ${prevenus} personne${prevenus > 1 ? 's' : ''} de la liste d’attente prévenue${prevenus > 1 ? 's' : ''} : la première à réserver prendra la place.`
