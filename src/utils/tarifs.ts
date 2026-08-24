@@ -14,9 +14,13 @@ import { AUDIENCES, type AudienceCreneau } from './ateliers';
  * stage. Ce sont les montants qui SERVENT À FACTURER ; les afficher d'après une
  * autre source reviendrait à promettre un prix que la facture démentirait.
  *
- * Ce qui n'en vient pas : les forfaits de saison. Ils n'existent pas en base —
- * on n'y facture pas un abonnement — et restent donc éditoriaux, dans le CMS.
- * Ce fichier sait seulement en lire les montants pour les résumer.
+ * LES FORFAITS EN VIENNENT MAINTENANT AUSSI. Ils sont longtemps restés
+ * éditoriaux, et à juste titre : on ne facturait pas un abonnement. Depuis que
+ * la séance en dépassement se facture au prix divisé du forfait, ces montants
+ * facturent à leur tour — la table `formules` les porte, et
+ * `grilleAvecPrixDeLaBase` les substitue dans les phrases du CMS, qui gardent
+ * leurs mots. Ce qui reste au CMS : la durée d'une séance, la glose du rythme,
+ * l'ordre des cartes.
  */
 
 export interface Tarifs {
@@ -114,6 +118,111 @@ export function remplacerFourchette(texte: string, nouvelle: string | null): str
 export function remplacerPrix(texte: string, prix: number | null | undefined): string {
   if (!prix) return texte;
   return texte.replace(/\d+(?:[.,]\d+)?\s*€/, `${prix} €`);
+}
+
+/**
+ * UNE FORMULE DE SAISON, telle que la base la porte.
+ *
+ * Les forfaits sont longtemps restés éditoriaux, et à juste titre : on ne
+ * facturait pas un abonnement, ils n'existaient donc pas en base. Depuis que
+ * la séance en dépassement se facture au prix divisé du forfait
+ * (20260824200000), ces montants FACTURENT — et ce fichier existe précisément
+ * pour que ce qui facture ne soit écrit qu'une fois.
+ */
+export interface FormuleBase {
+  audience: string;
+  seances: number;
+  prixCents: number;
+  mensualites: number;
+}
+
+/**
+ * Les formules au catalogue. Null si la base est injoignable.
+ *
+ * PAS DE FILTRE SUR LA SAISON, et c'est délibéré : déduire la saison courante
+ * d'une date se trompe entre juillet et septembre, où l'on prépare déjà la
+ * suivante — nous sommes le 24 août 2026 et les formules affichées sont celles
+ * de 2026-2027. `archived_at` est ce qui termine une saison, comme pour les
+ * créneaux.
+ */
+export async function lireFormules(): Promise<FormuleBase[] | null> {
+  try {
+    const { data, error } = await getAdminClient()
+      .from('formules')
+      .select('audience, seances, prix_cents, mensualites')
+      .is('archived_at', null);
+    if (error || !data) return null;
+    return data.map((f) => ({
+      audience: f.audience,
+      seances: f.seances,
+      prixCents: f.prix_cents,
+      mensualites: f.mensualites,
+    }));
+  } catch {
+    return null;
+  }
+}
+
+/** Le premier nombre d'un texte — « 9 séances » → 9, « 324 € » → 324. */
+const premierNombre = (texte: string | null | undefined): number | null => {
+  const n = Number(texte?.match(/\d+/)?.[0]);
+  return Number.isFinite(n) ? n : null;
+};
+
+/** « 29.5 » → « 29,50 », « 36 » → « 36 ». La virgule, et pas de zéro inutile. */
+export function montantFr(cents: number): string {
+  const euros = cents / 100;
+  return Number.isInteger(euros) ? String(euros) : euros.toFixed(2).replace('.', ',');
+}
+
+/**
+ * LA GRILLE DU CMS, SES NOMBRES REPRIS DE LA BASE.
+ *
+ * Même geste que `remplacerFourchette` et `remplacerPrix`, appliqué à la
+ * grille : la phrase appartient à Isabelle — c'est elle qui écrit « environ une
+ * fois par mois sur la saison » — et les trois nombres qu'elle contient
+ * viennent de `formules`. Le montant mensuel, le total et le nombre
+ * d'échéances se déduisent tous du prix et des mensualités ; les recopier dans
+ * le CMS en aurait fait des chiffres qu'un changement de tarif oublierait.
+ *
+ * L'APPARIEMENT SE FAIT SUR LE PUBLIC ET LE NOMBRE DE SÉANCES — « adultes » et
+ * le 9 de « 9 séances ». C'est ce couple qui identifie une formule, et il est
+ * déjà écrit des deux côtés. Une ligne du CMS qu'aucune formule ne porte
+ * garde ses nombres tels quels plutôt que de disparaître : mieux vaut un tarif
+ * périmé affiché qu'une formule absente de la page, qui ne se remarque pas.
+ */
+export function grilleAvecPrixDeLaBase<
+  T extends {
+    audience?: string | null;
+    formules?: readonly { seances?: string | null; mensuel?: string | null; detail?: string | null }[] | null;
+  },
+>(tarifs: readonly T[] | null | undefined, formules: readonly FormuleBase[] | null): T[] {
+  const grille = [...(tarifs ?? [])];
+  if (!formules?.length) return grille;
+
+  return grille.map((t) => ({
+    ...t,
+    formules: (t.formules ?? []).map((f) => {
+      const seances = premierNombre(f.seances);
+      const base = formules.find((b) => b.audience === t.audience && b.seances === seances);
+      if (!base) return f;
+
+      const mensuel = Math.round(base.prixCents / base.mensualites);
+      return {
+        ...f,
+        // « 36 € par mois » — seul le nombre change, les mots restent.
+        mensuel: f.mensuel ? f.mensuel.replace(/\d+(?:[.,]\d+)?/, montantFr(mensuel)) : f.mensuel,
+        // « … ; 324 €, en 9 mensualités ou en une fois » — le total puis le
+        // nombre d'échéances, dans cet ordre. Le premier nombre suivi d'un €
+        // est le total ; celui qui précède « mensualité » est le compte.
+        detail: f.detail
+          ? f.detail
+              .replace(/\d+(?:[.,]\d+)?\s*€/, `${montantFr(base.prixCents)} €`)
+              .replace(/\d+(\s*mensualit)/, `${base.mensualites}$1`)
+          : f.detail,
+      };
+    }),
+  }));
 }
 
 /**

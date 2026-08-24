@@ -14,7 +14,7 @@ import { getPageContext, reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { toSlug } from '../utils/strings';
 import { buildCourseSchema, buildServicePageSchemas } from '../utils/schema';
-import { fourchetteForfaits } from '../utils/tarifs';
+import { fourchetteForfaits, grilleAvecPrixDeLaBase, lireFormules } from '../utils/tarifs';
 import { getAdminClient } from '../utils/supabase';
 import { ATELIER_GROUPS, titreAudience } from '../utils/ateliers';
 
@@ -47,7 +47,17 @@ const { settings, siteUrl } = await getPageContext(Astro.site);
  * grille tarifaire qui n'existe plus. Elle garde ses mots, mais prend ses
  * nombres dans la grille affichée juste en dessous.
  */
-const grille = fourchetteForfaits(page.tarifs);
+/*
+ * LA GRILLE, SES NOMBRES REPRIS DE LA BASE — avant tout le reste.
+ *
+ * `page.tarifs` porte les mots ; `formules` porte les montants. Tout ce qui
+ * suit — la fourchette de la description SEO, les cartes, le JSON-LD, le prix
+ * d'appel de l'accueil — travaille sur la grille ainsi corrigée, faute de quoi
+ * la page et la facture annonceraient deux prix.
+ */
+const tarifsPage = grilleAvecPrixDeLaBase(page.tarifs, await lireFormules());
+
+const grille = fourchetteForfaits(tarifsPage);
 const descriptionSeo = grille
   ? page.seoDescription.replace(/De\s+\d+\s*€\s+à\s+\d+\s*€/i, grille)
   : page.seoDescription;
@@ -225,7 +235,7 @@ const prixSeanceDe = (audience: string) => {
  * « Pour les adultes », au-dessus de la grille ados — le genre de faute qui ne
  * se voit pas à la relecture du code et saute aux yeux sur la page.
  */
-const tarifs = (page.tarifs ?? []).map((t) => ({
+const tarifs = tarifsPage.map((t) => ({
   ...t,
   titre: titreAudience(t.audience),
   // « adultes » / « ados » / « enfants » seuls, pour la phrase de la séance

@@ -18,6 +18,8 @@ import {
   prixParPublic,
   remplacerPrix,
   remplacerFourchette,
+  grilleAvecPrixDeLaBase,
+  lireFormules,
 } from '../utils/tarifs';
 
 const homepage = await reader.singletons.homepage.read();
@@ -41,7 +43,15 @@ if (!settings) throw new Error('Site settings not found');
  * textes du CMS s'affichent tels quels.
  */
 const tarifs = await lireTarifs();
-const forfaitMin = forfaitLePlusBas(ateliers?.tarifs);
+
+/*
+ * La grille du CMS, ses montants repris de `formules` — comme sur la page des
+ * ateliers. Sans cela l'accueil annoncerait un prix d'appel que la page de
+ * destination démentirait, ce qui est exactement la faute que ce fichier
+ * cherche à empêcher.
+ */
+const grilleAteliers = grilleAvecPrixDeLaBase(ateliers?.tarifs, await lireFormules());
+const forfaitMin = forfaitLePlusBas(grilleAteliers);
 
 /**
  * Du forfait le plus bas au stage le plus cher — la fourchette de tout ce que
@@ -70,14 +80,14 @@ const fourchetteToutesFormules =
  * à la main rendrait possible d'annoncer le prix d'un forfait avec le volume de
  * l'autre — 36 € pour 20 séances — c'est-à-dire de promettre le double.
  */
-const forfaitAdulte = formuleLaMoinsChere(ateliers?.tarifs, 'adultes');
+const forfaitAdulte = formuleLaMoinsChere(grilleAteliers, 'adultes');
 
 const prixParPage: Record<string, string | null> = {
   '/ateliers-reguliers/': prixParPublic(
     {
       adultes: forfaitAdulte?.mensuel,
-      ados: forfaitLePlusBas(ateliers?.tarifs, 'ados'),
-      enfants: forfaitLePlusBas(ateliers?.tarifs, 'enfants'),
+      ados: forfaitLePlusBas(grilleAteliers, 'ados'),
+      enfants: forfaitLePlusBas(grilleAteliers, 'enfants'),
     },
     forfaitAdulte?.seances ? `/mois pour ${forfaitAdulte.seances}` : '/mois',
   ),
