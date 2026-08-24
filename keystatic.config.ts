@@ -31,22 +31,6 @@ const faqItemsField = () =>
     },
   );
 
-const schemaOffersField = () =>
-  fields.array(
-    fields.object({
-      name: fields.text({ label: 'Nom' }),
-      price: fields.text({
-        label: 'Prix (nombre seul, ex: 40)',
-        validation: { pattern: { regex: /^\d+(\.\d{1,2})?$/, message: 'Entrer un nombre (ex: 40 ou 25.50)' } },
-      }),
-    }),
-    {
-      label: 'Offres (schema SEO)',
-      itemLabel: (props) =>
-        `${props.fields.name.value || 'Offre'} — ${props.fields.price.value || '?'}€`,
-    },
-  );
-
 export default config({
   storage: import.meta.env.DEV
     ? { kind: 'local' }
@@ -172,6 +156,11 @@ export default config({
           label: 'Adhésion annuelle, en plus du forfait (ex : 15 € par an)',
           description:
             'S’AJOUTE aux forfaits de saison. Videz ce champ si l’adhésion est comprise dans les forfaits.',
+        }),
+        adhesionPonctuelle: fields.text({
+          label: 'Adhésion ponctuelle, comprise dans les stages et séances (ex : 5 €)',
+          description:
+            'DÉJÀ COMPRISE dans les prix des stages et des séances sans engagement. Sert seulement à l’expliquer.',
         }),
       },
     }),
