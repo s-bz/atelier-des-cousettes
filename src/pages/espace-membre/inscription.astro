@@ -1,0 +1,211 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getAdminClient } from '../../utils/supabase';
+import { lireCatalogueFormules, libelleFormule } from '../../utils/tarifs';
+import { AUDIENCES, memePublic } from '../../utils/ateliers';
+import { adhesionReglee, saisonDe } from '../../utils/inscriptions';
+import { preparerAchat, creerIntention, ADHESION_CENTS } from '../../utils/helloasso';
+
+/*
+ * L'ACHAT D'UN FORFAIT, DEPUIS L'ESPACE ADHÉRENT.
+ *
+ * Réservé à qui a déjà un compte : `connexion.astro` appelle `signInWithOtp`
+ * avec `shouldCreateUser: false`, si bien qu'une famille nouvelle ne peut pas
+ * se connecter avant d'avoir acheté. Elle passera par une route publique, qui
+ * réutilisera tout ce qui suit — d'où la séparation entre ce que la page décide
+ * et ce que `preparerAchat` met en forme.
+ */
+
+const { session, account } = Astro.locals;
+if (!session) return Astro.redirect('/espace-membre/connexion/');
+if (!account) return Astro.redirect('/espace-membre/connexion/?inconnu=1');
+
+const supabase = getAdminClient();
+const saison = saisonDe(new Date());
+
+const [{ data: participants }, formules, { data: creneaux }] = await Promise.all([
+  supabase.from('participants').select('id, first_name, last_name, audience')
+    .eq('account_id', account.id).order('first_name'),
+  lireCatalogueFormules(supabase),
+  supabase.from('creneaux').select('id, label, audience')
+    .eq('kind', 'atelier').eq('au_forfait', true).is('archived_at', null).order('label'),
+]);
+
+// L'adhésion se lit UNE FOIS, avant d'afficher : elle décide du montant annoncé
+// autant que de celui qui sera prélevé.
+const dejaAdherent = await adhesionReglee(supabase, account.id, saison);
+const adhesionDue = dejaAdherent.ok ? !dejaAdherent.valeur : true;
+
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const prenom = String(form.get('prenom') ?? '').trim();
+  const public_ = String(form.get('audience') ?? '');
+  const formule = formules.find((f) => f.id === String(form.get('formule') ?? ''));
+  const creneau = (creneaux ?? []).find((c) => c.id === String(form.get('creneau') ?? ''));
+  const comptant = form.get('reglement') === 'comptant';
+
+  if (!prenom) {
+    erreur = 'Indiquez le nom de la personne inscrite.';
+  } else if (!formule || !creneau) {
+    erreur = 'Choisissez une formule et un créneau.';
+  } else if (!memePublic(public_, creneau.audience) || !memePublic(public_, formule.audience)) {
+    /*
+     * MÊME CONTRÔLE QUE SUR L'ÉCRAN D'ISABELLE, et pour la même raison :
+     * l'inscription d'office exige que le créneau soit celui du public de la
+     * personne, et écarte le reste en silence. Laisser passer l'assemblage
+     * ferait payer quelqu'un pour un planning qui resterait vide.
+     */
+    erreur = 'Cette formule ou ce créneau ne correspond pas au public choisi.';
+  } else {
+    const site = new URL(Astro.url.origin);
+    const achat = preparerAchat({
+      formule,
+      creneau,
+      participant: prenom,
+      saison,
+      adhesionDue,
+      comptant,
+      achatLe: new Date(),
+      payeur: { email: account.email },
+      urls: {
+        retour: `${site}espace-membre/inscription/retour/`,
+        erreur: `${site}espace-membre/inscription/?echec=1`,
+        retourArriere: `${site}espace-membre/inscription/`,
+      },
+    });
+
+    const intention = await creerIntention(achat);
+    if (!intention.ok) erreur = intention.erreur;
+    // `redirectUrl` ne vaut que quinze minutes : on y va tout de suite.
+    else return Astro.redirect(intention.valeur.redirectUrl, 303);
+  }
+}
+
+if (Astro.url.searchParams.has('echec')) {
+  erreur = 'Le paiement n’a pas abouti. Rien n’a été prélevé — vous pouvez réessayer.';
+}
+
+const euros = (c: number) => (c / 100).toFixed(2).replace('.', ',').replace(',00', '');
+---
+
+<BaseLayout title="S’inscrire aux ateliers" description="Choisir sa formule et régler son forfait." noIndex>
+  <section class="mx-auto max-w-3xl px-4 py-16 md:py-20">
+    <h1 class="text-2xl md:text-3xl font-bold" style="font-family: var(--font-heading)">
+      S’inscrire aux ateliers réguliers
+    </h1>
+    <p class="mt-3 text-[var(--color-text)]">
+      Saison {saison}. Le règlement se fait sur la page sécurisée de HelloAsso, qui encaisse
+      pour l’association <strong>Les P’tits Piafs</strong> — c’est ce nom qui figurera sur
+      votre relevé bancaire.
+    </p>
+
+    {erreur && (
+      <p class="mt-6 rounded-xl bg-[var(--color-bg-pink)] px-4 py-3 text-white">{erreur}</p>
+    )}
+
+    {adhesionDue ? (
+      <p class="mt-6 rounded-xl bg-[var(--color-bg-accent)] px-4 py-3 text-sm">
+        L’adhésion à l’association, <strong>{euros(ADHESION_CENTS)} € par an et par famille</strong>,
+        s’ajoutera au premier versement. Elle vaut pour toute la saison, quel que soit le nombre
+        de personnes que vous inscrivez.
+      </p>
+    ) : (
+      <p class="mt-6 rounded-xl bg-[var(--color-bg-accent)] px-4 py-3 text-sm">
+        Votre adhésion {saison} est déjà réglée : il n’y a que le forfait à payer.
+      </p>
+    )}
+
+    <form method="post" class="mt-8 space-y-6">
+      <div>
+        <label for="prenom" class="block text-sm font-medium mb-1">Qui s’inscrit ?</label>
+        <input id="prenom" name="prenom" required class="champ"
+               list="deja-inscrits" placeholder="Prénom et nom" />
+        <datalist id="deja-inscrits">
+          {(participants ?? []).map((p) => (
+            <option value={`${p.first_name} ${p.last_name}`}></option>
+          ))}
+        </datalist>
+        <p class="mt-1 text-sm text-[var(--color-text-light)]">
+          Une inscription par personne. Pour inscrire quelqu’un d’autre, vous recommencerez
+          ensuite — l’adhésion ne sera pas redemandée.
+        </p>
+      </div>
+
+      <div>
+        <label for="audience" class="block text-sm font-medium mb-1">Public</label>
+        <select id="audience" name="audience" required class="champ">
+          {AUDIENCES.map((a) => <option value={a.personne}>{a.label}</option>)}
+        </select>
+      </div>
+
+      <div>
+        <label for="formule" class="block text-sm font-medium mb-1">Formule</label>
+        <select id="formule" name="formule" required class="champ">
+          {formules.map((f) => (
+            <option value={f.id} data-public={f.audience}>{libelleFormule(f)}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label for="creneau" class="block text-sm font-medium mb-1">Créneau</label>
+        <select id="creneau" name="creneau" required class="champ">
+          {(creneaux ?? []).map((c) => (
+            <option value={c.id} data-public={c.audience}>{c.label}</option>
+          ))}
+        </select>
+      </div>
+
+      <fieldset>
+        <legend class="block text-sm font-medium mb-1">Règlement</legend>
+        <label class="flex items-center gap-2">
+          <input type="radio" name="reglement" value="echelonne" checked />
+          <span>Échelonné, un versement par mois</span>
+        </label>
+        <label class="mt-1 flex items-center gap-2">
+          <input type="radio" name="reglement" value="comptant" />
+          <span>En une seule fois</span>
+        </label>
+      </fieldset>
+
+      <button type="submit"
+              class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
+        Régler sur HelloAsso
+      </button>
+    </form>
+  </section>
+</BaseLayout>
+
+<script>
+  /* Les listes suivent le public choisi — même geste que sur l'écran d'admin. */
+  const publics: Record<string, string> = { adulte: 'adultes', ado: 'ados', enfant: 'enfants' };
+  const audience = document.getElementById('audience');
+  const listes = ['formule', 'creneau']
+    .map((id) => document.getElementById(id))
+    .filter((el): el is HTMLSelectElement => el instanceof HTMLSelectElement);
+
+  function accorder() {
+    if (!(audience instanceof HTMLSelectElement)) return;
+    const attendu = publics[audience.value];
+    for (const liste of listes) {
+      for (const option of liste.options) {
+        const garde = option.dataset.public === attendu;
+        option.hidden = !garde;
+        option.disabled = !garde;
+      }
+      if (liste.selectedOptions[0]?.disabled) {
+        const premier = [...liste.options].find((o) => !o.disabled);
+        liste.selectedIndex = premier ? premier.index : -1;
+      }
+    }
+  }
+
+  if (audience && listes.length) {
+    audience.addEventListener('change', accorder);
+    accorder();
+  }
+</script>

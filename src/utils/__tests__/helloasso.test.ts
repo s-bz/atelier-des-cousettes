@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { lireNotification, jetonValide, construireEcheancier, corpsIntention }
+import { lireNotification, jetonValide, construireEcheancier, corpsIntention, preparerAchat }
   from '../helloasso';
 
 describe('lireNotification', () => {
@@ -175,5 +175,53 @@ describe('corpsIntention', () => {
 
     const avec = corpsIntention({ ...base, payeur: { email: 'marie@exemple.fr' } });
     expect(avec.payer).toEqual({ email: 'marie@exemple.fr' });
+  });
+});
+
+describe('preparerAchat', () => {
+  const formule = {
+    id: '2026-2027-adultes-9', libelle: '9 séances', audience: 'adultes',
+    seances: 9, prixCents: 32400, mensualites: 9,
+  };
+  const base = {
+    formule,
+    creneau: { id: 'atelier-du-jeudi-matin', label: 'Atelier du jeudi matin' },
+    participant: 'Léa D.',
+    saison: '2026-2027',
+    adhesionDue: false,
+    achatLe: new Date('2026-08-24T10:00:00Z'),
+    urls: { retour: 'https://x/r/', erreur: 'https://x/e/', retourArriere: 'https://x/b/' },
+  };
+
+  it('nomme ce qui est acheté, pour le payeur et pour son relevé', () => {
+    const a = preparerAchat(base);
+    expect(a.libelle).toBe('Forfait 9 séances — Atelier du jeudi matin — Léa D. — saison 2026-2027');
+    expect(a.totalCents).toBe(32400);
+    expect(a.versements).toBe(9);
+    expect(a.supplementInitialCents).toBe(0);
+  });
+
+  it('porte de quoi provisionner sans rien deviner', () => {
+    // Le provisionnement lit ces clés et n'a aucun libellé à interpréter.
+    expect(preparerAchat(base).metadata).toMatchObject({
+      saison: '2026-2027',
+      produit: 'forfait',
+      formule_id: '2026-2027-adultes-9',
+      creneau_id: 'atelier-du-jeudi-matin',
+      participant: 'Léa D.',
+      adhesion_cents: 0,
+    });
+  });
+
+  it('ajoute l’adhésion quand la famille ne l’a pas encore réglée', () => {
+    const a = preparerAchat({ ...base, adhesionDue: true });
+    expect(a.totalCents).toBe(32400);
+    expect(a.supplementInitialCents).toBe(1500);
+    expect(a.metadata.adhesion_cents).toBe(1500);
+    expect(a.libelle).toContain('adhésion comprise');
+  });
+
+  it('règle en une fois quand on le demande', () => {
+    expect(preparerAchat({ ...base, comptant: true }).versements).toBe(1);
   });
 });

@@ -361,3 +361,58 @@ export async function lireIntention(id: number | string): Promise<Resultat<Inten
   if (!r.ok) return r;
   return succes(r.valeur as IntentionLue);
 }
+
+/** L'adhésion annuelle à l'association, par famille. */
+export const ADHESION_CENTS = 1500;
+
+/**
+ * Ce qui est acheté, mis en forme pour HelloAsso.
+ *
+ * LE LIBELLÉ EST CE QUE LE PAYEUR RECONNAÎTRA sur son relevé bancaire, qui
+ * portera « Les P'tits Piafs » et non « L'Atelier des Cousettes ». Il nomme donc
+ * la formule, le créneau et le participant — un « Forfait 9 séances » seul ne
+ * dirait rien à une mère qui a inscrit deux filles le même jour.
+ *
+ * LES MÉTADONNÉES PORTENT DE QUOI PROVISIONNER SANS RIEN DEVINER. Le
+ * provisionnement lit `formule_id` et `creneau_id` ; il n'a aucun libellé à
+ * interpréter, et aucune table de correspondance à tenir à jour.
+ *
+ * L'ADHÉSION NE S'AJOUTE PAS AU TOTAL DU FORFAIT : elle se pose sur le premier
+ * versement, `supplementInitialCents`. Les échéances suivantes restent au
+ * montant de la formule, ce qu'une campagne ne savait pas faire.
+ */
+export function preparerAchat(o: {
+  formule: { id: string; libelle: string; prixCents: number; mensualites: number };
+  creneau: { id: string; label: string };
+  participant: string;
+  saison: string;
+  /** Vrai si la famille n'a pas encore réglé l'adhésion de la saison. */
+  adhesionDue: boolean;
+  /** Règlement en une fois plutôt qu'échelonné. */
+  comptant?: boolean;
+  achatLe: Date;
+  payeur?: Payeur;
+  urls: { retour: string; erreur: string; retourArriere: string };
+}): Achat {
+  const adhesion = o.adhesionDue ? ADHESION_CENTS : 0;
+
+  return {
+    libelle:
+      `Forfait ${o.formule.libelle} — ${o.creneau.label} — ${o.participant} — saison ${o.saison}`
+      + (adhesion ? ' (adhésion comprise)' : ''),
+    totalCents: o.formule.prixCents,
+    versements: o.comptant ? 1 : o.formule.mensualites,
+    achatLe: o.achatLe,
+    supplementInitialCents: adhesion,
+    metadata: {
+      saison: o.saison,
+      produit: 'forfait',
+      formule_id: o.formule.id,
+      creneau_id: o.creneau.id,
+      participant: o.participant,
+      adhesion_cents: adhesion,
+    },
+    ...(o.payeur ? { payeur: o.payeur } : {}),
+    urls: o.urls,
+  };
+}

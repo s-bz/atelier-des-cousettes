@@ -204,6 +204,8 @@ export interface FormuleCatalogue {
   audience: string;
   seances: number;
   prixCents: number;
+  /** Nombre de versements si le forfait n'est pas réglé en une fois. */
+  mensualites: number;
 }
 
 /**
@@ -217,7 +219,7 @@ export async function lireCatalogueFormules(
 ): Promise<FormuleCatalogue[]> {
   const { data, error } = await supabase
     .from('formules')
-    .select('id, libelle, audience, seances, prix_cents')
+    .select('id, libelle, audience, seances, prix_cents, mensualites')
     .is('archived_at', null)
     .order('audience')
     .order('seances');
@@ -229,6 +231,7 @@ export async function lireCatalogueFormules(
     audience: f.audience,
     seances: f.seances,
     prixCents: f.prix_cents,
+    mensualites: f.mensualites,
   }));
 }
 
@@ -240,7 +243,9 @@ export async function lireCatalogueFormules(
  * ailleurs. Les deux décimales sont conservées même sur un compte rond — un
  * « 25 € » et un « 29,50 € » côte à côte dans une liste se comparent mal.
  */
-export function libelleFormule(f: FormuleCatalogue): string {
+export function libelleFormule(
+  f: { libelle: string; audience: string; seances: number; prixCents: number },
+): string {
   const total = (f.prixCents / 100).toFixed(0);
   const divise = (f.prixCents / f.seances / 100).toFixed(2).replace('.', ',');
   return `${f.audience} — ${f.libelle} · ${total} € (${divise} € la séance en plus)`;
