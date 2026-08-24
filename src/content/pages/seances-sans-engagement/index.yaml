@@ -6,11 +6,10 @@ coverImage: /src/assets/images/covers/seances-sans-engagement/coverImage.jpeg
 coverImageAlt: Séance de couture ponctuelle à l'Atelier des Cousettes
 introduction: >-
   Une séance ponctuelle pour coudre à votre rythme, avec l'accompagnement
-  d'Isabelle : 3 heures le matin, l'après-midi ou le samedi. Nouveauté de cette
-  saison, une séance plus courte d'1 h 30 le jeudi en fin de journée, pour qui
-  sort du travail ou veut simplement essayer. Sans engagement, ouvert à tous les
-  niveaux. Cette formule s'adresse aux adultes ; les ados et les enfants sont
-  accueillis au forfait, dans les ateliers réguliers.
+  d'Isabelle : 3 heures en semaine ou le samedi. Nouveauté de cette saison, une
+  séance plus courte d'1 h 30 le jeudi en fin de journée, pour apprendre une
+  technique précise ou pour avancer sur un projet personnel. Sans engagement,
+  ouvert à tous les niveaux.
 priceLabel: la séance
 location: ''
 locationLabel: ''
@@ -31,6 +30,9 @@ ideesItems:
 audienceTitle: À qui s'adresse cette formule ?
 audienceItems:
   - Les débutants qui souhaitent découvrir la couture avant de s'engager.
+  - >-
+    Les couturiers qui souhaitent apprendre une technique précise : coudre un
+    ourlet, poser une fermeture éclair, par exemple...
   - Les couturiers occasionnels qui ont besoin d'un coup de main ponctuel.
   - Les couturiers confirmés qui apprécient de coudre en groupe.
   - Ceux qui n'ont pas la disponibilité pour s'engager sur toute la saison.
@@ -44,9 +46,7 @@ faqItems:
     answer: >-
       45 € pour une séance de 3 heures, et 22 € pour la séance de 1 h 30 du
       jeudi en fin de journée. L'adhésion ponctuelle à l'association Les P'tits
-      Piafs est comprise dans ce tarif : il n'y a rien à régler en plus. Les
-      ados et les enfants, eux, viennent au forfait — voir les ateliers
-      réguliers.
+      Piafs est comprise dans ce tarif : il n'y a rien à régler en plus.
   - question: Faut-il apporter son matériel ?
     answer: >-
       Oui, chaque participant vient avec sa propre machine à coudre, ses
@@ -58,11 +58,11 @@ faqItems:
       À la maison des associations de Revel, en Haute-Garonne, à vingt minutes
       de Castres. Parking gratuit à proximité. Les séances sans engagement ne
       sont pas proposées à Verdalle.
-  - question: Quels projets peut-on réaliser en 1 h 30 à 3 heures ?
-    answer: >-
-      Selon votre niveau : une pochette, un tote bag, un ourlet, des
-      retouches, ou commencer un projet plus ambitieux que vous poursuivrez
-      chez vous. Isabelle vous aide à estimer le temps nécessaire.
+  - question: Quels projets peut-on réaliser en 1 h 30 ou en 3 h ?
+    answer: |
+      La séance d'une heure et demie est un moment privilégié pour une leçon de couture : apprendre à coudre un ourlet, apprendre les petits points à la main, savoir lire un patron, etc.
+
+      L'atelier ponctuel de 3 heures peut vous permettre de réaliser une pochette, un tote bag, ou de commencer un projet plus ambitieux que vous poursuivrez chez vous. Isabelle vous aide à estimer le temps nécessaire.
   - question: Peut-on venir sans savoir coudre ?
     answer: >-
       Absolument. Isabelle prend le temps de vous montrer les bases :
@@ -70,7 +70,7 @@ faqItems:
       C'est une excellente façon de découvrir la couture.
   - question: Quelle est la politique d'annulation ?
     answer: >-
-      Vous pouvez libérer votre place jusqu'à 48 h avant la séance : elle ne
+      Vous pouvez libérer votre place jusqu'à 10 jours avant la séance : elle ne
       vous est pas comptée. Passé ce délai, la séance reste due. Prévenez
       Isabelle dès que vous le savez — votre place profite alors à quelqu'un
       d'autre, prévenu par e-mail. Les séances ont lieu sous réserve d'un

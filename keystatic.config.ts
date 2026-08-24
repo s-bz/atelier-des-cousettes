@@ -31,22 +31,6 @@ const faqItemsField = () =>
     },
   );
 
-const schemaOffersField = () =>
-  fields.array(
-    fields.object({
-      name: fields.text({ label: 'Nom' }),
-      price: fields.text({
-        label: 'Prix (nombre seul, ex: 40)',
-        validation: { pattern: { regex: /^\d+(\.\d{1,2})?$/, message: 'Entrer un nombre (ex: 40 ou 25.50)' } },
-      }),
-    }),
-    {
-      label: 'Offres (schema SEO)',
-      itemLabel: (props) =>
-        `${props.fields.name.value || 'Offre'} — ${props.fields.price.value || '?'}€`,
-    },
-  );
-
 export default config({
   storage: import.meta.env.DEV
     ? { kind: 'local' }
@@ -489,7 +473,6 @@ export default config({
         ),
         faqItems: faqItemsField(),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
-        schemaOffers: schemaOffersField(),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
     }),

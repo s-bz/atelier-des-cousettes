@@ -16,7 +16,7 @@ cd "$(dirname "$0")/../.."
 # s'arrête.
 declare -a SUITES=(
   "credits:10"
-  "bookings:14"
+  "bookings:16"
   "autorisation:5"
   "facturation:8"
   "auto-inscription:8"

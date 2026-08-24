@@ -1,5 +1,6 @@
 ---
 import ContactCTA from './ContactCTA.astro';
+import { splitParagraphs } from '../utils/strings';
 
 interface Props {
   title?: string;
@@ -37,7 +38,24 @@ const { title, items, ctaLabel, fond = true, cta = true } = Astro.props;
               classe ne figurait sur aucun élément. Le sélecteur ne désignait
               donc rien — un assistant vocal ne trouvait que les questions.
             */}
-            <p class="faq-answer mt-2 text-[var(--color-text)] leading-relaxed">{item.answer}</p>
+            {/*
+              PLUSIEURS PARAGRAPHES, quand la réponse en compte.
+              Le gabarit rendait tout dans un seul `<p>` : une réponse écrite en
+              deux temps — ce qu'on fait en 1 h 30, puis ce qu'on fait en 3 h —
+              se recollait en un bloc, les retours à la ligne ne valant rien en
+              HTML. Une réponse d'un seul paragraphe rend exactement comme
+              avant, un `<p>` unique.
+
+              `faq-answer` PASSE SUR LE CONTENEUR, et c'est délibéré : le
+              schéma FAQPage déclare `speakable` sur cette classe. La laisser
+              sur le premier paragraphe seul ferait lire la moitié d'une réponse
+              par un assistant vocal.
+            */}
+            <div class="faq-answer mt-2 text-[var(--color-text)] leading-relaxed">
+              {splitParagraphs(item.answer).map((para) => (
+                <p class="mt-3 first:mt-0">{para}</p>
+              ))}
+            </div>
           </div>
         ))}
       </div>

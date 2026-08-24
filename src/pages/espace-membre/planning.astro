@@ -282,7 +282,7 @@ const lien = personnes.length > 1 && choisie ? `?personne=${choisie.id}` : '';
                   const prises = occupees(s);
                   const etat = etatSeance(s);
                   const jAttends = mesAttentes.has(s.id);
-                  // Moins de 48 h : se désister ne rend plus la séance. On le
+                  // Moins de 10 jours : se désister ne rend plus la séance. On le
                   // dit AVANT le clic — l'apprendre après serait une mauvaise
                   // surprise, et elle porterait sur de l'argent.
                   const tardif = new Date(s.starts_at).getTime() - Date.now() < 48 * 3600e3;
@@ -341,7 +341,7 @@ const lien = personnes.length > 1 && choisie ? `?personne=${choisie.id}` : '';
                               rien : on n'avait pas de place. */}
                           {tardif && !jAttends && (
                             <span class="w-full text-xs text-[var(--color-button)]">
-                              Moins de 48 h : la place repartira, mais la séance restera due.
+                              Moins de 10 jours : la place repartira, mais la séance restera due.
                             </span>
                           )}
                         </form>

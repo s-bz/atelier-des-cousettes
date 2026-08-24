@@ -14,7 +14,14 @@ const { label, href, resolvedImage, imageAlt, priceRange, shortDescription } = A
 const safeHref = href?.startsWith('/') ? href : '#';
 ---
 
-<a href={safeHref} class="service-card group block rounded-xl bg-white dark:bg-[var(--color-card-bg)] overflow-hidden transition-all" aria-label={label}>
+{/*
+  COLONNE FLEXIBLE, et non plus un simple bloc.
+  La description n'est plus tronquée (voir plus bas) : les trois cartes ont donc
+  des textes de longueurs différentes. Sans cette colonne, le prix se collait
+  sous le texte et les trois pastilles se retrouvaient à trois hauteurs. Il est
+  maintenant poussé en bas de carte, aligné d'une carte à l'autre.
+*/}
+<a href={safeHref} class="service-card group flex flex-col rounded-xl bg-white dark:bg-[var(--color-card-bg)] overflow-hidden transition-all" aria-label={label}>
   {resolvedImage && (
     <Image
       src={resolvedImage}
@@ -26,15 +33,23 @@ const safeHref = href?.startsWith('/') ? href : '#';
       sizes="(max-width: 640px) 100vw, 33vw"
     />
   )}
-  <div class="p-4">
+  <div class="flex flex-1 flex-col p-4">
     <h3 class="text-lg font-semibold text-[var(--color-heading)]">
       {label}
     </h3>
+    {/*
+      PLUS DE `line-clamp-2`. La coupe à deux lignes gardait les cartes bien
+      carrées tant que les descriptions tenaient en deux lignes ; passé cette
+      longueur elle escamotait la fin sans le dire. La mention « Nouveau cette
+      saison : une séance courte d'1 h 30 » a été écrite pour être lue, et ne
+      l'était jamais — une carte qui tronque le seul argument neuf de la saison
+      n'est pas plus courte, elle est muette.
+    */}
     {shortDescription && (
-      <p class="mt-1 text-sm text-[var(--color-text)] line-clamp-2">{shortDescription}</p>
+      <p class="mt-1 text-sm text-[var(--color-text)]">{shortDescription}</p>
     )}
     {priceRange && (
-      <span class="mt-3 inline-block text-sm font-medium text-[var(--color-button)]">
+      <span class="mt-auto pt-3 self-start text-sm font-medium text-[var(--color-button)]">
         {priceRange}
       </span>
     )}

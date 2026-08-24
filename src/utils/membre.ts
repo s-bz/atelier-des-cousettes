@@ -194,7 +194,7 @@ export async function libererPlace(
     // après un désistement tardif serait faux, et la surprise viendrait à la
     // facturation.
     message: tardif
-      ? 'Place libérée : elle est proposée aux autres. Mais à moins de 48 h de la séance, '
+      ? 'Place libérée : elle est proposée aux autres. Mais à moins de 10 jours de la séance, '
         + 'celle-ci reste due — elle ne revient pas à votre solde.'
       : 'Place libérée. La séance revient à votre solde.',
   };
