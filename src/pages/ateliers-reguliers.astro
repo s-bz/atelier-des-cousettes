@@ -335,18 +335,24 @@ const courseSchema = buildCourseSchema({
     — devait traverser tout le calendrier pour le trouver. Il ne s'agit plus
     d'écrire à Isabelle après avoir hésité, mais de reprendre sa place.
   */}
-  {page.introduction && <IntroSection text={page.introduction} cta={false} fond />}
-
-  {page.inscriptionLabel && page.inscriptionUrl && (
-    <p class="-mt-8 mb-12 px-4 text-center md:-mt-10 md:mb-16">
-      <a href={page.inscriptionUrl}
-         class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 font-medium text-white">
-        {page.inscriptionLabel}
-      </a>
-      <span class="mt-2 block text-sm text-[var(--color-text-light)]">
-        Trois places par séance. {grille ? `${grille.replace(/^De/, 'De').toLowerCase()} par mois.` : ''}
-      </span>
-    </p>
+  {/*
+    LE BOUTON VA DANS LE CRÉNEAU PRÉVU POUR LUI — le <slot> d'IntroSection —
+    et non après la section. Posé dehors, il tombait sur la couture entre le
+    fond chaud de l'introduction et la section suivante : la limite des deux
+    couleurs le coupait en deux. Un composant ne sait pas ce qui le suit, mais
+    il sait ce qu'il contient.
+  */}
+  {page.introduction && (
+    <IntroSection text={page.introduction} cta={false} fond>
+      {page.inscriptionLabel && page.inscriptionUrl && (
+        <p class="mt-8">
+          <a href={page.inscriptionUrl}
+             class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 font-medium text-white">
+            {page.inscriptionLabel}
+          </a>
+        </p>
+      )}
+    </IntroSection>
   )}
 
   {groupes.length > 0 && (

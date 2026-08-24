@@ -4,14 +4,14 @@ import Hero from '../components/Hero.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { getPageContext } from '../utils/reader';
-import { renderMarkdoc } from '../utils/markdoc-components';
+import { renderMarkdoc, type MarkdocNode } from '../utils/markdoc-components';
 import { buildPageSchemas } from '../utils/schema';
 
 interface Props {
   title: string;
   subtitle?: string;
   seoDescription: string;
-  contentNode: { node: import('@markdoc/markdoc').Node } | null;
+  contentNode: { node: MarkdocNode } | null;
   showContactCTA?: boolean;
   coverImage?: string;
   coverImageAlt?: string;

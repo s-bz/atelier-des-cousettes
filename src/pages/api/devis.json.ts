@@ -2,6 +2,8 @@ import type { APIRoute } from 'astro';
 import { getAdminClient } from '../../utils/supabase';
 import { lireCatalogueFormules } from '../../utils/tarifs';
 import { adhesionDuePour, devis } from '../../utils/achat';
+import { lireCode, reductionDe } from '../../utils/codes-promo';
+import { saisonDe } from '../../utils/inscriptions';
 
 export const prerender = false;
 
@@ -36,13 +38,37 @@ export const GET: APIRoute = async ({ url }) => {
   // la découvrir au moment de payer.
   const adhesionDue = await adhesionDuePour(supabase, email && email.includes('@') ? email : null);
 
+  /*
+   * LE CODE EST ÉVALUÉ ICI AUSSI, pour que le devis dise la vérité avant le
+   * clic. Il sera revalidé à la création de l'intention : c'est là que le
+   * montant engage, et un devis n'engage rien.
+   */
+  const saisi = url.searchParams.get('code');
+  let reductionCents = 0;
+  let codeErreur: string | null = null;
+
+  if (saisi?.trim()) {
+    const saison = saisonDe(new Date());
+    const code = await lireCode(supabase, saisi);
+    if (!code) codeErreur = 'Ce code n’existe pas.';
+    else {
+      const r = reductionDe(formule.prixCents, code, { saison, aujourdhui: new Date() });
+      if (r.ok) reductionCents = r.valeur;
+      else codeErreur = r.erreur;
+    }
+  }
+
   return new Response(
-    JSON.stringify(devis({
-      formule,
-      adhesionDue,
-      comptant: url.searchParams.get('comptant') === '1',
-      achatLe: new Date(),
-    })),
+    JSON.stringify({
+      ...devis({
+        formule,
+        adhesionDue,
+        comptant: url.searchParams.get('comptant') === '1',
+        achatLe: new Date(),
+        reductionCents,
+      }),
+      codeErreur,
+    }),
     { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } },
   );
 };

@@ -28,7 +28,16 @@ let message: string | null = null;
 let ennui: string | null = null;
 let email: string | null = null;
 
-if (!idIntention) {
+if (Astro.url.searchParams.get('gratuit') === '1') {
+  /*
+   * UNE PLACE OFFERTE. Le total étant nul, aucun paiement n'a eu lieu et il n'y
+   * a pas d'intention à relire : l'inscription a déjà été enregistrée avant la
+   * redirection.
+   */
+  titre = 'C’est enregistré, bienvenue';
+  message = 'Votre code couvrait la totalité : il n’y a rien eu à régler. Vos premières '
+    + 'séances sont déjà posées sur votre créneau.';
+} else if (!idIntention) {
   ennui = 'Nous n’avons pas retrouvé le paiement. Si vous avez été débité, écrivez-nous à '
     + 'info@atelier-des-cousettes.fr.';
 } else {

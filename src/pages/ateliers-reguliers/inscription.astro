@@ -56,7 +56,7 @@ let erreur: string | null = null;
 const saisi = {
   email: '', payeurPrenom: '', payeurNom: '',
   autre: false, prenom: '', nom: '',
-  audience: 'adulte', formule: '', creneau: '',
+  audience: 'adulte', formule: '', creneau: '', code: '',
 };
 
 if (Astro.request.method === 'POST') {
@@ -69,6 +69,7 @@ if (Astro.request.method === 'POST') {
   saisi.nom = String(form.get('nom') ?? '').trim();
   saisi.formule = String(form.get('formule') ?? '');
   saisi.creneau = String(form.get('creneau') ?? '');
+  saisi.code = String(form.get('code') ?? '').trim();
 
   /*
    * SANS LA CASE COCHÉE, LE PARTICIPANT EST LE PAYEUR. C'est le cas d'un
@@ -100,6 +101,7 @@ if (Astro.request.method === 'POST') {
     formule: formules.find((f) => f.id === saisi.formule),
     creneau: creneauxVendables.find((c) => c.id === saisi.creneau),
     comptant: form.get('reglement') === 'comptant',
+    codePromo: saisi.code,
     origine: Astro.url.origin,
     site: Astro.site,
     cheminAchat: '/ateliers-reguliers/inscription/',
@@ -147,49 +149,71 @@ const euros = (c: number) => String(c / 100);
     )}
 
     <form method="post" class="mt-8 space-y-6">
-      <div>
-        <label for="email" class="block text-sm font-medium mb-1">Votre adresse électronique</label>
-        <input id="email" name="email" type="email" required value={saisi.email} class="champ" />
-        <p class="mt-1 text-sm text-[var(--color-text-light)]">
-          Celle du parent ou de la personne qui règle. C’est elle qui ouvrira l’accès à votre
-          espace, où vous choisirez vos dates.
-        </p>
-      </div>
+      {/*
+        TROIS SECTIONS, PARCE QUE LE FORMULAIRE POSE TROIS QUESTIONS. Les champs
+        du payeur — adresse, prénom, nom — se lisaient comme ceux du participant,
+        et rien ne disait à qui « Votre prénom » s'adressait quand une mère
+        inscrit sa fille. Le titre le dit une fois pour les trois.
+      */}
+      <fieldset class="space-y-4">
+        <legend class="mb-2 text-lg font-bold text-[var(--color-heading)]"
+                style="font-family: var(--font-heading)">
+          Vous, qui réglez
+        </legend>
 
-      <div class="grid gap-4 sm:grid-cols-2">
         <div>
-          <label for="payeurPrenom" class="block text-sm font-medium mb-1">Votre prénom</label>
-          <input id="payeurPrenom" name="payeurPrenom" required value={saisi.payeurPrenom}
-                 autocomplete="given-name" class="champ" />
+          <label for="email" class="block text-sm font-medium mb-1">Votre adresse électronique</label>
+          <input id="email" name="email" type="email" required value={saisi.email}
+                 autocomplete="email" class="champ" />
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            C’est elle qui ouvrira l’accès à votre espace, où vous choisirez vos dates.
+          </p>
         </div>
-        <div>
-          <label for="payeurNom" class="block text-sm font-medium mb-1">Votre nom</label>
-          <input id="payeurNom" name="payeurNom" required value={saisi.payeurNom}
-                 autocomplete="family-name" class="champ" />
-        </div>
-      </div>
 
-      <div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="payeurPrenom" class="block text-sm font-medium mb-1">Prénom</label>
+            <input id="payeurPrenom" name="payeurPrenom" required value={saisi.payeurPrenom}
+                   autocomplete="given-name" class="champ" />
+          </div>
+          <div>
+            <label for="payeurNom" class="block text-sm font-medium mb-1">Nom</label>
+            <input id="payeurNom" name="payeurNom" required value={saisi.payeurNom}
+                   autocomplete="family-name" class="champ" />
+          </div>
+        </div>
+
         <label class="flex items-start gap-2">
           <input type="checkbox" id="autre" name="autre" value="oui" checked={saisi.autre}
                  class="mt-1" />
-          <span>La personne qui participe n’est pas moi</span>
+          <span class="text-sm">
+            La personne qui participe n’est pas moi — j’inscris mon enfant, par exemple
+          </span>
         </label>
-        <p class="mt-1 text-sm text-[var(--color-text-light)]">
-          Cochez si vous inscrivez votre enfant, par exemple. Sinon, c’est vous qui participez.
-        </p>
-      </div>
+      </fieldset>
 
-      <div id="participant" class="grid gap-4 sm:grid-cols-2" hidden={!saisi.autre}>
-        <div>
-          <label for="prenom" class="block text-sm font-medium mb-1">Prénom du participant</label>
-          <input id="prenom" name="prenom" value={saisi.prenom} class="champ" />
+      <fieldset id="participant" class="space-y-4" hidden={!saisi.autre}>
+        <legend class="mb-2 text-lg font-bold text-[var(--color-heading)]"
+                style="font-family: var(--font-heading)">
+          La personne qui participe
+        </legend>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="prenom" class="block text-sm font-medium mb-1">Prénom</label>
+            <input id="prenom" name="prenom" value={saisi.prenom} class="champ" />
+          </div>
+          <div>
+            <label for="nom" class="block text-sm font-medium mb-1">Nom</label>
+            <input id="nom" name="nom" value={saisi.nom} class="champ" />
+          </div>
         </div>
-        <div>
-          <label for="nom" class="block text-sm font-medium mb-1">Nom du participant</label>
-          <input id="nom" name="nom" value={saisi.nom} class="champ" />
-        </div>
-      </div>
+      </fieldset>
+
+      <fieldset class="space-y-4">
+        <legend class="mb-2 text-lg font-bold text-[var(--color-heading)]"
+                style="font-family: var(--font-heading)">
+          L’inscription
+        </legend>
 
       <div>
         <label for="formule" class="block text-sm font-medium mb-1">Formule</label>
@@ -221,9 +245,24 @@ const euros = (c: number) => String(c / 100);
             </optgroup>
           ))}
         </select>
+        {/*
+          LA RÉASSURANCE OÙ LA QUESTION SE POSE. « Et si je ne peux pas un
+          samedi ? » se demande en choisissant le créneau, pas sous le bouton de
+          paiement où la réponse traînait auparavant.
+        */}
         <p class="mt-1 text-sm text-[var(--color-text-light)]">
-          Celui où vous serez inscrit d’office. Venir à un autre créneau reste possible.
+          Celui où vous serez inscrit d’office. Vos dates se choisissent ensuite et se
+          modifient jusqu’à 10 jours avant chaque séance ; venir à un autre créneau reste
+          possible.
         </p>
+      </div>
+
+      <div>
+        <label for="code" class="block text-sm font-medium mb-1">
+          Code de réduction — facultatif
+        </label>
+        <input id="code" name="code" value={saisi.code} autocapitalize="characters"
+               class="champ" placeholder="Si vous en avez un" />
       </div>
 
       <fieldset>
@@ -236,6 +275,7 @@ const euros = (c: number) => String(c / 100);
           <input type="radio" name="reglement" value="comptant" />
           <span>En une seule fois</span>
         </label>
+      </fieldset>
       </fieldset>
 
       <DevisEnDirect />
@@ -252,7 +292,6 @@ const euros = (c: number) => String(c / 100);
         les dates se choisissent après et se changent — et la mention due.
       */}
       <p class="text-sm text-[var(--color-text-light)]">
-        Vous choisirez vos dates ensuite, modifiables jusqu’à 10 jours avant chaque séance.
         En vous inscrivant, vous acceptez les{' '}
         <a href="/conditions/" class="underline">conditions de vente</a> — quatorze jours pour
         vous rétracter.

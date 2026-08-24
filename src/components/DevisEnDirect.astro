@@ -37,6 +37,7 @@ const { email } = Astro.props;
     frais caché — mais elle ne mérite pas le paragraphe qu'elle avait : au
     moment de décider, quatre blocs de texte se neutralisent.
   */}
+  <p class="mt-1 text-sm" id="devis-code"></p>
   <p class="mt-2 text-sm text-[var(--color-text-light)]">
     HelloAsso proposera d’y ajouter une contribution facultative, modifiable jusqu’à zéro.
   </p>
@@ -48,6 +49,8 @@ const { email } = Astro.props;
   const formule = document.getElementById('formule') as HTMLSelectElement | null;
   const reglements = [...document.querySelectorAll<HTMLInputElement>('input[name="reglement"]')];
 
+  const champCode = document.getElementById('code') as HTMLInputElement | null;
+  const ligneCode = document.getElementById('devis-code');
   const aujourdhui = document.getElementById('devis-aujourdhui');
   const suite = document.getElementById('devis-suite');
 
@@ -69,6 +72,7 @@ const { email } = Astro.props;
 
       const params = new URLSearchParams({ formule: id, comptant: comptant ? '1' : '0' });
       if (email.includes('@')) params.set('email', email);
+      if (champCode?.value.trim()) params.set('code', champCode.value.trim());
 
       // Une réponse tardive ne doit pas écraser une plus récente.
       enVol?.abort();
@@ -86,6 +90,14 @@ const { email } = Astro.props;
         suite!.textContent = d.nbEcheances
           ? `puis ${d.nbEcheances} versements de ${euros(d.suivantsCents)} — ${euros(d.totalCents)} en tout${dont}.`
           : `C’est le total${dont}.`;
+        if (ligneCode) {
+          // Un code refusé se dit ici, pas au moment de payer : c'est le seul
+          // endroit où l'on peut encore en essayer un autre.
+          ligneCode.textContent = d.codeErreur
+            ? d.codeErreur
+            : d.reductionCents ? `Code appliqué : ${euros(d.reductionCents)} de moins sur le forfait.` : '';
+          ligneCode.className = `mt-1 text-sm ${d.codeErreur ? 'text-[var(--color-bg-pink)]' : 'text-[var(--color-button)]'}`;
+        }
         bloc!.hidden = false;
       } catch (e) {
         // Une requête annulée n'est pas une panne : on laisse l'affichage en place.
@@ -96,6 +108,10 @@ const { email } = Astro.props;
     formule.addEventListener('change', chiffrer);
     for (const r of reglements) r.addEventListener('change', chiffrer);
     // On ne chiffre pas à chaque touche : l'adresse n'est utile que complète.
+    champCode?.addEventListener('input', () => {
+      clearTimeout(minuterie);
+      minuterie = setTimeout(chiffrer, 400);
+    });
     champEmail?.addEventListener('input', () => {
       clearTimeout(minuterie);
       minuterie = setTimeout(chiffrer, 400);

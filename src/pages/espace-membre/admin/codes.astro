@@ -1,0 +1,240 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../utils/guards';
+import { getAdminClient } from '../../../utils/supabase';
+import { saisonDe } from '../../../utils/inscriptions';
+import { normaliserCode } from '../../../utils/codes-promo';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const supabase = getAdminClient();
+const saison = saisonDe(new Date());
+
+/*
+ * LES CODES DE RÉDUCTION.
+ *
+ * Ils ne portent que sur le forfait : l'adhésion est une cotisation à
+ * l'association, pas un prix qu'on négocie. Et ils valent PAR INSCRIPTION, non
+ * par famille — une mère qui inscrit ses deux filles l'emploie deux fois.
+ *
+ * ON N'EFFACE PAS UN CODE, ON L'ARCHIVE. Des inscriptions le portent dans leurs
+ * métadonnées ; le supprimer rendrait leur remise inexplicable six mois plus
+ * tard, quand quelqu'un cherchera pourquoi une famille a payé moins.
+ */
+
+let message: string | null = null;
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = String(form.get('action') ?? '');
+
+  if (action === 'archiver') {
+    const { error } = await supabase.from('codes_promo')
+      .update({ archived_at: new Date().toISOString() })
+      .eq('code', String(form.get('code') ?? ''));
+    if (error) erreur = `Archivage impossible : ${error.message}`;
+    else message = 'Code archivé : il ne s’applique plus.';
+  } else {
+    const code = normaliserCode(String(form.get('code') ?? ''));
+    const type = String(form.get('type') ?? 'pourcent');
+    const valeur = Number(form.get('valeur') ?? 0);
+    const usageUnique = form.get('usage_unique') === 'oui';
+    const usagesMax = usageUnique ? 1 : Number(form.get('usages_max') ?? 0) || null;
+
+    if (!code) {
+      erreur = 'Donnez un code.';
+    } else if (!valeur || valeur <= 0) {
+      erreur = 'Indiquez une réduction.';
+    } else if (type === 'pourcent' && valeur > 100) {
+      erreur = 'Un pourcentage ne dépasse pas 100.';
+    } else {
+      const { error } = await supabase.from('codes_promo').insert({
+        code,
+        libelle: String(form.get('libelle') ?? '').trim() || null,
+        // L'un OU l'autre : la contrainte en base refuse les deux ensemble.
+        reduction_pourcent: type === 'pourcent' ? valeur : null,
+        reduction_cents: type === 'euros' ? Math.round(valeur * 100) : null,
+        saison: form.get('toutes_saisons') === 'oui' ? null : saison,
+        usages_max: usagesMax,
+        expire_le: String(form.get('expire_le') ?? '') || null,
+      });
+      if (error) {
+        erreur = error.message.includes('duplicate')
+          ? `Le code « ${code} » existe déjà.`
+          : `Création impossible : ${error.message}`;
+      } else {
+        message = `Code « ${code} » créé.`;
+      }
+    }
+  }
+}
+
+const { data: codes } = await supabase
+  .from('codes_promo')
+  .select('code, libelle, reduction_pourcent, reduction_cents, saison, usages_max, usages, expire_le, archived_at')
+  .order('archived_at', { nullsFirst: true })
+  .order('cree_le', { ascending: false });
+
+const actifs = (codes ?? []).filter((c) => !c.archived_at);
+const archives = (codes ?? []).filter((c) => c.archived_at);
+
+const dateFr = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const remise = (c: { reduction_pourcent: number | null; reduction_cents: number | null }) =>
+  c.reduction_pourcent !== null ? `${c.reduction_pourcent} %` : `${(c.reduction_cents ?? 0) / 100} €`;
+---
+
+<AdminLayout title="Codes de réduction" soustitre="Sur le forfait seul, et par inscription">
+  {message && <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] px-4 py-3">{message}</p>}
+  {erreur && <p class="mb-6 rounded-xl bg-[var(--color-bg-pink)] px-4 py-3 text-white">{erreur}</p>}
+
+  <details class="mb-8 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
+    <summary class="cursor-pointer font-medium text-[var(--color-heading)]">
+      Créer un code
+    </summary>
+
+    <form method="post" class="mt-4 space-y-4">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="code" class="block text-sm font-medium mb-1">Code</label>
+          <div class="flex gap-2">
+            <input id="code" name="code" required autocapitalize="characters"
+                   class="champ flex-1" placeholder="RENTREE26" />
+            <button type="button" id="tirer"
+                    class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-3 text-sm">
+              Générer
+            </button>
+          </div>
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Il se dit à l’oral et se recopie : la casse n’a pas d’importance.
+          </p>
+        </div>
+
+        <div>
+          <label for="libelle" class="block text-sm font-medium mb-1">À quoi il sert — facultatif</label>
+          <input id="libelle" name="libelle" class="champ" placeholder="Parrainage, forum des associations…" />
+        </div>
+
+        <div>
+          <label for="type" class="block text-sm font-medium mb-1">Type de remise</label>
+          <select id="type" name="type" class="champ">
+            <option value="pourcent">Pourcentage du forfait</option>
+            <option value="euros">Montant en euros</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="valeur" class="block text-sm font-medium mb-1">Valeur</label>
+          <input id="valeur" name="valeur" type="number" min="1" step="1" required class="champ" />
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            10 pour 10 %, ou 20 pour 20 €. La remise ne touche jamais l’adhésion.
+          </p>
+        </div>
+
+        <div>
+          <label for="usages_max" class="block text-sm font-medium mb-1">
+            Nombre d’usages — vide pour illimité
+          </label>
+          <input id="usages_max" name="usages_max" type="number" min="1" step="1" class="champ" />
+          <label class="mt-2 flex items-center gap-2 text-sm">
+            <input type="checkbox" id="usage_unique" name="usage_unique" value="oui" />
+            <span>Usage unique</span>
+          </label>
+        </div>
+
+        <div>
+          <label for="expire_le" class="block text-sm font-medium mb-1">Dernier jour — facultatif</label>
+          <input id="expire_le" name="expire_le" type="date" class="champ" />
+          <label class="mt-2 flex items-center gap-2 text-sm">
+            <input type="checkbox" name="toutes_saisons" value="oui" />
+            <span>Valable au-delà de la saison {saison}</span>
+          </label>
+        </div>
+      </div>
+
+      <button type="submit"
+              class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-2 font-medium text-white">
+        Créer
+      </button>
+    </form>
+  </details>
+
+  <h2 class="text-xl font-bold" style="font-family: var(--font-heading)">
+    En vigueur {actifs.length ? `(${actifs.length})` : ''}
+  </h2>
+
+  {!actifs.length ? (
+    <p class="mt-3 text-[var(--color-text-light)]">Aucun code actif.</p>
+  ) : (
+    <ul class="mt-4 space-y-3">
+      {actifs.map((c) => (
+        <li class="rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
+          <div class="flex flex-wrap items-baseline gap-x-3">
+            <span class="font-mono font-medium text-[var(--color-heading)]">{c.code}</span>
+            <span class="font-medium text-[var(--color-button)]">−{remise(c)}</span>
+            {c.libelle && <span class="text-sm text-[var(--color-text-light)]">{c.libelle}</span>}
+            <span class="ml-auto text-sm text-[var(--color-text-light)]">
+              {c.usages} employé{c.usages > 1 ? 's' : ''}
+              {c.usages_max ? ` sur ${c.usages_max}` : ''}
+            </span>
+          </div>
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            {c.saison ? `Saison ${c.saison}` : 'Toutes saisons'}
+            {c.expire_le ? ` · jusqu’au ${dateFr.format(new Date(c.expire_le))}` : ' · sans date de fin'}
+            {c.usages_max === 1 ? ' · usage unique' : ''}
+          </p>
+          <form method="post" class="mt-2">
+            <input type="hidden" name="action" value="archiver" />
+            <input type="hidden" name="code" value={c.code} />
+            <button type="submit" class="text-sm text-[var(--color-button)] underline">
+              Archiver
+            </button>
+          </form>
+        </li>
+      ))}
+    </ul>
+  )}
+
+  {archives.length > 0 && (
+    <details class="mt-8">
+      <summary class="cursor-pointer text-sm text-[var(--color-text-light)]">
+        {archives.length} code{archives.length > 1 ? 's' : ''} archivé{archives.length > 1 ? 's' : ''}
+      </summary>
+      <ul class="mt-3 space-y-1 text-sm text-[var(--color-text-light)]">
+        {archives.map((c) => (
+          <li><span class="font-mono">{c.code}</span> · −{remise(c)} · {c.usages} employé(s)</li>
+        ))}
+      </ul>
+    </details>
+  )}
+</AdminLayout>
+
+<script>
+  /*
+   * UN CODE TIRÉ AU SORT plutôt que choisi : « RENTREE » se devine, et un code
+   * devinable se partage. Les caractères ambigus — O/0, I/1/L — sont écartés,
+   * parce qu'un code se dicte au téléphone.
+   */
+  const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const bouton = document.getElementById('tirer');
+  const champ = document.getElementById('code');
+
+  bouton?.addEventListener('click', () => {
+    if (!(champ instanceof HTMLInputElement)) return;
+    const tirage = crypto.getRandomValues(new Uint32Array(8));
+    champ.value = [...tirage].map((n) => ALPHABET[n % ALPHABET.length]).join('');
+  });
+
+  /* Un usage unique fixe le nombre à 1 : les deux champs diraient sinon deux choses. */
+  const unique = document.getElementById('usage_unique');
+  const nombre = document.getElementById('usages_max');
+  if (unique instanceof HTMLInputElement && nombre instanceof HTMLInputElement) {
+    unique.addEventListener('change', () => {
+      nombre.disabled = unique.checked;
+      if (unique.checked) nombre.value = '1';
+    });
+  }
+</script>

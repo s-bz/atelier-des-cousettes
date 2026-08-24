@@ -107,6 +107,7 @@ describe('devis', () => {
     const d = devis({ formule: f, adhesionDue: true, comptant: false, achatLe: new Date('2026-08-25T00:00:00Z') });
     expect(d).toEqual({
       adhesionCents: 1500,
+      reductionCents: 0,
       premierCents: 5100,      // 36 € + 15 € d'adhésion
       suivantsCents: 3600,
       nbEcheances: 8,
@@ -119,6 +120,16 @@ describe('devis', () => {
     expect(d.adhesionCents).toBe(0);
     expect(d.premierCents).toBe(3600);
     expect(d.totalCents).toBe(32400);
+  });
+
+  it('ne réduit que le forfait, jamais l’adhésion', () => {
+    // 324 € − 50 € = 274 €, plus 15 € d'adhésion = 289 €. L'adhésion est une
+    // cotisation, pas un prix qu'on négocie.
+    const d = devis({ formule: f, adhesionDue: true, comptant: true,
+                      achatLe: new Date('2026-08-25T00:00:00Z'), reductionCents: 5000 });
+    expect(d.totalCents).toBe(28900);
+    expect(d.adhesionCents).toBe(1500);
+    expect(d.reductionCents).toBe(5000);
   });
 
   it('chiffre un règlement en une fois', () => {

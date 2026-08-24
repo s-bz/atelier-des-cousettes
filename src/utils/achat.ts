@@ -4,6 +4,8 @@ import { adhesionReglee, saisonDe } from './inscriptions';
 import { memePublic } from './ateliers';
 import { preparerAchat, creerIntention, construireEcheancier, ADHESION_CENTS } from './helloasso';
 import type { FormuleCatalogue } from './tarifs';
+import { lireCode, reductionDe, normaliserCode } from './codes-promo';
+import { lireCommande, provisionner } from './provisionnement';
 
 /**
  * Le parcours d'achat, avant le paiement.
@@ -54,6 +56,7 @@ export function origineJoignable(origine: string, site: URL | undefined): string
 
 export interface Devis {
   adhesionCents: number;
+  reductionCents: number;
   /** Ce qui sera prélevé aujourd'hui. */
   premierCents: number;
   /** Le montant de chacune des échéances suivantes. */
@@ -76,10 +79,15 @@ export function devis(o: {
   adhesionDue: boolean;
   comptant: boolean;
   achatLe: Date;
+  /** Réduction sur le forfait seul, déjà validée. */
+  reductionCents?: number;
 }): Devis {
   const adhesionCents = o.adhesionDue ? ADHESION_CENTS : 0;
+  // La réduction ne mord que sur le forfait : l'adhésion n'est pas un prix
+  // qu'on négocie.
+  const forfait = Math.max(0, o.formule.prixCents - (o.reductionCents ?? 0));
   const e = construireEcheancier({
-    totalCents: o.formule.prixCents,
+    totalCents: forfait,
     versements: o.comptant ? 1 : o.formule.mensualites,
     achatLe: o.achatLe,
     supplementInitialCents: adhesionCents,
@@ -87,6 +95,7 @@ export function devis(o: {
 
   return {
     adhesionCents,
+    reductionCents: o.reductionCents ?? 0,
     premierCents: e.initialAmount,
     suivantsCents: e.terms[0]?.amount ?? 0,
     nbEcheances: e.terms.length,
@@ -147,6 +156,8 @@ export async function demarrerAchat(
     formule?: FormuleCatalogue;
     creneau?: CreneauAchetable;
     comptant: boolean;
+    /** Le code saisi, s'il y en a un. */
+    codePromo?: string;
     /** Origine de la requête. Remplacée par `site` si HelloAsso la refuserait. */
     origine: string;
     /** Le site public configuré, seul repli possible depuis un poste local. */
@@ -181,8 +192,29 @@ export async function demarrerAchat(
 
   const base = origineJoignable(o.origine, o.site);
 
+  /*
+   * LE CODE SE VALIDE ICI, PAS DANS LE NAVIGATEUR. Le devis affiché n'engage
+   * rien ; c'est le montant de l'intention qui est prélevé. Un code refusé
+   * arrête l'achat plutôt que de le laisser passer au plein tarif en silence —
+   * quelqu'un qui a saisi un code s'attend à ce qu'il compte.
+   */
+  let reductionCents = 0;
+  let codeApplique: string | null = null;
+
+  if (o.codePromo?.trim()) {
+    const code = await lireCode(supabase, o.codePromo);
+    if (!code) return echec(`Le code « ${normaliserCode(o.codePromo)} » n'existe pas.`);
+
+    const r = reductionDe(o.formule!.prixCents, code, { saison, aujourdhui: new Date() });
+    if (!r.ok) return r;
+    reductionCents = r.valeur;
+    codeApplique = code.code;
+  }
+
   const achat = preparerAchat({
     formule: o.formule!,
+    reductionCents,
+    codePromo: codeApplique,
     creneau: o.creneau!,
     participant: o.prenom.trim(),
     saison,
@@ -206,6 +238,37 @@ export async function demarrerAchat(
       retourArriere: `${base}${o.cheminAchat}`,
     },
   });
+
+  /*
+   * QUAND IL N'Y A RIEN À PAYER, ON NE PASSE PAS PAR HELLOASSO.
+   *
+   * Un code à 100 %, sur une famille dont l'adhésion est déjà réglée, ramène le
+   * total à zéro — et l'API refuse : « Les montants sont invalides ». Une place
+   * offerte n'en est pas moins une inscription : on la provisionne directement,
+   * avec une référence propre qui la distingue d'une commande payée.
+   *
+   * Le code est consommé comme les autres : c'est bien un usage.
+   */
+  if (achat.totalCents + (achat.supplementInitialCents ?? 0) === 0) {
+    const commande = {
+      orderId: `GRATUIT-${crypto.randomUUID()}`,
+      codePromo: codeApplique,
+      email,
+      prenom: o.prenom.trim().split(/\s+/)[0],
+      nom: o.prenom.trim().split(/\s+/).slice(1).join(' '),
+      saison,
+      formuleId: o.formule!.id,
+      creneauId: o.creneau!.id,
+      adhesionCents: 0,
+    };
+
+    const fait = await provisionner(supabase, commande);
+    if (!fait.ok) return fait;
+
+    // On rend une URL comme dans le cas payant : l'appelant redirige, sans
+    // avoir à connaître ce cas de figure.
+    return succes({ redirectUrl: `${base}${o.cheminRetour}?gratuit=1` });
+  }
 
   const intention = await creerIntention(achat);
   if (!intention.ok) return intention;

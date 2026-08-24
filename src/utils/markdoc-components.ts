@@ -1,6 +1,6 @@
 import { block, wrapper } from '@keystatic/core/content-components';
 import { fields } from '@keystatic/core';
-import Markdoc, { type Config, type Node } from '@markdoc/markdoc';
+import Markdoc, { type Config, type Node, type NodeType } from '@markdoc/markdoc';
 
 const Tag = Markdoc.Tag;
 
@@ -199,11 +199,34 @@ const markdocConfig: Config = {
 // ---------------------------------------------------------------------------
 
 /**
+ * A Markdoc AST node, whichever copy of @markdoc/markdoc built it.
+ *
+ * Two copies coexist in the tree and both are load-bearing: Keystatic pins
+ * `@markdoc/markdoc@^0.4.0` (still true as of @keystatic/core 0.6.8), while this
+ * project and @astrojs/markdoc depend on 0.5.x. So the nodes the Keystatic reader
+ * hands us are 0.4.0 instances, and `Markdoc.transform` below is 0.5.x.
+ *
+ * That handoff works — the AST is plain data and `transform` dispatches to the
+ * node's own method — but the two `Node` classes are not assignable to each
+ * other: 0.5 narrowed `Schema['children']` from `string[]` to `NodeType[]`, and
+ * `Node` surfaces `Schema` through `findSchema()`/`resolve()`. Typing the
+ * parameter as the local `Node` therefore fails on every call site.
+ *
+ * So the boundary asks only for the fields both copies agree on, and the cast
+ * back to `Node` is confined to this one function.
+ */
+export type MarkdocNode = {
+  readonly $$mdtype: 'Node';
+  type: NodeType;
+  attributes: Record<string, any>;
+};
+
+/**
  * Transform and render a Markdoc node to an HTML string,
  * with support for custom components (CTA button, callout, YouTube).
  */
-export function renderMarkdoc(node: Node | null | undefined): string {
+export function renderMarkdoc(node: MarkdocNode | null | undefined): string {
   if (!node) return '';
-  const transformed = Markdoc.transform(node, markdocConfig);
+  const transformed = Markdoc.transform(node as unknown as Node, markdocConfig);
   return Markdoc.renderers.html(transformed);
 }
