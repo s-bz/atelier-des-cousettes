@@ -66,7 +66,8 @@ const { settings, siteUrl } = await getPageContext(Astro.site);
  * d'appel de l'accueil — travaille sur la grille ainsi corrigée, faute de quoi
  * la page et la facture annonceraient deux prix.
  */
-const tarifsPage = grilleAvecPrixDeLaBase(page.tarifs, await lireFormules());
+const formules = await lireFormules();
+const tarifsPage = grilleAvecPrixDeLaBase(page.tarifs, formules);
 
 const grille = fourchetteForfaits(tarifsPage);
 const descriptionSeo = grille
@@ -93,7 +94,22 @@ const schemas = buildServicePageSchemas({
   pageUrl: new URL(Astro.url.pathname, Astro.site).toString(),
   siteUrl,
   settings,
-  offers: page.schemaOffers ?? [],
+  /*
+   * LES OFFRES DU SCHÉMA VIENNENT DE LA BASE, non du CMS.
+   *
+   * `schemaOffers` annonçait encore « Forfait 10 séances — adultes, 360 € » et
+   * « 20 séances, 580 € » : des formules qui n'existent plus, et rien pour les
+   * ados. C'est ce que Google lit — l'endroit de la page que personne ne relit,
+   * et le seul où un prix périmé peut vivre des mois.
+   *
+   * Le champ a été RETIRÉ du contenu plutôt que corrigé, comme sur la page des
+   * séances sans engagement et pour la même raison : corrigé, il aurait
+   * simplement recommencé à dériver à la prochaine saison.
+   */
+  offers: (formules ?? []).map((f) => ({
+    name: `Forfait ${f.seances} séances — ${f.audience}`,
+    price: String(Math.round(f.prixCents / 100)),
+  })),
   faqItems,
 });
 

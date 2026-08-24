@@ -136,19 +136,8 @@ faqItems:
       revues mises à disposition. Isabelle vous guide pas à pas dans la
       réalisation de votre projet, de la coupe à la finition.
 crossLinksText: >-
-  Envie de découvrir une technique précise ? Consultez nos stages thématiques.
-  Vous pouvez aussi venir ponctuellement, le temps d'une séance sans engagement.
-schemaOffers:
-  - name: Forfait 10 séances — adultes
-    price: '360'
-  - name: Forfait 20 séances — adultes
-    price: '580'
-  - name: Séance sans engagement — adultes
-    price: '45'
-  - name: Forfait 10 séances — enfants
-    price: '280'
-  - name: Forfait 20 séances — enfants
-    price: '450'
-  - name: Séance sans engagement — enfants
-    price: '35'
+  Vous souhaitez commencer par une initiation à la machine à coudre ? Apprendre
+  à utiliser la surjeteuse, réaliser un sac, une trousse ? Vous souhaitez
+  apprendre une technique précise — coudre un ourlet, savoir lire un patron ?
+  Rejoignez une séance sans engagement !
 ctaLabel: Demander une place dans un créneau
