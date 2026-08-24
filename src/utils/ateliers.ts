@@ -95,7 +95,12 @@ export const ATELIER_GROUPS = [
   // base, et le renommer ferait disparaître le créneau existant de la page
   // publique sans rien signaler.
   { id: 'verdalle', label: 'Verdalle — Adultes', location: 'Verdalle', audience: 'adultes' },
-  { id: 'verdalle-enfants', label: 'Verdalle — Enfants', location: 'Verdalle', audience: 'enfants' },
+  // Pas de groupe « Verdalle — Enfants » : le créneau qui le portait a été
+  // supprimé (20260824230200), n'ayant jamais tenu une séance. Le laisser ici
+  // ne coûterait rien — la page ne montre que les groupes qu'une fiche remplit
+  // — mais il reparaîtrait dans le menu déroulant du CMS, à proposer un
+  // classement qui ne mène nulle part. `groupeDe('Verdalle', 'enfants')` rend
+  // toujours `verdalle-enfants` par sa règle de repli, le jour où il renaît.
 ] as const;
 
 export type AtelierGroupId = (typeof ATELIER_GROUPS)[number]['id'];
