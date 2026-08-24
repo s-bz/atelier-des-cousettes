@@ -223,11 +223,20 @@ if (Astro.url.searchParams.has('echec')) {
         <label for="formule" class="block text-sm font-medium mb-1">Formule</label>
         <select id="formule" name="formule" required class="champ">
           <option value="">Choisissez une formule</option>
+          {/*
+            LE PUBLIC EST RÉPÉTÉ DANS CHAQUE LIGNE, et pas seulement dans le
+            titre du groupe. Refermée, une liste déroulante n'affiche que
+            l'option retenue : le titre du groupe disparaît, et « 9 séances ·
+            324 € » ne dit plus s'il s'agit d'un adulte, d'un ado ou d'un
+            enfant. Redondant tant que la liste est ouverte, ce préfixe est la
+            seule chose qui reste une fois qu'elle est refermée.
+          */}
           {AUDIENCES.map((a) => (
             <optgroup label={a.label}>
               {formules.filter((f) => f.audience === a.creneau).map((f) => (
-                <option value={f.id} data-public={f.audience} selected={f.id === saisi.formule}>
-                  {f.libelle} · {Math.round(f.prixCents / 100)} €
+                <option value={f.id} data-public={f.audience} data-seances={f.seances}
+                        selected={f.id === saisi.formule}>
+                  {a.label} · {f.libelle} · {Math.round(f.prixCents / 100)} €
                 </option>
               ))}
             </optgroup>
@@ -253,11 +262,16 @@ if (Astro.url.searchParams.has('echec')) {
           LA RÉASSURANCE OÙ LA QUESTION SE POSE. « Et si je ne peux pas un
           samedi ? » se demande en choisissant le créneau, pas sous le bouton de
           paiement où la réponse traînait auparavant.
+
+          LE NOMBRE DE SÉANCES SE LIT SUR LA FORMULE CHOISIE, il ne s'écrit pas
+          ici : neuf ou dix-huit selon ce qu'on a pris, seize pour un enfant.
+          Sans JavaScript la phrase reste vraie, simplement sans le compte —
+          c'est pourquoi elle est écrite d'abord dans sa forme générale.
         */}
         <p class="mt-1 text-sm text-[var(--color-text-light)]">
-          Celui où vous serez inscrit d’office. Vos dates se choisissent ensuite et se
-          modifient jusqu’à 10 jours avant chaque séance ; venir à un autre créneau reste
-          possible.
+          <span data-echo-seances>Vous serez inscrit d’office aux séances de votre formule</span>,
+          réparties sur la saison. Vous pourrez changer vos dates depuis votre espace, au plus
+          tard 10 jours avant chaque séance ; il reste possible de venir à un autre créneau.
         </p>
       </div>
 
@@ -360,6 +374,22 @@ if (Astro.url.searchParams.has('echec')) {
 
     formule.addEventListener('change', accorder);
     accorder();
+  }
+
+  /*
+   * « Vous serez inscrit d'office aux 9 séances » plutôt qu'« aux séances de
+   * votre formule » : le nombre vient de l'option retenue, jamais du texte.
+   */
+  const echo = document.querySelector('[data-echo-seances]');
+  if (formule instanceof HTMLSelectElement && echo) {
+    const dire = () => {
+      const n = formule.selectedOptions[0]?.dataset.seances;
+      echo.textContent = n
+        ? `Vous serez inscrit d’office aux ${n} séances de votre formule`
+        : 'Vous serez inscrit d’office aux séances de votre formule';
+    };
+    formule.addEventListener('change', dire);
+    dire();
   }
 
   /* Les champs du participant n'apparaissent que s'il diffère du payeur. */
