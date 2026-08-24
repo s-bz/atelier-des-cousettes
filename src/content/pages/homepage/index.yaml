@@ -16,24 +16,30 @@ serviceCards:
   - label: Ateliers réguliers
     href: /ateliers-reguliers/
     image: /src/assets/images/homepage/serviceCards/0/image.jpg
-    imageAlt: Ateliers réguliers
-    priceRange: 36 €/mois pour 10 séances (28 € enfant)
+    imageAlt: >-
+      Une participante pose un patron sur un coton fleuri, entre ciseaux, mètre
+      ruban, règle de patronage et pelote à épingles
+    priceRange: 36 €/mois pour 9 séances (25 € ado, 34 € enfant)
     shortDescription: Progressez en petits groupes, une à deux fois par mois, de septembre à juin.
   - label: Stages thématiques
     href: /stages-thematiques/
     image: /src/assets/images/homepage/serviceCards/1/image.jpg
-    imageAlt: Stages thématiques
-    priceRange: De 45 € à 95 € le stage
-    shortDescription: 'Apprenez une technique précise : machine à coudre, surjeteuse, patronage.'
+    imageAlt: >-
+      Sac en toile bleu canard à empiècement fleuri turquoise et doré, fermé par
+      une glissière écrue, accroché à une palissade en bois
+    priceRange: De 45 € à 80 € le stage
+    shortDescription: >-
+      Découvrez la machine à coudre, la surjeteuse, initiez-vous au patronage ou
+      réalisez un petit projet.
   - label: Séances sans engagement
     href: /seances-sans-engagement/
     image: /src/assets/images/homepage/serviceCards/2/image.jpg
     imageAlt: Bobines de fil, dé à coudre, mètre ruban et ciseaux posés près d'une machine à coudre
     priceRange: 45 € la séance de 3 h (22 € en 1 h 30)
     shortDescription: >-
-      Sans engagement, avancez sur votre projet personnel avec l'aide
-      d'Isabelle. Nouveau cette saison : une séance courte d'1 h 30, le jeudi
-      en fin de journée.
+      Une séance ponctuelle, sans engagement, pour apprendre une technique
+      précise ou pour avancer sur un projet personnel. Nouveau cette saison :
+      une séance courte d'1 h 30, le jeudi en fin de journée.
 orientationText: >-
   Vous ne savez pas par où commencer ? Venez d'abord pour une séance sans
   engagement, à partir de 22 €. Si le courant passe, le forfait de la saison
