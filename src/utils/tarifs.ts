@@ -23,19 +23,45 @@ import { AUDIENCES, type AudienceCreneau } from './ateliers';
  * l'ordre des cartes.
  */
 
+/** Une séance achetable à l'unité : une durée, un prix. */
+export interface OffreSeance {
+  duree: string | null;
+  prix: number;
+}
+
 export interface Tarifs {
   /**
-   * Prix d'une séance hors forfait, par public.
+   * LES SÉANCES ACHETABLES À L'UNITÉ, la plus chère d'abord.
    *
-   * Une entrée par public connu, y compris ceux qu'aucun créneau ne porte
-   * encore — elles valent alors `null`. Énumérer les publics plutôt que d'en
-   * nommer deux à la main évite qu'un troisième arrive sans que ce fichier
-   * l'apprenne : c'est exactement ainsi que les ados auraient pu naître en base
-   * tout en restant invisibles sur les pages qui affichent les prix.
+   * C'ÉTAIT UN PRIX PAR PUBLIC, et deux hypothèses s'y cachaient, toutes deux
+   * devenues fausses la même saison :
+   *
+   *   — que tout créneau se vende à la séance. Les ateliers ados et enfants ne
+   *     le sont plus. Leur `default_unit_price_cents` demeure — la colonne est
+   *     obligatoire — mais il n'achète plus rien : depuis la table des
+   *     formules, un dépassement se facture au prix divisé du forfait. Faute de
+   *     filtrer sur `a_l_unite`, l'accueil a continué d'annoncer « 45 € la
+   *     séance (35 € ado et enfant) », un tarif que personne ne peut ni acheter
+   *     ni se voir facturer.
+   *
+   *   — qu'un public n'ait qu'un prix. Les adultes en ont deux depuis la séance
+   *     du jeudi soir : 45 € les 3 h, 22 € l'heure et demie. Interrogée par
+   *     public, la table rendait le premier des deux — l'ordre de la base,
+   *     c'est-à-dire le hasard.
+   *
+   * Une offre est donc un couple (durée, prix), et non un public. Deux créneaux
+   * qui durent autant et coûtent autant n'en font qu'une, quel que soit le jour.
    */
-  seance: Record<AudienceCreneau, number | null>;
+  seances: OffreSeance[];
   /** Le moins cher et le plus cher des stages. */
   stages: { min: number; max: number } | null;
+}
+
+/** « 3 h », « 1 h 30 » — la durée lue sur les horaires du créneau. */
+function dureeDe(debut: string, fin: string): string | null {
+  const min = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const m = min(fin) - min(debut);
+  return m <= 0 ? null : m % 60 === 0 ? `${m / 60} h` : `${Math.floor(m / 60)} h ${m % 60}`;
 }
 
 const euros = (cents: number) => Math.round(cents / 100);
@@ -51,25 +77,28 @@ export async function lireTarifs(): Promise<Tarifs | null> {
   try {
     const { data, error } = await getAdminClient()
       .from('creneaux')
-      .select('kind, audience, default_unit_price_cents')
+      .select('kind, a_l_unite, default_start_time, default_end_time, default_unit_price_cents')
       .is('archived_at', null);
     if (error || !data?.length) return null;
 
-    const prixDe = (kind: string, audience?: string) =>
-      data
-        .filter((c) => c.kind === kind && (!audience || c.audience === audience))
-        .map((c) => c.default_unit_price_cents)
-        .filter((n): n is number => typeof n === 'number' && n > 0);
+    const stages = data
+      .filter((c) => c.kind === 'stage' && c.default_unit_price_cents > 0)
+      .map((c) => c.default_unit_price_cents);
 
-    const stages = prixDe('stage');
+    // Une offre par couple (durée, prix) : les cinq créneaux adultes de 3 h à
+    // 45 € n'en font qu'une.
+    const offres = new Map<string, OffreSeance>();
+    for (const c of data) {
+      if (c.kind !== 'atelier' || !c.a_l_unite || !(c.default_unit_price_cents > 0)) continue;
+      const duree = dureeDe(c.default_start_time, c.default_end_time);
+      const cle = `${c.default_unit_price_cents}|${duree ?? ''}`;
+      if (!offres.has(cle)) offres.set(cle, { duree, prix: euros(c.default_unit_price_cents) });
+    }
 
     return {
-      seance: Object.fromEntries(
-        AUDIENCES.map((a) => {
-          const prix = prixDe('atelier', a.creneau)[0];
-          return [a.creneau, prix ? euros(prix) : null];
-        }),
-      ) as Record<AudienceCreneau, number | null>,
+      // La plus chère d'abord : c'est la formule principale, la courte se lit
+      // ensuite comme ce qu'elle est, une porte d'entrée.
+      seances: [...offres.values()].sort((a, b) => b.prix - a.prix),
       stages: stages.length
         ? { min: euros(Math.min(...stages)), max: euros(Math.max(...stages)) }
         : null,
@@ -345,6 +374,26 @@ export function prixParPublic(
     .join(', ');
 
   return `${tete.montant} €${suffixe} (${parenthese})`;
+}
+
+/**
+ * « 45 € la séance de 3 h (22 € en 1 h 30) » — les offres à l'unité en une phrase.
+ *
+ * Même hiérarchie que `prixParPublic` : la principale ouvre, les autres suivent
+ * entre parenthèses. Ce qui les distingue n'est plus le public — elles
+ * s'adressent toutes aux mêmes personnes — mais la durée, seule à justifier
+ * l'écart de prix. La taire ferait de « 22 € » un rabais inexpliqué sur le même
+ * service.
+ */
+export function prixDesOffres(offres: readonly OffreSeance[] | null | undefined): string | null {
+  const liste = (offres ?? []).filter((o) => o.prix > 0);
+  if (!liste.length) return null;
+
+  const [tete, ...suite] = liste;
+  const principal = `${tete.prix} € la séance${tete.duree ? ` de ${tete.duree}` : ''}`;
+  if (!suite.length) return principal;
+
+  return `${principal} (${suite.map((o) => `${o.prix} €${o.duree ? ` en ${o.duree}` : ''}`).join(', ')})`;
 }
 
 /** « De 28€ à 58€ » — du forfait le plus bas au plus élevé de la grille. */

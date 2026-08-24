@@ -14,7 +14,13 @@ import { getPageContext, reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { toSlug } from '../utils/strings';
 import { buildCourseSchema, buildServicePageSchemas } from '../utils/schema';
-import { fourchetteForfaits, grilleAvecPrixDeLaBase, lireFormules } from '../utils/tarifs';
+import {
+  fourchetteForfaits,
+  grilleAvecPrixDeLaBase,
+  lireFormules,
+  lireTarifs,
+  prixDesOffres,
+} from '../utils/tarifs';
 import { getAdminClient } from '../utils/supabase';
 import { ATELIER_GROUPS, titreAudience } from '../utils/ateliers';
 
@@ -26,12 +32,17 @@ import { ATELIER_GROUPS, titreAudience } from '../utils/ateliers';
  * jour de la semaine, un an trop tôt, ce qui ne se voit pas. Une date qui vient
  * de la base ne peut plus mentir sans que l'écran des séances mente aussi.
  *
- * CE QUI RESTE AU CONTENU, ET POURQUOI : les forfaits. Ils n'existent pas en
- * base. `default_unit_price_cents` est le prix d'une séance HORS forfait — 45 €
- * pour un adulte, 35 € pour un enfant — et non le forfait d'une saison.
- * Afficher l'un à la place de l'autre ne serait pas une simplification mais une
- * erreur de prix. Le prix à l'unité, lui, est lu en base : c'est celui qui sert
- * à facturer, et deux endroits pour un seul montant finiraient par diverger.
+ * CE QUI RESTE AU CONTENU, ET POURQUOI : les MOTS de la grille — la durée d'une
+ * séance, la glose du rythme, l'ordre des cartes. Ses nombres, eux, viennent de
+ * la table `formules` depuis qu'un dépassement se facture au prix divisé du
+ * forfait : le montant facture, il ne peut donc plus vivre à deux endroits.
+ *
+ * `default_unit_price_cents` reste une TOUTE AUTRE CHOSE — le prix d'une séance
+ * achetée seule, 45 € les 3 h — et non le forfait d'une saison. Afficher l'un à
+ * la place de l'autre ne serait pas une simplification mais une erreur de prix. Le prix à l'unité, lui, est lu en base : c'est celui qu'on
+ * encaisse d'un visiteur d'un soir, et deux endroits pour un seul montant
+ * finiraient par diverger. Il ne facture PAS les dépassements de forfait, qui
+ * se règlent au prix divisé de la formule achetée.
  *
  * Rendue à la demande, et non à la construction : une place prise ce matin doit
  * se voir cet après-midi.
@@ -218,16 +229,19 @@ const ecartsDe = (c: { name: string; time: string; location: string; group: stri
   return ecarts;
 };
 /**
- * Le prix d'une séance sans engagement, par public — LU EN BASE.
+ * LES SÉANCES ACHETABLES À L'UNITÉ, pour la phrase qui suit la grille.
  *
- * C'est le même montant qui facture une séance dépassant le forfait. Le
- * recopier dans le CMS en aurait fait deux, promis d'un côté et facturé de
- * l'autre, et ils auraient divergé en une saison.
+ * Elle se construisait public par public, sur `enBase` — les créneaux au
+ * forfait. Deux erreurs en une : elle annonçait encore « 35 € pour les ados et
+ * les enfants », un tarif qu'on ne peut plus acheter depuis que la séance à
+ * l'unité ne leur est plus proposée ; et elle ne pouvait pas voir la séance du
+ * jeudi soir, précisément parce que celle-ci n'est PAS au forfait.
+ *
+ * `lireTarifs` regarde les créneaux `a_l_unite`, qui sont exactement ceux
+ * qu'on peut acheter à la séance — la question que cette phrase pose.
  */
-const prixSeanceDe = (audience: string) => {
-  const c = (enBase ?? []).find((x) => x.audience === audience);
-  return c ? `${(c.default_unit_price_cents / 100).toFixed(0)} €` : null;
-};
+const offresUnite = (await lireTarifs())?.seances ?? [];
+const phraseUnite = prixDesOffres(offresUnite);
 
 /*
  * Les deux ternaires que ces lignes remplaçaient rangeaient tout public autre
@@ -238,10 +252,7 @@ const prixSeanceDe = (audience: string) => {
 const tarifs = tarifsPage.map((t) => ({
   ...t,
   titre: titreAudience(t.audience),
-  // « adultes » / « ados » / « enfants » seuls, pour la phrase de la séance
-  // à l'unité.
   public: t.audience,
-  prixSeance: prixSeanceDe(t.audience),
 }));
 
 /**
@@ -495,17 +506,16 @@ const courseSchema = buildCourseSchema({
           montants viennent de la base, où ils facturent aussi les séances
           au-delà du forfait.
         */}
-        {page.tarifsUniteQuestion && tarifs.some((t) => t.prixSeance) && (
+        {page.tarifsUniteQuestion && phraseUnite && (
           <p class="mt-8 text-center text-[var(--color-text)]">
+            {/*
+              LE PRÉFIXE « La séance est à » A DISPARU. Il complétait un montant
+              nu — « 45 € » — quand la phrase se construisait public par public.
+              L'offre porte désormais son unité (« 45 € la séance de 3 h »), et
+              le préfixe la redisait : « La séance est à 45 € la séance de 3 h ».
+            */}
             {page.tarifsUniteQuestion}{' '}
-            La séance est à{' '}
-            {tarifs.filter((t) => t.prixSeance).map((t, i, liste) => (
-              <Fragment>
-                {i > 0 && (i === liste.length - 1 ? ' et ' : ', ')}
-                <span class="font-semibold text-[var(--color-button)]">{t.prixSeance}</span>
-                {' '}pour les {t.public}
-              </Fragment>
-            ))}.
+            <span class="font-semibold text-[var(--color-button)]">{phraseUnite}</span>.
           </p>
         )}
 

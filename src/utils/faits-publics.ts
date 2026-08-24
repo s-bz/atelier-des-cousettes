@@ -109,6 +109,8 @@ export interface SeancePublique {
   fin: string;
   prixCents: number;
   capacite: number;
+  /** Voir `CreneauPublic.aLUnite` : ce prix s'achète-t-il seul ? */
+  aLUnite?: boolean;
 }
 
 export interface FaitsPublics {
@@ -249,7 +251,7 @@ export async function lireProchainesSeances(limite = 200): Promise<SeancePubliqu
       .from('sessions')
       .select(`
         starts_at, ends_at, capacity,
-        creneaux!inner(label, kind, audience, default_location, default_unit_price_cents, archived_at)
+        creneaux!inner(label, kind, audience, default_location, default_unit_price_cents, a_l_unite, archived_at)
       `)
       .eq('status', 'scheduled')
       .is('creneaux.archived_at', null)
@@ -266,6 +268,7 @@ export async function lireProchainesSeances(limite = 200): Promise<SeancePubliqu
       fin: s.ends_at,
       prixCents: s.creneaux?.default_unit_price_cents ?? 0,
       capacite: s.capacity,
+      aLUnite: s.creneaux?.a_l_unite ?? true,
     }));
   } catch {
     return [];
@@ -477,8 +480,15 @@ export function construireDates(f: FaitsPublics): string {
 
   const ligneSeance = (s: SeancePublique) => {
     const debut = new Date(s.debut);
-    const prix = s.prixCents > 0
-      ? `, ${euros(s.prixCents)} €${s.kind === 'atelier' ? ' la séance hors forfait' : ''}`
+    /*
+     * LE PRIX NE S'ÉCRIT QUE S'IL S'ACHÈTE. Un atelier ados ou enfants ne se
+     * vend plus à la séance, et son montant ne facture plus rien depuis que le
+     * dépassement se règle au prix divisé du forfait. L'annoncer « 35 € la
+     * séance hors forfait » proposait à un moteur de réponse un tarif que
+     * personne ne peut ni payer ni se voir facturer.
+     */
+    const prix = s.prixCents > 0 && s.aLUnite !== false
+      ? `, ${euros(s.prixCents)} €${s.kind === 'atelier' ? ' la séance' : ''}`
       : '';
     return `- **${jourIso.format(debut)}** — ${jourFr(s.debut)}, ${heureFr(s.debut)}–${heureFr(s.fin)} — ${s.creneau} (${s.audience})${prix}`;
   };
@@ -645,7 +655,14 @@ export function construireTarifs(f: FaitsPublics): string {
     const items = f.creneaux
       .filter((c) => c.kind === 'atelier' && c.lieu.trim().toLowerCase() === lieu.toLowerCase())
       .sort((a, b) => a.label.localeCompare(b.label, 'fr'))
-      .map((c) => `- **${c.label}** — ${c.audience}, ${heure(c.debut)}–${heure(c.fin)}, ${euros(c.prixCents)} € la séance hors forfait`)
+      .map((c) => {
+        // Un créneau au forfait seul n'a pas de prix à l'unité à annoncer : on
+        // dit alors comment il se prend, plutôt qu'un montant inachetable.
+        const prix = c.aLUnite === false
+          ? 'au forfait de saison uniquement'
+          : `${euros(c.prixCents)} € la séance`;
+        return `- **${c.label}** — ${c.audience}, ${heure(c.debut)}–${heure(c.fin)}, ${prix}`;
+      })
       .join('\n');
     return items ? `### ${lieu}\n\n${items}` : null;
   }).filter(Boolean).join('\n\n');

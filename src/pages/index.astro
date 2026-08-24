@@ -16,6 +16,7 @@ import {
   formuleLaMoinsChere,
   lireTarifs,
   prixParPublic,
+  prixDesOffres,
   remplacerPrix,
   remplacerFourchette,
   grilleAvecPrixDeLaBase,
@@ -58,8 +59,23 @@ const forfaitMin = forfaitLePlusBas(grilleAteliers);
  * propose l'atelier. C'est elle qui remplace les nombres des phrases qui
  * l'annoncent : « Tarifs accessibles » et la description SEO.
  */
+/*
+ * LE BAS DE LA FOURCHETTE EST LE MOINS CHER DE TOUT, forfait ou séance.
+ *
+ * Elle partait du forfait mensuel le plus bas — 25 € chez les ados — et
+ * ignorait la séance du jeudi soir à 22 €, qui est pourtant ce qu'on peut
+ * acheter de moins cher ici. « De 25 € à 80 € selon la formule choisie »
+ * annonçait donc un plancher qu'une des formules passait par-dessous.
+ */
+const planchers = [
+  forfaitMin,
+  tarifs?.seances?.at(-1)?.prix,
+].filter((n): n is number => typeof n === 'number' && n > 0);
+
 const fourchetteToutesFormules =
-  forfaitMin && tarifs?.stages ? `De ${forfaitMin} € à ${tarifs.stages.max} €` : null;
+  planchers.length && tarifs?.stages
+    ? `De ${Math.min(...planchers)} € à ${tarifs.stages.max} €`
+    : null;
 
 /**
  * Le prix mis en avant sur chaque carte, par destination.
@@ -101,7 +117,7 @@ const prixParPage: Record<string, string | null> = {
   '/stages-thematiques/': tarifs?.stages
     ? `De ${tarifs.stages.min} € à ${tarifs.stages.max} € le stage`
     : null,
-  '/seances-sans-engagement/': prixParPublic(tarifs?.seance ?? {}, ' la séance'),
+  '/seances-sans-engagement/': prixDesOffres(tarifs?.seances),
 };
 
 /**
@@ -118,7 +134,17 @@ const prixParPage: Record<string, string | null> = {
  * bifurcation.
  */
 const orientation = homepage.orientationText?.trim()
-  ? remplacerPrix(homepage.orientationText, tarifs?.seance.adultes)
+  /*
+   * LE PRIX LE PLUS BAS, et la phrase dit « à partir de ».
+   *
+   * Cette ligne-ci n'annonce pas un tarif, elle lève une objection : « par où
+   * commencer ». C'est donc le plus petit pas qu'elle doit chiffrer — 22 € pour
+   * l'heure et demie du jeudi soir — là où les cartes, qui servent à comparer,
+   * ouvrent sur la formule principale. « À partir de » est ce qui rend les deux
+   * compatibles : sans ces trois mots, 22 € promettrait à tort le tarif de
+   * toutes les séances.
+   */
+  ? remplacerPrix(homepage.orientationText, tarifs?.seances?.at(-1)?.prix)
   : null;
 
 const coverGlob = import.meta.glob<{ default: ImageMetadata }>('/src/assets/images/covers/**/*.{jpg,jpeg,png,webp}');
@@ -187,7 +213,7 @@ const siteUrl = Astro.site?.origin;
           { "@type": "AdministrativeArea", "name": "Haute-Garonne" },
           { "@type": "AdministrativeArea", "name": "Tarn" }
         ],
-        "priceRange": forfaitMin && tarifs?.stages ? `${forfaitMin}€–${tarifs.stages.max}€` : undefined,
+        "priceRange": planchers.length && tarifs?.stages ? `${Math.min(...planchers)}€–${tarifs.stages.max}€` : undefined,
         "sameAs": [settings?.facebookUrl, settings?.googleBusinessUrl].filter(Boolean),
         "founder": {
           "@type": "Person",
