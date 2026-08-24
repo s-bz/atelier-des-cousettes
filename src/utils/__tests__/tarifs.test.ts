@@ -6,6 +6,7 @@ import {
   fourchetteForfaits,
   prixParPublic,
   grilleAvecPrixDeLaBase,
+  libelleFormule,
   montantFr,
   remplacerFourchette,
 } from '../tarifs';
@@ -260,5 +261,23 @@ describe('grilleAvecPrixDeLaBase', () => {
     );
     expect(t.formules).toHaveLength(1);
     expect(t.formules[0].mensuel).toBe('25 € par mois');
+  });
+});
+
+describe('libelleFormule', () => {
+  it('dit le public, le volume, le prix, et ce que coûte une séance en plus', () => {
+    // Le prix divisé est la raison d'être de l'étiquette : c'est lui qui
+    // facture un dépassement, et il ne se lit nulle part ailleurs.
+    expect(libelleFormule({
+      id: '2026-2027-adultes-18', libelle: '18 séances',
+      audience: 'adultes', seances: 18, prixCents: 53100,
+    })).toBe('adultes — 18 séances · 531 € (29,50 € la séance en plus)');
+  });
+
+  it('garde les deux décimales même sur un compte rond', () => {
+    expect(libelleFormule({
+      id: '2026-2027-ados-9', libelle: '9 séances',
+      audience: 'ados', seances: 9, prixCents: 22500,
+    })).toBe('ados — 9 séances · 225 € (25,00 € la séance en plus)');
   });
 });
