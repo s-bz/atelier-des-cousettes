@@ -160,6 +160,14 @@ paiement en N fois plutôt que d'un abonnement. À confirmer auprès du support
 HelloAsso avant d'ouvrir l'encaissement mensuel.
 
 ## 7. L'ordre des opérations
+**État au 25/08/2026 :** le code est en production (#167), les migrations sont
+appliquées, les trois variables d'environnement sont posées chez Vercel, et
+**l'URL de rappel est enregistrée dans le back-office**. Le webhook répond 200,
+son jeton est reconnu, et la relecture d'une intention par l'API fonctionne en
+production. Rien n'arrive encore : les formulaires sont en brouillon.
+
+**Il ne reste que deux choses avant d'encaisser :** les textes juridiques (§1),
+et le ménage des six tarifs périmés (§3).
 
 1. Trancher la question de l'entité. Tout le reste attend.
 2. Faire le ménage du §3 — tant que les formulaires sont en Draft, c'est gratuit.
