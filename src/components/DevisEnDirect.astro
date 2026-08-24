@@ -30,21 +30,15 @@ const { email } = Astro.props;
 >
   <p class="font-medium text-[var(--color-heading)]" id="devis-aujourdhui"></p>
   <p class="mt-1 text-sm text-[var(--color-text)]" id="devis-suite"></p>
-  <p class="mt-1 text-sm text-[var(--color-text-light)]" id="devis-adhesion"></p>
 
   {/*
-    LA CONTRIBUTION HELLOASSO S'ANNONCE ICI, ET NON SUR LEUR PAGE.
-    Notre devis dit « 51 € » et la page de paiement affiche « 52,19 € » : sans
-    explication, l'écart se lit comme un frais caché. Il n'en est pas un —
-    HelloAsso est gratuit pour l'association et se finance par ces contributions,
-    qui s'AJOUTENT au montant et n'en retranchent rien. Elle est suggérée par
-    défaut, modifiable, et peut être ramenée à zéro.
+    LA CONTRIBUTION HELLOASSO, EN UNE LIGNE. Elle doit être dite — sans quoi
+    l'écart entre notre « 49 € » et le « 50,x € » de leur page se lit comme un
+    frais caché — mais elle ne mérite pas le paragraphe qu'elle avait : au
+    moment de décider, quatre blocs de texte se neutralisent.
   */}
-  <p class="mt-3 border-t border-[var(--color-border-prominent)] pt-3 text-sm text-[var(--color-text-light)]">
-    Sur la page de paiement, HelloAsso proposera d’ajouter une contribution à son propre
-    fonctionnement — c’est ce qui rend le service gratuit pour l’association. Elle est{' '}
-    <strong>facultative</strong> et se modifie, jusqu’à zéro, d’un clic sur « Modifier ».
-    L’association perçoit le même montant dans tous les cas.
+  <p class="mt-2 text-sm text-[var(--color-text-light)]">
+    HelloAsso proposera d’y ajouter une contribution facultative, modifiable jusqu’à zéro.
   </p>
 </div>
 
@@ -56,9 +50,8 @@ const { email } = Astro.props;
 
   const aujourdhui = document.getElementById('devis-aujourdhui');
   const suite = document.getElementById('devis-suite');
-  const adhesion = document.getElementById('devis-adhesion');
 
-  if (bloc && formule && aujourdhui && suite && adhesion) {
+  if (bloc && formule && aujourdhui && suite) {
     const euros = (c: number) =>
       (c / 100).toFixed(2).replace('.', ',').replace(',00', '') + ' €';
 
@@ -87,12 +80,12 @@ const { email } = Astro.props;
         const d = await r.json();
 
         aujourdhui!.textContent = `À régler aujourd’hui : ${euros(d.premierCents)}`;
+        const dont = d.adhesionCents
+          ? `, dont ${euros(d.adhesionCents)} d’adhésion (une fois par famille)`
+          : ` — adhésion déjà réglée`;
         suite!.textContent = d.nbEcheances
-          ? `puis ${d.nbEcheances} versements de ${euros(d.suivantsCents)} — soit ${euros(d.totalCents)} en tout.`
-          : `C’est le montant total.`;
-        adhesion!.textContent = d.adhesionCents
-          ? `Dont ${euros(d.adhesionCents)} d’adhésion à l’association, pour toute la famille et toute la saison.`
-          : `L’adhésion de votre famille est déjà réglée pour cette saison : elle n’est pas recomptée.`;
+          ? `puis ${d.nbEcheances} versements de ${euros(d.suivantsCents)} — ${euros(d.totalCents)} en tout${dont}.`
+          : `C’est le total${dont}.`;
         bloc!.hidden = false;
       } catch (e) {
         // Une requête annulée n'est pas une panne : on laisse l'affichage en place.
