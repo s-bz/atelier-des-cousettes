@@ -198,6 +198,64 @@ begin
   end if;
 end $$;
 
+
+-- ── 15-16. LE DÉLAI D'ANNULATION ────────────────────────────────────────
+--
+-- Dix jours (20260824240000, qui remplace les 48 h d'origine). En deçà, la
+-- place repart aux autres mais la séance reste due : `credit_retenu` la marque.
+--
+-- CE DÉLAI N'AVAIT JAMAIS ÉTÉ TESTÉ. Il vivait dans un seul `interval` au fond
+-- de `release_booking`, et dans huit phrases éparpillées sur le site et dans
+-- les gabarits d'e-mail. Rien n'obligeait les neuf à dire la même chose — c'est
+-- exactement ainsi qu'un nombre dérive sans que personne ne s'en aperçoive.
+--
+-- Les dates sont RELATIVES à maintenant : figées, le test cesserait de
+-- distinguer les deux cas dès que la première serait dépassée.
+
+insert into creneaux (id, label, group_id, default_start_time, default_end_time,
+                      default_location, default_capacity, default_unit_price_cents)
+values ('t-delai', 'Test delai', 'revel-adultes', '14:00', '17:00', 'Revel', 6, 4500);
+
+insert into participants (id, first_name, last_name)
+values ('a0000000-0000-0000-0000-000000000009', 'Test', 'Delai');
+
+insert into sessions (id, creneau_id, starts_at, ends_at, location,
+                      capacity, unit_price_cents) values
+  ('50000000-0000-0000-0000-000000000009', 't-delai',
+   now() + interval '5 days',  now() + interval '5 days 3 hours',  'Revel', 6, 4500),
+  ('50000000-0000-0000-0000-000000000010', 't-delai',
+   now() + interval '15 days', now() + interval '15 days 3 hours', 'Revel', 6, 4500);
+
+insert into bookings (id, session_id, participant_id, source, status) values
+  ('b0000000-0000-0000-0000-000000000009', '50000000-0000-0000-0000-000000000009',
+   'a0000000-0000-0000-0000-000000000009', 'member', 'booked'),
+  ('b0000000-0000-0000-0000-000000000010', '50000000-0000-0000-0000-000000000010',
+   'a0000000-0000-0000-0000-000000000009', 'member', 'booked');
+
+do $$
+declare v_retour jsonb;
+begin
+  v_retour := release_booking('b0000000-0000-0000-0000-000000000009');
+  insert into resultats(cas, verdict) values ('15 a 5 jours, la seance reste due',
+    case when (v_retour->>'tardif')::boolean
+          and (select credit_retenu from bookings
+               where id = 'b0000000-0000-0000-0000-000000000009')
+         then 'OK'
+         else 'ECHEC: '||coalesce(v_retour::text,'null') end);
+end $$;
+
+do $$
+declare v_retour jsonb;
+begin
+  v_retour := release_booking('b0000000-0000-0000-0000-000000000010');
+  insert into resultats(cas, verdict) values ('16 a 15 jours, le credit revient',
+    case when not (v_retour->>'tardif')::boolean
+          and not (select credit_retenu from bookings
+                   where id = 'b0000000-0000-0000-0000-000000000010')
+         then 'OK'
+         else 'ECHEC: '||coalesce(v_retour::text,'null') end);
+end $$;
+
 select verdict, cas from resultats order by ordre;
 
 rollback;
