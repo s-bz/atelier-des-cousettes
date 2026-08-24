@@ -120,7 +120,9 @@ const CALENDRIER = [
      */
     creneau: 'seance-du-jeudi-soir',
     jour: 4,
-    dates: ['17/09', '15/10', '05/11', '17/12',
+    // Trois dates déplacées après coup, sur décision d'Isabelle : le 17/09
+    // devient le 24/09, le 15/10 le 22/10, et le 17/12 recule au 03/12.
+    dates: ['24/09', '22/10', '05/11', '03/12',
             '28/01', '25/02', '25/03', '22/04', '27/05', '24/06'],
   },
   {
