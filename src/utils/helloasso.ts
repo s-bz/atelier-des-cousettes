@@ -9,6 +9,10 @@
  */
 
 import { createHash, timingSafeEqual } from 'node:crypto';
+import type { Resultat } from './inscriptions';
+
+const echec = (erreur: string): Resultat<never> => ({ ok: false, erreur });
+const succes = <T>(valeur: T): Resultat<T> => ({ ok: true, valeur });
 
 /**
  * Le jeton partagé, lu dans la chaîne de requête de l'URL de rappel.
@@ -158,4 +162,202 @@ export function construireEcheancier(o: {
     initialAmount: part + reste + supplement,
     terms,
   };
+}
+
+/** `itemName` est borné à 250 caractères par l'API. */
+const LIBELLE_MAX = 250;
+
+export interface Payeur {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+}
+
+export interface Achat {
+  /** Ce que le payeur lira sur la page de paiement et sur son reçu. */
+  libelle: string;
+  totalCents: number;
+  /** Nombre de versements, paiement initial compris. 1 pour un règlement comptant. */
+  versements: number;
+  achatLe: Date;
+  jour?: number;
+  supplementInitialCents?: number;
+  /** Le panier réel : formule, créneau, participants. Revient intact sur le GET. */
+  metadata: Record<string, unknown>;
+  payeur?: Payeur;
+  urls: { retour: string; erreur: string; retourArriere: string };
+}
+
+export interface CorpsIntention extends Echeancier {
+  itemName: string;
+  backUrl: string;
+  errorUrl: string;
+  returnUrl: string;
+  containsDonation: boolean;
+  metadata: Record<string, unknown>;
+  payer?: Payeur;
+}
+
+/**
+ * Le corps d'une intention de paiement.
+ *
+ * SÉPARÉ DE L'APPEL RÉSEAU À DESSEIN : c'est ici que vivent les règles, et
+ * elles se vérifient sans joindre HelloAsso. L'appel lui-même n'est qu'un POST.
+ *
+ * UNE INTENTION NE PORTE QU'UNE LIGNE D'ARTICLE — un libellé, un montant. Le
+ * détail vit dans `metadata`, objet JSON libre jusqu'à 20 000 caractères, qui
+ * revient intact sur le GET. C'est lui qui remplace la table de correspondance
+ * « tarif → formule » prévue au PRD §6 : le `formule_id` est écrit par le site,
+ * il n'a jamais à être deviné depuis un libellé.
+ */
+export function corpsIntention(a: Achat): CorpsIntention {
+  const echeancier = construireEcheancier({
+    totalCents: a.totalCents,
+    versements: a.versements,
+    achatLe: a.achatLe,
+    jour: a.jour,
+    supplementInitialCents: a.supplementInitialCents,
+  });
+
+  return {
+    ...echeancier,
+    itemName: a.libelle.slice(0, LIBELLE_MAX),
+    backUrl: a.urls.retourArriere,
+    errorUrl: a.urls.erreur,
+    returnUrl: a.urls.retour,
+    // Rien de ce que vend l'atelier n'est un don : le déclarer changerait le
+    // traitement fiscal de la commande.
+    containsDonation: false,
+    metadata: a.metadata,
+    // Un payeur vide vaut mieux absent : HelloAsso demande alors les
+    // coordonnées lui-même, au lieu d'afficher des champs pré-remplis à blanc.
+    ...(a.payeur && Object.keys(a.payeur).length ? { payer: a.payeur } : {}),
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// L'appel à l'API
+// ─────────────────────────────────────────────────────────────────────────────
+
+const API = 'https://api.helloasso.com/v5';
+const JETON_URL = 'https://api.helloasso.com/oauth2/token';
+
+/**
+ * Le slug de l'association, tel qu'il figure dans ses propres URL publiques
+ * (helloasso.com/associations/les-p-tits-piafs). Ce n'est pas un secret, et le
+ * changer serait un événement bien plus grand qu'une variable d'environnement.
+ */
+const ORGANISATION = 'les-p-tits-piafs';
+
+const env = (nom: string) => import.meta.env?.[nom] ?? process.env[nom];
+
+/**
+ * Le jeton d'accès, gardé jusqu'à son expiration.
+ *
+ * Il vaut trente minutes ; en redemander un à chaque appel ajouterait un
+ * aller-retour à chaque paiement, pour rien. La marge de soixante secondes
+ * évite de présenter un jeton qui expire pendant le trajet.
+ */
+let jetonEnCours: { valeur: string; expireA: number } | null = null;
+
+async function jetonApi(): Promise<Resultat<string>> {
+  if (jetonEnCours && Date.now() < jetonEnCours.expireA) return succes(jetonEnCours.valeur);
+
+  const id = env('HELLOASSO_CLIENT_ID');
+  const secret = env('HELLOASSO_CLIENT_SECRET');
+  if (!id || !secret) return echec('HELLOASSO_CLIENT_ID ou HELLOASSO_CLIENT_SECRET manquant.');
+
+  try {
+    const r = await fetch(JETON_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'client_credentials', client_id: id, client_secret: secret }),
+    });
+    if (!r.ok) return echec(`Authentification HelloAsso refusée (${r.status}).`);
+
+    const j = (await r.json()) as { access_token: string; expires_in: number };
+    jetonEnCours = { valeur: j.access_token, expireA: Date.now() + (j.expires_in - 60) * 1000 };
+    return succes(j.access_token);
+  } catch (e) {
+    return echec(`HelloAsso injoignable : ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+async function appeler(chemin: string, init?: RequestInit): Promise<Resultat<unknown>> {
+  const j = await jetonApi();
+  if (!j.ok) return j;
+
+  try {
+    const r = await fetch(API + chemin, {
+      ...init,
+      headers: { ...init?.headers, authorization: `Bearer ${j.valeur}`, 'content-type': 'application/json' },
+    });
+    const texte = await r.text();
+    let corps: unknown;
+    try { corps = JSON.parse(texte); } catch { corps = texte; }
+
+    if (!r.ok) {
+      // L'API dit précisément ce qu'elle refuse — « Aucune échéance après le 27
+      // de chaque mois », par exemple. Perdre ce message pour un « erreur 400 »
+      // rendrait la panne indéchiffrable.
+      const messages = (corps as { errors?: { message?: string }[] })?.errors
+        ?.map((x) => x.message).filter(Boolean).join(' ; ');
+      return echec(messages || `HelloAsso a répondu ${r.status}.`);
+    }
+    return succes(corps);
+  } catch (e) {
+    return echec(`HelloAsso injoignable : ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+export interface IntentionCreee {
+  id: number;
+  redirectUrl: string;
+}
+
+/**
+ * Crée l'intention de paiement et rend l'URL vers laquelle rediriger.
+ *
+ * `redirectUrl` NE VAUT QUE QUINZE MINUTES : l'intention se crée au moment où
+ * l'on clique pour payer, jamais en amont.
+ */
+export async function creerIntention(a: Achat): Promise<Resultat<IntentionCreee>> {
+  let corps: CorpsIntention;
+  try {
+    corps = corpsIntention(a);
+  } catch (e) {
+    // construireEcheancier refuse un échéancier hors des bornes de l'API : mieux
+    // vaut l'apprendre ici que par un 400 après avoir fait patienter quelqu'un.
+    return echec(e instanceof Error ? e.message : String(e));
+  }
+
+  const r = await appeler(`/organizations/${ORGANISATION}/checkout-intents`, {
+    method: 'POST',
+    body: JSON.stringify(corps),
+  });
+  if (!r.ok) return r;
+
+  const lu = r.valeur as Partial<IntentionCreee>;
+  if (!lu?.id || !lu?.redirectUrl) return echec('Réponse inattendue de HelloAsso : ni id ni redirectUrl.');
+  return succes({ id: lu.id, redirectUrl: lu.redirectUrl });
+}
+
+export interface IntentionLue {
+  id: number;
+  metadata?: Record<string, unknown>;
+  /** Absente tant que le paiement n'est pas autorisé. */
+  order?: Record<string, unknown>;
+}
+
+/**
+ * Relit une intention — le seul témoignage digne de foi de ce qui a été payé.
+ *
+ * Les paramètres ajoutés à l'URL de retour (`checkoutIntentId`, `code`,
+ * `orderId`) sont falsifiables : ils servent à savoir QUOI relire, jamais à
+ * décider. La commande n'apparaît ici qu'une fois le paiement autorisé.
+ */
+export async function lireIntention(id: number | string): Promise<Resultat<IntentionLue>> {
+  const r = await appeler(`/organizations/${ORGANISATION}/checkout-intents/${id}`);
+  if (!r.ok) return r;
+  return succes(r.valeur as IntentionLue);
 }

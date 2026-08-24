@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { lireNotification, jetonValide, construireEcheancier } from '../helloasso';
+import { lireNotification, jetonValide, construireEcheancier, corpsIntention }
+  from '../helloasso';
 
 describe('lireNotification', () => {
   it('tire sa clé d’idempotence de l’identifiant de commande', () => {
@@ -118,5 +119,61 @@ describe('construireEcheancier', () => {
     expect(e.initialAmount + e.terms.reduce((s, t) => s + t.amount, 0)).toBe(10000);
     expect(e.terms.map((t) => t.amount)).toEqual([3333, 3333]);
     expect(e.initialAmount).toBe(3334);
+  });
+});
+
+describe('corpsIntention', () => {
+  const achat = new Date('2026-08-24T10:00:00Z');
+  const base = {
+    libelle: 'Forfait adultes 9 séances — Léa D. — saison 2026-2027',
+    totalCents: 32400,
+    versements: 9,
+    achatLe: achat,
+    metadata: { saison: '2026-2027', formule_id: '2026-2027-adultes-9' },
+    urls: {
+      retour: 'https://exemple.fr/retour/',
+      erreur: 'https://exemple.fr/erreur/',
+      retourArriere: 'https://exemple.fr/ateliers-reguliers/',
+    },
+  };
+
+  it('assemble un corps que l’API accepte', () => {
+    const c = corpsIntention(base);
+
+    expect(c.itemName).toBe(base.libelle);
+    expect(c.totalAmount).toBe(32400);
+    expect(c.initialAmount).toBe(3600);
+    expect(c.terms).toHaveLength(8);
+    expect(c.containsDonation).toBe(false);
+    expect(c.returnUrl).toBe('https://exemple.fr/retour/');
+    expect(c.errorUrl).toBe('https://exemple.fr/erreur/');
+    expect(c.backUrl).toBe('https://exemple.fr/ateliers-reguliers/');
+  });
+
+  it('porte les métadonnées telles quelles', () => {
+    // C'est `metadata` qui remplace la table de correspondance du PRD §6 : le
+    // formule_id est écrit par le site, il n'a jamais à être deviné.
+    expect(corpsIntention(base).metadata).toEqual(base.metadata);
+  });
+
+  it('borne le libellé aux 250 caractères de l’API', () => {
+    const c = corpsIntention({ ...base, libelle: 'Forfait ' + 'très long '.repeat(40) });
+    expect(c.itemName.length).toBe(250);
+  });
+
+  it('ne pose aucune échéance sur un règlement en une fois', () => {
+    const c = corpsIntention({ ...base, versements: 1 });
+    expect(c.terms).toEqual([]);
+    expect(c.initialAmount).toBe(32400);
+    expect(c.totalAmount).toBe(32400);
+  });
+
+  it('n’envoie un payeur que s’il est connu', () => {
+    // Un objet payeur vide vaut mieux absent : HelloAsso demandera alors les
+    // coordonnées lui-même plutôt que d'afficher des champs pré-remplis à blanc.
+    expect(corpsIntention(base).payer).toBeUndefined();
+
+    const avec = corpsIntention({ ...base, payeur: { email: 'marie@exemple.fr' } });
+    expect(avec.payer).toEqual({ email: 'marie@exemple.fr' });
   });
 });
