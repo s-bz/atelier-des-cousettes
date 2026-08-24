@@ -270,7 +270,12 @@ const seancesSchema = (enBase ?? []).flatMap((c) =>
       debut: s.starts_at,
       fin: s.ends_at,
       lieu: c.default_location,
-      prix: c.default_unit_price_cents / 100,
+      // `null / 100` vaut 0 en JavaScript, et `buildCourseSchema` écarte
+      // déjà les prix nuls — le zéro ne sortait donc pas. Mais il sortait par
+      // accident : le jour où le filtre change, un créneau au forfait
+      // annoncerait « gratuit » à Google. On dit explicitement qu'il n'y a pas
+      // de prix.
+      prix: c.default_unit_price_cents === null ? null : c.default_unit_price_cents / 100,
     })),
 );
 

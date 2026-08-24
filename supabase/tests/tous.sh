@@ -18,7 +18,7 @@ declare -a SUITES=(
   "credits:10"
   "bookings:14"
   "autorisation:5"
-  "facturation:6"
+  "facturation:8"
   "auto-inscription:8"
   "public-enfants-adultes:4"
   "forfaits:5"

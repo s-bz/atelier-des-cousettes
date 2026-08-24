@@ -92,12 +92,6 @@ creneaux:
     time: ''
     group: verdalle
     note: Créneau ouvert selon la demande — contactez Isabelle.
-  - name: Atelier enfants de Verdalle
-    location: Verdalle
-    day: Sur demande
-    time: ''
-    group: verdalle-enfants
-    note: Créneau ouvert selon la demande — contactez Isabelle.
 faqItems:
   - question: Quels sont les tarifs des ateliers réguliers ?
     answer: >-

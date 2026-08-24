@@ -73,7 +73,11 @@ if (Astro.request.method === 'POST') {
       default_location: lieu,
       default_capacity: Number(form.get('places')),
       places_attente: Math.max(0, Number(form.get('attente') ?? 0)),
-      default_unit_price_cents: Math.round(Number(form.get('prix')) * 100),
+      // Vide → NULL, et non zéro : un créneau qui ne se vend pas à l'unité n'a
+      // pas de prix à la séance, il n'est pas gratuit.
+      default_unit_price_cents: String(form.get('prix') ?? '').trim() === ''
+        ? null
+        : Math.round(Number(form.get('prix')) * 100),
     });
 
     if (error) {
@@ -201,7 +205,9 @@ function heuresDuStage(c: { seances_par_stage: number; sessions: { starts_at: st
                       <> {c.default_start_time.slice(0, 5)}–{c.default_end_time.slice(0, 5)} ·</>
                     )}
                     {' '}{c.default_capacity} place{c.default_capacity > 1 ? 's' : ''} ·
-                    {' '}{euros(c.default_unit_price_cents)} €
+                    {' '}{c.default_unit_price_cents === null
+                      ? 'au forfait'
+                      : `${euros(c.default_unit_price_cents)} €`}
                   </span>
                   {/* Un forfait le dit : « 3 séances » n'a pas le même sens
                       qu'un stage proposé trois fois. Les heures avec, parce que
@@ -298,7 +304,7 @@ function heuresDuStage(c: { seances_par_stage: number; sessions: { starts_at: st
             </div>
             <div>
               <label for={`n-prix-${section.kind}`} class="block text-sm font-medium mb-1">{section.libellePrix}</label>
-              <input id={`n-prix-${section.kind}`} name="prix" type="number" min="0" step="0.01" required
+              <input id={`n-prix-${section.kind}`} name="prix" type="number" min="0" step="0.01"
                      value="40.00" class="champ" />
             </div>
           </div>

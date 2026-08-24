@@ -98,6 +98,62 @@ select '6 sans abonnement, tout est facture',
        case when count(*) = 1 then 'OK' else 'ECHEC: '||count(*) end
 from extra_sessions('d0000000-0000-0000-0000-000000000002');
 
+
+-- ————————————————————————————————————————————————————————————————
+-- UN CRÉNEAU QUI NE SE VEND PAS À L'UNITÉ N'A PAS DE PRIX À L'UNITÉ
+-- ————————————————————————————————————————————————————————————————
+--
+-- Les ateliers ados et enfants ne se prennent qu'au forfait. Ils portaient
+-- pourtant 35 € dans `default_unit_price_cents` — un tarif hérité de l'époque
+-- où on pouvait y venir une fois, qu'Isabelle ne pratique plus.
+--
+-- Ce montant ne s'affiche nulle part (les pages filtrent sur `a_l_unite`) et il
+-- ne facture plus les dépassements (ceux-ci se règlent au prix divisé du
+-- forfait depuis 20260824200000). Il restait donc un seul chemin par lequel il
+-- pouvait sortir : un abonnement SANS formule, sur lequel `extra_sessions`
+-- retombe faute de mieux. La séance en trop s'y facturait 35 € — un prix que
+-- personne ne pratique, et que rien sur le site n'annonce.
+--
+-- Le bon comportement n'est pas d'inventer un autre montant : c'est de n'en
+-- rendre AUCUN. Une séance à facturer sans tarif connu se voit, et se règle en
+-- rattachant l'abonnement à sa formule ; un 35 € plausible, lui, passe en
+-- facturation sans que personne ne le remarque.
+
+insert into creneaux (id, label, group_id, audience, a_l_unite,
+                      default_start_time, default_end_time,
+                      default_location, default_capacity, default_unit_price_cents)
+values ('t-fact-forfait', 'Test au forfait seul', 'revel-enfants', 'enfants', false,
+        '10:00', '12:00', 'Revel', 6, null);
+
+insert into participants (id, first_name, last_name, audience)
+values ('d0000000-0000-0000-0000-000000000003', 'Test', 'SansFormule', 'enfant');
+
+-- Un abonnement sans formule : le cas des lignes saisies avant la table.
+insert into subscriptions (participant_id, season, total_credits, starts_on, ends_on)
+values ('d0000000-0000-0000-0000-000000000003', '2026-2027', 0,
+        '2026-10-01', '2027-06-30');
+
+insert into sessions (id, creneau_id, starts_at, ends_at, location,
+                      capacity, unit_price_cents)
+values ('e0000000-0000-0000-0000-000000000005', 't-fact-forfait',
+        '2026-10-10 10:00+02', '2026-10-10 12:00+02', 'Revel', 6, null);
+
+insert into bookings (session_id, participant_id, source, status)
+values ('e0000000-0000-0000-0000-000000000005',
+        'd0000000-0000-0000-0000-000000000003', 'admin', 'booked');
+
+insert into resultats(cas, verdict)
+select '7 la seance en trop est bien signalee',
+       case when count(*) = 1 then 'OK' else 'ECHEC: '||count(*) end
+from extra_sessions('d0000000-0000-0000-0000-000000000003');
+
+insert into resultats(cas, verdict)
+select '8 sans formule ni prix a l unite, aucun tarif invente',
+       case when unit_price_cents is null
+            then 'OK'
+            else 'ECHEC: '||unit_price_cents||' cts inventes' end
+from extra_sessions('d0000000-0000-0000-0000-000000000003');
+
 select verdict, cas from resultats order by ordre;
 
 rollback;
