@@ -4,8 +4,11 @@ export const prerender = false;
 import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
-import { groupeDe } from '../../../../utils/ateliers';
+import { AUDIENCES, PRIX_SEANCE_PAR_DEFAUT, groupeDe } from '../../../../utils/ateliers';
 import { toSlug } from '../../../../utils/strings';
+
+/** Sérialisée une fois : chaque formulaire d'atelier la porte en attribut. */
+const PREREMPLISSAGE = JSON.stringify(PRIX_SEANCE_PAR_DEFAUT);
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -238,9 +241,7 @@ function heuresDuStage(c: { seances_par_stage: number; sessions: { starts_at: st
         </summary>
 
         <form method="post" class="mt-4"
-              {...(section.kind === 'atelier'
-                ? { 'data-prix-adultes': '40.00', 'data-prix-enfants': '30.00' }
-                : {})}>
+              {...(section.kind === 'atelier' ? { 'data-prix': PREREMPLISSAGE } : {})}>
           <input type="hidden" name="kind" value={section.kind} />
 
           <div>
@@ -262,8 +263,7 @@ function heuresDuStage(c: { seances_par_stage: number; sessions: { starts_at: st
             <div>
               <label for={`audience-n-${section.kind}`} class="block text-sm font-medium mb-1">Public</label>
               <select id={`audience-n-${section.kind}`} name="audience" required class="champ">
-                <option value="adultes">Adultes</option>
-                <option value="enfants">Enfants</option>
+                {AUDIENCES.map((a) => <option value={a.creneau}>{a.label}</option>)}
               </select>
               <p class="mt-1 text-sm text-[var(--color-text-light)]">
                 Seules les personnes de ce public pourront s’y inscrire.
@@ -353,22 +353,26 @@ function heuresDuStage(c: { seances_par_stage: number; sessions: { starts_at: st
   )}
 
   {/*
-    Le tarif suit le public choisi : 40 € adulte, 30 € enfant. UN CONFORT, PAS UN
-    MÉCANISME — le champ reste saisissable, et sans JavaScript la page fonctionne
-    exactement comme avant. Poser la règle en base aurait empêché un tarif
-    exceptionnel ; la laisser au seul souvenir d'Isabelle produisait des ateliers
-    enfants à 40 €.
+    Le tarif suit le public choisi. UN CONFORT, PAS UN MÉCANISME — le champ
+    reste saisissable, et sans JavaScript la page fonctionne exactement comme
+    avant. Poser la règle en base aurait empêché un tarif exceptionnel ; la
+    laisser au seul souvenir d'Isabelle produisait des ateliers enfants à 40 €.
+
+    LES MONTANTS SONT UNE TABLE, plus deux attributs nommés lus par un ternaire.
+    Celui-ci renvoyait le tarif adulte pour tout public autre qu'« enfants » :
+    un atelier ados se serait prérempli à 45 €, soit dix de trop, et il aurait
+    fallu s'en apercevoir. Les valeurs elles-mêmes annonçaient encore 40 et 30 €
+    — la grille d'avant l'inclusion de l'adhésion, jamais remise à jour.
   */}
   <script>
-    document.querySelectorAll<HTMLFormElement>('form[data-prix-adultes]').forEach((form) => {
+    document.querySelectorAll<HTMLFormElement>('form[data-prix]').forEach((form) => {
       const cible = form.querySelector<HTMLSelectElement>('select[name="audience"]');
       const prix = form.querySelector<HTMLInputElement>('input[name="prix"]');
       if (!cible || !prix) return;
 
+      const table: Record<string, string> = JSON.parse(form.dataset.prix ?? '{}');
       cible.addEventListener('change', () => {
-        const montant = cible.value === 'enfants'
-          ? form.dataset.prixEnfants
-          : form.dataset.prixAdultes;
+        const montant = table[cible.value];
         if (montant) prix.value = montant;
       });
     });

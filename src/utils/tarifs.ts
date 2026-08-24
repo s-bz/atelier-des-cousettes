@@ -1,4 +1,5 @@
 import { getAdminClient } from './supabase';
+import { AUDIENCES, type AudienceCreneau } from './ateliers';
 
 /**
  * Les tarifs, lus une fois en base pour toutes les pages qui les affichent.
@@ -19,8 +20,16 @@ import { getAdminClient } from './supabase';
  */
 
 export interface Tarifs {
-  /** Prix d'une séance hors forfait, par public. */
-  seance: { adultes: number | null; enfants: number | null };
+  /**
+   * Prix d'une séance hors forfait, par public.
+   *
+   * Une entrée par public connu, y compris ceux qu'aucun créneau ne porte
+   * encore — elles valent alors `null`. Énumérer les publics plutôt que d'en
+   * nommer deux à la main évite qu'un troisième arrive sans que ce fichier
+   * l'apprenne : c'est exactement ainsi que les ados auraient pu naître en base
+   * tout en restant invisibles sur les pages qui affichent les prix.
+   */
+  seance: Record<AudienceCreneau, number | null>;
   /** Le moins cher et le plus cher des stages. */
   stages: { min: number; max: number } | null;
 }
@@ -51,10 +60,12 @@ export async function lireTarifs(): Promise<Tarifs | null> {
     const stages = prixDe('stage');
 
     return {
-      seance: {
-        adultes: prixDe('atelier', 'adultes')[0] ? euros(prixDe('atelier', 'adultes')[0]) : null,
-        enfants: prixDe('atelier', 'enfants')[0] ? euros(prixDe('atelier', 'enfants')[0]) : null,
-      },
+      seance: Object.fromEntries(
+        AUDIENCES.map((a) => {
+          const prix = prixDe('atelier', a.creneau)[0];
+          return [a.creneau, prix ? euros(prix) : null];
+        }),
+      ) as Record<AudienceCreneau, number | null>,
       stages: stages.length
         ? { min: euros(Math.min(...stages)), max: euros(Math.max(...stages)) }
         : null,
@@ -162,7 +173,7 @@ export function formuleLaMoinsChere(
 }
 
 /**
- * Le prix d'une carte, quand deux publics n'ont pas le même tarif.
+ * Le prix d'une carte, quand les publics n'ont pas tous le même tarif.
  *
  * « DÈS 28 € » ÉTAIT UN PRIX D'ENFANT. Les cartes affichaient le plus bas des
  * montants, tous publics confondus : 28 €/mois pour les ateliers, 35 € pour une
@@ -179,15 +190,52 @@ export function formuleLaMoinsChere(
  * de fois on vient pour ce montant, ce qui est précisément ce dont on a besoin
  * pour juger s'il est cher. Une fourchette réelle, elle, s'écrit en toutes
  * lettres par l'appelant (« de 45 € à 95 € »), sans passer par ici.
+ *
+ * LA FONCTION PRENAIT DEUX MONTANTS NOMMÉS, elle prend désormais la table des
+ * publics. Le troisième — les ados — serait autrement entré en base sans
+ * qu'aucune de ces phrases ne l'apprenne : elles auraient continué d'annoncer
+ * deux prix pour trois grilles, ce qui est la forme la plus discrète d'un tarif
+ * faux.
  */
-export function prixDeuxPublics(
-  adultes: number | null | undefined,
-  enfants: number | null | undefined,
+export function prixParPublic(
+  prix: Partial<Record<AudienceCreneau, number | null | undefined>>,
   suffixe = '',
 ): string | null {
-  if (!adultes) return enfants ? `${enfants} €${suffixe}` : null;
-  if (!enfants || enfants === adultes) return `${adultes} €${suffixe}`;
-  return `${adultes} €${suffixe} (${enfants} € enfant)`;
+  const connus = AUDIENCES
+    .map((a) => ({ personne: a.personne as string, montant: prix[a.creneau] }))
+    .filter((p): p is { personne: string; montant: number } =>
+      typeof p.montant === 'number' && p.montant > 0);
+
+  if (!connus.length) return null;
+
+  // AUDIENCES ouvre par les adultes : le premier montant connu est le leur dès
+  // qu'ils en ont un, et sinon le public le plus proche. Aucune carte ne peut
+  // donc s'ouvrir sur un prix d'enfant, ce qui était tout le problème.
+  const [tete, ...suite] = connus;
+  const autres = suite.filter((p) => p.montant !== tete.montant);
+  if (!autres.length) return `${tete.montant} €${suffixe}`;
+
+  /*
+   * LES PUBLICS QUI PAIENT LE MÊME PRIX SE DISENT ENSEMBLE. Les ados et les
+   * enfants règlent tous deux 35 € la séance : « (35 € ado, 35 € enfant) »
+   * répète un montant pour ne rien ajouter, et fait chercher au lecteur une
+   * différence qui n'existe pas. « (35 € ado et enfant) » se lit d'un coup.
+   */
+  const parMontant = new Map<number, string[]>();
+  for (const p of autres) {
+    parMontant.set(p.montant, [...(parMontant.get(p.montant) ?? []), p.personne]);
+  }
+
+  const parenthese = [...parMontant.entries()]
+    .map(([montant, gens]) => {
+      const noms = gens.length > 1
+        ? `${gens.slice(0, -1).join(', ')} et ${gens[gens.length - 1]}`
+        : gens[0];
+      return `${montant} € ${noms}`;
+    })
+    .join(', ');
+
+  return `${tete.montant} €${suffixe} (${parenthese})`;
 }
 
 /** « De 28€ à 58€ » — du forfait le plus bas au plus élevé de la grille. */

@@ -5,6 +5,7 @@ import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
 import { notifier, variablesSeance } from '../../../../utils/emails';
+import { AUDIENCES } from '../../../../utils/ateliers';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -50,6 +51,11 @@ if (Astro.request.method === 'POST') {
         participant_id: id,
         season: String(form.get('saison') ?? ''),
         home_creneau_id: String(form.get('creneau') ?? '') || null,
+        // Une formule désignée l'emporte : le déclencheur en base recopie son
+        // nombre de séances dans total_credits et vide credits_per_month. Les
+        // deux champs ci-dessous ne servent donc qu'à la saisie libre, pour un
+        // abonnement qui ne correspond à aucune formule du catalogue.
+        formule_id: String(form.get('formule') ?? '') || null,
         credits_per_month: form.get('type') === 'forfait' ? null : Number(form.get('credits')),
         total_credits: form.get('type') === 'forfait' ? Number(form.get('credits')) : null,
         starts_on: debut,
@@ -93,6 +99,7 @@ if (Astro.request.method === 'POST') {
         .from('subscriptions')
         .update({
           home_creneau_id: String(form.get('creneau') ?? '') || null,
+          formule_id: String(form.get('formule') ?? '') || null,
           credits_per_month: form.get('type') === 'forfait' ? null : Number(form.get('credits')),
           total_credits: form.get('type') === 'forfait' ? Number(form.get('credits')) : null,
           starts_on: debut,
@@ -271,9 +278,28 @@ const { data: participant } = await supabase
 
 if (!participant) return new Response('Participant introuvable', { status: 404 });
 
+/**
+ * Les formules au catalogue, avec le prix qu'elles font payer un dépassement.
+ *
+ * Ce prix — le total divisé par le nombre de séances — n'est stocké nulle part :
+ * l'écrire à côté des deux nombres dont il se déduit en ferait un troisième à
+ * tenir d'accord. Il s'affiche ici parce que c'est le moment où Isabelle en a
+ * besoin : choisir la formule, c'est choisir ce que coûtera la séance en plus.
+ */
+const { data: formules } = await supabase
+  .from('formules')
+  .select('id, libelle, audience, seances, prix_cents')
+  .is('archived_at', null)
+  .order('audience')
+  .order('seances');
+
+const libelleFormule = (f: { libelle: string; audience: string; seances: number; prix_cents: number }) =>
+  `${f.audience} — ${f.libelle} · ${(f.prix_cents / 100).toFixed(0)} € ` +
+  `(${(f.prix_cents / f.seances / 100).toFixed(2).replace('.', ',')} € la séance en plus)`;
+
 const { data: abonnements } = await supabase
   .from('subscriptions')
-  .select('id, season, home_creneau_id, credits_per_month, total_credits, starts_on, ends_on, helloasso_order_id, creneaux(label)')
+  .select('id, season, home_creneau_id, credits_per_month, total_credits, formule_id, starts_on, ends_on, helloasso_order_id, creneaux(label)')
   .eq('participant_id', id)
   .order('starts_on');
 
@@ -473,6 +499,19 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
                   </select>
                 </div>
                 <div class="sm:col-span-2">
+                  <label for={`c-formule-${a.id}`} class="block text-sm font-medium mb-1">Formule</label>
+                  <select id={`c-formule-${a.id}`} name="formule" class="champ">
+                    <option value="">Aucune — saisie libre ci-dessous</option>
+                    {(formules ?? []).map((f) => (
+                      <option value={f.id} selected={f.id === a.formule_id}>{libelleFormule(f)}</option>
+                    ))}
+                  </select>
+                  <p class="mt-1 text-sm text-[var(--color-text-light)]">
+                    Choisir une formule fixe le nombre de séances et le prix d’un dépassement.
+                    Sans formule, une séance en plus se facture au tarif d’une séance sans engagement.
+                  </p>
+                </div>
+                <div class="sm:col-span-2">
                   <label for={`c-type-${a.id}`} class="block text-sm font-medium mb-1">Type</label>
                   <select id={`c-type-${a.id}`} name="type" class="champ">
                     <option value="mensuel" selected={a.total_credits === null}>Séances par mois</option>
@@ -557,6 +596,17 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
             <option value="">Aucun</option>
             {(creneaux ?? []).map((c) => <option value={c.id}>{c.label} — {c.audience}</option>)}
           </select>
+        </div>
+        <div class="sm:col-span-2">
+          <label for="formule" class="block text-sm font-medium mb-1">Formule</label>
+          <select id="formule" name="formule" class="champ">
+            <option value="">Aucune — saisie libre ci-dessous</option>
+            {(formules ?? []).map((f) => <option value={f.id}>{libelleFormule(f)}</option>)}
+          </select>
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Choisir une formule fixe le nombre de séances et le prix d’un dépassement.
+            Sans formule, une séance en plus se facture au tarif d’une séance sans engagement.
+          </p>
         </div>
         <div class="sm:col-span-2">
           <label for="type" class="block text-sm font-medium mb-1">Type de forfait</label>
@@ -699,8 +749,11 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
       <div class="mt-3">
         <label for="audience" class="block text-sm font-medium mb-1">Public</label>
         <select id="audience" name="audience" class="champ">
-          <option value="adulte" selected={participant.audience === 'adulte'}>Adulte</option>
-          <option value="enfant" selected={participant.audience === 'enfant'}>Enfant</option>
+          {AUDIENCES.map((a) => (
+            <option value={a.personne} selected={participant.audience === a.personne}>
+              {a.label.replace(/s$/, '')}
+            </option>
+          ))}
         </select>
       </div>
 

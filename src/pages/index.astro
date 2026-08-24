@@ -15,7 +15,7 @@ import {
   forfaitLePlusBas,
   formuleLaMoinsChere,
   lireTarifs,
-  prixDeuxPublics,
+  prixParPublic,
   remplacerPrix,
   remplacerFourchette,
 } from '../utils/tarifs';
@@ -73,9 +73,12 @@ const fourchetteToutesFormules =
 const forfaitAdulte = formuleLaMoinsChere(ateliers?.tarifs, 'adultes');
 
 const prixParPage: Record<string, string | null> = {
-  '/ateliers-reguliers/': prixDeuxPublics(
-    forfaitAdulte?.mensuel,
-    forfaitLePlusBas(ateliers?.tarifs, 'enfants'),
+  '/ateliers-reguliers/': prixParPublic(
+    {
+      adultes: forfaitAdulte?.mensuel,
+      ados: forfaitLePlusBas(ateliers?.tarifs, 'ados'),
+      enfants: forfaitLePlusBas(ateliers?.tarifs, 'enfants'),
+    },
     forfaitAdulte?.seances ? `/mois pour ${forfaitAdulte.seances}` : '/mois',
   ),
   /*
@@ -88,11 +91,7 @@ const prixParPage: Record<string, string | null> = {
   '/stages-thematiques/': tarifs?.stages
     ? `De ${tarifs.stages.min} € à ${tarifs.stages.max} € le stage`
     : null,
-  '/seances-sans-engagement/': prixDeuxPublics(
-    tarifs?.seance.adultes,
-    tarifs?.seance.enfants,
-    ' la séance',
-  ),
+  '/seances-sans-engagement/': prixParPublic(tarifs?.seance ?? {}, ' la séance'),
 };
 
 /**

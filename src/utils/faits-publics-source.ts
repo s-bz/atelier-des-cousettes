@@ -55,6 +55,7 @@ export async function rassemblerFaitsPublics(site: URL | undefined): Promise<Fai
       introduction: seances?.introduction,
       description: seances?.description,
       publics: seances?.audienceItems ?? [],
+      idees: seances?.ideesItems ?? [],
     },
     // Du plus récent au plus ancien : un modèle qui tronque la liste garde
     // alors ce qui a le plus de chances d'être encore juste.
@@ -79,5 +80,7 @@ export async function rassemblerFaitsPublics(site: URL | undefined): Promise<Fai
         definition: t.entry.definitionCourte,
       })),
     avisProvisoire: settings?.avisProvisoire,
+    adhesionAnnuelle: settings?.adhesionAnnuelle,
+    adhesionPonctuelle: settings?.adhesionPonctuelle,
   };
 }

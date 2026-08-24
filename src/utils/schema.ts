@@ -32,6 +32,11 @@ interface PageSchemaOptions {
 }
 
 interface ServicePageSchemaOptions extends PageSchemaOptions {
+  /**
+   * Les communes où CETTE formule se tient. Omis : les deux.
+   * Le département suit la commune — Revel en Haute-Garonne, Verdalle dans le Tarn.
+   */
+  communes?: readonly string[];
   offers: readonly SchemaOffer[];
   faqItems: readonly FaqItem[];
 }
@@ -430,6 +435,7 @@ export function buildServicePageSchemas({
   settings,
   offers,
   faqItems,
+  communes,
 }: ServicePageSchemaOptions): object[] {
   const faqSchema = buildFaqSchema(faqItems);
 
@@ -453,13 +459,22 @@ export function buildServicePageSchemas({
        * Les deux communes sont nommées avant les départements : c'est ainsi
        * qu'on les cherche. « couture revel » se mesure à 50 recherches par
        * mois, « cours de couture haute-garonne » à 10.
+       *
+       * MAIS TOUTES LES FORMULES NE SE TIENNENT PAS PARTOUT, et ce schéma
+       * décrit UNE formule, pas l'atelier. La séance sans engagement ne se
+       * prend qu'à Revel : lui laisser la liste complète promettait à Google
+       * une offre à Verdalle qu'aucune date n'aurait honorée. `communes` la
+       * restreint ; l'omettre garde les deux, ce qui reste juste des ateliers
+       * réguliers et des stages.
        */
-      "areaServed": [
-        { "@type": "City", "name": "Revel" },
-        { "@type": "City", "name": "Verdalle" },
-        { "@type": "AdministrativeArea", "name": "Haute-Garonne" },
-        { "@type": "AdministrativeArea", "name": "Tarn" },
-      ],
+      "areaServed": (communes ?? ['Revel', 'Verdalle']).flatMap((ville) => [
+        { "@type": "City" as const, "name": ville },
+        ...(ville === 'Revel'
+          ? [{ "@type": "AdministrativeArea" as const, "name": "Haute-Garonne" }]
+          : ville === 'Verdalle'
+            ? [{ "@type": "AdministrativeArea" as const, "name": "Tarn" }]
+            : []),
+      ]),
       "serviceType": "Cours de couture",
       "offers": offers.map((o) => {
         const numericPrice = parseFloat(o.price);

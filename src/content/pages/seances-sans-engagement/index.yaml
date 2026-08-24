@@ -1,29 +1,38 @@
 title: Une séance sans engagement
 subtitle: Cousez en toute liberté, à l’heure qui vous convient
 seoDescription: >-
-  Séance de couture sans engagement à Revel (Haute-Garonne) et Verdalle (Tarn). 45 € pour les adultes, 35 € pour les enfants, adhésion comprise.
+  Séance de couture sans engagement pour adultes à Revel (Haute-Garonne). 45 € les 3 h, 22 € la séance de 1 h 30 du jeudi soir, adhésion comprise.
 coverImage: /src/assets/images/covers/seances-sans-engagement/coverImage.jpeg
 coverImageAlt: Séance de couture ponctuelle à l'Atelier des Cousettes
 introduction: >-
   Une séance ponctuelle pour coudre à votre rythme, avec l'accompagnement
-  d'Isabelle — 3 heures pour les adultes, 2 heures pour les enfants. Le
-  matin, l'après-midi ou en fin de journée, selon les créneaux. Sans
-  engagement, ouvert à tous les niveaux.
+  d'Isabelle : 3 heures le matin, l'après-midi ou le samedi, ou 1 h 30 le jeudi
+  en fin de journée. Sans engagement, ouvert à tous les niveaux. Cette formule
+  s'adresse aux adultes ; les ados et les enfants sont accueillis au forfait,
+  dans les ateliers réguliers.
 priceLabel: la séance
-location: Revel et Verdalle
-locationLabel: entre Tarn et Haute-Garonne
+location: ''
+locationLabel: ''
 descriptionTitle: Comment se déroule une séance ?
 description: |
   Vous venez avec votre projet personnel — un vêtement à coudre, une retouche à faire, un accessoire à créer — et Isabelle vous accompagne pas à pas : choix du patron, coupe du tissu, assemblage, finitions. Si vous n'avez pas encore d'idée, elle peut vous proposer un petit projet adapté à votre niveau.
 
   Les groupes sont volontairement limités pour que chacun bénéficie d'une attention personnalisée. L'atmosphère est chaleureuse : on coud, on échange, on s'entraide.
+ideesTitle: Quelques idées de ce qu'on peut y faire
+ideesItems:
+  - Coudre un ourlet
+  - Mes p'tits points à la main
+  - Poser une fermeture éclair sur une jupe ou un pantalon
+  - Faire des poches
+  - Apprendre à lire un patron
+  - Couper et poser un biais
+  - Questions libres
 audienceTitle: À qui s'adresse cette formule ?
 audienceItems:
   - Les débutants qui souhaitent découvrir la couture avant de s'engager.
   - Les couturiers occasionnels qui ont besoin d'un coup de main ponctuel.
   - Les couturiers confirmés qui apprécient de coudre en groupe.
   - Ceux qui n'ont pas la disponibilité pour s'engager sur toute la saison.
-  - Les enfants accompagnés d'un parent souhaitant s'initier à la couture.
 datesTitle: Prochaines dates
 lienDates: Voir les dates
 lienDeroulement: Comment ça se passe
@@ -32,9 +41,11 @@ faqSectionTitle: Questions fréquentes
 faqItems:
   - question: Quel est le tarif d'une séance ?
     answer: >-
-      45 € pour 3 heures d'atelier pour un adulte, 35 € pour 2 heures pour un
-      enfant. L'adhésion ponctuelle à l'association Les P'tits Piafs est comprise
-      dans ce tarif : il n'y a rien à régler en plus.
+      45 € pour une séance de 3 heures, et 22 € pour la séance de 1 h 30 du
+      jeudi en fin de journée. L'adhésion ponctuelle à l'association Les P'tits
+      Piafs est comprise dans ce tarif : il n'y a rien à régler en plus. Les
+      ados et les enfants, eux, viennent au forfait — voir les ateliers
+      réguliers.
   - question: Faut-il apporter son matériel ?
     answer: >-
       Oui, chaque participant vient avec sa propre machine à coudre, ses
@@ -43,10 +54,10 @@ faqItems:
       fournitures : tissu, fils, ciseaux, épingles.
   - question: Où ont lieu les séances ?
     answer: >-
-      À la maison des associations de Revel et à l'atelier privé d'Isabelle
-      à Verdalle, dans le Tarn. Le lieu est précisé lors de l'inscription.
-      Parking gratuit à proximité.
-  - question: Quels projets peut-on réaliser en 2 à 3 heures ?
+      À la maison des associations de Revel, en Haute-Garonne, à vingt minutes
+      de Castres. Parking gratuit à proximité. Les séances sans engagement ne
+      sont pas proposées à Verdalle.
+  - question: Quels projets peut-on réaliser en 1 h 30 à 3 heures ?
     answer: >-
       Selon votre niveau : une pochette, un tote bag, un ourlet, des
       retouches, ou commencer un projet plus ambitieux que vous poursuivrez

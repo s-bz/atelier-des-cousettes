@@ -14,6 +14,7 @@ import { resolveImage, resolveImageUrl } from '../utils/images';
 import { splitParagraphs, toSlug } from '../utils/strings';
 import { buildCourseSchema, buildServicePageSchemas } from '../utils/schema';
 import { getAdminClient } from '../utils/supabase';
+import { AUDIENCES } from '../utils/ateliers';
 
 /**
  * Une séance sans engagement : ses dates lues en base.
@@ -34,8 +35,9 @@ import { getAdminClient } from '../utils/supabase';
  * Le nom de l'atelier reste sur chaque ligne, faute de quoi « jeudi 8 octobre »
  * ne dirait pas où se rendre.
  *
- * Adultes et enfants sont séparés : les durées diffèrent — 3 h contre 2 h — les
- * prix aussi, et surtout on ne s'inscrit pas dans le mauvais groupe.
+ * Les publics sont séparés : les durées diffèrent — 3 h chez les adultes, 2 h
+ * chez les ados et les enfants — les prix aussi, et surtout on ne s'inscrit pas
+ * dans le mauvais groupe.
  *
  * AUCUN REPLI sur les dates du contenu : elles seraient périmées dès la première
  * séance déplacée, et afficher une date qui n'existe plus ferait se déplacer
@@ -60,6 +62,7 @@ const faqItems = page.faqItems ?? [];
 
 
 const audienceItems = page.audienceItems ?? [];
+const ideesItems = page.ideesItems ?? [];
 
 
 
@@ -70,14 +73,43 @@ const { data: seances, error } = await supabase
   .select(`
     starts_at, ends_at, capacity, places_attente, status,
     bookings(status),
-    creneaux!inner(label, audience, default_location, kind, archived_at)
+    creneaux!inner(label, audience, default_location, kind, archived_at,
+                   default_start_time, default_end_time, default_unit_price_cents)
   `)
   .eq('status', 'scheduled')
   .eq('creneaux.kind', 'atelier')
+  .eq('creneaux.a_l_unite', true)
   .is('creneaux.archived_at', null)
   .gt('starts_at', new Date().toISOString())
   .order('starts_at')
   .limit(120);
+
+const euros = (cents: number) => (cents / 100).toFixed(0);
+
+/** « 3 h », « 2 h 30 », « 1 h 30 » — lu sur les horaires, non recopié à la main. */
+const duree = (debut: string, fin: string) => {
+  const min = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const m = min(fin) - min(debut);
+  return m <= 0 ? null : m % 60 === 0 ? `${m / 60} h` : `${Math.floor(m / 60)} h ${m % 60}`;
+};
+
+/**
+ * CE QUI DISTINGUE DEUX OFFRES : une durée et un prix.
+ *
+ * Cette page groupait par PUBLIC, et c'était juste tant qu'un public n'avait
+ * qu'un tarif : les adultes venaient 3 h pour 45 €, les enfants 2 h pour 35 €.
+ * Deux changements ont défait cet accord le même jour — la séance à l'unité a
+ * cessé d'être proposée aux ados et aux enfants, ne laissant qu'un public, et
+ * une séance de 1 h 30 à 22 € s'est ajoutée à côté des 3 h à 45 €.
+ *
+ * Grouper par public produisait alors UNE carte « Adultes » portant le prix du
+ * premier créneau venu — 45 € ou 22 € selon l'ordre que rend la base, c'est-à-
+ * dire au hasard — et la durée « 3 h ou 1 h 30 ». Un tarif exact, tiré au sort.
+ *
+ * Le public, lui, n'a plus rien à distinguer : la page ne s'adresse plus qu'aux
+ * adultes, et elle le dit une fois en tête plutôt que sur chaque carte.
+ */
+const cleOffre = (prixCents: number, duree: string | null) => `${prixCents}|${duree ?? ''}`;
 
 const aplati = ((seances ?? []) as any[]).map((s) => ({
   starts_at: s.starts_at,
@@ -86,7 +118,12 @@ const aplati = ((seances ?? []) as any[]).map((s) => ({
   places_attente: s.places_attente,
   bookings: s.bookings,
   lieu: s.creneaux?.default_location ?? null,
-  audience: s.creneaux?.audience ?? 'adultes',
+  // L'OFFRE, ET NON PLUS LE PUBLIC. Voir `offresDe` plus bas : deux séances
+  // relèvent de la même offre quand elles durent autant et coûtent autant.
+  offre: cleOffre(
+    s.creneaux?.default_unit_price_cents ?? 0,
+    duree(s.creneaux?.default_start_time ?? '', s.creneaux?.default_end_time ?? ''),
+  ),
 }));
 
 /**
@@ -101,26 +138,46 @@ const aplati = ((seances ?? []) as any[]).map((s) => ({
  * Le prix vient de la base et non du contenu : c'est le même champ qui sert à
  * facturer une séance hors forfait, et deux endroits pour un seul montant
  * finiraient par se contredire.
+ *
+ * `a_l_unite` DÉCIDE DE CE QUI PARAÎT ICI. Les ateliers ados et enfants ne se
+ * vendent plus à la séance — on y prend un forfait — et leurs 35 € ne servent
+ * plus qu'à facturer un dépassement. Le prix reste donc en base sans être
+ * annoncé : facturer et proposer sont deux choses, et cette page ne fait que
+ * la seconde.
  */
 const { data: creneauxAtelier } = await supabase
   .from('creneaux')
-  .select('audience, default_location, default_unit_price_cents, default_start_time, default_end_time')
+  .select('label, audience, default_location, default_unit_price_cents, default_start_time, default_end_time')
   .eq('kind', 'atelier')
+  .eq('a_l_unite', true)
   .is('archived_at', null);
 
-const euros = (cents: number) => (cents / 100).toFixed(0);
-
-/** « 3 h », « 2 h 30 » — lu sur les horaires du créneau, non recopié à la main. */
-const duree = (debut: string, fin: string) => {
-  const min = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
-  const m = min(fin) - min(debut);
-  return m <= 0 ? null : m % 60 === 0 ? `${m / 60} h` : `${Math.floor(m / 60)} h ${m % 60}`;
+/**
+ * Les offres proposées, déduites des créneaux — la plus longue d'abord.
+ *
+ * Rien n'est énuméré à la main : une liste écrite ici déciderait à elle seule
+ * de ce que la page montre, et un créneau qui n'y figurerait pas disparaîtrait
+ * en entier, sans erreur ni trou visible. C'est ce qui serait arrivé à la
+ * séance du jeudi soir.
+ */
+const offresDe = (cs: typeof creneauxAtelier) => {
+  const par = new Map<string, { titre: string; prix: string; duree: string; cle: string }>();
+  for (const c of cs ?? []) {
+    const d = duree(c.default_start_time, c.default_end_time);
+    const cle = cleOffre(c.default_unit_price_cents, d);
+    if (!par.has(cle)) {
+      par.set(cle, {
+        cle,
+        titre: d ? `Séance de ${d}` : 'Séance',
+        prix: euros(c.default_unit_price_cents),
+        duree: d ?? '',
+      });
+    }
+  }
+  // La plus longue en tête : c'est la formule principale, celle qu'on vient
+  // chercher. La courte se lit ensuite comme ce qu'elle est, une porte d'entrée.
+  return [...par.values()].sort((a, b) => Number(b.prix) - Number(a.prix));
 };
-
-const PUBLICS = [
-  { cle: 'adultes', titre: 'Adultes' },
-  { cle: 'enfants', titre: 'Enfants' },
-];
 
 /**
  * Un lieu, et pour chacun de ses publics ses dates.
@@ -144,12 +201,7 @@ const PUBLICS = [
  * Une pastille par public plutôt qu'une seule : ils n'ont ni le même prix ni la
  * même durée, et une moyenne n'aurait décrit personne.
  */
-const parPublic = PUBLICS.map(({ cle, titre }) => {
-  const cs = (creneauxAtelier ?? []).filter((c) => c.audience === cle);
-  if (cs.length === 0) return null;
-  const durees = [...new Set(cs.map((c) => duree(c.default_start_time, c.default_end_time)).filter(Boolean))];
-  return { titre, prix: euros(cs[0].default_unit_price_cents), duree: durees.join(' ou ') };
-}).filter((p): p is NonNullable<typeof p> => p !== null);
+const parPublic = offresDe(creneauxAtelier);
 
 /**
  * Les offres du schéma viennent des tarifs en base, non du contenu.
@@ -166,10 +218,13 @@ const schemas = buildServicePageSchemas({
   siteUrl,
   settings,
   offers: parPublic.map((p) => ({
-    name: `Séance sans engagement — ${p.titre.toLowerCase()}`,
+    name: `${p.titre} sans engagement`,
     price: p.prix,
   })),
   faqItems: faqItems,
+  // Revel seulement : cette formule ne se prend plus à Verdalle. Les ateliers
+  // réguliers, eux, gardent les deux communes.
+  communes: ['Revel'],
 });
 
 /**
@@ -200,22 +255,15 @@ const courseSchema = buildCourseSchema({
 
 const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location))]
   .map((lieu) => {
-    const publics = PUBLICS.map(({ cle, titre }) => {
-      const cs = (creneauxAtelier ?? []).filter(
-        (c) => c.default_location === lieu && c.audience === cle,
-      );
-      if (cs.length === 0) return null;
-      const durees = [...new Set(cs.map((c) => duree(c.default_start_time, c.default_end_time)).filter(Boolean))];
-      return {
-        cle, titre,
-        prix: euros(cs[0].default_unit_price_cents),
-        duree: durees.length === 1 ? durees[0] : durees.join(' ou '),
-        // Le lieu est retiré des lignes : il titre déjà la section qui les porte.
-        items: aplati
-          .filter((s) => s.lieu === lieu && s.audience === cle)
-          .map(({ lieu: _, ...reste }) => reste),
-      };
-    }).filter((p): p is NonNullable<typeof p> => p !== null);
+    const publics = offresDe(
+      (creneauxAtelier ?? []).filter((c) => c.default_location === lieu),
+    ).map((o) => ({
+      ...o,
+      // Le lieu est retiré des lignes : il titre déjà la section qui les porte.
+      items: aplati
+        .filter((s) => s.lieu === lieu && s.offre === o.cle)
+        .map(({ lieu: _, offre: __, ...reste }) => reste),
+    }));
     return { lieu, publics, total: publics.reduce((n, p) => n + p.items.length, 0) };
   })
   // Le lieu le plus fourni d'abord : c'est là que la plupart des gens iront.
@@ -250,7 +298,7 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
               <div class="rounded-xl bg-white px-5 py-3 text-center shadow-md dark:bg-[var(--color-card-bg)]">
                 <p class="heading-font text-2xl font-bold text-[var(--color-button)]">{p.prix} €</p>
                 <p class="text-xs text-[var(--color-text-light)]">
-                  {page.priceLabel}, {p.titre.toLowerCase()}{p.duree && ` (${p.duree})`}
+                  {page.priceLabel}{p.duree && ` de ${p.duree}`}
                 </p>
               </div>
             ))}
@@ -302,7 +350,7 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
     </section>
   )}
 
-  {(page.description || audienceItems.length > 0) && (
+  {(page.description || ideesItems.length > 0 || audienceItems.length > 0) && (
     <section id="deroulement" class="scroll-mt-24 py-16 md:py-20">
       <div class="mx-auto max-w-3xl px-4">
         {page.description && (
@@ -315,6 +363,29 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
             <div class="prose max-w-none">
               {splitParagraphs(page.description).map((para) => <p>{para}</p>)}
             </div>
+          </div>
+        )}
+        {/*
+          LES IDÉES AVANT « À QUI ÇA S'ADRESSE », et après le déroulement.
+          Celui-ci se termine sur « si vous n'avez pas encore d'idée, elle peut
+          vous proposer un petit projet » : la liste est la réponse à cette
+          phrase, et la placer ailleurs l'aurait laissée sans suite.
+        */}
+        {ideesItems.length > 0 && (
+          <div class="mb-12">
+            {page.ideesTitle && (
+              <h2 class="mb-6 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+                {page.ideesTitle}
+              </h2>
+            )}
+            <ul class="grid gap-3 sm:grid-cols-2">
+              {ideesItems.map((item) => (
+                <li class="flex items-baseline gap-3">
+                  <span class="text-sm text-[var(--color-button)]">&#10003;</span>
+                  <span class="text-[var(--color-text)]">{item}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
         {audienceItems.length > 0 && (
@@ -408,9 +479,9 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
                       )}
                     </h4>
                     <p class="mb-3 text-sm text-[var(--color-text-light)]">
-                      {p.duree} d’accompagnement
-                      {p.items.length > 0 &&
-                        ` · ${p.items.length} date${p.items.length > 1 ? 's' : ''} à venir`}
+                      {p.items.length > 0
+                        ? `${p.items.length} date${p.items.length > 1 ? 's' : ''} à venir`
+                        : 'Aucune date programmée pour l’instant.'}
                     </p>
                     <div class="rounded-xl bg-[var(--color-bg-accent)] p-4">
 {/*
