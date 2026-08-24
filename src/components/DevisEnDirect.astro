@@ -31,6 +31,21 @@ const { email } = Astro.props;
   <p class="font-medium text-[var(--color-heading)]" id="devis-aujourdhui"></p>
   <p class="mt-1 text-sm text-[var(--color-text)]" id="devis-suite"></p>
   <p class="mt-1 text-sm text-[var(--color-text-light)]" id="devis-adhesion"></p>
+
+  {/*
+    LA CONTRIBUTION HELLOASSO S'ANNONCE ICI, ET NON SUR LEUR PAGE.
+    Notre devis dit « 51 € » et la page de paiement affiche « 52,19 € » : sans
+    explication, l'écart se lit comme un frais caché. Il n'en est pas un —
+    HelloAsso est gratuit pour l'association et se finance par ces contributions,
+    qui s'AJOUTENT au montant et n'en retranchent rien. Elle est suggérée par
+    défaut, modifiable, et peut être ramenée à zéro.
+  */}
+  <p class="mt-3 border-t border-[var(--color-border-prominent)] pt-3 text-sm text-[var(--color-text-light)]">
+    Sur la page de paiement, HelloAsso proposera d’ajouter une contribution à son propre
+    fonctionnement — c’est ce qui rend le service gratuit pour l’association. Elle est{' '}
+    <strong>facultative</strong> et se modifie, jusqu’à zéro, d’un clic sur « Modifier ».
+    L’association perçoit le même montant dans tous les cas.
+  </p>
 </div>
 
 <script>
