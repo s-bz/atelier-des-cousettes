@@ -11,12 +11,5 @@ export const prerender = false;
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const supabase = getRequestClient(request, cookies);
   await supabase.auth.signOut();
-  /*
-   * `deconnecte=1` N'EST PAS DÉCORATIF. La mesure d'audience identifie
-   * l'adhérent connecté par son adresse ; sans ce signal au retour, l'identité
-   * survivrait dans le navigateur et l'ordinateur familial attribuerait à la
-   * mère ce que la fille consulte ensuite. C'est le seul moment où l'on sait
-   * qu'il faut oublier quelqu'un. Voir BaseLayout.astro.
-   */
-  return redirect('/espace-membre/connexion/?deconnecte=1', 303);
+  return redirect('/espace-membre/connexion/', 303);
 };

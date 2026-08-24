@@ -71,13 +71,6 @@ if (Astro.url.searchParams.has('echec')) {
       Réserver une séance sans engagement
     </h1>
 
-    <p class="mt-4 rounded-xl bg-[var(--color-bg-accent)] px-4 py-3 text-sm">
-      Le règlement se fait sur la page sécurisée de <strong>HelloAsso</strong>, qui encaisse pour
-      l’association <strong>Les P’tits Piafs</strong> — c’est ce nom qui figurera sur votre relevé
-      bancaire. <strong>L’adhésion à l’association est comprise dans le tarif</strong> : il n’y a
-      rien à régler en plus le jour venu.
-    </p>
-
     <FormulaireReservation seances={seances} erreur={erreur} saisi={saisi} nomProduit="cette séance" />
   </section>
 </BaseLayout>

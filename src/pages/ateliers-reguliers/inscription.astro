@@ -8,7 +8,6 @@ import { lireCatalogueFormules, heureCourte } from '../../utils/tarifs';
 import { AUDIENCES, personneDe } from '../../utils/ateliers';
 import { saisonDe } from '../../utils/inscriptions';
 import { demarrerAchat } from '../../utils/achat';
-import { ADHESION_CENTS } from '../../utils/helloasso';
 import { mesurer } from '../../utils/mesure';
 
 /*
@@ -132,7 +131,6 @@ if (Astro.url.searchParams.has('echec')) {
   });
 }
 
-const euros = (c: number) => String(c / 100);
 ---
 
 <BaseLayout
@@ -148,15 +146,6 @@ const euros = (c: number) => String(c / 100);
       Saison {saison}, de septembre à juin. <strong>Trois places par séance</strong>, avec
       Isabelle à côté de vous. Choisissez votre formule et votre créneau ; vous choisirez vos
       dates ensuite, et vous pourrez les changer.
-    </p>
-
-    <p class="mt-4 rounded-xl bg-[var(--color-bg-accent)] px-4 py-3 text-sm">
-      Le règlement se fait sur la page sécurisée de <strong>HelloAsso</strong>, qui encaisse pour
-      l’association <strong>Les P’tits Piafs</strong> — c’est ce nom qui figurera sur votre relevé
-      bancaire. L’adhésion à l’association, <strong>{euros(ADHESION_CENTS)} € par an et par
-      famille</strong>, s’ajoute au premier versement — <strong>sauf si votre famille l’a déjà
-      réglée cette saison</strong> : elle est alors reconnue à votre adresse, et vous n’avez
-      pas à vous connecter pour cela.
     </p>
 
     {erreur && (
@@ -306,6 +295,20 @@ const euros = (c: number) => String(c / 100);
         réassurance se neutralisent. Reste ce qui lève vraiment l'hésitation —
         les dates se choisissent après et se changent — et la mention due.
       */}
+      {/*
+        CE QUI SE DIT AU MOMENT DE PAYER, ET PAS AVANT. Un bandeau ouvrait cette
+        page et disait trois choses à qui n'avait encore rien choisi : le nom du
+        relevé, le montant de l'adhésion, et le cas de la famille qui l'a déjà
+        réglée. Les deux derniers sont des faits de PRIX, et le devis les dit
+        déjà — au centime, et pour la situation réelle du visiteur plutôt qu'en
+        énonçant la règle. Reste le nom du relevé, un fait de PAIEMENT, qui ne
+        sert qu'ici.
+      */}
+      <p class="text-sm text-[var(--color-text-light)]">
+        Le règlement se fait sur la page sécurisée de HelloAsso : votre relevé bancaire portera
+        « Les P’tits Piafs », le nom de l’association.
+      </p>
+
       <p class="text-sm text-[var(--color-text-light)]">
         En vous inscrivant, vous acceptez les{' '}
         <a href="/conditions/" class="underline">conditions de vente</a> — quatorze jours pour

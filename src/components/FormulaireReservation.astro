@@ -177,6 +177,22 @@ const mentionPlaces = (s: SeanceAchetable) =>
       Réserver ma place
     </button>
 
+    {/*
+      CE QUI SE DIT AU MOMENT DE PAYER, ET PAS AVANT. Ces deux phrases ouvraient
+      la page, en bandeau, avant qu'on ait rien choisi : un mur de réassurance
+      posé devant quelqu'un qui n'a encore aucune décision à rassurer.
+
+      Elles se sont séparées selon ce qu'elles sont. « L'adhésion est comprise »
+      est un fait de PRIX : il vit sous la liste des dates et dans le devis, là
+      où le montant s'affiche. Le nom qui paraîtra sur le relevé est un fait de
+      PAIEMENT : il ne sert qu'ici, sous le bouton, où il évite le « qui m'a
+      prélevé ? » du lendemain.
+    */}
+    <p class="text-sm text-[var(--color-text-light)]">
+      Le règlement se fait sur la page sécurisée de HelloAsso : votre relevé bancaire portera
+      « Les P’tits Piafs », le nom de l’association.
+    </p>
+
     <p class="text-sm text-[var(--color-text-light)]">
       En réservant {nomProduit}, vous acceptez les{' '}
       <a href="/conditions/" class="underline">conditions de vente</a> — quatorze jours pour
