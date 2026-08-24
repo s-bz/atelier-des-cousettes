@@ -97,7 +97,11 @@ if (Astro.request.method === 'POST') {
         default_location: lieu,
         default_capacity: Number(form.get('places')),
         places_attente: Math.max(0, Number(form.get('attente') ?? 0)),
-        default_unit_price_cents: Math.round(Number(form.get('prix')) * 100),
+        // Vide → NULL, et non zéro : un créneau qui ne se vend pas à l'unité n'a
+      // pas de prix à la séance, il n'est pas gratuit.
+      default_unit_price_cents: String(form.get('prix') ?? '').trim() === ''
+        ? null
+        : Math.round(Number(form.get('prix')) * 100),
         ...(estStage
           ? { seances_par_stage: Math.max(1, Number(form.get('seances') ?? 1)) }
           : {
@@ -337,8 +341,10 @@ const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (�
       </div>
       <div>
         <label for="prix" class="block text-sm font-medium mb-1">{libellePrix}</label>
-        <input id="prix" name="prix" type="number" min="0" step="0.01" required
-               value={(creneau.default_unit_price_cents / 100).toFixed(2)} class="champ" />
+        <input id="prix" name="prix" type="number" min="0" step="0.01"
+               value={creneau.default_unit_price_cents === null
+                 ? ''
+                 : (creneau.default_unit_price_cents / 100).toFixed(2)} class="champ" />
       </div>
     </div>
 
