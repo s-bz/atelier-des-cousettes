@@ -170,14 +170,32 @@ select '13 depassement autorise, solde negatif',
             then 'OK' else 'ECHEC: solde='||balance('a0000000-0000-0000-0000-000000000002','2026-10-15') end;
 
 -- ── 14. release_booking sur une ligne déjà libérée ───────────────────────
+-- `release_booking` REND DU JSONB, et non un booléen.
+--
+-- Ce cas déclarait `v_ok boolean` et lui affectait le retour de la fonction —
+-- une écriture d'avant 20260730071219, qui a fait passer la fonction à
+-- `jsonb_build_object('ok', …, 'tardive', …)` pour distinguer une libération
+-- tardive d'une libération dans les délais.
+--
+-- IL N'A JAMAIS ÉCHOUÉ POUR AUTANT, et c'est le plus instructif : tant qu'une
+-- régression antérieure faisait échouer toutes les réservations, aucune ligne
+-- « released » n'existait, `v_booking` valait NULL, et NULL s'affecte à un
+-- booléen sans broncher. Le test passait en ne testant rien. Réparer la
+-- réservation l'a révélé du même coup.
 do $$
-declare v_booking uuid; v_ok boolean;
+declare v_booking uuid; v_retour jsonb;
 begin
   select id into v_booking from bookings
   where session_id = '50000000-0000-0000-0000-000000000001' and status = 'released' limit 1;
-  v_ok := release_booking(v_booking);
-  insert into resultats(cas, verdict) values ('14 double liberation sans effet',
-    case when v_ok = false then 'OK' else 'ECHEC: a modifie une ligne' end);
+  if v_booking is null then
+    insert into resultats(cas, verdict) values ('14 double liberation sans effet',
+      'ECHEC: aucune ligne liberee a rejouer');
+  else
+    v_retour := release_booking(v_booking);
+    insert into resultats(cas, verdict) values ('14 double liberation sans effet',
+      case when v_retour->>'ok' = 'false' then 'OK'
+           else 'ECHEC: a modifie une ligne — '||coalesce(v_retour::text,'null') end);
+  end if;
 end $$;
 
 select verdict, cas from resultats order by ordre;
