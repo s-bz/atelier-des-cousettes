@@ -724,6 +724,19 @@ export default config({
         content: fields.markdoc({ label: 'Contenu', components: markdocComponents }),
       },
     }),
+    conditions: singleton({
+      label: 'Règlement intérieur et conditions de vente',
+      path: 'src/content/pages/conditions/',
+      previewUrl: '/conditions/',
+      format: { contentField: 'content' },
+      schema: {
+        title: fields.text({ label: 'Titre' }),
+        subtitle: fields.text({ label: 'Sous-titre' }),
+        seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
+        ...coverImageFields('conditions'),
+        content: fields.markdoc({ label: 'Contenu', components: markdocComponents }),
+      },
+    }),
     confidentialite: singleton({
       label: 'Politique de confidentialité',
       path: 'src/content/pages/confidentialite/',
