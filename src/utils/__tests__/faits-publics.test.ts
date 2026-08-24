@@ -97,7 +97,6 @@ const faits: FaitsPublics = {
   ],
   avisProvisoire: 'Tarifs provisoires.',
   adhesionAnnuelle: '15 € par an',
-  adhesionPonctuelle: '5 €',
 };
 
 describe('lecture des prix en base', () => {
@@ -161,6 +160,13 @@ describe('construireLlms', () => {
     const sans = construireLlms({ ...faits, adhesionAnnuelle: null });
     expect(sans).not.toContain('en plus du forfait');
     expect(sans).toContain('comprise dans le prix des stages');
+  });
+
+  it('dit l’adhésion comprise sans dépendre d’un montant ponctuel', () => {
+    // « 5 € » figurait dans le CMS sans jamais s'afficher : le champ ne servait
+    // que de drapeau. Le fait, lui, reste vrai et doit se dire tout seul —
+    // c'est celui qu'un modèle récite en répondant « combien ça coûte ».
+    expect(texte).toContain('comprise dans le prix des stages et des séances sans engagement');
   });
 
   it('garde le sigle du titre professionnel intact', () => {
@@ -305,6 +311,12 @@ describe('construireLlmsFull', () => {
   it('répète les montants plutôt que de renvoyer à tarifs.md', () => {
     expect(texte).toContain('Séance de 3 h : 45 €, adhésion comprise');
     expect(texte).toContain('10 séances : 36 € par mois');
+  });
+
+  it('marque « adhésion comprise » sans dépendre d’un montant ponctuel', () => {
+    // Le suffixe était conditionné au champ `adhesionPonctuelle`, dont la valeur
+    // n'était jamais affichée. Le champ supprimé, le fait doit tenir seul.
+    expect(texte).toMatch(/- .+ : \d+ €, adhésion comprise/);
   });
 });
 

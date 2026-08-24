@@ -178,7 +178,6 @@ export interface FaitsPublics {
    * plutôt que de l'affirmer. Vider l'un retire sa mention partout.
    */
   adhesionAnnuelle?: string | null;
-  adhesionPonctuelle?: string | null;
 }
 
 const euros = (cents: number) => Math.round(cents / 100);
@@ -456,9 +455,12 @@ export function faitsCles(f: FaitsPublics): string[] {
     // tous les tarifs » était fausse pour les forfaits, et c'est le fait le
     // plus repris d'un llms.txt : celui qu'un modèle récite en répondant
     // « combien ça coûte ».
-    f.adhesionPonctuelle
-      ? `- **Adhésion** : comprise dans le prix des stages et des séances sans engagement`
-      : null,
+    //
+    // LE PREMIER RÉGIME NE DÉPEND DE RIEN. Il était conditionné à un champ
+    // `adhesionPonctuelle` qui portait « 5 € » sans jamais l'afficher : un
+    // montant que personne ne paie, qui ne servait que de drapeau, et dont
+    // l'oubli aurait fait disparaître un fait vrai.
+    `- **Adhésion** : comprise dans le prix des stages et des séances sans engagement`,
     f.adhesionAnnuelle
       ? `- **Adhésion annuelle** : ${f.adhesionAnnuelle}, en plus du forfait de saison`
       : null,
@@ -783,7 +785,7 @@ ${uneLigne(f.seances.introduction)}
 
 ${lignes(
   ...offresALUnite(f.creneaux).map(
-    (o) => `- ${o.titre} : ${o.prix} €${f.adhesionPonctuelle ? ', adhésion comprise' : ''}`,
+    (o) => `- ${o.titre} : ${o.prix} €, adhésion comprise`,
   ),
 )}
 
