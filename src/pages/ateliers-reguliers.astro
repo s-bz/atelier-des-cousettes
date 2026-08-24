@@ -7,7 +7,6 @@ import AvisProvisoire from '../components/AvisProvisoire.astro';
 import IntroSection from '../components/IntroSection.astro';
 import CrossLinksSection from '../components/CrossLinksSection.astro';
 import CalendrierCreneau from '../components/CalendrierCreneau.astro';
-import ContactCTA from '../components/ContactCTA.astro';
 import FaqSection from '../components/FaqSection.astro';
 import Temoignages from '../components/Temoignages.astro';
 import { getPageContext, reader } from '../utils/reader';
@@ -137,7 +136,7 @@ const { data: enBase, error } = await supabase
   .from('creneaux')
   .select(`
     label, audience, default_location, default_start_time, default_end_time,
-    default_unit_price_cents,
+    default_unit_price_cents, default_capacity,
     sessions(starts_at, ends_at, capacity, places_attente, status, bookings(status))
   `)
   .eq('kind', 'atelier')
@@ -185,6 +184,16 @@ const enHeures = (debut: string, fin: string) => {
   const m = min(fin) - min(debut);
   return m <= 0 ? null : m % 60 === 0 ? `${m / 60} h` : `${Math.floor(m / 60)} h ${m % 60}`;
 };
+
+/**
+ * Le nombre de places d'une séance — trois, sur tous les créneaux.
+ *
+ * C'EST L'ARGUMENT LE PLUS FORT DE LA PAGE, et il n'y figurait nulle part. Il
+ * ne se lisait qu'en creux, quand une date passait « complet ». Or trois places
+ * expliquent à la fois l'attention qu'on reçoit et le prix qu'on paie : le
+ * taire, c'était laisser le prix seul.
+ */
+const placesDe = (nom: string) => parNom.get(cle(nom))?.default_capacity ?? null;
 
 const dureeDe = (nom: string) => {
   const c = parNom.get(cle(nom));
@@ -321,11 +330,30 @@ const courseSchema = buildCourseSchema({
 
 
   {/*
-    Pas de bouton sous l'introduction : la page en compte déjà cinq plus bas, un
-    par lieu puis sous les tarifs et la FAQ. Celui-ci arrivait avant qu'on ait lu
-    de quoi décider — et un bouton répété six fois cesse d'être remarqué.
+    UN BOUTON HAUT, MAINTENANT QUE LA PAGE VEND. Elle n'en portait qu'un seul,
+    sous la grille des tarifs : qui revient s'inscrire — la moitié d'une rentrée
+    — devait traverser tout le calendrier pour le trouver. Il ne s'agit plus
+    d'écrire à Isabelle après avoir hésité, mais de reprendre sa place.
   */}
-  {page.introduction && <IntroSection text={page.introduction} cta={false} fond />}
+  {/*
+    LE BOUTON VA DANS LE CRÉNEAU PRÉVU POUR LUI — le <slot> d'IntroSection —
+    et non après la section. Posé dehors, il tombait sur la couture entre le
+    fond chaud de l'introduction et la section suivante : la limite des deux
+    couleurs le coupait en deux. Un composant ne sait pas ce qui le suit, mais
+    il sait ce qu'il contient.
+  */}
+  {page.introduction && (
+    <IntroSection text={page.introduction} cta={false} fond>
+      {page.inscriptionLabel && page.inscriptionUrl && (
+        <p class="mt-8">
+          <a href={page.inscriptionUrl}
+             class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 font-medium text-white">
+            {page.inscriptionLabel}
+          </a>
+        </p>
+      )}
+    </IntroSection>
+  )}
 
   {groupes.length > 0 && (
     <section class="pt-8 pb-16 md:pt-10 md:pb-20">
@@ -406,6 +434,11 @@ const courseSchema = buildCourseSchema({
                         {dureeDe(c.name) && ` · ${dureeDe(c.name)} par séance`}
                       </p>
                     )}
+                    {placesDe(c.name) && (
+                      <p class="text-sm text-[var(--color-button)]">
+                        {placesDe(c.name)} places par séance
+                      </p>
+                    )}
                     {c.note && (
                       <p class="text-sm text-[var(--color-text-light)]">{c.note}</p>
                     )}
@@ -442,13 +475,12 @@ const courseSchema = buildCourseSchema({
             </div>
 
             {/*
-              Un bouton par groupe, au pied de ses cartes. Celui qui a trouvé son
-              créneau à Revel n'a plus à traverser Verdalle pour trouver de quoi
-              écrire — et l'on écrit au sujet d'un atelier précis, pas de la page.
+              MARGE POSITIVE : le « -mt-6 » d'origine remontait ce lien contre
+              le bouton de contact qui le précédait. Ce bouton retiré, la marge
+              négative le faisait chevaucher les cartes.
             */}
-            <ContactCTA label={page.ctaLabel} />
             {page.tarifsLienLabel && tarifs.length > 0 && (
-              <p class="-mt-6 text-center">
+              <p class="mt-6 text-center">
                 <a href="#tarifs" class="text-sm font-medium text-[var(--color-button)] underline">
                   {page.tarifsLienLabel}
                 </a>
@@ -459,6 +491,13 @@ const courseSchema = buildCourseSchema({
       </div>
     </section>
   )}
+
+  {/*
+    LA PREUVE AVANT LE PRIX. Les témoignages arrivaient après la grille et après
+    le seul bouton de la page : ils ne pouvaient donc convaincre personne au
+    moment où l'on décide. Ils la précèdent désormais.
+  */}
+  <Temoignages page="ateliers" />
 
   {tarifs.length > 0 && (
     <section id="tarifs" class="scroll-mt-24 bg-[var(--color-bg-accent)] py-16 md:py-20">
@@ -535,8 +574,16 @@ const courseSchema = buildCourseSchema({
               L'offre porte désormais son unité (« 45 € la séance de 3 h »), et
               le préfixe la redisait : « La séance est à 45 € la séance de 3 h ».
             */}
+            {/*
+              LA PHRASE MÈNE À LA PAGE QU'ELLE DÉCRIT. Elle posait la question
+              — « vous préférez venir une seule fois ? » — et laissait le
+              lecteur la résoudre seul, alors que la réponse a sa page. Le
+              montant porte le lien : c'est lui qu'on lit, et il était déjà
+              coloré comme un lien sans en être un.
+            */}
             {page.tarifsUniteQuestion}{' '}
-            <span class="font-semibold text-[var(--color-button)]">{phraseUnite}</span>.
+            <a href="/seances-sans-engagement/"
+               class="font-semibold text-[var(--color-button)] underline">{phraseUnite}</a>.
           </p>
         )}
 
@@ -546,15 +593,46 @@ const courseSchema = buildCourseSchema({
           </p>
         )}
 
-        {/* Agir sans avoir à repartir chercher un bouton plus bas. */}
-        <ContactCTA label={page.ctaLabel} />
+        {/*
+          LE SEUL BOUTON DE LA PAGE, sous la grille : c'est là qu'on décide, les
+          prix sous les yeux. Les « Demander une place dans un créneau » qui le
+          précédaient ont été retirés — on n'écrit plus pour demander une place,
+          on la prend.
+        */}
+        {page.inscriptionLabel && page.inscriptionUrl && (
+          <p class="mt-8 text-center">
+            <a href={page.inscriptionUrl}
+               class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 font-medium text-white">
+              {page.inscriptionLabel}
+            </a>
+          </p>
+        )}
+
       </div>
     </section>
   )}
 
-  <Temoignages page="ateliers" />
 
-  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} fond />
+  <FaqSection title={page.faqSectionTitle} items={faqItems} fond cta={false} />
+
+  {/*
+    LE DERNIER BOUTON EST APRÈS LA FAQ, et non avant : c'est là qu'on a fini de
+    lever ses objections. Le laisser uniquement sous la grille obligeait à
+    remonter la page pour agir sur une décision qu'on venait de prendre.
+  */}
+  {page.inscriptionLabel && page.inscriptionUrl && (
+    <section class="py-12 md:py-16">
+      <p class="px-4 text-center">
+        <a href={page.inscriptionUrl}
+           class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 font-medium text-white">
+          {page.inscriptionLabel}
+        </a>
+        <span class="mt-3 block text-sm text-[var(--color-text-light)]">
+          Vous choisirez vos dates ensuite, et pourrez en changer jusqu’à 10 jours avant chaque séance.
+        </span>
+      </p>
+    </section>
+  )}
 
   {page.crossLinksText && (
     <CrossLinksSection text={page.crossLinksText} excludeHref="/ateliers-reguliers/" />

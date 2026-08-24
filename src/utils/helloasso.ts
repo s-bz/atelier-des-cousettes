@@ -388,6 +388,10 @@ export function preparerAchat(o: {
   saison: string;
   /** Vrai si la famille n'a pas encore réglé l'adhésion de la saison. */
   adhesionDue: boolean;
+  /** Réduction accordée sur le forfait, déjà validée. */
+  reductionCents?: number;
+  /** Le code employé, pour la trace et le décompte des usages. */
+  codePromo?: string | null;
   /** Règlement en une fois plutôt qu'échelonné. */
   comptant?: boolean;
   achatLe: Date;
@@ -396,11 +400,18 @@ export function preparerAchat(o: {
 }): Achat {
   const adhesion = o.adhesionDue ? ADHESION_CENTS : 0;
 
+  /*
+   * LA RÉDUCTION NE MORD QUE SUR LE FORFAIT. L'adhésion est une cotisation à
+   * l'association, pas un prix qu'on négocie : un code qui l'entamerait
+   * inscrirait quelqu'un sans qu'il adhère.
+   */
+  const forfaitCents = Math.max(0, o.formule.prixCents - (o.reductionCents ?? 0));
+
   return {
     libelle:
       `Forfait ${o.formule.libelle} — ${o.creneau.label} — ${o.participant} — saison ${o.saison}`
       + (adhesion ? ' (adhésion comprise)' : ''),
-    totalCents: o.formule.prixCents,
+    totalCents: forfaitCents,
     versements: o.comptant ? 1 : o.formule.mensualites,
     achatLe: o.achatLe,
     supplementInitialCents: adhesion,
@@ -411,6 +422,7 @@ export function preparerAchat(o: {
       creneau_id: o.creneau.id,
       participant: o.participant,
       adhesion_cents: adhesion,
+      ...(o.codePromo ? { code_promo: o.codePromo, reduction_cents: o.reductionCents ?? 0 } : {}),
     },
     ...(o.payeur ? { payeur: o.payeur } : {}),
     urls: o.urls,

@@ -22,6 +22,14 @@ interface Props {
 }
 
 const { text, ctaLabel, cta = true, fond = false } = Astro.props;
+
+/*
+  La marge basse se resserre quand rien ne suit le paragraphe — mais « rien »
+  veut dire ni bouton de contact, NI CONTENU GLISSÉ DANS LE SLOT. Sans cette
+  seconde condition, une page qui pose son propre bouton dans le slot le voyait
+  collé à deux pas du bord, là où le fond s'arrête.
+*/
+const dense = !cta && !Astro.slots.has('default');
 ---
 
 {/*
@@ -34,7 +42,7 @@ const { text, ctaLabel, cta = true, fond = false } = Astro.props;
   voyait plus que l'espace qu'on avait gagné. Un composant ne peut pas savoir ce
   qui le suit ; il lui reste à ne jamais coller.
 */}
-<section class={`pt-12 md:pt-16 ${cta ? 'pb-16 md:pb-20' : 'pb-8 md:pb-10'} ${fond ? 'bg-[var(--color-bg-accent)]' : ''}`}>
+<section class={`pt-12 md:pt-16 ${dense ? 'pb-8 md:pb-10' : 'pb-16 md:pb-20'} ${fond ? 'bg-[var(--color-bg-accent)]' : ''}`}>
   <div class="max-w-3xl mx-auto px-4 text-center">
     <p class="text-base md:text-lg leading-relaxed text-[var(--color-text)]">{text}</p>
     <slot />

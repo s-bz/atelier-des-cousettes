@@ -21,7 +21,9 @@ defaultCtaLabel: Écrire à Isabelle
 headerCtaLabel: Nous contacter
 headerPhoneLabel: Appeler Isabelle au
 googleNote: '5,0'
-avisProvisoire: >-
-  Réservez votre place dès maintenant : elle vous est gardée, sans engagement de
-  votre part. Les tarifs et horaires 2026-2027 seront confirmés d'ici fin août.
-adhesionAnnuelle: 15 € par an
+# Vidé le 25/08/2026 : l'avis annonçait des tarifs « confirmés d'ici fin août »
+# et une réservation « sans engagement », au-dessus de pages qui vendent
+# désormais la saison à prix ferme. Le bandeau disparaît de lui-même quand ce
+# champ est vide.
+avisProvisoire: ''
+adhesionAnnuelle: 15 € par an et par famille

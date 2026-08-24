@@ -174,7 +174,7 @@ const heures = !(heuresEnTete && creneauxHoraires.size === 1);
       n'offrirait pas.
     */}
     {repliees.length > 0 && (
-      <details class="mt-2 text-sm">
+      <details class="mt-2 text-sm" data-dates>
         <summary class="cursor-pointer font-medium text-[var(--color-button)]">
           Voir les {repliees.length} autres dates
         </summary>
@@ -185,3 +185,57 @@ const heures = !(heuresEnTete && creneauxHoraires.size === 1);
     )}
   </Fragment>
 )}
+
+<script>
+  /*
+   * DEUX CARTES CÔTE À CÔTE S'OUVRENT ENSEMBLE.
+   *
+   * Déplier les sept dates d'un créneau allongeait sa carte seule et laissait
+   * sa voisine flotter au-dessus d'un grand vide — le lecteur perdait la
+   * comparaison entre les deux, qui est précisément ce qu'il était en train de
+   * faire.
+   *
+   * SUR LA MÊME RANGÉE SEULEMENT, et non tout le groupe : sur un téléphone la
+   * grille tombe à une colonne, chaque carte est sa propre rangée, et déplier
+   * l'une n'en déplie aucune autre. C'est l'alignement qu'on répare, pas un
+   * comportement qu'on impose.
+   *
+   * Le repli reste un <details> : sans JavaScript, tout continue de fonctionner,
+   * carte par carte.
+   */
+  const replis = [...document.querySelectorAll('details[data-dates]')];
+
+  /** L'enfant direct de la grille qui contient ce repli — sa « carte ». */
+  function carte(repli: Element): HTMLElement | null {
+    let el: HTMLElement | null = repli as HTMLElement;
+    while (el?.parentElement && getComputedStyle(el.parentElement).display !== 'grid') {
+      el = el.parentElement;
+    }
+    return el?.parentElement ? el : null;
+  }
+
+  let enCours = false;
+
+  for (const repli of replis) {
+    repli.addEventListener('toggle', () => {
+      // Ouvrir une voisine déclenche son propre « toggle » : sans ce garde, les
+      // deux s'appelleraient l'une l'autre.
+      if (enCours) return;
+
+      const mienne = carte(repli);
+      if (!mienne) return;
+      const rangee = mienne.offsetTop;
+      const grille = mienne.parentElement;
+
+      enCours = true;
+      for (const autre of replis) {
+        if (autre === repli) continue;
+        const sienne = carte(autre);
+        if (!sienne || sienne.parentElement !== grille) continue;
+        if (Math.abs(sienne.offsetTop - rangee) > 1) continue;
+        (autre as HTMLDetailsElement).open = (repli as HTMLDetailsElement).open;
+      }
+      enCours = false;
+    });
+  }
+</script>

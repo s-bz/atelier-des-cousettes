@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Resultat } from './inscriptions';
+import { compterUsage } from './codes-promo';
 import {
   trouverOuCreerCompte, creerParticipant, creerAbonnement,
   enregistrerAdhesion, inscrireDOffice, bornesSaison,
@@ -25,6 +26,7 @@ const succes = <T>(valeur: T): Resultat<T> => ({ ok: true, valeur });
 
 export interface Commande {
   orderId: string;
+  codePromo: string | null;
   email: string;
   prenom: string;
   nom: string;
@@ -77,6 +79,7 @@ export function lireCommande(intention: {
     formuleId: texte('formule_id'),
     creneauId: texte('creneau_id'),
     adhesionCents: typeof m.adhesion_cents === 'number' ? m.adhesion_cents : 0,
+    codePromo: typeof m.code_promo === 'string' ? m.code_promo : null,
   });
 }
 
@@ -170,6 +173,14 @@ export async function provisionner(
     // trop-perçu, que l'admin verra dans la file, pas une panne.
     if (!adhesion.ok) return adhesion;
   }
+
+  /*
+   * L'USAGE DU CODE SE COMPTE ICI, ET NON À LA CRÉATION DE L'INTENTION : un
+   * panier abandonné ne doit pas consommer un code à tirage limité. Ce chemin
+   * ne s'exécute qu'une fois par commande — l'unicité de `helloasso_order_id`
+   * s'en porte garante.
+   */
+  if (commande.codePromo) await compterUsage(supabase, commande.codePromo);
 
   // Les places s'ouvrent tout de suite : quelqu'un qui vient de payer veut voir
   // son planning, pas attendre le cron du lendemain.

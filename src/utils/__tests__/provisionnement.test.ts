@@ -25,6 +25,7 @@ describe('lireCommande', () => {
     if (!r.ok) return;
     expect(r.valeur).toEqual({
       orderId: '88123',
+      codePromo: null,
       email: 'marie@exemple.fr',
       prenom: 'Léa',
       nom: 'D.',
@@ -33,6 +34,16 @@ describe('lireCommande', () => {
       creneauId: 'atelier-du-jeudi-matin',
       adhesionCents: 1500,
     });
+  });
+
+  it('retient le code employé, pour en compter l’usage', () => {
+    // L'usage se décompte au provisionnement, pas à la création de l'intention :
+    // un panier abandonné ne doit pas consommer un code à tirage limité.
+    const r = lireCommande({
+      ...intentionPayee,
+      metadata: { ...intentionPayee.metadata, code_promo: 'RENTREE26', reduction_cents: 3240 },
+    });
+    expect(r.ok && r.valeur.codePromo).toBe('RENTREE26');
   });
 
   it('refuse une intention dont le paiement n’est pas acquis', () => {
