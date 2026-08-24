@@ -33,24 +33,45 @@ const [formules, { data: creneaux }] = await Promise.all([
 ]);
 
 let erreur: string | null = null;
-const saisi = { email: '', prenom: '', audience: 'adulte', formule: '', creneau: '' };
+const saisi = {
+  email: '', payeurPrenom: '', payeurNom: '',
+  autre: false, prenom: '', nom: '',
+  audience: 'adulte', formule: '', creneau: '',
+};
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   saisi.email = String(form.get('email') ?? '').trim();
+  saisi.payeurPrenom = String(form.get('payeurPrenom') ?? '').trim();
+  saisi.payeurNom = String(form.get('payeurNom') ?? '').trim();
+  saisi.autre = form.get('autre') === 'oui';
   saisi.prenom = String(form.get('prenom') ?? '').trim();
+  saisi.nom = String(form.get('nom') ?? '').trim();
   saisi.audience = String(form.get('audience') ?? 'adulte');
   saisi.formule = String(form.get('formule') ?? '');
   saisi.creneau = String(form.get('creneau') ?? '');
 
+  /*
+   * SANS LA CASE COCHÉE, LE PARTICIPANT EST LE PAYEUR. C'est le cas d'un
+   * adulte qui s'inscrit lui-même, et lui demander deux fois son nom serait
+   * absurde. Le repli vaut aussi sans JavaScript : les champs du participant
+   * restent alors visibles mais facultatifs, et vides ils ne disent rien.
+   */
+  const participant = saisi.autre && saisi.prenom
+    ? `${saisi.prenom} ${saisi.nom}`.trim()
+    : `${saisi.payeurPrenom} ${saisi.payeurNom}`.trim();
+
   const r = await demarrerAchat(supabase, {
     email: saisi.email,
-    prenom: saisi.prenom,
+    payeurPrenom: saisi.payeurPrenom,
+    payeurNom: saisi.payeurNom,
+    prenom: participant,
     audience: saisi.audience,
     formule: formules.find((f) => f.id === saisi.formule),
     creneau: (creneaux ?? []).find((c) => c.id === saisi.creneau),
     comptant: form.get('reglement') === 'comptant',
     origine: Astro.url.origin,
+    site: Astro.site,
     cheminAchat: '/ateliers-reguliers/inscription/',
     cheminRetour: '/ateliers-reguliers/inscription/retour/',
   });
@@ -103,10 +124,39 @@ const euros = (c: number) => String(c / 100);
         </p>
       </div>
 
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="payeurPrenom" class="block text-sm font-medium mb-1">Votre prénom</label>
+          <input id="payeurPrenom" name="payeurPrenom" required value={saisi.payeurPrenom}
+                 autocomplete="given-name" class="champ" />
+        </div>
+        <div>
+          <label for="payeurNom" class="block text-sm font-medium mb-1">Votre nom</label>
+          <input id="payeurNom" name="payeurNom" required value={saisi.payeurNom}
+                 autocomplete="family-name" class="champ" />
+        </div>
+      </div>
+
       <div>
-        <label for="prenom" class="block text-sm font-medium mb-1">Qui participe ?</label>
-        <input id="prenom" name="prenom" required value={saisi.prenom}
-               placeholder="Prénom et nom" class="champ" />
+        <label class="flex items-start gap-2">
+          <input type="checkbox" id="autre" name="autre" value="oui" checked={saisi.autre}
+                 class="mt-1" />
+          <span>La personne qui participe n’est pas moi</span>
+        </label>
+        <p class="mt-1 text-sm text-[var(--color-text-light)]">
+          Cochez si vous inscrivez votre enfant, par exemple. Sinon, c’est vous qui participez.
+        </p>
+      </div>
+
+      <div id="participant" class="grid gap-4 sm:grid-cols-2" hidden={!saisi.autre}>
+        <div>
+          <label for="prenom" class="block text-sm font-medium mb-1">Prénom du participant</label>
+          <input id="prenom" name="prenom" value={saisi.prenom} class="champ" />
+        </div>
+        <div>
+          <label for="nom" class="block text-sm font-medium mb-1">Nom du participant</label>
+          <input id="nom" name="nom" value={saisi.nom} class="champ" />
+        </div>
       </div>
 
       <div>
@@ -161,7 +211,7 @@ const euros = (c: number) => String(c / 100);
       </button>
 
       <p class="text-sm text-[var(--color-text-light)]">
-        En vous inscrivant, vous acceptez le
+        En vous inscrivant, vous acceptez le{' '}
         <a href="/conditions/" class="underline">règlement intérieur et les conditions de vente</a>.
         Vous disposez de quatorze jours pour vous rétracter.
       </p>
@@ -196,6 +246,15 @@ const euros = (c: number) => String(c / 100);
         liste.selectedIndex = premier ? premier.index : -1;
       }
     }
+  }
+
+  /* Les champs du participant n'apparaissent que s'il diffère du payeur. */
+  const autre = document.getElementById('autre');
+  const bloc = document.getElementById('participant');
+  if (autre instanceof HTMLInputElement && bloc) {
+    const suivre = () => { bloc.hidden = !autre.checked; };
+    autre.addEventListener('change', suivre);
+    suivre();
   }
 
   if (audience && listes.length) {

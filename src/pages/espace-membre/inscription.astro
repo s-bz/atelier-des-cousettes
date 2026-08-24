@@ -51,6 +51,7 @@ if (Astro.request.method === 'POST') {
     creneau: (creneaux ?? []).find((c) => c.id === String(form.get('creneau') ?? '')),
     comptant: form.get('reglement') === 'comptant',
     origine: Astro.url.origin,
+    site: Astro.site,
     cheminAchat: '/espace-membre/inscription/',
     cheminRetour: '/espace-membre/inscription/retour/',
   });

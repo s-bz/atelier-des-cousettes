@@ -7,7 +7,6 @@ import AvisProvisoire from '../components/AvisProvisoire.astro';
 import IntroSection from '../components/IntroSection.astro';
 import CrossLinksSection from '../components/CrossLinksSection.astro';
 import CalendrierCreneau from '../components/CalendrierCreneau.astro';
-import ContactCTA from '../components/ContactCTA.astro';
 import FaqSection from '../components/FaqSection.astro';
 import Temoignages from '../components/Temoignages.astro';
 import { getPageContext, reader } from '../utils/reader';
@@ -442,13 +441,12 @@ const courseSchema = buildCourseSchema({
             </div>
 
             {/*
-              Un bouton par groupe, au pied de ses cartes. Celui qui a trouvé son
-              créneau à Revel n'a plus à traverser Verdalle pour trouver de quoi
-              écrire — et l'on écrit au sujet d'un atelier précis, pas de la page.
+              MARGE POSITIVE : le « -mt-6 » d'origine remontait ce lien contre
+              le bouton de contact qui le précédait. Ce bouton retiré, la marge
+              négative le faisait chevaucher les cartes.
             */}
-            <ContactCTA label={page.ctaLabel} />
             {page.tarifsLienLabel && tarifs.length > 0 && (
-              <p class="-mt-6 text-center">
+              <p class="mt-6 text-center">
                 <a href="#tarifs" class="text-sm font-medium text-[var(--color-button)] underline">
                   {page.tarifsLienLabel}
                 </a>
@@ -535,8 +533,16 @@ const courseSchema = buildCourseSchema({
               L'offre porte désormais son unité (« 45 € la séance de 3 h »), et
               le préfixe la redisait : « La séance est à 45 € la séance de 3 h ».
             */}
+            {/*
+              LA PHRASE MÈNE À LA PAGE QU'ELLE DÉCRIT. Elle posait la question
+              — « vous préférez venir une seule fois ? » — et laissait le
+              lecteur la résoudre seul, alors que la réponse a sa page. Le
+              montant porte le lien : c'est lui qu'on lit, et il était déjà
+              coloré comme un lien sans en être un.
+            */}
             {page.tarifsUniteQuestion}{' '}
-            <span class="font-semibold text-[var(--color-button)]">{phraseUnite}</span>.
+            <a href="/seances-sans-engagement/"
+               class="font-semibold text-[var(--color-button)] underline">{phraseUnite}</a>.
           </p>
         )}
 
@@ -547,9 +553,10 @@ const courseSchema = buildCourseSchema({
         )}
 
         {/*
-          S'INSCRIRE PASSE AVANT ÉCRIRE, et se place sous la grille : c'est là
-          qu'on décide, les prix sous les yeux. Le bouton de contact reste, pour
-          qui a une question plutôt qu'une intention.
+          LE SEUL BOUTON DE LA PAGE, sous la grille : c'est là qu'on décide, les
+          prix sous les yeux. Les « Demander une place dans un créneau » qui le
+          précédaient ont été retirés — on n'écrit plus pour demander une place,
+          on la prend.
         */}
         {page.inscriptionLabel && page.inscriptionUrl && (
           <p class="mt-8 text-center">
@@ -560,14 +567,13 @@ const courseSchema = buildCourseSchema({
           </p>
         )}
 
-        <ContactCTA label={page.ctaLabel} />
       </div>
     </section>
   )}
 
   <Temoignages page="ateliers" />
 
-  <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} fond />
+  <FaqSection title={page.faqSectionTitle} items={faqItems} fond cta={false} />
 
   {page.crossLinksText && (
     <CrossLinksSection text={page.crossLinksText} excludeHref="/ateliers-reguliers/" />

@@ -26,6 +26,33 @@ export interface CreneauAchetable {
 }
 
 /**
+ * Une origine que HelloAsso accepte pour ses URL de retour.
+ *
+ * HELLOASSO REFUSE localhost, 127.0.0.1 ET LE HTTP EN CLAIR — d'un « Le champ
+ * BackUrl est invalide » qui ne dit pas lequel des trois est en cause. Sans
+ * repli, le parcours d'achat serait intestable ailleurs qu'en production.
+ *
+ * On retombe alors sur le site configuré : le paiement se fait bien, et le
+ * retour atterrit sur le domaine public — qui provisionne dans la MÊME base.
+ * Le parcours se vérifie donc en entier depuis un poste de développement, au
+ * prix d'un changement de domaine à la dernière étape.
+ *
+ * Une préversion Vercel, elle, est joignable en https : on la garde, faute de
+ * quoi on testerait la production en croyant tester la préversion.
+ */
+export function origineJoignable(origine: string, site: URL | undefined): string {
+  const sans = (u: string) => u.replace(/\/+$/, '');
+  try {
+    const u = new URL(origine);
+    const locale = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(u.hostname);
+    if (u.protocol === 'https:' && !locale) return sans(origine);
+  } catch {
+    /* origine illisible : on tentera le repli */
+  }
+  return site ? sans(String(site)) : sans(origine);
+}
+
+/**
  * Ce qui est demandé est-il seulement possible ?
  *
  * Le contrôle des publics n'est pas une politesse : `run_auto_enrolment` exige
@@ -69,13 +96,19 @@ export async function demarrerAchat(
   supabase: SupabaseClient,
   o: {
     email: string;
+    /** Le nom du payeur, tel qu'il figurera sur la page de paiement. */
+    payeurPrenom?: string;
+    payeurNom?: string;
+    /** Le nom de la personne inscrite. Le payeur lui-même, le plus souvent. */
     prenom: string;
     audience: string;
     formule?: FormuleCatalogue;
     creneau?: CreneauAchetable;
     comptant: boolean;
-    /** Base du site, pour les URL de retour. */
+    /** Origine de la requête. Remplacée par `site` si HelloAsso la refuserait. */
     origine: string;
+    /** Le site public configuré, seul repli possible depuis un poste local. */
+    site?: URL;
     /** Chemin de la page d'achat, où revenir en cas d'échec. */
     cheminAchat: string;
     /** Chemin de la page de retour après paiement. */
@@ -104,6 +137,8 @@ export async function demarrerAchat(
     if (deja.ok) adhesionDue = !deja.valeur;
   }
 
+  const base = origineJoignable(o.origine, o.site);
+
   const achat = preparerAchat({
     formule: o.formule!,
     creneau: o.creneau!,
@@ -112,11 +147,21 @@ export async function demarrerAchat(
     adhesionDue,
     comptant: o.comptant,
     achatLe: new Date(),
-    payeur: { email },
+    /*
+     * LE PAYEUR N'EST PAS TOUJOURS LE PARTICIPANT, et c'est le cas le plus
+     * courant chez les enfants : la page de paiement doit porter le nom de qui
+     * règle, non celui de qui coud. Les deux se saisissent séparément, et le
+     * formulaire ne demande le second que lorsqu'il diffère.
+     */
+    payeur: {
+      email,
+      ...(o.payeurPrenom?.trim() ? { firstName: o.payeurPrenom.trim() } : {}),
+      ...(o.payeurNom?.trim() ? { lastName: o.payeurNom.trim() } : {}),
+    },
     urls: {
-      retour: `${o.origine}${o.cheminRetour}`,
-      erreur: `${o.origine}${o.cheminAchat}?echec=1`,
-      retourArriere: `${o.origine}${o.cheminAchat}`,
+      retour: `${base}${o.cheminRetour}`,
+      erreur: `${base}${o.cheminAchat}?echec=1`,
+      retourArriere: `${base}${o.cheminAchat}`,
     },
   });
 

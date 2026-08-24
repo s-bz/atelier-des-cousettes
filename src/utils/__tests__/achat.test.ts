@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { verifierAchat } from '../achat';
+import { verifierAchat, origineJoignable } from '../achat';
 
 const formule = {
   id: '2026-2027-adultes-9', libelle: '9 séances', audience: 'adultes',
@@ -56,5 +56,45 @@ describe('verifierAchat', () => {
       expect(r.erreur).toContain('ados');
       expect(r.erreur).toContain('enfant');
     }
+  });
+});
+
+describe('origineJoignable', () => {
+  const site = new URL('https://atelier-des-cousettes.fr');
+
+  it('garde une origine publique', () => {
+    expect(origineJoignable('https://atelier-des-cousettes.fr', site))
+      .toBe('https://atelier-des-cousettes.fr');
+  });
+
+  it('garde une adresse de prévisualisation', () => {
+    // Les déploiements de préversion sont joignables : HelloAsso les accepte.
+    expect(origineJoignable('https://atelier-abc123.vercel.app', site))
+      .toBe('https://atelier-abc123.vercel.app');
+  });
+
+  it('remplace une origine locale par le site public', () => {
+    // « Le champ BackUrl est invalide » : HelloAsso refuse localhost. Sans ce
+    // repli, le parcours d'achat est intestable en développement.
+    for (const locale of ['http://localhost:4321', 'http://127.0.0.1:4321', 'http://[::1]:4321']) {
+      expect(origineJoignable(locale, site)).toBe('https://atelier-des-cousettes.fr');
+    }
+  });
+
+  it('refuse le http en clair, que HelloAsso rejette aussi', () => {
+    expect(origineJoignable('http://exemple.fr', site)).toBe('https://atelier-des-cousettes.fr');
+  });
+
+  it('ne laisse jamais de barre oblique finale', () => {
+    // `String(Astro.site)` en porte une : sans cela on construirait
+    // « https://…fr//ateliers-reguliers/ ».
+    expect(origineJoignable('http://localhost:4321', new URL('https://atelier-des-cousettes.fr/')))
+      .toBe('https://atelier-des-cousettes.fr');
+  });
+
+  it('rend l’origine telle quelle si aucun site n’est configuré', () => {
+    // Rien de mieux à proposer : l'erreur de l'API sera plus parlante qu'un
+    // repli inventé.
+    expect(origineJoignable('http://localhost:4321', undefined)).toBe('http://localhost:4321');
   });
 });
