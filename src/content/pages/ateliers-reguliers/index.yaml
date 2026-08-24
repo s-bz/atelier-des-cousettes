@@ -1,7 +1,7 @@
 title: Ateliers réguliers
 subtitle: Progressez à votre rythme, une à deux fois par mois
 seoDescription: >-
-  Ateliers de couture réguliers à Revel (Haute-Garonne) et Verdalle (Tarn). Tous niveaux, petits groupes. De 25€ à 55€ par mois, de septembre à juin.
+  Ateliers de couture réguliers à Revel (Haute-Garonne) et Verdalle (Tarn). Tous niveaux, petits groupes. De 25€ à 59€ par mois, de septembre à juin.
 coverImage: /src/assets/images/covers/ateliers-reguliers/coverImage.webp
 coverImageAlt: Atelier de couture régulier en petits groupes à Revel
 introduction: >-
@@ -15,53 +15,55 @@ tarifsTitle: Tarifs
 tarifsLienLabel: Voir les tarifs
 tarifsIntro: >-
   Un forfait s'achète pour la saison, de septembre à juin, et se pose sur les
-  dates de votre choix, dans le créneau qui vous convient. L'adhésion à
-  l'association est comprise : il n'y a rien à régler en plus.
+  dates de votre choix, dans le créneau qui vous convient. S'y ajoute l'adhésion
+  à l'association Les P'tits Piafs, 15 € par an, réglée une seule fois pour la
+  saison.
 tarifsUniteQuestion: Vous préférez venir une seule fois, sans vous engager ?
 tarifsNote: Le tissu et les fournitures restent à votre charge.
 tarifs:
   - audience: adultes
     dureeSeance: Séances de 3 h
     formules:
-      - seances: 10 séances
+      - seances: 9 séances
         mensuel: 36 € par mois
-        detail: environ une fois par mois sur la saison, ou 360 € réglés en une fois
-      - seances: 20 séances
-        mensuel: 58 € par mois
-        detail: environ deux fois par mois sur la saison, ou 580 € réglés en une fois
+        detail: environ une fois par mois sur la saison ; 324 €, en 9 mensualités ou en une fois
+      - seances: 18 séances
+        mensuel: 59 € par mois
+        detail: environ deux fois par mois sur la saison ; 531 €, en 9 mensualités ou en une fois
+  - audience: ados
+    dureeSeance: Séances de 2 h
+    formules:
+      - seances: 9 séances
+        mensuel: 25 € par mois
+        detail: environ une fois par mois sur la saison ; 225 €, en 9 mensualités ou en une fois
+      - seances: 18 séances
+        mensuel: 44 € par mois
+        detail: environ deux fois par mois sur la saison ; 396 €, en 9 mensualités ou en une fois
   - audience: enfants
     dureeSeance: Séances de 2 h
     formules:
-      - seances: 10 séances
-        mensuel: 28 € par mois
-        detail: environ une fois par mois sur la saison, ou 280 € réglés en une fois
-      - seances: 20 séances
-        mensuel: 45 € par mois
-        detail: environ deux fois par mois sur la saison, ou 450 € réglés en une fois
+      - seances: 16 séances
+        mensuel: 34 € par mois
+        detail: toutes les dates de la saison ; 340 €, en 10 mensualités ou en une fois
 creneaux:
-  - name: Atelier de Verdalle
-    location: Verdalle
-    day: '1 fois par mois le jeudi '
-    time: de 9h30 à 12h30
-    group: verdalle
   - name: Atelier du mardi après-midi
     location: Revel
     day: 1 à 2 fois par mois, le mardi
     time: 14h à 17h
+    group: revel-adultes
+  - name: Atelier du jeudi matin
+    location: Revel
+    day: 1 fois par mois, le jeudi
+    time: 9h30 à 12h30
     group: revel-adultes
   - name: Atelier du jeudi après-midi
     location: Revel
     day: 2 fois par mois, le jeudi
     time: 14h à 17h
     group: revel-adultes
-  - name: Atelier enfants du jeudi
-    location: Revel
-    day: 1 à 2 fois par mois, le jeudi
-    time: 17h30 à 19h30
-    group: revel-enfants
   - name: Atelier du samedi matin
     location: Revel
-    day: 1 à 2 fois par mois, le samedi
+    day: 1 fois par mois, le samedi
     time: 9h30 à 12h30
     group: revel-adultes
   - name: Atelier du samedi après-midi
@@ -69,29 +71,53 @@ creneaux:
     day: 2 fois par mois, le samedi
     time: 14h à 17h
     group: revel-adultes
+  - name: Atelier ados du samedi matin
+    location: Revel
+    day: 1 fois par mois, le samedi
+    time: 10h30 à 12h30
+    group: revel-ados
+  - name: Atelier ados du samedi après-midi
+    location: Revel
+    day: 2 fois par mois, le samedi
+    time: 14h à 16h
+    group: revel-ados
   - name: Atelier enfants du samedi
     location: Revel
     day: 1 à 2 fois par mois, le samedi
     time: 10h à 12h
     group: revel-enfants
+  - name: Atelier de Verdalle
+    location: Verdalle
+    day: Sur demande
+    time: ''
+    group: verdalle
+    note: Créneau ouvert selon la demande — contactez Isabelle.
   - name: Atelier enfants de Verdalle
     location: Verdalle
     day: Sur demande
-    time: 14h à 16h
+    time: ''
     group: verdalle-enfants
     note: Créneau ouvert selon la demande — contactez Isabelle.
 faqItems:
   - question: Quels sont les tarifs des ateliers réguliers ?
     answer: >-
-      Pour les adultes, 36 € par mois pour 10 séances de 3 h sur la saison, ou
-      58 € par mois pour 20 séances. Pour les enfants, 28 € par mois pour
-      10 séances de 2 h, ou 45 € par mois pour 20 séances. L'adhésion à
-      l'association Les P'tits Piafs est comprise dans ces montants. Le tissu et
-      les fournitures restent à votre charge.
+      Pour les adultes, 9 séances de 3 h coûtent 324 €, et 18 séances 531 €.
+      Pour les ados, 9 séances de 2 h coûtent 225 €, et 18 séances 396 €. Pour
+      les enfants, les 16 séances de 2 h de la saison coûtent 340 €. Chaque
+      forfait se règle en une fois ou en mensualités : 9 mensualités pour les
+      adultes et les ados (36 €, 59 €, 25 € ou 44 € selon la formule), 10 pour
+      les enfants (34 €). S'ajoute l'adhésion à l'association Les P'tits Piafs,
+      15 € par an. Le tissu et les fournitures restent à votre charge.
+  - question: L'adhésion à l'association est-elle comprise dans le forfait ?
+    answer: >-
+      Non. L'adhésion à l'association Les P'tits Piafs coûte 15 € par an et
+      s'ajoute au forfait ; elle se règle une seule fois pour la saison. Les
+      stages et les séances sans engagement, eux, comprennent déjà leur adhésion
+      ponctuelle : il n'y a rien à régler en plus.
   - question: Que se passe-t-il si je viens plus souvent que mon forfait ?
     answer: >-
-      Les séances en plus se règlent à l'unité, au même tarif qu'une séance sans
-      engagement : 45 € pour les adultes, 35 € pour les enfants.
+      Les séances en plus se règlent à l'unité : 45 € pour les adultes, 35 €
+      pour les ados et les enfants. Elles se facturent en fin de saison.
   - question: Faut-il apporter son matériel ?
     answer: >-
       Chaque participant vient avec sa propre machine à coudre, ses accessoires

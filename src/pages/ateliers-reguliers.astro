@@ -16,7 +16,7 @@ import { toSlug } from '../utils/strings';
 import { buildCourseSchema, buildServicePageSchemas } from '../utils/schema';
 import { fourchetteForfaits } from '../utils/tarifs';
 import { getAdminClient } from '../utils/supabase';
-import { ATELIER_GROUPS } from '../utils/ateliers';
+import { ATELIER_GROUPS, titreAudience } from '../utils/ateliers';
 
 /**
  * Les ateliers réguliers : leurs dates et leur disponibilité lues en base.
@@ -86,6 +86,16 @@ const supabase = getAdminClient();
 // Les séances à venir de chaque créneau d'atelier encore proposé. Un créneau
 // archivé n'est plus au programme : montrer ses dates ferait espérer une
 // inscription impossible.
+//
+// `au_forfait` écarte les créneaux qui ne se vendent qu'à l'unité — la séance
+// du jeudi soir, 1 h 30 à 22 €. Cette page ne parle que de forfaits : l'y
+// laisser paraître aurait invité à poser sur elle un forfait qu'elle
+// n'accepte pas. Elle a sa page, celle des séances sans engagement.
+//
+// LE FILTRE EST SUR LA REQUÊTE, ET NON À L'AFFICHAGE, parce que `enBase` sert
+// aussi à repérer les créneaux qu'aucune fiche du CMS ne décrit. Filtré plus
+// tard, un créneau hors forfait serait signalé comme un oubli de contenu à
+// chaque visite — un avertissement permanent sur une absence voulue.
 const { data: enBase, error } = await supabase
   .from('creneaux')
   .select(`
@@ -94,6 +104,7 @@ const { data: enBase, error } = await supabase
     sessions(starts_at, ends_at, capacity, places_attente, status, bookings(status))
   `)
   .eq('kind', 'atelier')
+  .eq('au_forfait', true)
   .is('archived_at', null);
 
 const maintenant = new Date().toISOString();
@@ -208,11 +219,18 @@ const prixSeanceDe = (audience: string) => {
   return c ? `${(c.default_unit_price_cents / 100).toFixed(0)} €` : null;
 };
 
+/*
+ * Les deux ternaires que ces lignes remplaçaient rangeaient tout public autre
+ * qu'« enfants » chez les adultes. La carte des ados se serait donc intitulée
+ * « Pour les adultes », au-dessus de la grille ados — le genre de faute qui ne
+ * se voit pas à la relecture du code et saute aux yeux sur la page.
+ */
 const tarifs = (page.tarifs ?? []).map((t) => ({
   ...t,
-  titre: t.audience === 'enfants' ? 'Pour les enfants' : 'Pour les adultes',
-  // « adultes » / « enfants » seuls, pour la phrase de la séance à l'unité.
-  public: t.audience === 'enfants' ? 'enfants' : 'adultes',
+  titre: titreAudience(t.audience),
+  // « adultes » / « ados » / « enfants » seuls, pour la phrase de la séance
+  // à l'unité.
+  public: t.audience,
   prixSeance: prixSeanceDe(t.audience),
 }));
 
@@ -329,16 +347,27 @@ const courseSchema = buildCourseSchema({
                     L'horaire monte en évidence : il ne se répète plus sur chaque
                     date, c'est donc ici qu'on le lit — une seule fois, mais
                     lisiblement.
+
+                    UN CRÉNEAU SANS HORAIRE N'EN AFFICHE AUCUN, ni la durée qui
+                    s'en déduit. Les deux ateliers de Verdalle se donnent « sur
+                    demande » et n'ont aucune date au programme : « de 9h30 à
+                    12h30 · 3 h par séance » y annonçait un rendez-vous précis
+                    que rien ne tient, et invitait à venir un jeudi matin où
+                    personne n'ouvre. Vider l'horaire dans le CMS retire la
+                    ligne entière — la durée suit, n'étant que l'écart entre
+                    deux heures qu'on cesse d'annoncer.
                   */}
-                  <p class="mb-4 font-medium text-[var(--color-heading)]">
-                    {c.time}
-                    {dureeDe(c.name) && ` · ${dureeDe(c.name)} par séance`}
-                    {c.note && (
-                      <span class="block text-sm font-normal text-[var(--color-text-light)]">
-                        {c.note}
-                      </span>
+                  <div class="mb-4">
+                    {c.time && (
+                      <p class="font-medium text-[var(--color-heading)]">
+                        {c.time}
+                        {dureeDe(c.name) && ` · ${dureeDe(c.name)} par séance`}
+                      </p>
                     )}
-                  </p>
+                    {c.note && (
+                      <p class="text-sm text-[var(--color-text-light)]">{c.note}</p>
+                    )}
+                  </div>
 
                   {ecartsDe(c).length > 0 && (
                     <div class="mb-4 rounded-xl border border-[var(--color-button)] p-3 text-sm">
@@ -408,10 +437,12 @@ const courseSchema = buildCourseSchema({
         )}
 
         {/*
-          UNE SEULE COLONNE, adultes puis enfants. Côte à côte, les deux cartes
-          invitaient à une comparaison que personne ne fait : on sait pour qui
-          l'on vient. L'ordre suffit à hiérarchiser, à l'identique sur téléphone
-          et sur écran, sans dépliant ni bouton à découvrir.
+          UNE SEULE COLONNE, du public le plus âgé au plus jeune. Côte à côte,
+          les cartes invitaient à une comparaison que personne ne fait : on sait
+          pour qui l'on vient. L'ordre suffit à hiérarchiser, à l'identique sur
+          téléphone et sur écran, sans dépliant ni bouton à découvrir — et il
+          tient aussi bien à trois publics qu'à deux, là où deux colonnes
+          auraient dû être repensées à l'arrivée des ados.
         */}
         <div class="space-y-6">
           {tarifs.map((t) => (

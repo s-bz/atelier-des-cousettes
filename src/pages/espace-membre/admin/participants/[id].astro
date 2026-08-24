@@ -5,6 +5,7 @@ import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
 import { notifier, variablesSeance } from '../../../../utils/emails';
+import { AUDIENCES } from '../../../../utils/ateliers';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -699,8 +700,11 @@ const saisonDefaut = `${anneeCourante}-${anneeCourante + 1}`;
       <div class="mt-3">
         <label for="audience" class="block text-sm font-medium mb-1">Public</label>
         <select id="audience" name="audience" class="champ">
-          <option value="adulte" selected={participant.audience === 'adulte'}>Adulte</option>
-          <option value="enfant" selected={participant.audience === 'enfant'}>Enfant</option>
+          {AUDIENCES.map((a) => (
+            <option value={a.personne} selected={participant.audience === a.personne}>
+              {a.label.replace(/s$/, '')}
+            </option>
+          ))}
         </select>
       </div>
 

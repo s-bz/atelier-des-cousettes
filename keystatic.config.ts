@@ -1,5 +1,5 @@
 import { config, fields, singleton, collection } from '@keystatic/core';
-import { ATELIER_GROUPS } from './src/utils/ateliers';
+import { ATELIER_GROUPS, AUDIENCES } from './src/utils/ateliers';
 import { markdocComponents } from './src/utils/markdoc-components';
 
 const coverImageFields = (slug: string) => ({
@@ -148,6 +148,35 @@ export default config({
           description:
             'Affiché en haut des trois pages de formules. Videz ce champ pour le faire disparaître partout.',
           multiline: true,
+        }),
+
+        /*
+         * L'ADHÉSION À L'ASSOCIATION — DEUX MONTANTS, DEUX RÉGIMES.
+         *
+         * Ils n'étaient écrits nulle part, et c'est ce qui a permis à la phrase
+         * « l'adhésion est comprise : il n'y a rien à régler en plus » de
+         * s'étendre à des formules où elle est fausse. Un fait que personne ne
+         * détient finit par être affirmé de mémoire.
+         *
+         *   — ANNUELLE, pour un forfait de saison. Elle s'ajoute au forfait :
+         *     les montants de la grille ne la contiennent pas.
+         *   — PONCTUELLE, pour un stage ou une séance sans engagement. Elle est
+         *     COMPRISE dans le prix affiché depuis juillet 2026, où stages et
+         *     séances ont été augmentés d'autant (migrations 20260730112806 et
+         *     20260730144328). Rien à régler sur place.
+         *
+         * Vider l'un des deux retire la mention correspondante partout, plutôt
+         * que d'afficher « 0 € ».
+         */
+        adhesionAnnuelle: fields.text({
+          label: 'Adhésion annuelle, en plus du forfait (ex : 15 € par an)',
+          description:
+            'S’AJOUTE aux forfaits de saison. Videz ce champ si l’adhésion est comprise dans les forfaits.',
+        }),
+        adhesionPonctuelle: fields.text({
+          label: 'Adhésion ponctuelle, comprise dans les stages et séances (ex : 5 €)',
+          description:
+            'DÉJÀ COMPRISE dans les prix des stages et des séances sans engagement. Sert seulement à l’expliquer.',
         }),
       },
     }),
@@ -394,11 +423,11 @@ export default config({
           fields.object({
             audience: fields.select({
               label: 'Public',
-              options: [
-                { label: 'Adultes', value: 'adultes' },
-                { label: 'Enfants', value: 'enfants' },
-              ],
-              defaultValue: 'adultes',
+              // Les publics viennent de la table commune au code et à la base.
+              // Recopiés ici, ils vieillissaient à part : les ados existaient en
+              // base et restaient impossibles à tarifer dans le CMS.
+              options: AUDIENCES.map((a) => ({ label: a.label, value: a.creneau })),
+              defaultValue: AUDIENCES[0].creneau,
             }),
             dureeSeance: fields.text({ label: 'Durée d’une séance (ex : Séances de 3 h)' }),
             formules: fields.array(
@@ -431,7 +460,9 @@ export default config({
           }),
           {
             label: 'Tarifs par public',
-            itemLabel: (props) => (props.fields.audience.value === 'enfants' ? 'Enfants' : 'Adultes'),
+            itemLabel: (props) =>
+              AUDIENCES.find((a) => a.creneau === props.fields.audience.value)?.label ??
+              props.fields.audience.value,
           },
         ),
         creneaux: fields.array(
@@ -439,7 +470,10 @@ export default config({
             name: fields.text({ label: 'Nom du créneau' }),
             location: fields.text({ label: 'Lieu (ex: Revel, Verdalle)' }),
             day: fields.text({ label: 'Jour (ex: Jeudi)' }),
-            time: fields.text({ label: 'Horaire (ex: 14h à 17h)' }),
+            // Laisser vide retire la ligne entière de la carte, durée comprise :
+            // c'est ce qu'on veut d'un créneau « sur demande », dont aucune date
+            // ne garantit l'horaire annoncé.
+            time: fields.text({ label: 'Horaire (ex: 14h à 17h — vide si sur demande)' }),
             group: fields.select({
               label: 'Groupe (navigation)',
               options: ATELIER_GROUPS.map((g) => ({ label: g.label, value: g.id })),
@@ -478,10 +512,33 @@ export default config({
          * affiche 45 € pour un adulte et 35 € pour deux heures d'enfant.
          */
         priceLabel: fields.text({ label: 'Sous-libellé tarif (ex: la séance)' }),
-        location: fields.text({ label: 'Lieu', multiline: true }),
+        // La pastille de lieu, à côté de celles des tarifs. Vider ce champ la
+        // retire — le sous-libellé part avec elle, n'ayant plus rien à qualifier.
+        location: fields.text({
+          label: 'Lieu, en pastille (ex: Revel) — vide pour retirer la pastille',
+          multiline: true,
+        }),
         locationLabel: fields.text({ label: 'Sous-libellé lieu (ex: dans le Tarn)' }),
         descriptionTitle: fields.text({ label: 'Titre section description' }),
         description: fields.text({ label: 'Description du déroulement', multiline: true }),
+        /*
+         * CE QU'ON PEUT Y FAIRE — la question qui précède « pour qui ».
+         *
+         * « Vous venez avec votre projet personnel » suppose qu'on en ait un.
+         * Le débutant qui hésite n'a justement pas de projet : il a une envie
+         * vague et la crainte qu'elle soit trop petite, ou trop ambitieuse,
+         * pour justifier une séance. Nommer des gestes ordinaires — un ourlet,
+         * une fermeture éclair — répond à cette crainte mieux qu'une invitation
+         * à venir avec une idée.
+         *
+         * Même gabarit que la liste « à qui s'adresse cette formule », qui la
+         * suit : une phrase par ligne, cochée.
+         */
+        ideesTitle: fields.text({ label: 'Titre section idées d’activités' }),
+        ideesItems: fields.array(fields.text({ label: 'Idée' }), {
+          label: 'Idées d’activités',
+          itemLabel: (props) => props.value || 'Idée',
+        }),
         audienceTitle: fields.text({ label: 'Titre section public' }),
         audienceItems: fields.array(
           fields.text({ label: 'Public cible' }),

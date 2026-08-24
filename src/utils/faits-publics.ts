@@ -23,6 +23,7 @@
  */
 
 import { getAdminClient } from './supabase';
+import { AUDIENCES, libelleAudience } from './ateliers';
 
 /** Un créneau tel que la base le décrit, réduit à ce qui est public. */
 export interface CreneauPublic {
@@ -33,6 +34,20 @@ export interface CreneauPublic {
   debut: string;
   fin: string;
   prixCents: number;
+  /**
+   * Ce créneau se vend-il à la séance ?
+   *
+   * Faux pour les ateliers ados et enfants depuis la saison 2026-2027 : on y
+   * prend un forfait, ou rien. Leur `prixCents` demeure — il facture une séance
+   * qui dépasse le forfait — mais ces fichiers ne doivent plus l'annoncer comme
+   * un tarif d'essai. FACTURER N'EST PAS PROPOSER, et c'est précisément le
+   * genre de nuance qu'un modèle de langage ne peut pas deviner : il lirait
+   * « 35 € la séance enfant » et le répéterait à un parent.
+   *
+   * Optionnel, et vrai par défaut à la lecture : les jeux d'essai écrits avant
+   * cette colonne décrivent des créneaux qui se vendaient bien des deux façons.
+   */
+  aLUnite?: boolean;
 }
 
 export interface Formule {
@@ -131,12 +146,37 @@ export interface FaitsPublics {
     introduction?: string | null;
     description?: string | null;
     publics: readonly string[];
+    /**
+     * Ce qu'on peut faire en une séance — « coudre un ourlet », « poser une
+     * fermeture éclair ».
+     *
+     * « QUE PEUT-ON FAIRE EN COURS DE COUTURE ? » est une question qu'on pose à
+     * un moteur de réponse, et à laquelle rien ici ne répondait : ces fichiers
+     * savaient dire les prix, les dates, les lieux et les publics, mais pas les
+     * gestes. Un tarif ne rassure que celui qui sait déjà ce qu'il vient faire.
+     */
+    idees: readonly string[];
   };
   articles: readonly ArticlePublic[];
   /** Le glossaire, par ordre alphabétique. Vide tant qu'aucune fiche n'existe. */
   glossaire: readonly TermePublic[];
   /** L'avertissement du CMS quand la saison n'est pas encore arrêtée. */
   avisProvisoire?: string | null;
+  /**
+   * L'ADHÉSION À L'ASSOCIATION, ET SES DEUX RÉGIMES.
+   *
+   * Ces fichiers ont affirmé neuf fois « l'adhésion est comprise dans tous les
+   * tarifs annoncés ». C'était vrai des stages et des séances à l'unité, dont
+   * les prix ont été relevés d'autant en juillet 2026, et faux des forfaits de
+   * saison, auxquels 15 € par an s'ajoutent. « Tous » est le mot qui a fait la
+   * faute : une phrase juste sur deux formules, étendue à la troisième parce
+   * qu'aucun fait ne la contredisait.
+   *
+   * Les deux montants viennent donc du CMS, et les phrases se déduisent d'eux
+   * plutôt que de l'affirmer. Vider l'un retire sa mention partout.
+   */
+  adhesionAnnuelle?: string | null;
+  adhesionPonctuelle?: string | null;
 }
 
 const euros = (cents: number) => Math.round(cents / 100);
@@ -173,7 +213,7 @@ export async function lireCreneauxPublics(): Promise<CreneauPublic[]> {
   try {
     const { data, error } = await getAdminClient()
       .from('creneaux')
-      .select('label, kind, audience, default_location, default_start_time, default_end_time, default_unit_price_cents')
+      .select('label, kind, audience, default_location, default_start_time, default_end_time, default_unit_price_cents, a_l_unite')
       .is('archived_at', null);
     if (error || !data) return [];
     return data.map((c) => ({
@@ -184,6 +224,7 @@ export async function lireCreneauxPublics(): Promise<CreneauPublic[]> {
       debut: c.default_start_time,
       fin: c.default_end_time,
       prixCents: c.default_unit_price_cents,
+      aLUnite: c.a_l_unite ?? true,
     }));
   } catch {
     return [];
@@ -231,10 +272,81 @@ export async function lireProchainesSeances(limite = 200): Promise<SeancePubliqu
   }
 }
 
-/** Le prix d'une séance hors forfait, par public. */
+/**
+ * Le prix d'une séance ACHETÉE À L'UNITÉ, par public.
+ *
+ * Un créneau qui ne se vend qu'au forfait n'a pas de prix à l'unité à annoncer,
+ * même si sa colonne en porte un : ce montant-là facture les dépassements de
+ * forfait, il ne s'offre pas. Les ateliers ados et enfants sont dans ce cas.
+ */
 export function prixSeance(creneaux: readonly CreneauPublic[], audience: string): number | null {
-  const c = creneaux.find((x) => x.kind === 'atelier' && x.audience === audience && x.prixCents > 0);
+  const c = creneaux.find(
+    (x) => x.kind === 'atelier' && x.audience === audience && x.prixCents > 0 && x.aLUnite !== false,
+  );
   return c ? euros(c.prixCents) : null;
+}
+
+/**
+ * « 3 h », « 2 h 30 » — la durée d'une séance de ce public, LUE SUR SES CRÉNEAUX.
+ *
+ * Elle était écrite en toutes lettres dans la phrase qui l'affiche : « 45 € la
+ * séance de 3 h », « 35 € la séance de 2 h ». Deux durées codées en dur, donc
+ * deux publics et pas un de plus — l'atelier ados serait sorti sans durée, ou
+ * pire, avec celle d'un autre. Le montant venait déjà de la base ; la durée
+ * vient désormais du même endroit, et les deux ne peuvent plus se contredire.
+ */
+function dureeDe(debut: string, fin: string): string | null {
+  const min = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const m = min(fin) - min(debut);
+  return m <= 0 ? null : m % 60 === 0 ? `${m / 60} h` : `${Math.floor(m / 60)} h ${m % 60}`;
+}
+
+export function dureeSeance(creneaux: readonly CreneauPublic[], audience: string): string | null {
+  const c = creneaux.find(
+    (x) => x.kind === 'atelier' && x.audience === audience && x.aLUnite !== false,
+  );
+  return c ? dureeDe(c.debut, c.fin) : null;
+}
+
+/**
+ * LES OFFRES ACHETABLES À L'UNITÉ — une par couple (durée, prix).
+ *
+ * `prixSeance` rend UN prix pour UN public, et c'était suffisant tant qu'un
+ * public n'avait qu'un tarif. Les adultes en ont désormais deux : 3 h à 45 €
+ * dans les ateliers réguliers, 1 h 30 à 22 € le jeudi soir. Interrogée par
+ * public, la fonction rendait le premier des deux — c'est-à-dire l'ordre que
+ * la base voulait bien donner — et /tarifs.md n'annonçait qu'une des deux
+ * formules, sans rien signaler.
+ *
+ * Ce sont donc les OFFRES qu'on énumère, non les publics. Deux créneaux qui
+ * durent autant et coûtent autant sont la même offre, quel que soit le jour :
+ * les cinq créneaux adultes de 3 h à 45 € n'en font qu'une.
+ *
+ * La plus chère d'abord : c'est la formule principale, la courte se lit ensuite
+ * comme ce qu'elle est, une porte d'entrée.
+ */
+export interface OffreUnite {
+  /** « Séance de 3 h » — le nom sous lequel elle se propose. */
+  titre: string;
+  duree: string | null;
+  prix: number;
+}
+
+export function offresALUnite(creneaux: readonly CreneauPublic[]): OffreUnite[] {
+  const par = new Map<string, OffreUnite>();
+  for (const c of creneaux) {
+    if (c.kind !== 'atelier' || c.prixCents <= 0 || c.aLUnite === false) continue;
+    const duree = dureeDe(c.debut, c.fin);
+    const cle = `${c.prixCents}|${duree ?? ''}`;
+    if (!par.has(cle)) {
+      par.set(cle, {
+        titre: duree ? `Séance de ${duree}` : 'Séance',
+        duree,
+        prix: euros(c.prixCents),
+      });
+    }
+  }
+  return [...par.values()].sort((a, b) => b.prix - a.prix);
 }
 
 /**
@@ -319,7 +431,11 @@ export function faitsCles(f: FaitsPublics): string[] {
   const durees = f.ateliers.grille
     .map((g) => {
       const d = uneLigne(g.dureeSeance).replace(/^s[ée]ances? de\s*/i, '');
-      return d ? `${d} pour les ${g.audience === 'enfants' ? 'enfants' : 'adultes'}` : null;
+      // Le public se dit tel qu'il est écrit. Le ternaire d'avant repliait tout
+      // ce qui n'était pas « enfants » sur « adultes » : la durée de la séance
+      // ados serait sortie annoncée pour les adultes, à qui elle ne s'applique
+      // pas — et ce fichier est lu par des modèles qui la réciteront.
+      return d ? `${d} pour les ${g.audience}` : null;
     })
     .filter(Boolean);
 
@@ -333,7 +449,16 @@ export function faitsCles(f: FaitsPublics): string[] {
     `- **Saison** : de septembre à juin`,
     `- **Niveaux accueillis** : tous, du grand débutant au couturier confirmé`,
     f.auteur ? `- **Enseignante** : ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}, plus de dix ans d'enseignement` : null,
-    `- **Adhésion** : comprise dans tous les tarifs annoncés`,
+    // Deux régimes, dits l'un après l'autre. Une seule ligne « comprise dans
+    // tous les tarifs » était fausse pour les forfaits, et c'est le fait le
+    // plus repris d'un llms.txt : celui qu'un modèle récite en répondant
+    // « combien ça coûte ».
+    f.adhesionPonctuelle
+      ? `- **Adhésion** : comprise dans le prix des stages et des séances sans engagement`
+      : null,
+    f.adhesionAnnuelle
+      ? `- **Adhésion annuelle** : ${f.adhesionAnnuelle}, en plus du forfait de saison`
+      : null,
     f.articles.length ? `- **Articles de blog publiés** : ${f.articles.length}` : null,
   ].filter((l): l is string => l !== null);
 }
@@ -374,7 +499,7 @@ export function construireDates(f: FaitsPublics): string {
   return `# Prochaines dates — ${f.siteName}
 
 Les séances programmées, telles que le calendrier de réservation les porte.
-Fuseau horaire : Europe/Paris. Les montants sont en euros, adhésion comprise.
+Fuseau horaire : Europe/Paris. Les montants sont en euros. Le prix indiqué est celui d'une séance à l'unité, adhésion ponctuelle comprise.
 Source de vérité : ${siteUrl}/ateliers-reguliers/ et ${siteUrl}/stages-thematiques/.
 ${f.avisProvisoire ? `\n> ${f.avisProvisoire}\n` : ''}
 ## Ateliers réguliers et séances sans engagement
@@ -413,23 +538,23 @@ ${f.telephones.map((t) => `- Téléphone : ${t}`).join('\n')}
 export function construireLlms(f: FaitsPublics): string {
   const { siteUrl } = f;
   const forfaits = mensuels(f.ateliers.grille);
-  const seanceAdulte = prixSeance(f.creneaux, 'adultes');
-  const seanceEnfant = prixSeance(f.creneaux, 'enfants');
   const stages = fourchetteStages(f.creneaux);
 
   const tarifAteliers = forfaits.length
-    ? `de ${Math.min(...forfaits)} € à ${Math.max(...forfaits)} € par mois, adhésion comprise`
+    ? `de ${Math.min(...forfaits)} € à ${Math.max(...forfaits)} € par mois` +
+      (f.adhesionAnnuelle ? `, plus l'adhésion annuelle de ${f.adhesionAnnuelle}` : '')
     : null;
-  const tarifSeance = lignes(
-    seanceAdulte ? `${seanceAdulte} € pour les adultes` : null,
-    seanceEnfant ? `${seanceEnfant} € pour les enfants` : null,
-  ).replace('\n', ', ');
+  // Une ligne par OFFRE, non par public : les adultes en ont deux, et une
+  // énumération par public n'en rendait qu'une.
+  const tarifSeance = offresALUnite(f.creneaux)
+    .map((o) => `${o.prix} €${o.duree ? ` la séance de ${o.duree}` : ''}`)
+    .join(', ');
 
   return `# ${f.siteName}
 
-> Cours de couture, ateliers réguliers, stages thématiques et séances sans engagement à Revel (Haute-Garonne) et Verdalle (Tarn), en France, pour adultes et enfants.
+> Cours de couture, ateliers réguliers, stages thématiques et séances sans engagement à Revel (Haute-Garonne) et Verdalle (Tarn), en France, pour adultes, ados et enfants.
 
-${f.siteName} est un atelier de couture animé par ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}, à Revel (Haute-Garonne) et Verdalle (Tarn), à vingt minutes de Castres. Les cours accueillent tous les niveaux, du grand débutant au couturier confirmé, en petits groupes. Adultes et enfants.
+${f.siteName} est un atelier de couture animé par ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}, à Revel (Haute-Garonne) et Verdalle (Tarn), à vingt minutes de Castres. Les cours accueillent tous les niveaux, du grand débutant au couturier confirmé, en petits groupes. Adultes, ados et enfants.
 ${f.avisProvisoire ? `\n**À noter** : ${f.avisProvisoire}\n` : ''}
 ## Faits clés
 
@@ -457,7 +582,7 @@ ${f.seancesAVenir.length
 ${f.telephones.map((t) => `- **Téléphone** : ${t}`).join('\n')}
 - **Site** : ${siteUrl}
 ${f.facebookUrl ? `- **Facebook** : ${f.facebookUrl}` : ''}
-- **Association support** : Les P'tits Piafs — l'adhésion est comprise dans tous les tarifs annoncés
+- **Association support** : Les P'tits Piafs — l'adhésion est comprise dans le prix des stages et des séances sans engagement${f.adhesionAnnuelle ? `, et coûte ${f.adhesionAnnuelle} en plus d'un forfait de saison` : ''}
 
 ## Pages
 
@@ -492,15 +617,18 @@ ${f.glossaire.map((t) => `- [${t.terme}](${siteUrl}/glossaire/${t.slug}/) — ${
  */
 export function construireTarifs(f: FaitsPublics): string {
   const { siteUrl } = f;
-  const seanceAdulte = prixSeance(f.creneaux, 'adultes');
-  const seanceEnfant = prixSeance(f.creneaux, 'enfants');
+  // Une ligne par OFFRE, prix ET durée lus en base.
+  const seances = offresALUnite(f.creneaux).map(
+    (o) => `- **${o.titre}** : ${o.prix} €`,
+  );
 
   const grille = f.ateliers.grille.map((g) => {
-    const titre = g.audience === 'enfants' ? 'Enfants' : 'Adultes';
+    const titre = libelleAudience(g.audience ?? '');
     const formules = (g.formules ?? [])
       .map((fo) => `- **${fo.seances}** : ${fo.mensuel}${fo.detail ? ` (${fo.detail})` : ''}`)
       .join('\n');
-    return `### Ateliers réguliers — ${titre}\n\n${g.dureeSeance ? `${g.dureeSeance}. ` : ''}Saison de septembre à juin. Adhésion comprise.\n\n${formules}`;
+    const adhesion = f.adhesionAnnuelle ? ` Adhésion de ${f.adhesionAnnuelle} en plus.` : '';
+    return `### Ateliers réguliers — ${titre}\n\n${g.dureeSeance ? `${g.dureeSeance}. ` : ''}Saison de septembre à juin.${adhesion}\n\n${formules}`;
   }).join('\n\n');
 
   const stages = f.stages.liste.map((s) => {
@@ -529,7 +657,8 @@ Dernière source de vérité : ${siteUrl}/ateliers-reguliers/ et ${siteUrl}/stag
 ${f.avisProvisoire ? `\n> ${f.avisProvisoire}\n` : ''}
 ## Ce que les prix comprennent
 
-- L'adhésion à l'association Les P'tits Piafs est **comprise** dans tous les montants ci-dessous. Il n'y a rien à régler en plus.
+- L'adhésion à l'association Les P'tits Piafs est **comprise** dans le prix des stages et des séances sans engagement. Il n'y a rien à régler sur place.
+${f.adhesionAnnuelle ? `- Un forfait de saison suppose en revanche l'adhésion annuelle, **${f.adhesionAnnuelle}**, à régler **en plus** du forfait — une seule fois pour la saison.` : ''}
 - Le tissu et les fournitures restent à la charge du participant.
 - Chaque participant vient avec sa machine à coudre. Isabelle peut en prêter une sur demande préalable.
 
@@ -541,12 +670,9 @@ ${grille}
 
 Sans inscription à la saison, à l'unité.
 
-${lignes(
-  seanceAdulte ? `- **Adulte** : ${seanceAdulte} € la séance de 3 h` : null,
-  seanceEnfant ? `- **Enfant** : ${seanceEnfant} € la séance de 2 h` : null,
-) || '- Prix communiqué sur demande.'}
+${lignes(...seances) || '- Prix communiqué sur demande.'}
 
-C'est aussi le tarif d'une séance venant en plus d'un forfait.
+Une séance venant en plus d'un forfait se facture au tarif de SON atelier — 45 € pour un adulte, 35 € pour un ado ou un enfant — et non à celui d'une séance courte, qui ne se forfaitise pas.
 
 ## Stages thématiques
 
@@ -595,7 +721,7 @@ export function construireLlmsFull(f: FaitsPublics): string {
 
   return `# ${f.siteName} — informations complètes
 
-> Cours de couture, ateliers réguliers, stages thématiques et séances sans engagement à Revel (Haute-Garonne) et Verdalle (Tarn), en France, pour adultes et enfants, animés par ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}.
+> Cours de couture, ateliers réguliers, stages thématiques et séances sans engagement à Revel (Haute-Garonne) et Verdalle (Tarn), en France, pour adultes, ados et enfants, animés par ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}.
 
 ## Faits clés
 
@@ -603,7 +729,7 @@ ${faitsCles(f).join('\n')}
 
 ## À propos
 
-${f.siteName} est un atelier de couture animé par ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}. Les cours ont lieu à Revel (Haute-Garonne, 31) et à Verdalle (Tarn, 81), à vingt minutes de Castres, et accueillent tous les niveaux — du grand débutant au couturier confirmé — en petits groupes pour garantir un accompagnement personnalisé. Adultes et enfants.
+${f.siteName} est un atelier de couture animé par ${f.auteur}, ${minuscule(f.auteurTitre ?? '')}. Les cours ont lieu à Revel (Haute-Garonne, 31) et à Verdalle (Tarn, 81), à vingt minutes de Castres, et accueillent tous les niveaux — du grand débutant au couturier confirmé — en petits groupes pour garantir un accompagnement personnalisé. Adultes, ados et enfants.
 
 Isabelle enseigne la couture depuis plus de dix ans. Son parcours mêle héritage familial (son arrière-grand-père était tailleur), passion pour le patronage et engagement artisanal.
 
@@ -612,7 +738,7 @@ Les cours se déroulent à deux endroits :
 - **Atelier privé** : ${f.adresse.rue}, ${f.adresse.codePostal} ${f.adresse.ville}, ${f.adresse.region}
 - **Maison des associations** : Revel
 
-L'atelier s'appuie sur l'association Les P'tits Piafs. **L'adhésion est comprise dans tous les tarifs annoncés** : il n'y a rien à régler en plus. Le tissu et les fournitures restent à la charge du participant.
+L'atelier s'appuie sur l'association Les P'tits Piafs. **L'adhésion est comprise dans le prix des stages et des séances sans engagement** : il n'y a rien à régler sur place.${f.adhesionAnnuelle ? ` Un forfait de saison suppose en revanche l'adhésion annuelle, **${f.adhesionAnnuelle}**, à régler en plus du forfait.` : ''} Le tissu et les fournitures restent à la charge du participant.
 ${f.avisProvisoire ? `\n**À noter** : ${f.avisProvisoire}\n` : ''}
 ## Les trois formules
 
@@ -623,7 +749,7 @@ ${uneLigne(f.ateliers.introduction)}
 ${uneLigne(f.ateliers.tarifsIntro)}
 
 ${f.ateliers.grille.map((g) => {
-  const titre = g.audience === 'enfants' ? 'Enfants' : 'Adultes';
+  const titre = libelleAudience(g.audience ?? '');
   const formules = (g.formules ?? [])
     .map((fo) => `- ${fo.seances} : ${fo.mensuel}${fo.detail ? ` — ${fo.detail}` : ''}`)
     .join('\n');
@@ -639,16 +765,12 @@ ${creneaux}
 ${uneLigne(f.seances.introduction)}
 
 ${lignes(
-  ...(() => {
-    const a = prixSeance(f.creneaux, 'adultes');
-    const e = prixSeance(f.creneaux, 'enfants');
-    return [
-      a ? `- Adulte : ${a} € la séance de 3 h, adhésion comprise` : null,
-      e ? `- Enfant : ${e} € la séance de 2 h, adhésion comprise` : null,
-    ];
-  })(),
+  ...offresALUnite(f.creneaux).map(
+    (o) => `- ${o.titre} : ${o.prix} €${f.adhesionPonctuelle ? ', adhésion comprise' : ''}`,
+  ),
 )}
 
+${f.seances.idees.length ? `On peut y venir pour :\n\n${f.seances.idees.map((i) => `- ${i}`).join('\n')}\n` : ''}
 ${f.seances.publics.length ? `Cette formule s'adresse à :\n\n${f.seances.publics.map((p) => `- ${p}`).join('\n')}` : ''}
 
 ### Stages thématiques
@@ -666,7 +788,7 @@ Oui, chaque participant vient avec sa propre machine, ses accessoires et sa noti
 Non. Les grands débutants sont attendus : enfiler la machine, régler la tension, coudre droit, faire un ourlet. Isabelle adapte son accompagnement au niveau de chacun.
 
 **L'adhésion est-elle en plus du tarif ?**
-Non. L'adhésion à l'association Les P'tits Piafs est comprise dans tous les tarifs annoncés.
+Cela dépend de la formule. Pour un stage ou une séance sans engagement, non : l'adhésion ponctuelle est comprise dans le prix affiché.${f.adhesionAnnuelle ? ` Pour un forfait de saison, oui : l'adhésion annuelle à l'association Les P'tits Piafs coûte ${f.adhesionAnnuelle} et s'ajoute au forfait, réglée une seule fois pour la saison.` : ''}
 
 **Les enfants sont-ils acceptés ?**
 Oui, des créneaux leur sont réservés, avec des séances de 2 h et une grille tarifaire distincte.

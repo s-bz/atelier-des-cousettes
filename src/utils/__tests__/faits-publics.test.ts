@@ -9,6 +9,7 @@ import {
   prixSeance,
   prixStage,
   type CreneauPublic,
+  offresALUnite,
   type FaitsPublics,
   type SeancePublique,
 } from '../faits-publics';
@@ -83,6 +84,7 @@ const faits: FaitsPublics = {
     introduction: 'Une séance ponctuelle.',
     description: null,
     publics: ['Les débutants.'],
+    idees: ['Coudre un ourlet', 'Faire des poches'],
   },
   articles: [
     { slug: 'coudre-tote-bag', titre: 'Coudre un tote bag', description: 'Les étapes\n essentielles.', publieLe: '2026-03-01' },
@@ -94,6 +96,8 @@ const faits: FaitsPublics = {
     { slug: 'droit-fil', terme: 'Droit fil', definition: 'La direction des fils\n de chaîne.' },
   ],
   avisProvisoire: 'Tarifs provisoires.',
+  adhesionAnnuelle: '15 € par an',
+  adhesionPonctuelle: '5 €',
 };
 
 describe('lecture des prix en base', () => {
@@ -123,7 +127,7 @@ describe('construireLlms', () => {
 
   it('annonce les tarifs lus en base et dans la grille, pas des montants figés', () => {
     expect(texte).toContain('de 28 € à 58 € par mois');
-    expect(texte).toContain('45 € pour les adultes, 35 € pour les enfants');
+    expect(texte).toContain('45 € la séance de 3 h, 35 € la séance de 2 h');
     expect(texte).toContain('de 38 € à 70 €');
   });
 
@@ -132,9 +136,31 @@ describe('construireLlms', () => {
     expect(texte).toContain('https://exemple.fr/seances-sans-engagement/');
   });
 
-  it('dit que l’adhésion est comprise — la question qui revient le plus', () => {
-    expect(texte).toContain('adhésion comprise');
-    expect(texte).toMatch(/adhésion est comprise dans tous les tarifs/);
+  /*
+   * L'ADHÉSION A DEUX RÉGIMES, ET C'EST LA QUESTION QUI REVIENT LE PLUS.
+   *
+   * Le test d'avant exigeait « comprise dans TOUS les tarifs », et scellait
+   * ainsi une phrase fausse : les stages et les séances à l'unité comprennent
+   * leur adhésion ponctuelle, les forfaits de saison non — 15 € par an s'y
+   * ajoutent. Un llms.txt est récité par des modèles qui répondent « combien ça
+   * coûte » à notre place ; l'erreur y valait un devis faux.
+   */
+  it('distingue l’adhésion comprise de l’adhésion annuelle en plus', () => {
+    expect(texte).toContain('comprise dans le prix des stages et des séances sans engagement');
+    expect(texte).toContain('15 € par an, en plus du forfait de saison');
+  });
+
+  it('n’affirme plus que l’adhésion est comprise dans TOUS les tarifs', () => {
+    expect(texte).not.toMatch(/adhésion est comprise dans tous les tarifs/);
+    expect(texte).not.toContain('il n’y a rien à régler en plus');
+  });
+
+  it('se tait sur l’adhésion annuelle quand le CMS n’en porte aucune', () => {
+    // Le champ vidé décrit un monde où le forfait la comprend : la page ne doit
+    // alors annoncer ni « 0 € » ni un supplément qui n'existe pas.
+    const sans = construireLlms({ ...faits, adhesionAnnuelle: null });
+    expect(sans).not.toContain('en plus du forfait');
+    expect(sans).toContain('comprise dans le prix des stages');
   });
 
   it('garde le sigle du titre professionnel intact', () => {
@@ -261,8 +287,70 @@ describe('construireLlmsFull', () => {
   });
 
   it('répète les montants plutôt que de renvoyer à tarifs.md', () => {
-    expect(texte).toContain('Adulte : 45 € la séance de 3 h, adhésion comprise');
+    expect(texte).toContain('Séance de 3 h : 45 €, adhésion comprise');
     expect(texte).toContain('10 séances : 36 € par mois');
+  });
+});
+
+describe('ce qu’on peut faire en séance', () => {
+  it('énumère les idées dans llms-full', () => {
+    // « Que peut-on faire en cours de couture ? » est une question posée aux
+    // moteurs de réponse. Les prix y étaient, les gestes non.
+    const texte = construireLlmsFull(faits);
+    expect(texte).toContain('On peut y venir pour :');
+    expect(texte).toContain('- Coudre un ourlet');
+  });
+
+  it('se tait quand aucune idée n’est saisie', () => {
+    const texte = construireLlmsFull({ ...faits, seances: { ...faits.seances, idees: [] } });
+    expect(texte).not.toContain('On peut y venir pour');
+  });
+});
+
+describe('offresALUnite', () => {
+  it('réunit les créneaux qui durent autant et coûtent autant', () => {
+    // Deux créneaux adultes de 3 h à 45 € — le mardi et Verdalle — sont UNE
+    // offre. Les énumérer par créneau aurait affiché deux fois le même tarif.
+    expect(offresALUnite(creneaux)).toEqual([
+      { titre: 'Séance de 3 h', duree: '3 h', prix: 45 },
+      { titre: 'Séance de 2 h', duree: '2 h', prix: 35 },
+    ]);
+  });
+
+  it('écarte un créneau qui ne se vend pas à l’unité, sans perdre son prix', () => {
+    /*
+     * LA DISTINCTION QUI COMPTE : facturer n'est pas proposer.
+     *
+     * Les ateliers ados et enfants gardent leur prix — il facture une séance
+     * dépassant le forfait — mais ne s'achètent plus à la séance. Sans ce
+     * filtre, /tarifs.md et /llms.txt continueraient d'annoncer « 35 € la
+     * séance enfant » à des modèles qui le répéteraient à un parent.
+     */
+    const sansEnfants = creneaux.map((c) =>
+      c.audience === 'enfants' ? { ...c, aLUnite: false } : c,
+    );
+    expect(offresALUnite(sansEnfants)).toEqual([
+      { titre: 'Séance de 3 h', duree: '3 h', prix: 45 },
+    ]);
+    // Le prix demeure sur le créneau, il n'est simplement plus proposé.
+    expect(sansEnfants.find((c) => c.audience === 'enfants')?.prixCents).toBe(3500);
+  });
+
+  it('ne compte pas les stages, qui ne sont pas des séances', () => {
+    expect(offresALUnite(creneaux).map((o) => o.prix)).not.toContain(70);
+  });
+
+  it('range la formule la plus chère en tête', () => {
+    // La longue est la formule principale ; la courte se lit ensuite comme ce
+    // qu'elle est, une porte d'entrée.
+    const avecCourte = [
+      ...creneaux,
+      { label: 'Séance du jeudi soir', kind: 'atelier', audience: 'adultes',
+        lieu: 'Revel', debut: '17:30:00', fin: '19:00:00', prixCents: 2200 },
+    ];
+    expect(offresALUnite(avecCourte).map((o) => o.titre)).toEqual([
+      'Séance de 3 h', 'Séance de 2 h', 'Séance de 1 h 30',
+    ]);
   });
 });
 

@@ -5,6 +5,7 @@ import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
 import { notifier, variablesAccueil } from '../../../../utils/emails';
+import { AUDIENCES } from '../../../../utils/ateliers';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -198,11 +199,14 @@ if (Astro.request.method === 'POST') {
         <div>
           <label for="audience" class="block text-sm font-medium mb-1">Public</label>
           <select id="audience" name="audience" required class="champ">
-            <option value="adulte" selected={champs.audience === 'adulte'}>Adulte</option>
-            <option value="enfant" selected={champs.audience === 'enfant'}>Enfant</option>
+            {AUDIENCES.map((a) => (
+              <option value={a.personne} selected={champs.audience === a.personne}>
+                {a.label.replace(/s$/, '')}
+              </option>
+            ))}
           </select>
           <p class="mt-1 text-sm text-[var(--color-text-light)]">
-            Les séances adultes durent 3 h, les séances enfants 2 h.
+            Les séances adultes durent 3 h, les séances ados et enfants 2 h.
             Chacun ne peut s’inscrire qu’aux séances de son public.
           </p>
         </div>

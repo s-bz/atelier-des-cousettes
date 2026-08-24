@@ -4,7 +4,7 @@ export const prerender = false;
 import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
-import { groupeDe } from '../../../../utils/ateliers';
+import { AUDIENCES, PRIX_SEANCE_PAR_DEFAUT, groupeDe } from '../../../../utils/ateliers';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -261,7 +261,7 @@ const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (�
     un stage, dont le prix n'a rien à voir avec le public.
   */}
   <form method="post" class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md"
-        {...(estStage ? {} : { 'data-prix-adultes': '40.00', 'data-prix-enfants': '30.00' })}>
+        {...(estStage ? {} : { 'data-prix': JSON.stringify(PRIX_SEANCE_PAR_DEFAUT) })}>
     <input type="hidden" name="action" value="modifier" />
     <input type="hidden" name="kind" value={creneau.kind} />
 
@@ -285,8 +285,9 @@ const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (�
       <div>
         <label for="audience" class="block text-sm font-medium mb-1">Public</label>
         <select id="audience" name="audience" class="champ">
-          <option value="adultes" selected={creneau.audience === 'adultes'}>Adultes</option>
-          <option value="enfants" selected={creneau.audience === 'enfants'}>Enfants</option>
+          {AUDIENCES.map((a) => (
+            <option value={a.creneau} selected={creneau.audience === a.creneau}>{a.label}</option>
+          ))}
         </select>
         <p class="mt-1 text-sm text-[var(--color-text-light)]">
           Seules les personnes de ce public peuvent s’y inscrire.
@@ -411,15 +412,16 @@ const libellePrix = estStage ? 'Prix du stage (€)' : 'Séance hors forfait (�
   </div>
 
   <script>
-    document.querySelectorAll<HTMLFormElement>('form[data-prix-adultes]').forEach((form) => {
+    document.querySelectorAll<HTMLFormElement>('form[data-prix]').forEach((form) => {
       const cible = form.querySelector<HTMLSelectElement>('select[name="audience"]');
       const prix = form.querySelector<HTMLInputElement>('input[name="prix"]');
       if (!cible || !prix) return;
 
+      // Une table, plus deux attributs lus par un ternaire : celui-ci rendait le
+      // tarif adulte pour tout public autre qu'« enfants », ados compris.
+      const table: Record<string, string> = JSON.parse(form.dataset.prix ?? '{}');
       cible.addEventListener('change', () => {
-        const montant = cible.value === 'enfants'
-          ? form.dataset.prixEnfants
-          : form.dataset.prixAdultes;
+        const montant = table[cible.value];
         if (montant) prix.value = montant;
       });
     });

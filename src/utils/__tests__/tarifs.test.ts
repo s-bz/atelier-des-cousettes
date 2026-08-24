@@ -4,7 +4,7 @@ import {
   formuleLaMoinsChere,
   fourchette,
   fourchetteForfaits,
-  prixDeuxPublics,
+  prixParPublic,
   remplacerFourchette,
 } from '../tarifs';
 
@@ -120,24 +120,45 @@ describe('formuleLaMoinsChere', () => {
   });
 });
 
-describe('prixDeuxPublics', () => {
+describe('prixParPublic', () => {
   it('ouvre sur le tarif adulte et range l’enfant entre parenthèses', () => {
-    expect(prixDeuxPublics(36, 28, '/mois pour 10 séances'))
+    expect(prixParPublic({ adultes: 36, enfants: 28 }, '/mois pour 10 séances'))
       .toBe('36 €/mois pour 10 séances (28 € enfant)');
   });
 
   it('n’annonce plus « Dès » — 45 € est le prix, pas un plancher', () => {
-    expect(prixDeuxPublics(45, 35, ' la séance')).toBe('45 € la séance (35 € enfant)');
+    expect(prixParPublic({ adultes: 45, enfants: 35 }, ' la séance'))
+      .toBe('45 € la séance (35 € enfant)');
   });
 
   it('ne fabrique pas de parenthèse quand un seul public est tarifé', () => {
-    expect(prixDeuxPublics(45, null, ' la séance')).toBe('45 € la séance');
-    expect(prixDeuxPublics(45, 45, ' la séance')).toBe('45 € la séance');
-    expect(prixDeuxPublics(null, 35, ' la séance')).toBe('35 € la séance');
+    expect(prixParPublic({ adultes: 45, enfants: null }, ' la séance')).toBe('45 € la séance');
+    expect(prixParPublic({ adultes: 45, enfants: 45 }, ' la séance')).toBe('45 € la séance');
+    expect(prixParPublic({ adultes: null, enfants: 35 }, ' la séance')).toBe('35 € la séance');
   });
 
   it('se tait complètement plutôt que d’afficher un prix vide', () => {
-    expect(prixDeuxPublics(null, null, ' la séance')).toBeNull();
+    expect(prixParPublic({ adultes: null, enfants: null }, ' la séance')).toBeNull();
+  });
+
+  /*
+   * LES TROIS PUBLICS. La fonction n'en connaissait que deux, et l'arrivée des
+   * ados ne se serait signalée nulle part : la phrase serait restée juste pour
+   * les adultes et les enfants, en taisant simplement le troisième tarif.
+   */
+  it('réunit les publics qui paient le même prix', () => {
+    expect(prixParPublic({ adultes: 45, ados: 35, enfants: 35 }, ' la séance'))
+      .toBe('45 € la séance (35 € ado et enfant)');
+  });
+
+  it('les sépare quand les montants diffèrent, du plus âgé au plus jeune', () => {
+    expect(prixParPublic({ adultes: 45, ados: 40, enfants: 35 }, ' la séance'))
+      .toBe('45 € la séance (40 € ado, 35 € enfant)');
+  });
+
+  it('ouvre sur les ados quand les adultes n’ont pas de tarif', () => {
+    // L'ordre d'AUDIENCES fait la hiérarchie : jamais un prix d'enfant en tête.
+    expect(prixParPublic({ ados: 25, enfants: 28 }, '/mois')).toBe('25 €/mois (28 € enfant)');
   });
 });
 

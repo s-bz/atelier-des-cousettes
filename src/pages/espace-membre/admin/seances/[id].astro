@@ -6,6 +6,7 @@ import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
 import { notifier, variablesSeance, variablesDeplacement } from '../../../../utils/emails';
 import { previenLaListe } from '../../../../utils/membre';
+import { personneDe } from '../../../../utils/ateliers';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -333,11 +334,16 @@ if (groupees) {
 
 // Seules les personnes du public de la séance : proposer les autres serait
 // proposer un geste que la base refusera.
+//
+// Le singulier vient de personneDe(), et non d'un ternaire : celui d'avant
+// rendait « adulte » pour tout public autre qu'« enfants ». Sur une séance
+// ados il aurait donc proposé la liste des adultes — tous refusés à
+// l'inscription, sans que l'écran laisse deviner pourquoi.
 const publicSeance = (seance.creneaux as any)?.audience ?? 'adultes';
 const { data: tousParticipants } = await supabase
   .from('participants')
   .select('id, first_name, last_name')
-  .eq('audience', publicSeance === 'enfants' ? 'enfant' : 'adulte')
+  .eq('audience', personneDe(publicSeance))
   .order('last_name');
 const inscriptibles = (tousParticipants ?? []).filter((p) => !dejaInscrits.has(p.id));
 
