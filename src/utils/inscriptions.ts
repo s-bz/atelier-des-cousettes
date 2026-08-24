@@ -220,6 +220,37 @@ export async function adhesionReglee(
 }
 
 /**
+ * Inscrit la famille au registre pour la saison, si elle n'y est pas déjà.
+ *
+ * L'UNICITÉ EN BASE EST LE VRAI GARDE. Deux achats lancés dans deux onglets
+ * consulteraient tous deux une table vide et croiraient l'adhésion due ; c'est
+ * la contrainte `(account_id, saison)` qui empêche la seconde ligne. Un conflit
+ * n'est donc pas une erreur — il dit que quelqu'un a réglé entre-temps — mais
+ * le trop-perçu, lui, mérite d'apparaître dans la file « à traiter ».
+ */
+export async function enregistrerAdhesion(
+  supabase: SupabaseClient,
+  o: { compteId: string; saison: string; montantCents: number; helloassoOrderId?: string | null },
+): Promise<Resultat<{ creee: boolean }>> {
+  const { data, error } = await supabase
+    .from('adhesions')
+    .upsert(
+      {
+        account_id: o.compteId,
+        saison: o.saison,
+        montant_cents: o.montantCents,
+        helloasso_order_id: o.helloassoOrderId ?? null,
+        paye_le: new Date().toISOString(),
+      },
+      { onConflict: 'account_id,saison', ignoreDuplicates: true },
+    )
+    .select('id');
+
+  if (error) return echec(`Adhésion impossible : ${error.message}`);
+  return succes({ creee: (data ?? []).length > 0 });
+}
+
+/**
  * Inscrire d'office tout de suite, sans attendre le cron du lendemain.
  *
  * Sans cela, Isabelle crée quelqu'un, ouvre la feuille de présence, n'y voit

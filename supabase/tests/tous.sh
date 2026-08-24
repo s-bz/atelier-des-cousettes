@@ -22,6 +22,7 @@ declare -a SUITES=(
   "auto-inscription:8"
   "public-enfants-adultes:4"
   "forfaits:7"
+  "adhesions:4"
 )
 
 total=0
