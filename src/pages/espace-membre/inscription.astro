@@ -4,9 +4,10 @@ export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getAdminClient } from '../../utils/supabase';
 import { lireCatalogueFormules, libelleFormule } from '../../utils/tarifs';
-import { AUDIENCES, memePublic } from '../../utils/ateliers';
-import { adhesionReglee, saisonDe } from '../../utils/inscriptions';
-import { preparerAchat, creerIntention, ADHESION_CENTS } from '../../utils/helloasso';
+import { AUDIENCES } from '../../utils/ateliers';
+import { saisonDe } from '../../utils/inscriptions';
+import { ADHESION_CENTS } from '../../utils/helloasso';
+import { demarrerAchat, adhesionDuePour } from '../../utils/achat';
 
 /*
  * L'ACHAT D'UN FORFAIT, DEPUIS L'ESPACE ADHÉRENT.
@@ -35,54 +36,28 @@ const [{ data: participants }, formules, { data: creneaux }] = await Promise.all
 
 // L'adhésion se lit UNE FOIS, avant d'afficher : elle décide du montant annoncé
 // autant que de celui qui sera prélevé.
-const dejaAdherent = await adhesionReglee(supabase, account.id, saison);
-const adhesionDue = dejaAdherent.ok ? !dejaAdherent.valeur : true;
+const adhesionDue = await adhesionDuePour(supabase, account.email);
 
 let erreur: string | null = null;
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  const prenom = String(form.get('prenom') ?? '').trim();
-  const public_ = String(form.get('audience') ?? '');
-  const formule = formules.find((f) => f.id === String(form.get('formule') ?? ''));
-  const creneau = (creneaux ?? []).find((c) => c.id === String(form.get('creneau') ?? ''));
-  const comptant = form.get('reglement') === 'comptant';
 
-  if (!prenom) {
-    erreur = 'Indiquez le nom de la personne inscrite.';
-  } else if (!formule || !creneau) {
-    erreur = 'Choisissez une formule et un créneau.';
-  } else if (!memePublic(public_, creneau.audience) || !memePublic(public_, formule.audience)) {
-    /*
-     * MÊME CONTRÔLE QUE SUR L'ÉCRAN D'ISABELLE, et pour la même raison :
-     * l'inscription d'office exige que le créneau soit celui du public de la
-     * personne, et écarte le reste en silence. Laisser passer l'assemblage
-     * ferait payer quelqu'un pour un planning qui resterait vide.
-     */
-    erreur = 'Cette formule ou ce créneau ne correspond pas au public choisi.';
-  } else {
-    const site = new URL(Astro.url.origin);
-    const achat = preparerAchat({
-      formule,
-      creneau,
-      participant: prenom,
-      saison,
-      adhesionDue,
-      comptant,
-      achatLe: new Date(),
-      payeur: { email: account.email },
-      urls: {
-        retour: `${site}espace-membre/inscription/retour/`,
-        erreur: `${site}espace-membre/inscription/?echec=1`,
-        retourArriere: `${site}espace-membre/inscription/`,
-      },
-    });
+  const r = await demarrerAchat(supabase, {
+    email: account.email,
+    prenom: String(form.get('prenom') ?? ''),
+    audience: String(form.get('audience') ?? 'adulte'),
+    formule: formules.find((f) => f.id === String(form.get('formule') ?? '')),
+    creneau: (creneaux ?? []).find((c) => c.id === String(form.get('creneau') ?? '')),
+    comptant: form.get('reglement') === 'comptant',
+    origine: Astro.url.origin,
+    cheminAchat: '/espace-membre/inscription/',
+    cheminRetour: '/espace-membre/inscription/retour/',
+  });
 
-    const intention = await creerIntention(achat);
-    if (!intention.ok) erreur = intention.erreur;
-    // `redirectUrl` ne vaut que quinze minutes : on y va tout de suite.
-    else return Astro.redirect(intention.valeur.redirectUrl, 303);
-  }
+  if (!r.ok) erreur = r.erreur;
+  // `redirectUrl` ne vaut que quinze minutes : on y va tout de suite.
+  else return Astro.redirect(r.valeur.redirectUrl, 303);
 }
 
 if (Astro.url.searchParams.has('echec')) {

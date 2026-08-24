@@ -473,6 +473,11 @@ export default config({
         ),
         faqItems: faqItemsField(),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
+        inscriptionLabel: fields.text({
+          label: 'Bouton d’inscription en ligne',
+          description: 'Videz-le pour retirer le bouton de la page.',
+        }),
+        inscriptionUrl: fields.text({ label: 'Lien du bouton d’inscription' }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
     }),

@@ -546,7 +546,20 @@ const courseSchema = buildCourseSchema({
           </p>
         )}
 
-        {/* Agir sans avoir à repartir chercher un bouton plus bas. */}
+        {/*
+          S'INSCRIRE PASSE AVANT ÉCRIRE, et se place sous la grille : c'est là
+          qu'on décide, les prix sous les yeux. Le bouton de contact reste, pour
+          qui a une question plutôt qu'une intention.
+        */}
+        {page.inscriptionLabel && page.inscriptionUrl && (
+          <p class="mt-8 text-center">
+            <a href={page.inscriptionUrl}
+               class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 font-medium text-white">
+              {page.inscriptionLabel}
+            </a>
+          </p>
+        )}
+
         <ContactCTA label={page.ctaLabel} />
       </div>
     </section>

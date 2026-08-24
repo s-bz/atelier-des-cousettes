@@ -1,0 +1,117 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getAdminClient } from '../../../utils/supabase';
+import { lireIntention } from '../../../utils/helloasso';
+import { lireCommande, provisionner } from '../../../utils/provisionnement';
+
+/*
+ * LE RETOUR DU PAYEUR, SANS COMPTE.
+ *
+ * Cette page ne peut pas exiger de session : la famille n'en avait pas en
+ * arrivant, et son compte vient tout juste d'être créé par le provisionnement.
+ * Elle ne montre donc rien de personnel — seulement que le règlement est passé
+ * et comment ouvrir son accès.
+ *
+ * Elle ne se fie pas non plus aux paramètres de l'URL, que la documentation
+ * HelloAsso signale falsifiables : ils disent QUOI relire, l'API dit ce qui a
+ * été payé. Et elle appelle le même `provisionner` que la notification et que
+ * le retour de l'espace adhérent.
+ */
+
+const supabase = getAdminClient();
+const idIntention = Astro.url.searchParams.get('checkoutIntentId');
+
+let titre = 'Votre inscription';
+let message: string | null = null;
+let ennui: string | null = null;
+let email: string | null = null;
+
+if (!idIntention) {
+  ennui = 'Nous n’avons pas retrouvé le paiement. Si vous avez été débité, écrivez-nous à '
+    + 'info@atelier-des-cousettes.fr.';
+} else {
+  const intention = await lireIntention(idIntention);
+
+  if (!intention.ok) {
+    ennui = 'Nous n’arrivons pas à vérifier ce paiement pour l’instant. S’il a été prélevé, '
+      + 'il est bien enregistré chez HelloAsso : écrivez-nous et nous le rattacherons.';
+  } else {
+    const commande = lireCommande(intention.valeur);
+
+    if (!commande.ok) {
+      /*
+       * ON NE DIT JAMAIS « ERREUR » À QUELQU'UN QUI VIENT DE PAYER. Son
+       * règlement est passé ; c'est notre rattachement qui manque. L'événement
+       * est consigné pour qu'Isabelle le reprenne.
+       */
+      await supabase.from('helloasso_events').upsert(
+        {
+          cle: `Retour:${idIntention}`,
+          type: 'Retour',
+          identifiant: String(idIntention),
+          authentifie: true,
+          charge_utile: intention.valeur as never,
+        },
+        { onConflict: 'cle', ignoreDuplicates: true },
+      );
+      console.error(`[inscription publique] ${idIntention} : ${commande.erreur}`);
+      ennui = 'Votre règlement est bien enregistré. Il nous reste à finir de vous inscrire — '
+        + 'Isabelle s’en occupe et vous recevrez une confirmation.';
+    } else {
+      email = commande.valeur.email;
+      const fait = await provisionner(supabase, commande.valeur);
+
+      if (!fait.ok) {
+        console.error(`[inscription publique] ${idIntention} : ${fait.erreur}`);
+        ennui = 'Votre règlement est bien enregistré. Il nous reste à finir de vous inscrire — '
+          + 'Isabelle s’en occupe et vous recevrez une confirmation.';
+      } else {
+        titre = 'C’est réglé, bienvenue';
+        message = fait.valeur.cree
+          ? 'Votre inscription est enregistrée et vos premières séances sont déjà posées sur '
+            + 'votre créneau.'
+          : 'Votre inscription était déjà enregistrée. Tout est en ordre.';
+      }
+    }
+  }
+}
+---
+
+<BaseLayout title={titre} description="Confirmation de votre inscription." noIndex>
+  <section class="mx-auto max-w-3xl px-4 py-16 md:py-20">
+    <h1 class="text-2xl md:text-3xl font-bold" style="font-family: var(--font-heading)">{titre}</h1>
+
+    {message && <p class="mt-4 text-[var(--color-text)]">{message}</p>}
+
+    {ennui && (
+      <p class="mt-4 rounded-xl bg-[var(--color-bg-accent)] px-4 py-3 text-[var(--color-text)]">
+        {ennui}
+      </p>
+    )}
+
+    {message && (
+      <div class="mt-8 rounded-xl bg-[var(--color-bg-accent)] px-4 py-4">
+        <h2 class="font-bold text-[var(--color-heading)]">Ouvrir votre espace</h2>
+        <p class="mt-2 text-[var(--color-text)]">
+          Votre accès est ouvert{email ? ` à l’adresse ${email}` : ''}. Connectez-vous pour voir
+          vos dates, en changer, ou inscrire quelqu’un d’autre de votre foyer — l’adhésion ne
+          sera pas redemandée.
+        </p>
+        <a href="/espace-membre/connexion/"
+           class="mt-4 inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
+          Me connecter
+        </a>
+        <p class="mt-3 text-sm text-[var(--color-text-light)]">
+          Un code vous sera envoyé par courriel : il n’y a pas de mot de passe à retenir.
+        </p>
+      </div>
+    )}
+
+    <p class="mt-8 text-sm text-[var(--color-text-light)]">
+      Une question ? <a href="mailto:info@atelier-des-cousettes.fr" class="underline">
+      info@atelier-des-cousettes.fr</a>
+    </p>
+  </section>
+</BaseLayout>
