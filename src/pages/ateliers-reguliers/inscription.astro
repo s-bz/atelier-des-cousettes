@@ -234,8 +234,7 @@ if (Astro.url.searchParams.has('echec')) {
           {AUDIENCES.map((a) => (
             <optgroup label={a.label}>
               {formules.filter((f) => f.audience === a.creneau).map((f) => (
-                <option value={f.id} data-public={f.audience} data-seances={f.seances}
-                        selected={f.id === saisi.formule}>
+                <option value={f.id} data-public={f.audience} selected={f.id === saisi.formule}>
                   {a.label} · {f.libelle} · {Math.round(f.prixCents / 100)} €
                 </option>
               ))}
@@ -273,20 +272,24 @@ if (Astro.url.searchParams.has('echec')) {
           qu'on obtient et ce qu'on peut encore changer se lisaient d'un bloc,
           et la liberté de bouger — la vraie réponse à « et si je ne peux pas un
           samedi ? » — se perdait en fin de phrase.
+
+          « TOUTES LES SÉANCES DE VOTRE FORMULE » plutôt qu'un nombre : la
+          phrase est juste pour les cinq formules sans avoir à compter, et rien
+          ne peut la contredire le jour où une formule change.
         */}
         <ul class="mt-2 space-y-1 text-sm text-[var(--color-text-light)]">
           <li class="flex gap-2">
             <span aria-hidden="true">·</span>
             <span>
-              <span data-echo-seances>Vous serez inscrit d’office aux séances de votre
-              formule</span>, réparties sur la saison.
+              Inscription automatique à toutes les séances de votre formule, sur toute la
+              saison.
             </span>
           </li>
           <li class="flex gap-2">
             <span aria-hidden="true">·</span>
             <span>
-              Vous pourrez changer vos dates depuis votre espace, au plus tard 10 jours avant
-              chaque séance — y compris vers d’autres jours ou d’autres horaires.
+              Changement de date possible dans votre espace jusqu’à 10 jours avant la séance
+              (autre jour ou autre horaire).
             </span>
           </li>
         </ul>
@@ -391,22 +394,6 @@ if (Astro.url.searchParams.has('echec')) {
 
     formule.addEventListener('change', accorder);
     accorder();
-  }
-
-  /*
-   * « Vous serez inscrit d'office aux 9 séances » plutôt qu'« aux séances de
-   * votre formule » : le nombre vient de l'option retenue, jamais du texte.
-   */
-  const echo = document.querySelector('[data-echo-seances]');
-  if (formule instanceof HTMLSelectElement && echo) {
-    const dire = () => {
-      const n = formule.selectedOptions[0]?.dataset.seances;
-      echo.textContent = n
-        ? `Vous serez inscrit d’office aux ${n} séances de votre formule`
-        : 'Vous serez inscrit d’office aux séances de votre formule';
-    };
-    formule.addEventListener('change', dire);
-    dire();
   }
 
   /* Les champs du participant n'apparaissent que s'il diffère du payeur. */
