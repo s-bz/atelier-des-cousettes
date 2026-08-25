@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getAdminClient } from '../../../utils/supabase';
+import { releverRemboursements } from '../../../utils/remboursements';
 import { notifier, notifierAdmins, variablesSeance, variablesSemaine } from '../../../utils/emails';
 
 export const prerender = false;
@@ -30,7 +31,7 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   const supabase = getAdminClient();
-  const bilan = { inscriptions: 0, rappels: 0, echecs: 0, recapitulatif: 0 };
+  const bilan = { inscriptions: 0, rappels: 0, remboursements: 0, echecs: 0, recapitulatif: 0 };
 
   // ── 1. Auto-inscription ────────────────────────────────────────────────
   const { data: inscrites, error: erreurInscription } =
@@ -98,7 +99,26 @@ export const GET: APIRoute = async ({ request }) => {
       .eq('id', reservation.id);
   }
 
-  // ── 3. Récapitulatif de la semaine, le dimanche ────────────────────────
+  // ── 3. Les remboursements repérés chez HelloAsso ───────────────────────
+  //
+  // Isabelle rembourse au portail — l'API l'exige, `refund` étant protégé par
+  // une authentification forte qu'une clé serveur ne sait pas satisfaire. Notre
+  // côté ne l'apprenait donc jamais : la personne gardait ses places, son solde
+  // passait sous zéro, et elle réapparaissait sur la liste « à facturer ». On
+  // remboursait puis on facturait.
+  //
+  // ON DÉPOSE, ON N'AGIT PAS. Libérer les places de quelqu'un est irréversible
+  // pour lui — sa date part à un autre — et un état mal lu ne doit pas vider un
+  // planning tout seul. La confirmation appartient à Isabelle.
+  //
+  // Le relevé lui-même vit dans `releverRemboursements`, partagé avec le
+  // bouton de l'écran d'administration : deux chemins qui répondraient
+  // différemment à la même question finiraient par se contredire.
+  const releve = await releverRemboursements(supabase);
+  bilan.remboursements += releve.deposes;
+  bilan.echecs += releve.echecs;
+
+  // ── 4. Récapitulatif de la semaine, le dimanche ────────────────────────
   //
   // Replié dans la tâche quotidienne plutôt que déclaré comme second cron : le
   // palier Hobby de Vercel n'autorise qu'un déclenchement par jour et par

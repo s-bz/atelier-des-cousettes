@@ -306,3 +306,39 @@ describe('preparerAchatUnite', () => {
     expect(a.metadata.montant_cents).toBe(5000);
   });
 });
+
+describe('lireNotification — un paiement qui change d’état', () => {
+  const paiement = (etat: string, maj: string) => ({
+    eventType: 'Payment',
+    data: { id: 91548278, state: etat, meta: { updatedAt: maj } },
+  });
+
+  it('distingue le remboursement du paiement d’origine', () => {
+    /*
+     * LE MÊME PAIEMENT NOUS EST ANNONCÉ DEUX FOIS : autorisé, puis remboursé.
+     * Avec une clé réduite à « Payment:<id> », la seconde annonce passait pour
+     * un doublon de la première et disparaissait — `ignoreDuplicates` l'écartant
+     * en silence. On aurait remboursé sans jamais l'apprendre.
+     */
+    const autorise = lireNotification(paiement('Authorized', '2026-08-25T04:35:11Z'));
+    const rembourse = lireNotification(paiement('Refunded', '2026-08-26T10:02:00Z'));
+
+    expect(autorise.cle).not.toBe(rembourse.cle);
+  });
+
+  it('garde la même clé pour une réémission à l’identique', () => {
+    // HelloAsso réémet ; c'est le fonctionnement normal, et deux fois le même
+    // événement ne doit pas faire deux lignes.
+    const a = lireNotification(paiement('Authorized', '2026-08-25T04:35:11Z'));
+    const b = lireNotification(paiement('Authorized', '2026-08-25T04:35:11Z'));
+
+    expect(a.cle).toBe(b.cle);
+  });
+
+  it('tient sans date de mise à jour', () => {
+    // Tous les événements n'en portent pas : la clé retombe alors sur
+    // l'identifiant seul, comme avant.
+    const sans = lireNotification({ eventType: 'Order', data: { id: 42 } });
+    expect(sans.cle).toBe('Order:42');
+  });
+});

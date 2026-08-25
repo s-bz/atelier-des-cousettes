@@ -58,7 +58,10 @@ function empreinte(brut: unknown): string {
 }
 
 export function lireNotification(brut: unknown): NotificationHelloAsso {
-  const enveloppe = (brut ?? {}) as { eventType?: unknown; data?: { id?: unknown } };
+  const enveloppe = (brut ?? {}) as {
+    eventType?: unknown;
+    data?: { id?: unknown; meta?: { updatedAt?: unknown } };
+  };
 
   const type =
     typeof enveloppe.eventType === 'string' && enveloppe.eventType ? enveloppe.eventType : 'Inconnu';
@@ -74,10 +77,26 @@ export function lireNotification(brut: unknown): NotificationHelloAsso {
    * l'idempotence (une réémission à l'octet près garde sa clé) sans jamais
    * confondre deux charges utiles distinctes.
    */
+  /*
+   * LA DATE DE MISE À JOUR ENTRE DANS LA CLÉ, quand la charge en porte une.
+   *
+   * Un paiement nous est annoncé plusieurs fois dans sa vie : autorisé, puis
+   * remboursé, puis peut-être remboursé de nouveau. C'est LE MÊME identifiant à
+   * chaque fois. Réduite à « Payment:<id> », la clé faisait passer le
+   * remboursement pour un doublon de l'autorisation, et `ignoreDuplicates`
+   * l'écartait en silence : on aurait remboursé sans jamais l'apprendre.
+   *
+   * `meta.updatedAt` distingue ces annonces sans casser l'idempotence : une
+   * réémission à l'identique — le fonctionnement normal de HelloAsso — porte la
+   * même date, donc la même clé. Absente, on retombe sur l'identifiant seul.
+   */
+  const maj = enveloppe.data?.meta?.updatedAt;
+  const version = typeof maj === 'string' && maj ? `:${maj}` : '';
+
   return {
     type,
     identifiant,
-    cle: identifiant ? `${type}:${identifiant}` : `${type}:sha:${empreinte(brut)}`,
+    cle: identifiant ? `${type}:${identifiant}${version}` : `${type}:sha:${empreinte(brut)}`,
   };
 }
 
@@ -519,3 +538,50 @@ export function preparerAchatUnite(o: {
     urls: o.urls,
   };
 }
+
+export interface PaiementDefait {
+  paiementId: string;
+  commandeId: string;
+  montantCents: number;
+  /** `Refunded`, `Refunding` ou `Canceled`. */
+  etat: string;
+}
+
+/** Les états qui défont un paiement : l'argent revient, ou l'échéance n'aura pas lieu. */
+const DEFAITS = new Set(['Refunded', 'Refunding', 'Canceled']);
+
+/**
+ * Ce qui, dans une commande, a été remboursé ou annulé.
+ *
+ * ON INTERROGE LA COMMANDE, ET NON LA LISTE DES PAIEMENTS. C'était le premier
+ * réflexe — `GET /organizations/{slug}/payments` accepte `states` et trie par
+ * date de mise à jour — mais cette liste NE CONTIENT QUE LES PAIEMENTS
+ * TRAITÉS. Mesuré le 25/08/2026 sur une vraie annulation : neuf échéances
+ * passées à `Canceled` dans la commande, et la liste de l'organisation
+ * continuait de ne rendre que les deux paiements `Authorized`, quel que soit le
+ * filtre — avec ou sans date, avec ou sans tri.
+ *
+ * ET AUCUNE NOTIFICATION N'ARRIVE. Un remboursement en émet peut-être une ;
+ * une annulation d'échéances n'en émet aucune — vérifié, la boîte est restée
+ * vide. Interroger la commande est donc le seul moyen de l'apprendre.
+ */
+export async function defaitsDeLaCommande(commandeId: string): Promise<Resultat<PaiementDefait[]>> {
+  const r = await appeler(`/orders/${encodeURIComponent(commandeId)}`);
+  if (!r.ok) return r;
+
+  const paiements = ((r.valeur as { payments?: unknown[] })?.payments ?? []) as {
+    id?: unknown; state?: unknown; amount?: unknown;
+  }[];
+
+  return succes(paiements.flatMap((p) => {
+    const etat = typeof p.state === 'string' ? p.state : '';
+    if (!p.id || !DEFAITS.has(etat)) return [];
+    return [{
+      paiementId: String(p.id),
+      commandeId,
+      montantCents: typeof p.amount === 'number' ? p.amount : 0,
+      etat,
+    }];
+  }));
+}
+

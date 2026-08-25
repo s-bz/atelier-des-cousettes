@@ -77,26 +77,59 @@ remboursement partiel ET l'arrêt des échéances à venir**.
 
 ---
 
-## 3. Vérifier qu'une notification vient bien de vous
+## 3. Les notifications : ce que le contrat dit, et ce qu'il tait
 
-Nous recevons les notifications sur une URL publique, déclarée au back-office.
-Nous les authentifions aujourd'hui par un **jeton secret placé en paramètre de
-l'URL**, comparé en temps constant — faute d'avoir trouvé mieux.
+Le contrat OpenAPI documente la configuration, non le fonctionnement :
 
-Or le modèle `ApiUrlNotificationModel` du contrat porte un champ
-**`signatureKey`**, sous `/partners/me/api-notifications`. Cet endpoint nous
-répond **403** : nous ne sommes pas client partenaire, mais une association qui
-intègre son propre site.
+| Ce qu'on y trouve | |
+| --- | --- |
+| `ApiNotificationType` | quatre valeurs : `Payment`, `Order`, `Form`, `Organization` |
+| `ApiUrlNotificationModel` | porte un champ **`signatureKey`** — « allows you to verify the authenticity of notifications » |
+| `PUT` / `DELETE /partners/me/api-notifications` | pour declarer ou retirer l'URL |
 
-1. **Comment obtenir et vérifier cette signature en tant qu'association ?**
-   Est-elle réservée aux partenaires ?
-2. Si elle nous est inaccessible, **le jeton en paramètre d'URL est-il la
-   pratique que vous recommandez**, ou existe-t-il autre chose ?
-3. **Politique de reprise** : combien de tentatives, à quel rythme, et sur quels
-   codes HTTP considérez-vous une notification comme échouée ? Nous répondons
-   200 dès que la charge est journalisée, même si le traitement est différé.
-4. **Un remboursement ou une annulation émet-il une notification ?** Les types
-   déclarés sont `Payment`, `Order`, `Form`, `Organization` ; nous ne savons pas
-   lequel porte un remboursement, ni quel `state` le distingue.
-5. Peut-on **rejouer une notification** depuis le back-office, pour reprendre
-   une commande que notre côté aurait manquée ?
+Et ce qu'il ne dit pas : **la forme de la charge utile**, **quand** une
+notification part, et **comment obtenir la cle de signature**.
+
+1. **`signatureKey` : comment la lire ?** Il n'existe aucun `GET` sur ces
+   routes — nous obtenons `405 Method Not Allowed`, et non `403`, ce qui
+   indique que notre jeton y est pourtant accepte. Faut-il la relever au
+   back-office ? Est-elle rendue par le `PUT` ? A defaut, nous authentifions
+   par un jeton secret place en parametre de l'URL de rappel : est-ce ce que
+   vous recommandez ?
+
+2. **Quels evenements declenchent une notification ?** Mesure le 25/08/2026 :
+   un paiement autorise en emet une (`Payment`, avec `state`,
+   `refundOperations` et l'`order`) ; **l'annulation de neuf echeances n'en a
+   emis aucune**. Un remboursement en emet-il une ? La liste des quatre types
+   ne distingue pas le remboursement, ce qui laisse penser qu'il arriverait en
+   `Payment` — a confirmer.
+
+3. **Le meme paiement change d'etat au fil de sa vie** — autorise, puis
+   rembourse — en gardant son identifiant. Nous distinguons ces annonces par
+   `data.meta.updatedAt`. Est-ce l'usage prevu, ou existe-t-il un identifiant
+   d'evenement propre ?
+
+4. **Politique de reprise** : combien de tentatives, a quel rythme, sur quels
+   codes HTTP ? Nous repondons 200 des que la charge est journalisee, meme si
+   le traitement est differe.
+
+5. **Peut-on rejouer une notification** depuis le back-office ?
+
+---
+
+## 3 bis. Les echeances annulees sont invisibles hors de la commande
+
+Constate sur un cas reel : neuf echeances passees a `Canceled`.
+
+- `GET /orders/{id}` les montre toutes, correctement.
+- `GET /organizations/{slug}/payments` **ne les montre pas**, quel que soit le
+  filtre — avec ou sans `states`, avec ou sans dates, quel que soit le tri.
+  Elle continue de ne rendre que les paiements `Authorized`.
+- `states=Canceled` y est pourtant **accepte** : l'API valide ce parametre et
+  refuse une valeur inventee par un `400`. Elle rend donc zero resultat sans
+  rien signaler — une reponse valide qui ne dit rien.
+
+**Est-ce voulu ?** Nous interrogeons desormais chaque commande une par une,
+faute de mieux. Une liste d'organisation qui rendrait aussi les echeances
+annulees nous epargnerait N appels par nuit.
+

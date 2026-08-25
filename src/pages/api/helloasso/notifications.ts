@@ -107,10 +107,49 @@ export const POST: APIRoute = async ({ request }) => {
    * l'intention relue par l'API qui fait foi, exactement comme au retour du
    * payeur, et par la même fonction.
    */
+  await deposerSiRembourse(supabase, charge);
   await provisionnerSiPossible(supabase, cle, charge);
 
   return new Response(null, { status: 200 });
 };
+
+/**
+ * Dépose un remboursement dès qu'on l'apprend, sans attendre la nuit.
+ *
+ * HELLOASSO NOUS ANNONCE LE MÊME PAIEMENT PLUSIEURS FOIS : autorisé, puis
+ * remboursé, puis peut-être annulé. La charge porte alors `state` et
+ * `refundOperations`, et son `order.id` suffit à retrouver l'inscription.
+ *
+ * LA TÂCHE DE NUIT RESTE, en filet : une notification peut se perdre, et un
+ * remboursement passé inaperçu laisse des places bloquées jusqu'à ce que
+ * quelqu'un s'en aperçoive. Les deux chemins déposent sous le même identifiant
+ * de paiement, unique en base — le second arrivé ne fait rien.
+ *
+ * ON DÉPOSE, ON N'AGIT PAS : libérer les places de quelqu'un appartient à
+ * Isabelle, pas à une charge utile non signée.
+ */
+const DEFAITS = new Set(['Refunded', 'Refunding', 'Canceled']);
+
+async function deposerSiRembourse(supabase: ReturnType<typeof getAdminClient>, charge: unknown) {
+  const d = (charge as { eventType?: unknown; data?: Record<string, unknown> })?.data;
+  const etat = d?.state;
+  const commande = (d?.order as { id?: unknown } | undefined)?.id;
+
+  if (typeof etat !== 'string' || !DEFAITS.has(etat) || !d?.id || !commande) return;
+
+  const { error } = await supabase.from('remboursements').upsert(
+    {
+      commande: String(commande),
+      paiement: String(d.id),
+      montant_cents: typeof d.amount === 'number' ? d.amount : 0,
+      etat,
+    },
+    { onConflict: 'paiement', ignoreDuplicates: true },
+  );
+
+  if (error) console.error(`[helloasso] remboursement ${String(d.id)} non déposé :`, error.message);
+  else console.info(`[helloasso] remboursement déposé : paiement ${String(d.id)}, ${etat}`);
+}
 
 /**
  * Le back-office de HelloAsso peut appeler l'URL pour la valider à la saisie.
