@@ -131,6 +131,17 @@ const jour = new Intl.DateTimeFormat('fr-FR', {
 });
 
 /*
+ * QUAND LA DATE EST DÉJÀ CHOISIE, SON CRÉNEAU L'EST AUSSI. On arrive ainsi
+ * depuis le planning de l'espace adhérent, qui envoie la séance et non le
+ * créneau. Le déduire ici plutôt que de s'en remettre au script : sans
+ * JavaScript, la première liste afficherait « toutes les possibilités »
+ * au-dessus d'une date déjà retenue.
+ */
+const creneauRetenu = creneauChoisi
+  ?? groupes.find((g) => g.dates.some((d) => d.id === saisi.session))?.id
+  ?? null;
+
+/*
  * LA RARETÉ SE DIT QUAND ELLE EST VRAIE, et se calcule ici plutôt que dans le
  * gabarit : une comparaison `<=` au milieu du JSX se lit mal, et le compilateur
  * la prend volontiers pour une balise ouvrante.
@@ -221,7 +232,7 @@ const mentionPlaces = (s: SeanceAchetable) =>
         <select id="creneau" class="champ">
           <option value="">Toutes les possibilités</option>
           {groupes.map((g) => (
-            <option value={g.id} selected={g.id === creneauChoisi}>{resume(g)}</option>
+            <option value={g.id} selected={g.id === creneauRetenu}>{resume(g)}</option>
           ))}
         </select>
       </div>

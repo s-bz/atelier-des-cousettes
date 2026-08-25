@@ -69,6 +69,20 @@ if (Astro.request.method === 'POST') {
  */
 const creneauChoisi = Astro.url.searchParams.get('creneau');
 
+/*
+ * ON PEUT AUSSI ARRIVER AVEC SA DATE DÉJÀ CHOISIE — depuis le planning de
+ * l'espace adhérent, où l'on vient de la voir. Il ne reste alors qu'à régler.
+ *
+ * Et si la personne est connectée, son adresse est connue : la resaisir
+ * n'apprendrait rien, et c'est elle qui fait reconnaître une adhésion déjà
+ * réglée. Le reste du formulaire ne change pas — la page reste publique, et
+ * c'est le serveur qui revérifie tout.
+ */
+if (Astro.request.method !== 'POST') {
+  saisi.session = Astro.url.searchParams.get('session') ?? '';
+  saisi.email = Astro.locals.account?.email ?? '';
+}
+
 if (Astro.url.searchParams.has('echec')) {
   erreur = 'Le paiement n’a pas abouti. Rien n’a été prélevé — vous pouvez réessayer.';
   // HelloAsso renvoie ici quand le paiement n'a pas abouti. Rien n'a été
