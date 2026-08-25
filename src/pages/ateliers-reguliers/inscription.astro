@@ -111,12 +111,18 @@ if (Astro.request.method === 'POST') {
   if (!r.ok) {
     erreur = r.erreur;
     /*
-     * UN ACHAT REFUSÉ EST UN ACHAT PERDU, et le motif dit pourquoi. C'est le
-     * seul endroit où l'on apprend qu'un code de réduction expiré, ou une date
-     * devenue complète entre l'affichage et l'envoi, renvoie des familles. Le
-     * motif est un message écrit par nous, jamais une saisie de l'internaute.
+     * UN ACHAT REFUSÉ EST UN ACHAT PERDU, et le motif dit pourquoi : c'est le
+     * seul endroit où l'on apprend qu'un code expiré, ou une date prise entre
+     * l'affichage et l'envoi, renvoie des familles.
+     *
+     * SANS L'ADRESSE, ET C'EST LE POINT. Cette personne n'a rien acheté. Elle
+     * n'est ni adhérente ni cliente, et rien ne justifie qu'une adresse saisie
+     * dans un formulaire refusé ouvre une fiche chez un tiers. On ne perd
+     * presque rien : ce qui fait corriger, c'est le motif — un message écrit
+     * par nous, jamais une saisie de l'internaute. Ce qui est perdu, et
+     * assumé : savoir que la même personne est revenue payer ensuite.
      */
-    await mesurer('achat_refuse', saisi.email, { motif: r.erreur, depuis: '/ateliers-reguliers/inscription/' });
+    await mesurer('achat_refuse', null, { motif: r.erreur, depuis: '/ateliers-reguliers/inscription/' });
   }
   // `redirectUrl` ne vaut que quinze minutes : on y va tout de suite.
   else return Astro.redirect(r.valeur.redirectUrl, 303);

@@ -21,6 +21,8 @@
  * HelloAsso ferait réémettre une commande déjà provisionnée.
  */
 
+import { getAdminClient } from './supabase';
+
 const env = (nom: string): string | undefined =>
   (import.meta.env as Record<string, string | undefined>)?.[nom] ?? process.env[nom];
 
@@ -45,6 +47,57 @@ const DELAI_MAX_MS = 2000;
 /** Ce qu'on écrit comme identifiant quand l'événement n'appartient à personne. */
 const SYSTEME = 'systeme';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// L'opposition
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * LA POLITIQUE DE CONFIDENTIALITÉ PROMET « NOUS CESSERONS DE VOUS MESURER ».
+ *
+ * L'article 21 du RGPD impose d'honorer une opposition pour l'AVENIR, et non
+ * seulement d'effacer le passé : supprimer une fiche chez PostHog après coup ne
+ * suffit pas, il faut un filtre en amont. Le voici.
+ *
+ * ELLE SE LIT UNE FOIS PAR INSTANCE, PAS UNE FOIS PAR ÉVÉNEMENT. Cet appel est
+ * intercalé dans le provisionnement, lui-même appelé par la notification
+ * HelloAsso : une requête par paiement s'ajouterait à un chemin déjà long et
+ * qui doit répondre. La liste, elle, tient dans une poignée de lignes et ne
+ * bouge presque jamais — elle vit donc en mémoire, rafraîchie au quart d'heure.
+ */
+const TTL_LISTE_MS = 10 * 60 * 1000;
+
+let opposition: Set<string> | null = null;
+let oppositionLueLe = 0;
+
+async function listeOpposition(): Promise<Set<string> | null> {
+  const maintenant = Date.now();
+  if (opposition && maintenant - oppositionLueLe < TTL_LISTE_MS) return opposition;
+
+  try {
+    const { data, error } = await getAdminClient()
+      .from('accounts')
+      .select('email')
+      .eq('mesure_refusee', true);
+
+    if (error) throw new Error(error.message);
+
+    opposition = new Set(
+      (data ?? []).map((l) => String((l as { email: unknown }).email).trim().toLowerCase()),
+    );
+    oppositionLueLe = maintenant;
+    return opposition;
+  } catch (e) {
+    /*
+     * ON REND LA LISTE PRÉCÉDENTE, MÊME PÉRIMÉE — et `null` si l'on n'en a
+     * jamais eu. C'est ce `null` qui décide, plus bas, de ne rien envoyer de
+     * nominatif : entre perdre une mesure et mesurer quelqu'un qui s'y est
+     * opposé, le choix n'appartient pas au code.
+     */
+    console.error('[mesure] liste d’opposition illisible :', e);
+    return opposition;
+  }
+}
+
 /**
  * Enregistre un événement.
  *
@@ -66,6 +119,17 @@ export async function mesurer(
   if (!cle) return;
 
   const identifiant = email?.trim().toLowerCase() || SYSTEME;
+
+  /*
+   * L'OPPOSITION NE VAUT QUE POUR CE QUI DÉSIGNE QUELQU'UN. Un événement
+   * système — une commande qu'on n'a pas su lire, donc sans adresse — ne
+   * concerne personne en particulier : il n'y a personne à en dispenser, et
+   * l'écarter reviendrait à s'aveugler sur des paiements en souffrance.
+   */
+  if (identifiant !== SYSTEME) {
+    const refusant = await listeOpposition();
+    if (refusant === null || refusant.has(identifiant)) return;
+  }
 
   try {
     const reponse = await fetch(`${hote()}/i/v0/e/`, {
