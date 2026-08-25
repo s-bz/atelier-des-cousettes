@@ -29,8 +29,18 @@ interface CommandeBase {
   orderId: string;
   codePromo: string | null;
   email: string;
+  /** Le prénom de la personne qui PARTICIPE. */
   prenom: string;
   nom: string;
+  /**
+   * Le nom de qui RÈGLE, tel que HelloAsso le renvoie. Nul s'il manque.
+   *
+   * Distinct du participant : une mère règle pour sa fille. On le garde sur le
+   * compte, pour ne pas le redemander à chaque achat et pour qu'un foyer se
+   * reconnaisse autrement que par son adresse.
+   */
+  payeurPrenom: string | null;
+  payeurNom: string | null;
   saison: string;
   creneauId: string;
   /**
@@ -77,7 +87,10 @@ export function lireCommande(intention: {
   metadata?: Record<string, unknown>;
   order?: Record<string, unknown>;
 }): Resultat<Commande> {
-  const order = intention.order as { id?: unknown; payer?: { email?: unknown } } | undefined;
+  const order = intention.order as {
+    id?: unknown;
+    payer?: { email?: unknown; firstName?: unknown; lastName?: unknown };
+  } | undefined;
 
   // `order` n'apparaît qu'une fois le paiement autorisé. Provisionner avant, ce
   // serait créer un abonnement pour quelqu'un qui a fermé l'onglet sans payer.
@@ -111,9 +124,13 @@ export function lireCommande(intention: {
    */
   const [prenom, ...reste] = texte('participant').split(/\s+/);
 
+  const texteDe = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+
   const commun = {
     orderId: String(order.id),
     email,
+    payeurPrenom: texteDe(order.payer?.firstName),
+    payeurNom: texteDe(order.payer?.lastName),
     prenom,
     nom: reste.join(' '),
     saison: texte('saison'),
@@ -175,6 +192,34 @@ async function trouverOuCreerParticipant(
     nom: o.nom,
     audience: public_.valeur,
   });
+}
+
+/**
+ * Garde le nom de qui règle sur son compte.
+ *
+ * ÉCRIT À CHAQUE COMMANDE, et écrase la fois précédente : c'est le nom qui
+ * vient d'être présenté au paiement, donc le plus récent que nous ayons. Une
+ * correction faite à la main dans l'administration tiendra jusqu'au prochain
+ * achat — ce qui est le bon sens de lecture, la banque ayant le dernier mot sur
+ * l'identité du porteur.
+ *
+ * Un échec ne fait pas échouer la commande : le nom est un confort, la place
+ * est l'essentiel.
+ */
+async function retenirLePayeur(
+  supabase: SupabaseClient,
+  compteId: string,
+  prenom: string | null,
+  nom: string | null,
+): Promise<void> {
+  if (!prenom && !nom) return;
+
+  const { error } = await supabase
+    .from('accounts')
+    .update({ payeur_prenom: prenom, payeur_nom: nom })
+    .eq('id', compteId);
+
+  if (error) console.error('[provisionnement] nom du payeur non retenu :', error.message);
 }
 
 /** « adultes » → « adulte » : le public d'une personne est le singulier de celui de son groupe. */
@@ -258,6 +303,8 @@ async function provisionnerUnite(
   const compte = await trouverOuCreerCompte(supabase, commande.email);
   if (!compte.ok) return compte;
 
+  await retenirLePayeur(supabase, compte.valeur, commande.payeurPrenom, commande.payeurNom);
+
   const participant = await trouverOuCreerParticipant(supabase, {
     compteId: compte.valeur,
     prenom: commande.prenom,
@@ -304,6 +351,8 @@ async function provisionnerForfait(
 
   const compte = await trouverOuCreerCompte(supabase, commande.email);
   if (!compte.ok) return compte;
+
+  await retenirLePayeur(supabase, compte.valeur, commande.payeurPrenom, commande.payeurNom);
 
   const participant = await trouverOuCreerParticipant(supabase, {
     compteId: compte.valeur,

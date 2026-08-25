@@ -236,6 +236,10 @@ export async function demarrerAchatUnite(
     const [prenom, ...reste] = participant.split(/\s+/);
     const fait = await provisionner(supabase, {
       produit: 'seance',
+      // Même une place offerte a son payeur : c'est lui qui a rempli le
+      // formulaire, et son nom vaut d'être retenu comme sur un achat réglé.
+      payeurPrenom: o.payeurPrenom?.trim() || null,
+      payeurNom: o.payeurNom?.trim() || null,
       orderId: `GRATUIT-${crypto.randomUUID()}`,
       codePromo: codeApplique,
       montantCents: 0,

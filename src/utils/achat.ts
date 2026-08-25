@@ -253,6 +253,10 @@ export async function demarrerAchat(
   if (achat.totalCents + (achat.supplementInitialCents ?? 0) === 0) {
     const commande = {
       produit: 'forfait' as const,
+      // Même une place offerte a son payeur : c'est lui qui a rempli le
+      // formulaire, et son nom vaut d'être retenu comme sur un achat réglé.
+      payeurPrenom: o.payeurPrenom?.trim() || null,
+      payeurNom: o.payeurNom?.trim() || null,
       orderId: `GRATUIT-${crypto.randomUUID()}`,
       codePromo: codeApplique,
       montantCents: 0,

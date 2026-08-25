@@ -28,6 +28,8 @@ describe('lireCommande', () => {
       orderId: '88123',
       codePromo: null,
       email: 'marie@exemple.fr',
+      payeurPrenom: 'Marie',
+      payeurNom: 'D.',
       prenom: 'Léa',
       nom: 'D.',
       saison: '2026-2027',
@@ -134,6 +136,8 @@ describe('lireCommande — une place à l’unité', () => {
       orderId: '90210',
       codePromo: null,
       email: 'marie@exemple.fr',
+      payeurPrenom: null,
+      payeurNom: null,
       prenom: 'Léa',
       nom: 'D.',
       saison: '2026-2027',
@@ -171,5 +175,30 @@ describe('lireCommande — une place à l’unité', () => {
     // achat à l'unité ne porte donc pas d'`adhesion_cents`, et n'en réclame pas.
     const r = lireCommande(seancePayee);
     expect(r.ok && 'adhesionCents' in r.valeur).toBe(false);
+  });
+});
+
+describe('lireCommande — le payeur', () => {
+  it('retient le nom de qui règle, distinct du participant', () => {
+    // HelloAsso le renvoie à chaque commande et nous le jetions. Il ne vaut pas
+    // celui du participant : une mère règle pour sa fille, et confondre les
+    // deux fait naître un second dossier au même foyer.
+    const r = lireCommande({
+      ...intentionPayee,
+      order: { id: 88123, payer: { email: 'marie@exemple.fr', firstName: 'Marie', lastName: 'Dupont' } },
+      metadata: { ...intentionPayee.metadata, participant: 'Léa Dupont' },
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.valeur.payeurPrenom).toBe('Marie');
+    expect(r.valeur.payeurNom).toBe('Dupont');
+    expect(r.valeur.prenom).toBe('Léa');
+  });
+
+  it('accepte une commande sans nom de payeur', () => {
+    // HelloAsso ne l'exige pas : on garde la commande, sans le nom.
+    const r = lireCommande({ ...intentionPayee, order: { id: 88123, payer: { email: 'x@y.fr' } } });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.valeur.payeurPrenom).toBeNull();
   });
 });

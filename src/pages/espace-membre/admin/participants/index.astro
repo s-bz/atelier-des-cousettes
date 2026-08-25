@@ -240,7 +240,12 @@ const aFacturer = (personnes ?? []).filter((p) => (soldes.get(p.id) ?? 0) < 0).l
         return (
           <div class="rounded-xl border border-[var(--color-border-prominent)] bg-[var(--color-card-bg)] shadow-md">
             <p class="border-b border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-light)]">
-              Même compte · {foyer.email}
+              Même compte ·{' '}
+              {foyer.compte ? (
+                <a href={`/espace-membre/admin/comptes/${foyer.compte}/`} class="underline">
+                  {foyer.email}
+                </a>
+              ) : foyer.email}
             </p>
             <div class="divide-y divide-[var(--color-border)]">
               {foyer.membres.map(ligne)}
