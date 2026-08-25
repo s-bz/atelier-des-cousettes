@@ -122,5 +122,48 @@ select '9 la personne en attente est signalee',
             else 'ECHEC: personne en attente absente du bilan' end
 from issue;
 
+-- ── 10. UN FORFAIT REMBOURSÉ AVANT LA RENTRÉE ───────────────────────────
+--
+-- On s'inscrit en août pour une saison qui ouvre le 1er septembre : c'est le
+-- cas le plus courant de l'année. Refermer l'abonnement sur « aujourd'hui »
+-- le datait alors AVANT son début, et la contrainte
+-- `subscription_dates_ordered` refusait la ligne — Isabelle lisait
+-- « Libération impossible » et rien ne se libérait. Vu au premier
+-- remboursement réel, que ce fichier ne savait pas reproduire : son abonnement
+-- commençait soixante jours plus tôt.
+insert into accounts (id, email) values ('f0000000-0000-0000-0000-000000000002', 'rentree@test.fr');
+insert into participants (id, account_id, first_name, last_name, audience)
+values ('f1000000-0000-0000-0000-000000000003', 'f0000000-0000-0000-0000-000000000002',
+        'Pas', 'Commencé', 'adulte');
+
+insert into sessions (id, creneau_id, starts_at, ends_at, location, capacity, unit_price_cents, status, places_attente)
+values ('f2000000-0000-0000-0000-000000000009', 't-remb',
+        date_trunc('month', current_date + interval '1 month') + interval '10 days',
+        date_trunc('month', current_date + interval '1 month') + interval '10 days 3 hours',
+        'Revel', 5, 4500, 'scheduled', 0);
+
+insert into subscriptions (participant_id, season, total_credits, home_creneau_id,
+                           starts_on, ends_on, helloasso_order_id)
+values ('f1000000-0000-0000-0000-000000000003', 'test', 1, 't-remb',
+        date_trunc('month', current_date + interval '1 month')::date,
+        (current_date + 300), 'Order:RENTREE');
+
+insert into bookings (session_id, participant_id, source, status)
+values ('f2000000-0000-0000-0000-000000000009', 'f1000000-0000-0000-0000-000000000003', 'auto', 'booked');
+
+do $$
+begin
+  perform annuler_pour_remboursement('Order:RENTREE');
+  insert into r(cas, verdict) values ('10 remboursement avant la rentree', 'OK');
+exception when others then
+  insert into r(cas, verdict) values ('10 remboursement avant la rentree', 'ECHEC: '||sqlerrm);
+end $$;
+
+insert into r(cas, verdict)
+select '11 l abonnement se referme sur son premier jour',
+       case when ends_on = starts_on then 'OK'
+            else 'ECHEC: du '||starts_on::text||' au '||ends_on::text end
+from subscriptions where helloasso_order_id = 'Order:RENTREE';
+
 select verdict, cas from r order by ordre;
 rollback;
