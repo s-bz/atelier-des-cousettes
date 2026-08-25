@@ -48,34 +48,84 @@ exception when check_violation then
   insert into resultats(cas, verdict) values ('3 les deux droits refuses', 'OK');
 end $$;
 
--- ── 4. L'auto-inscription étale, elle ne brûle pas ───────────────────────
--- Huit séances dans le mois courant : de quoi tout consommer d'un coup si la
--- répartition ne fonctionnait pas.
+-- ── 4 et 5. L'auto-inscription étale SUR LES DATES, pas sur les mois ─────
+--
+-- L'ancienne version étalait sur les mois, à raison de `crédits ÷ mois` : un
+-- pack de seize séances sur une saison de dix mois visait 1,6 par mois, et les
+-- mois à deux dates n'en plaçaient qu'une. Un achat réel en a perdu deux.
+--
+-- Trois mois de dates, à raison de huit par mois — vingt-quatre en tout pour
+-- dix crédits. Ancrées au mois suivant : à J+n, les huit premières
+-- déborderaient sur le mois d'après dès qu'on approche de la fin du mois, et la
+-- suite virerait au rouge une semaine par mois.
 insert into sessions (creneau_id, starts_at, ends_at, location, capacity, unit_price_cents)
+-- UN CALENDRIER INÉGAL, ET C'EST TOUT L'INTÉRÊT : trois dates le premier mois,
+-- une le deuxième, une le troisième. Réparti également (huit, huit, huit), le
+-- calcul par mois et le calcul par dates donnent le même résultat, et le test
+-- ne prouve rien. C'est le déséquilibre qui les sépare — celui du vrai
+-- calendrier, deux séances certains mois et une les autres.
+--
+-- `::date` après l'ajout de mois : sinon on additionne un entier à un
+-- timestamp, ce que Postgres refuse.
 select 't-forf',
-       current_date + n + time '14:00',
-       current_date + n + time '17:00',
+       ((date_trunc('month', current_date + interval '1 month') + (m * interval '1 month'))::date + n)
+         + time '14:00',
+       ((date_trunc('month', current_date + interval '1 month') + (m * interval '1 month'))::date + n)
+         + time '17:00',
        'Revel', 20, 2500
-from generate_series(1, 8) as n
-where (current_date + n) < (date_trunc('month', current_date) + interval '1 month')::date;
+from (values (0, 1), (0, 2), (0, 3), (1, 1), (2, 1)) as v(m, n);
 
-select run_auto_enrolment(30);
+update subscriptions
+   set total_credits = 3,
+       credits_per_month = null,
+       starts_on = date_trunc('month', current_date + interval '1 month')::date,
+       ends_on   = (date_trunc('month', current_date + interval '4 months') - interval '1 day')::date
+ where participant_id = 'e1000000-0000-0000-0000-000000000001';
 
--- UNE BORNE HAUTE NE SUFFIT PAS : « 0 <= 2 » est vrai, si bien que ce test
--- restait vert le jour où l'auto-inscription a cessé de traiter les forfaits.
--- Il exige désormais qu'il s'en pose au moins une.
+select run_auto_enrolment(200);
+
+-- TROIS CRÉDITS SUR CINQ DATES : ce qu'on vérifie est qu'il en reste pour la
+-- fin. Prendre les trois premières — toutes dans le premier mois — laisserait
+-- l'adhérent sans rien de novembre à janvier, ce qui est précisément ce qu'un
+-- forfait de saison ne doit pas faire.
+--
+-- On n'exige pas un mois servi sur trois : avec trois dates sur cinq dans le
+-- premier mois, une répartition régulière en pose deux là et une à la fin. Ce
+-- qui compte est que la DERNIÈRE date soit tenue.
 insert into resultats(cas, verdict)
-select '4 forfait etale, pas brule',
-       case when count(*) between 1 and 2 then 'OK — '||count(*)||' ce mois-ci'
-            when count(*) = 0 then 'ECHEC: aucune posee'
-            else 'ECHEC: '||count(*)||' posees d un coup' end
+select '4 forfait etale, la fin est servie',
+       case when max(s.starts_at) >= date_trunc('month', current_date + interval '3 months')
+            then 'OK'
+            else 'ECHEC: rien apres '||to_char(max(s.starts_at), 'DD/MM') end
 from bookings b join sessions s on s.id = b.session_id
 where b.participant_id = 'e1000000-0000-0000-0000-000000000001' and b.status = 'booked';
 
 insert into resultats(cas, verdict)
-select '5 il reste du forfait pour la suite',
-       case when balance('e1000000-0000-0000-0000-000000000001') >= 8
-            then 'OK' else 'ECHEC: solde '||balance('e1000000-0000-0000-0000-000000000001') end;
+select '5 tous les credits places, aucun de plus',
+       case when count(*) = 3 then 'OK'
+            else 'ECHEC: '||count(*)||' places pour 3 credits' end
+from bookings b
+where b.participant_id = 'e1000000-0000-0000-0000-000000000001' and b.status = 'booked';
+
+-- ── 5 bis. AUTANT DE DATES QUE DE CRÉDITS : ON LES PREND TOUTES ─────────
+-- C'est le cas de l'achat réel — seize séances, seize dates au calendrier — où
+-- la répartition par mois n'en plaçait que quatorze.
+insert into participants (id, first_name, last_name, audience)
+values ('e1000000-0000-0000-0000-000000000009', 'Juste', 'Assez', 'adulte');
+
+insert into subscriptions (participant_id, season, total_credits, home_creneau_id, starts_on, ends_on)
+values ('e1000000-0000-0000-0000-000000000009', 'test', 5, 't-forf',
+        date_trunc('month', current_date + interval '1 month')::date,
+        (date_trunc('month', current_date + interval '4 months') - interval '1 day')::date);
+
+select run_auto_enrolment(200);
+
+insert into resultats(cas, verdict)
+select '5bis autant de dates que de credits : toutes prises',
+       case when count(*) = 5 then 'OK'
+            else 'ECHEC: '||count(*)||' places sur 5 dates' end
+from bookings b
+where b.participant_id = 'e1000000-0000-0000-0000-000000000009' and b.status = 'booked';
 
 -- ── 6 et 7. UN FORFAIT ACHETÉ AVANT LA RENTRÉE ──────────────────────────
 --
