@@ -3,6 +3,7 @@ export const prerender = false;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getRequestClient, getAdminClient } from '../../utils/supabase';
+import { suiteSure } from '../../utils/nav';
 import { lienWhatsApp } from '../../utils/contact';
 import { mesurer } from '../../utils/mesure';
 
@@ -17,9 +18,19 @@ const MOBILE_ET_MAIL = {
 // conversation avec un inconnu est pire qu'un bouton absent.
 const whatsapp = lienWhatsApp(MOBILE_ET_MAIL.mobile);
 
+/*
+ * OÙ REVENIR UNE FOIS CONNECTÉ.
+ *
+ * Quelqu'un qui se connecte depuis une page d'achat veut retourner à son achat,
+ * pas atterrir dans son espace et refaire le chemin. Le paramètre traverse
+ * l'envoi du code et le lien Google, puisque Supabase conserve la chaîne de
+ * requête de `redirectTo`.
+ */
+const suite = suiteSure(Astro.url.searchParams.get('suite'));
+
 // Déjà connecté : rien à faire ici.
 if (Astro.locals.account) {
-  return Astro.redirect('/espace-membre/');
+  return Astro.redirect(suite);
 }
 
 let etape: 'email' | 'code' = 'email';
@@ -49,7 +60,7 @@ if (Astro.request.method === 'POST') {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${Astro.url.origin}/espace-membre/callback/`,
+        redirectTo: `${Astro.url.origin}/espace-membre/callback/?suite=${encodeURIComponent(suite)}`,
         skipBrowserRedirect: true,
       },
     });
@@ -169,7 +180,7 @@ if (Astro.request.method === 'POST') {
         // fois de celui qui revient : le premier vient d'acheter et découvre
         // son planning, le second en fait un usage courant.
         await mesurer('connexion_reussie', email, { methode: 'code', premiere });
-        return Astro.redirect('/espace-membre/');
+        return Astro.redirect(suite);
       }
     }
   }

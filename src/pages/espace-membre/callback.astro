@@ -1,6 +1,7 @@
 ---
 export const prerender = false;
 
+import { suiteSure } from '../../utils/nav';
 import { getRequestClient, getAdminClient } from '../../utils/supabase';
 import { mesurer } from '../../utils/mesure';
 
@@ -82,5 +83,5 @@ if (premiere) {
 
 await mesurer('connexion_reussie', email, { methode: 'google', premiere });
 
-return Astro.redirect('/espace-membre/');
+return Astro.redirect(suiteSure(Astro.url.searchParams.get('suite')));
 ---
