@@ -24,6 +24,7 @@ declare -a SUITES=(
   "forfaits:7"
   "adhesions:4"
   "reservation-payee:8"
+  "seance-payee:7"
 )
 
 total=0
