@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getAdminClient } from '../../../utils/supabase';
+import { paiementsRembourses } from '../../../utils/helloasso';
 import { notifier, notifierAdmins, variablesSeance, variablesSemaine } from '../../../utils/emails';
 
 export const prerender = false;
@@ -30,7 +31,7 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   const supabase = getAdminClient();
-  const bilan = { inscriptions: 0, rappels: 0, echecs: 0, recapitulatif: 0 };
+  const bilan = { inscriptions: 0, rappels: 0, remboursements: 0, echecs: 0, recapitulatif: 0 };
 
   // ── 1. Auto-inscription ────────────────────────────────────────────────
   const { data: inscrites, error: erreurInscription } =
@@ -98,7 +99,52 @@ export const GET: APIRoute = async ({ request }) => {
       .eq('id', reservation.id);
   }
 
-  // ── 3. Récapitulatif de la semaine, le dimanche ────────────────────────
+  // ── 3. Les remboursements repérés chez HelloAsso ───────────────────────
+  //
+  // Isabelle rembourse au portail — l'API l'exige, `refund` étant protégé par
+  // une authentification forte qu'une clé serveur ne sait pas satisfaire. Notre
+  // côté ne l'apprenait donc jamais : la personne gardait ses places, son solde
+  // passait sous zéro, et elle réapparaissait sur la liste « à facturer ». On
+  // remboursait puis on facturait.
+  //
+  // ON DÉPOSE, ON N'AGIT PAS. Libérer les places de quelqu'un est irréversible
+  // pour lui — sa date part à un autre — et un état mal lu ne doit pas vider un
+  // planning tout seul. La confirmation appartient à Isabelle.
+  //
+  // Une semaine de recul plutôt qu'un jour : la tâche peut manquer un tour, et
+  // un remboursement passé inaperçu laisse des places bloquées jusqu'à ce que
+  // quelqu'un s'en aperçoive.
+  const depuis = new Date();
+  depuis.setDate(depuis.getDate() - 7);
+
+  const rembourses = await paiementsRembourses(depuis);
+
+  if (!rembourses.ok) {
+    console.error('[cron] remboursements illisibles :', rembourses.erreur);
+    bilan.echecs++;
+  } else {
+    for (const p of rembourses.valeur) {
+      // `paiement` est unique : un remboursement déjà déposé ne se redépose
+      // pas, et la tâche peut donc repasser sur la même semaine sans dommage.
+      const { error } = await supabase.from('remboursements').upsert(
+        {
+          commande: p.commandeId,
+          paiement: p.paiementId,
+          montant_cents: p.montantCents,
+          etat: p.etat,
+        },
+        { onConflict: 'paiement', ignoreDuplicates: true },
+      );
+      if (error) {
+        console.error(`[cron] remboursement ${p.paiementId} non déposé :`, error.message);
+        bilan.echecs++;
+      } else {
+        bilan.remboursements++;
+      }
+    }
+  }
+
+  // ── 4. Récapitulatif de la semaine, le dimanche ────────────────────────
   //
   // Replié dans la tâche quotidienne plutôt que déclaré comme second cron : le
   // palier Hobby de Vercel n'autorise qu'un déclenchement par jour et par

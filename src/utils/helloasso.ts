@@ -519,3 +519,66 @@ export function preparerAchatUnite(o: {
     urls: o.urls,
   };
 }
+
+export interface PaiementRembourse {
+  paiementId: string;
+  commandeId: string;
+  montantCents: number;
+  etat: string;
+}
+
+/**
+ * Les paiements défaits — remboursés, ou annulés pour la suite.
+ *
+ * ON NE PEUT PAS DÉFAIRE PAR L'API : `POST /payments/{id}/refund` est protégé
+ * par une authentification forte qu'une clé `client_credentials` ne sait pas
+ * satisfaire. Isabelle agit donc au portail, et la tâche quotidienne le
+ * constate — lire ne demande aucune authentification forte.
+ *
+ * DEUX GESTES DISTINCTS, ET IL FAUT LES DEUX. Sur un règlement échelonné,
+ * Isabelle peut rembourser ce qui a été prélevé, ou seulement arrêter les
+ * échéances à venir — un arrêt ne rend rien, donc ne produit AUCUN paiement
+ * remboursé. Ne guetter que `Refunded` aurait manqué la moitié des cas.
+ *
+ *   Refunded / Refunding → l'argent revient
+ *   Canceled            → les échéances à venir sont arrêtées
+ *
+ * `Canceled` N'EST PAS DANS LA LISTE DOCUMENTÉE du paramètre `states`, qui
+ * s'arrête à `WaitingBankValidation`. Il est pourtant accepté : l'API valide
+ * ce paramètre et refuse une valeur inventée par un 400, si bien qu'un 200 sur
+ * `Canceled` prouve qu'elle le connaît. Vérifié le 25/08/2026.
+ *
+ * Le tri par `UpdateDate` permet de ne demander que ce qui a bougé, plutôt que
+ * de reparcourir l'histoire à chaque nuit.
+ */
+export async function paiementsRembourses(depuis: Date): Promise<Resultat<PaiementRembourse[]>> {
+  const p = new URLSearchParams({
+    sortField: 'UpdateDate',
+    sortOrder: 'Desc',
+    pageSize: '100',
+    from: depuis.toISOString(),
+  });
+  p.append('states', 'Refunded');
+  p.append('states', 'Refunding');
+  p.append('states', 'Canceled');
+
+  const r = await appeler(`/organizations/${ORGANISATION}/payments?${p}`);
+  if (!r.ok) return r;
+
+  const data = (r.valeur as { data?: unknown[] })?.data ?? [];
+
+  return succes(data.flatMap((brut) => {
+    const p = brut as {
+      id?: unknown; amount?: unknown; state?: unknown; order?: { id?: unknown };
+    };
+    // Sans commande, impossible de savoir quelle inscription est concernée :
+    // on l'écarte plutôt que de deviner.
+    if (!p.id || !p.order?.id) return [];
+    return [{
+      paiementId: String(p.id),
+      commandeId: String(p.order.id),
+      montantCents: typeof p.amount === 'number' ? p.amount : 0,
+      etat: typeof p.state === 'string' ? p.state : 'Inconnu',
+    }];
+  }));
+}
