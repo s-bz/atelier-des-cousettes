@@ -6,12 +6,12 @@ import Hero from '../components/Hero.astro';
 import AvisProvisoire from '../components/AvisProvisoire.astro';
 import CrossLinksSection from '../components/CrossLinksSection.astro';
 import CalendrierCreneau from '../components/CalendrierCreneau.astro';
-import ContactCTA from '../components/ContactCTA.astro';
 import FaqSection from '../components/FaqSection.astro';
 import Temoignages from '../components/Temoignages.astro';
 import { getPageContext, reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { splitParagraphs, toSlug } from '../utils/strings';
+import { lienContact } from '../utils/origine';
 import { buildCourseSchema, buildServicePageSchemas } from '../utils/schema';
 import { getAdminClient } from '../utils/supabase';
 import { AUDIENCES } from '../utils/ateliers';
@@ -511,11 +511,42 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
               </div>
 
               {/*
-                Un bouton par lieu, au pied de ses cartes. Celui qui vient à
-                Revel n'a plus à traverser Verdalle pour trouver de quoi écrire
-                — même parti que sur la page des ateliers.
+                DEUX BOUTONS PAR LIEU, au pied de ses cartes — et celui qui
+                réserve passe devant.
+
+                On venait de lire ses dates, et la seule chose qu'on pouvait
+                faire ensuite était d'écrire : le bouton qui prend la place se
+                trouvait en haut de page, trois écrans plus haut, hors de vue
+                depuis longtemps. Il fallait donc remonter pour faire ce que
+                la page venait de donner envie de faire, ou renoncer.
+
+                LE CONTACT RESTE, EN SECOND : celui qui a une question plutôt
+                qu'une date à choisir le trouve encore — même parti que sur la
+                fiche d'un stage.
+
+                PAS DE BOUTON SANS DATE. Un lieu dont aucune séance n'est
+                programmée n'a rien à vendre : la page de réservation l'écarte
+                déjà de sa liste, et l'y envoyer mènerait à un choix
+                introuvable. Il ne reste alors qu'à écrire, ce que la carte
+                vide dit déjà.
               */}
-              <ContactCTA label={page.ctaLabel} />
+              <div class="mt-8 mb-8 flex flex-wrap justify-center gap-3 not-prose">
+                {l.total > 0 && page.inscriptionLabel && page.inscriptionUrl && (
+                  <a
+                    href={page.inscriptionUrl}
+                    class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 text-sm font-medium text-white no-underline transition-all hover:scale-[1.02] hover:bg-[var(--color-button-hover)]"
+                  >
+                    {page.inscriptionLabel}
+                  </a>
+                )}
+                <a
+                  href={lienContact(Astro.url.pathname)}
+                  data-tally-fallback
+                  class="inline-block rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-8 py-3 text-sm font-medium text-[var(--color-button)] no-underline transition-colors hover:bg-[var(--color-button)] hover:text-white"
+                >
+                  {page.ctaLabel}
+                </a>
+              </div>
             </div>
           ))}
         </div>
