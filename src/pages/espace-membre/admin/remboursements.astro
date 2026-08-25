@@ -33,7 +33,7 @@ if (Astro.request.method === 'POST') {
   if (form.get('action') === 'ignorer') {
     const { error } = await supabase.from('remboursements')
       .update({ confirme_le: new Date().toISOString(), bilan: 'Écarté sans action.' })
-      .eq('id', id);
+      .eq('commande', commande).is('confirme_le', null);
     if (error) erreur = `Impossible : ${error.message}`;
     else message = 'Écarté. Rien n’a été libéré.';
   } else {
@@ -44,19 +44,49 @@ if (Astro.request.method === 'POST') {
     } else {
       const bilan = `${(data as any)?.liberees ?? 0} séance(s) libérée(s), `
         + `${(data as any)?.gardees ?? 0} déjà suivie(s) conservée(s).`;
+      /*
+       * TOUTES LES LIGNES DE LA COMMANDE, et non celle qu'on a cliquée. Une
+       * seule annulation d'échéancier en produit autant qu'il restait
+       * d'échéances — neuf, sur le premier cas réel. Les laisser une à une
+       * ferait confirmer neuf fois la même décision, et les huit suivantes ne
+       * trouveraient plus rien à libérer.
+       */
       await supabase.from('remboursements')
         .update({ confirme_le: new Date().toISOString(), bilan })
-        .eq('id', id);
+        .eq('commande', commande).is('confirme_le', null);
       message = bilan;
     }
   }
 }
 
-const { data: attente } = await supabase
+const { data: lignes } = await supabase
   .from('remboursements')
   .select('id, commande, paiement, montant_cents, etat, repere_le')
   .is('confirme_le', null)
   .order('repere_le', { ascending: false });
+
+/*
+ * UNE CARTE PAR COMMANDE, pas par paiement. Annuler un échéancier de dix mois
+ * produit neuf lignes — une par échéance restante — et les afficher telles
+ * quelles demanderait de confirmer neuf fois la même décision.
+ */
+interface Groupe {
+  id: string; commande: string; montant_cents: number;
+  etats: Set<string>; combien: number; repere_le: string;
+}
+
+const attente: Groupe[] = [];
+for (const l of lignes ?? []) {
+  let g = attente.find((x) => x.commande === l.commande);
+  if (!g) {
+    g = { id: l.id, commande: l.commande, montant_cents: 0,
+          etats: new Set(), combien: 0, repere_le: l.repere_le };
+    attente.push(g);
+  }
+  g.montant_cents += l.montant_cents ?? 0;
+  g.etats.add(l.etat);
+  g.combien += 1;
+}
 
 const { data: faits } = await supabase
   .from('remboursements')
@@ -69,7 +99,7 @@ const { data: faits } = await supabase
  * À QUI CETTE COMMANDE APPARTIENT-ELLE ? Sans ce rapprochement, l'écran
  * n'afficherait qu'un numéro : impossible de décider quoi que ce soit.
  */
-const commandes = [...new Set((attente ?? []).map((r) => r.commande))];
+const commandes = [...new Set(attente.map((r) => r.commande))];
 
 const { data: parAbonnement } = commandes.length
   ? await supabase
@@ -107,7 +137,7 @@ const motDe = (etat: string) =>
   {message && <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] px-4 py-3">{message}</p>}
   {erreur && <p class="mb-6 rounded-xl bg-[var(--color-bg-pink)] px-4 py-3 text-white">{erreur}</p>}
 
-  {!attente?.length ? (
+  {!attente.length ? (
     <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text)] shadow-md">
       Rien à confirmer. Un remboursement fait sur HelloAsso apparaît ici dans la minute — c'est
       HelloAsso qui nous prévient. Une vérification a lieu chaque nuit par sécurité, au cas où
@@ -121,7 +151,9 @@ const motDe = (etat: string) =>
             {quiEst.get(r.commande) ?? `Commande ${r.commande} — personne inconnue`}
           </p>
           <p class="mt-1 text-sm text-[var(--color-text-light)]">
-            {euros(r.montant_cents)} € · {motDe(r.etat)} · repéré le {dateFr.format(new Date(r.repere_le))}
+            {euros(r.montant_cents)} € · {[...r.etats].map(motDe).join(' et ')}
+            {r.combien > 1 && ` · ${r.combien} échéances`}
+            {' · '}repéré le {dateFr.format(new Date(r.repere_le))}
             {' · '}commande {r.commande}
           </p>
 

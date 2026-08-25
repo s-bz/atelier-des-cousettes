@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getAdminClient } from '../../../utils/supabase';
-import { paiementsRembourses } from '../../../utils/helloasso';
+import { defaitsDeLaCommande } from '../../../utils/helloasso';
 import { notifier, notifierAdmins, variablesSeance, variablesSemaine } from '../../../utils/emails';
 
 export const prerender = false;
@@ -111,21 +111,45 @@ export const GET: APIRoute = async ({ request }) => {
   // pour lui — sa date part à un autre — et un état mal lu ne doit pas vider un
   // planning tout seul. La confirmation appartient à Isabelle.
   //
-  // Une semaine de recul plutôt qu'un jour : la tâche peut manquer un tour, et
-  // un remboursement passé inaperçu laisse des places bloquées jusqu'à ce que
-  // quelqu'un s'en aperçoive.
-  const depuis = new Date();
-  depuis.setDate(depuis.getDate() - 7);
+  // ON INTERROGE CHAQUE COMMANDE VIVANTE, UNE PAR UNE.
+  //
+  // La liste des paiements de l'organisation aurait été plus courte — un appel
+  // au lieu de N — mais elle NE CONTIENT QUE LES PAIEMENTS TRAITÉS. Mesuré sur
+  // une vraie annulation : neuf échéances passées à `Canceled` dans la
+  // commande, et la liste continuait de ne rendre que les paiements
+  // `Authorized`, quel que soit le filtre. Une annulation d'échéances y est
+  // invisible.
+  //
+  // N reste petit : ce sont les commandes dont l'inscription court encore.
+  const { data: commandes } = await supabase
+    .from('subscriptions')
+    .select('helloasso_order_id')
+    .not('helloasso_order_id', 'is', null)
+    .gte('ends_on', new Date().toISOString().slice(0, 10));
 
-  const rembourses = await paiementsRembourses(depuis);
+  const { data: placesPayees } = await supabase
+    .from('bookings')
+    .select('helloasso_order_id')
+    .not('helloasso_order_id', 'is', null)
+    .eq('status', 'booked');
 
-  if (!rembourses.ok) {
-    console.error('[cron] remboursements illisibles :', rembourses.erreur);
-    bilan.echecs++;
-  } else {
-    for (const p of rembourses.valeur) {
+  const aVerifier = [...new Set([
+    ...(commandes ?? []).map((c) => c.helloasso_order_id as string),
+    ...(placesPayees ?? []).map((b) => b.helloasso_order_id as string),
+  ])].filter((c) => c && !c.startsWith('GRATUIT-'));
+
+  for (const commande of aVerifier) {
+    const defaits = await defaitsDeLaCommande(commande);
+
+    if (!defaits.ok) {
+      console.error(`[cron] commande ${commande} illisible :`, defaits.erreur);
+      bilan.echecs++;
+      continue;
+    }
+
+    for (const p of defaits.valeur) {
       // `paiement` est unique : un remboursement déjà déposé ne se redépose
-      // pas, et la tâche peut donc repasser sur la même semaine sans dommage.
+      // pas, et la tâche peut donc repasser chaque nuit sans dommage.
       const { error } = await supabase.from('remboursements').upsert(
         {
           commande: p.commandeId,

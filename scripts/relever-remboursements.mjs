@@ -27,20 +27,38 @@ const t = await fetch(`${hote}/oauth2/token`, {
 if (!t.ok) { console.error('Jeton refusé :', t.status); process.exit(1); }
 const { access_token } = await t.json();
 
-const depuis = new Date();
-depuis.setDate(depuis.getDate() - 7);
-
-const p = new URLSearchParams({ sortField: 'UpdateDate', sortOrder: 'Desc',
-                                pageSize: '100', from: depuis.toISOString() });
-for (const etat of ['Refunded', 'Refunding', 'Canceled']) p.append('states', etat);
-
-const r = await fetch(`${hote}/v5/organizations/${org}/payments?${p}`,
-                      { headers: { authorization: `Bearer ${access_token}` } });
-const { data = [] } = await r.json();
-
-console.log(`${data.length} paiement(s) défait(s) depuis le ${depuis.toLocaleDateString('fr-FR')}`);
-
 const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
+
+// Les commandes encore vivantes — celles dont l'inscription court.
+const [{ data: abos }, { data: places }] = await Promise.all([
+  supabase.from('subscriptions').select('helloasso_order_id')
+    .not('helloasso_order_id', 'is', null)
+    .gte('ends_on', new Date().toISOString().slice(0, 10)),
+  supabase.from('bookings').select('helloasso_order_id')
+    .not('helloasso_order_id', 'is', null).eq('status', 'booked'),
+]);
+
+const commandes = [...new Set([
+  ...(abos ?? []).map((c) => c.helloasso_order_id),
+  ...(places ?? []).map((b) => b.helloasso_order_id),
+])].filter((c) => c && !c.startsWith('GRATUIT-'));
+
+console.log(`${commandes.length} commande(s) à vérifier`);
+
+const DEFAITS = new Set(['Refunded', 'Refunding', 'Canceled']);
+const data = [];
+
+for (const commande of commandes) {
+  const r = await fetch(`${hote}/v5/orders/${encodeURIComponent(commande)}`,
+                        { headers: { authorization: `Bearer ${access_token}` } });
+  if (!r.ok) { console.log(`  commande ${commande} : ${r.status}`); continue; }
+  const o = await r.json();
+  for (const p of o.payments ?? []) {
+    if (DEFAITS.has(p.state)) data.push({ ...p, order: { id: commande } });
+  }
+}
+
+console.log(`${data.length} paiement(s) défait(s)`);
 
 for (const paiement of data) {
   if (!paiement.id || !paiement.order?.id) continue;

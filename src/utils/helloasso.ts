@@ -539,65 +539,49 @@ export function preparerAchatUnite(o: {
   };
 }
 
-export interface PaiementRembourse {
+export interface PaiementDefait {
   paiementId: string;
   commandeId: string;
   montantCents: number;
+  /** `Refunded`, `Refunding` ou `Canceled`. */
   etat: string;
 }
 
-/**
- * Les paiements défaits — remboursés, ou annulés pour la suite.
- *
- * ON NE PEUT PAS DÉFAIRE PAR L'API : `POST /payments/{id}/refund` est protégé
- * par une authentification forte qu'une clé `client_credentials` ne sait pas
- * satisfaire. Isabelle agit donc au portail, et la tâche quotidienne le
- * constate — lire ne demande aucune authentification forte.
- *
- * DEUX GESTES DISTINCTS, ET IL FAUT LES DEUX. Sur un règlement échelonné,
- * Isabelle peut rembourser ce qui a été prélevé, ou seulement arrêter les
- * échéances à venir — un arrêt ne rend rien, donc ne produit AUCUN paiement
- * remboursé. Ne guetter que `Refunded` aurait manqué la moitié des cas.
- *
- *   Refunded / Refunding → l'argent revient
- *   Canceled            → les échéances à venir sont arrêtées
- *
- * `Canceled` N'EST PAS DANS LA LISTE DOCUMENTÉE du paramètre `states`, qui
- * s'arrête à `WaitingBankValidation`. Il est pourtant accepté : l'API valide
- * ce paramètre et refuse une valeur inventée par un 400, si bien qu'un 200 sur
- * `Canceled` prouve qu'elle le connaît. Vérifié le 25/08/2026.
- *
- * Le tri par `UpdateDate` permet de ne demander que ce qui a bougé, plutôt que
- * de reparcourir l'histoire à chaque nuit.
- */
-export async function paiementsRembourses(depuis: Date): Promise<Resultat<PaiementRembourse[]>> {
-  const p = new URLSearchParams({
-    sortField: 'UpdateDate',
-    sortOrder: 'Desc',
-    pageSize: '100',
-    from: depuis.toISOString(),
-  });
-  p.append('states', 'Refunded');
-  p.append('states', 'Refunding');
-  p.append('states', 'Canceled');
+/** Les états qui défont un paiement : l'argent revient, ou l'échéance n'aura pas lieu. */
+const DEFAITS = new Set(['Refunded', 'Refunding', 'Canceled']);
 
-  const r = await appeler(`/organizations/${ORGANISATION}/payments?${p}`);
+/**
+ * Ce qui, dans une commande, a été remboursé ou annulé.
+ *
+ * ON INTERROGE LA COMMANDE, ET NON LA LISTE DES PAIEMENTS. C'était le premier
+ * réflexe — `GET /organizations/{slug}/payments` accepte `states` et trie par
+ * date de mise à jour — mais cette liste NE CONTIENT QUE LES PAIEMENTS
+ * TRAITÉS. Mesuré le 25/08/2026 sur une vraie annulation : neuf échéances
+ * passées à `Canceled` dans la commande, et la liste de l'organisation
+ * continuait de ne rendre que les deux paiements `Authorized`, quel que soit le
+ * filtre — avec ou sans date, avec ou sans tri.
+ *
+ * ET AUCUNE NOTIFICATION N'ARRIVE. Un remboursement en émet peut-être une ;
+ * une annulation d'échéances n'en émet aucune — vérifié, la boîte est restée
+ * vide. Interroger la commande est donc le seul moyen de l'apprendre.
+ */
+export async function defaitsDeLaCommande(commandeId: string): Promise<Resultat<PaiementDefait[]>> {
+  const r = await appeler(`/orders/${encodeURIComponent(commandeId)}`);
   if (!r.ok) return r;
 
-  const data = (r.valeur as { data?: unknown[] })?.data ?? [];
+  const paiements = ((r.valeur as { payments?: unknown[] })?.payments ?? []) as {
+    id?: unknown; state?: unknown; amount?: unknown;
+  }[];
 
-  return succes(data.flatMap((brut) => {
-    const p = brut as {
-      id?: unknown; amount?: unknown; state?: unknown; order?: { id?: unknown };
-    };
-    // Sans commande, impossible de savoir quelle inscription est concernée :
-    // on l'écarte plutôt que de deviner.
-    if (!p.id || !p.order?.id) return [];
+  return succes(paiements.flatMap((p) => {
+    const etat = typeof p.state === 'string' ? p.state : '';
+    if (!p.id || !DEFAITS.has(etat)) return [];
     return [{
       paiementId: String(p.id),
-      commandeId: String(p.order.id),
+      commandeId,
       montantCents: typeof p.amount === 'number' ? p.amount : 0,
-      etat: typeof p.state === 'string' ? p.state : 'Inconnu',
+      etat,
     }];
   }));
 }
+
