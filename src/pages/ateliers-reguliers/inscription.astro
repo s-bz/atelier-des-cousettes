@@ -287,12 +287,12 @@ if (Astro.url.searchParams.has('echec')) {
           <div>
             <label for="payeurPrenom" class="block text-sm font-medium mb-1">Prénom</label>
             <input id="payeurPrenom" name="payeurPrenom" required value={saisi.payeurPrenom}
-                   autocomplete="given-name" class="champ" />
+                   autocomplete="given-name" class="champ" readonly={verrouille} />
           </div>
           <div>
             <label for="payeurNom" class="block text-sm font-medium mb-1">Nom</label>
             <input id="payeurNom" name="payeurNom" required value={saisi.payeurNom}
-                   autocomplete="family-name" class="champ" />
+                   autocomplete="family-name" class="champ" readonly={verrouille} />
           </div>
         </div>
 
