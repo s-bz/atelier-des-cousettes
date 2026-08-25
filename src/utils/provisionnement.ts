@@ -266,9 +266,10 @@ const enEuros = (cents: number) =>
  * acheté. Il ne dit ni le créneau retenu, ni les dates posées — c'est-à-dire
  * précisément la chose qu'on vient de payer. Personne ne recevait cela.
  *
- * ENVOYÉ UNE SEULE FOIS PAR COMMANDE, parce qu'appelé depuis le chemin qui ne
- * s'exécute qu'une fois : le retour du payeur et la notification arrivent tous
- * deux, et c'est l'unicité de `helloasso_order_id` qui écarte le second.
+ * ENVOYÉ UNE SEULE FOIS PAR COMMANDE, et c'est la base qui le garantit :
+ * l'abonnement par l'unicité de `helloasso_order_id`, la place à l'unité par la
+ * pierre `annonce_le` que `reclamer_annonce` pose. Le retour du payeur et la
+ * notification arrivent tous deux ; un seul des deux annonce.
  *
  * UN ÉCHEC D'ENVOI NE FAIT PAS ÉCHOUER LA COMMANDE. La place est posée, elle
  * est acquise ; un courriel perdu se renvoie à la main, une inscription perdue
@@ -432,6 +433,21 @@ async function provisionnerUnite(
     .select('starts_at, ends_at, location, creneaux(label)')
     .eq('id', commande.sessionId)
     .maybeSingle();
+
+  /*
+   * UN SEUL PASSAGE ANNONCE, ET MESURE.
+   *
+   * Le retour du payeur et la notification HelloAsso provisionnent tous les
+   * deux la même commande, parfois à la même seconde. Sur un forfait, le
+   * second bute sur l'unicité de `subscriptions.helloasso_order_id`. Ici, non :
+   * `book_participant` est délibérément idempotente et REND la place déjà
+   * posée — les deux passages réussissent donc, et le premier stage vendu a
+   * produit deux courriels de confirmation.
+   *
+   * La pierre `annonce_le` départage, en base, comme le reste.
+   */
+  const { data: nous } = await supabase.rpc('reclamer_annonce', { p_booking: place });
+  if (!nous) return succes({ cree: false, participantId: participant.valeur });
 
   await annoncerAchat(supabase, {
     commande,

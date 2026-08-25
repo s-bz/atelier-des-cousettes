@@ -5,7 +5,9 @@ import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
 import { notifier, variablesSeance, variablesDeplacement } from '../../../../utils/emails';
-import { previenLaListe } from '../../../../utils/membre';
+import {
+  libererPlace, annoncerInscription, annoncerLiberationDeStage, placesDuStage,
+} from '../../../../utils/membre';
 import { personneDe } from '../../../../utils/ateliers';
 
 const garde = requireAdmin(Astro);
@@ -146,33 +148,36 @@ if (Astro.request.method === 'POST') {
     }
   }
 
+  /*
+   * LIBÉRER PASSE PAR LE MÊME CHEMIN QUE L'ADHÉRENT.
+   *
+   * Cet écran appelait `release_booking` directement : la place partait, la
+   * liste d'attente était prévenue, et l'intéressé n'apprenait rien. Le geste
+   * le plus courant de l'atelier était le seul muet — découvert en replaçant
+   * quelqu'un d'une date de stage sur une autre, sans qu'il en soit averti ni
+   * d'un côté ni de l'autre.
+   *
+   * Le participant nul dit « geste d'administration » : la place n'a pas à
+   * appartenir à qui l'exécute, et Isabelle ne reçoit pas la copie de son
+   * propre geste.
+   */
   if (action === 'liberer') {
-    const { data: issue, error } = await supabase.rpc('release_booking', {
-      p_booking: String(form.get('booking')),
-    });
+    const issue = await libererPlace(String(form.get('booking')), null);
 
-    if (error) {
-      erreur = error.message;
+    if (!issue.ok) {
+      erreur = issue.message;
     } else {
-      const tardif = Boolean((issue as any)?.tardif);
-      const attente = ((issue as any)?.attente ?? []) as string[];
-
-      // Toute la liste d'attente est prévenue qu'une place est libre, et
-      // personne n'est inscrit d'office : la place part à qui la veut. Envoyé
-      // ici comme depuis l'espace adhérent — l'annonce ne dépend pas de qui a
-      // rendu la place.
-      let prevenus = 0;
-      if (attente.length > 0) {
-        const { data: s } = await supabase
-          .from('sessions').select('starts_at, ends_at, location').eq('id', id).maybeSingle();
-        if (s) prevenus = await previenLaListe(attente, s);
-      }
-
-      message = (tardif
+      message = (issue.tardif
         ? 'Place libérée. À moins de 10 jours, la séance reste due — utilisez « Rendre malgré le délai » sur sa fiche pour la lui rendre.'
         : 'Place libérée, le crédit est rendu.')
-        + (attente.length > 0
-            ? ` ${prevenus} personne${prevenus > 1 ? 's' : ''} de la liste d’attente prévenue${prevenus > 1 ? 's' : ''} : la première à réserver prendra la place.`
+        // Une place réglée en ligne ne rend aucun crédit quand c'est un stage :
+        // il se paie à la date. Sans ce rappel, l'argent reste chez nous sans
+        // qu'aucun écran ne le dise.
+        + (issue.commande
+            ? ` Cette place avait été réglée en ligne (commande ${issue.commande}) : replacez-la sur une autre date, ou remboursez-la depuis HelloAsso.`
+            : '')
+        + (issue.prevenus > 0
+            ? ` ${issue.prevenus} personne${issue.prevenus > 1 ? 's' : ''} de la liste d’attente prévenue${issue.prevenus > 1 ? 's' : ''} : la première à réserver prendra la place.`
             : '');
     }
   }
@@ -215,16 +220,22 @@ if (Astro.request.method === 'POST') {
   // libère. book_participant convertit sa ligne existante plutôt que d'en poser
   // une seconde, que l'index unique refuserait.
   if (action === 'promouvoir') {
-    const { error } = await supabase.rpc('book_participant', {
+    const { data: ligne, error } = await supabase.rpc('book_participant', {
       p_session: id,
       p_participant: String(form.get('participant') ?? ''),
       p_source: 'admin',
       p_forcer: form.get('forcer') === 'on',
     });
-    if (error) erreur = error.message;
-    else message = form.get('forcer') === 'on'
-      ? 'Inscrit au-delà des places, depuis la liste d’attente.'
-      : 'Inscrit : la place lui a été donnée.';
+    if (error) {
+      erreur = error.message;
+    } else {
+      // La place vient d'être acquise : on le lui écrit. Sa mise en attente,
+      // elle, ne s'annonce pas — c'est en obtenant la place qu'on l'apprend.
+      await annoncerInscription(String(ligne));
+      message = form.get('forcer') === 'on'
+        ? 'Inscrit au-delà des places, depuis la liste d’attente.'
+        : 'Inscrit : la place lui a été donnée.';
+    }
   }
 
   if (action === 'inscrire' || action === 'retirer-stage') {
@@ -238,29 +249,49 @@ if (Astro.request.method === 'POST') {
     const participant = String(form.get('participant') ?? '');
 
     if (action === 'retirer-stage') {
+      // Les dates se relèvent AVANT : `release_stage` rend un nombre, pas des
+      // identifiants, et sans eux il n'y aurait personne à prévenir.
+      const places = await placesDuStage(String(type?.creneau_id), participant);
+
       const { data, error } = await supabase.rpc('release_stage', {
         p_creneau: type?.creneau_id, p_participant: participant,
       });
-      if (error) erreur = error.message;
-      else message = `${data} date${(data as number) > 1 ? 's' : ''} libérée${(data as number) > 1 ? 's' : ''} sur ce stage.`;
+      if (error) {
+        erreur = error.message;
+      } else {
+        for (const place of places) await annoncerLiberationDeStage(place);
+        message = `${data} date${(data as number) > 1 ? 's' : ''} libérée${(data as number) > 1 ? 's' : ''} sur ce stage.`;
+      }
 
     } else if (action === 'inscrire' && form.get('forcer') === 'on') {
       // Dépassement volontaire : Isabelle seule sait si une personne de plus
       // tient dans sa salle. Le drapeau est refusé côté base à quiconque n'est
       // pas administrateur.
-      const { error } = await supabase.rpc('book_participant', {
+      const { data: ligne, error } = await supabase.rpc('book_participant', {
         p_session: id, p_participant: participant, p_source: 'admin', p_forcer: true,
       });
-      if (error) erreur = error.message;
-      else message = 'Inscrit au-delà des places. La séance affiche désormais un dépassement.';
+      if (error) {
+        erreur = error.message;
+      } else {
+        await annoncerInscription(String(ligne));
+        message = 'Inscrit au-delà des places. La séance affiche désormais un dépassement.';
+      }
 
     } else if (forfait) {
       // Tout ou rien : la fonction refuse en bloc si une date est complète.
       const { data, error } = await supabase.rpc('book_stage', {
         p_creneau: type?.creneau_id, p_participant: participant,
       });
-      if (error) erreur = error.message;
-      else message = `Inscrit sur ${data} date${(data as number) > 1 ? 's' : ''} du stage.`;
+      if (error) {
+        erreur = error.message;
+      } else {
+        // Une annonce par date : chacune porte la sienne, et c'est celle-là
+        // qu'on cherche en rouvrant le message trois semaines plus tard.
+        for (const place of await placesDuStage(String(type?.creneau_id), participant)) {
+          await annoncerInscription(place);
+        }
+        message = `Inscrit sur ${data} date${(data as number) > 1 ? 's' : ''} du stage.`;
+      }
 
     } else {
       const { data: ligne, error } = await supabase.rpc('book_participant', {
@@ -273,6 +304,11 @@ if (Astro.request.method === 'POST') {
         // pleine laisserait croire à une place obtenue.
         const { data: pose } = await supabase
           .from('bookings').select('status').eq('id', ligne).maybeSingle();
+
+        // Prévenir n'a de sens que si la place est acquise : `annoncerInscription`
+        // s'en assure elle-même, et se tait pour une mise en attente.
+        await annoncerInscription(String(ligne));
+
         message = pose?.status === 'waiting'
           ? 'Ajouté à la liste d’attente. La personne sera prévenue dès qu’une place se libère, et restera libre de la prendre ou non.'
           : 'Participant inscrit.';

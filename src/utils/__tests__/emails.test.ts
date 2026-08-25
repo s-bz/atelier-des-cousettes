@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { remplir, enHtml, variablesSeance, variablesAccueil } from '../emails';
+import { remplir, enHtml, composer, variablesSeance, variablesStage, variablesAccueil } from '../emails';
 
 const source = readFileSync('src/utils/emails.ts', 'utf8');
 
@@ -234,5 +234,72 @@ describe('habillage HTML', () => {
 
   it('centre la marque', () => {
     expect(enHtml('Objet', 'Bonjour')).toMatch(/align="center"[^>]*text-align:center/);
+  });
+});
+
+describe('les liens du service sont servis sans qu’on les demande', () => {
+  /*
+   * LE COURRIEL D'ACHAT EST PARTI AVEC « {{lien_espace}} » EN TOUTES LETTRES.
+   *
+   * Son appelant passait ce qu'il connaissait — prénom, produit, montant,
+   * dates — et rien d'autre : les deux liens sont des constantes du service,
+   * qu'aucun métier n'a de raison de porter. Les faire réclamer à chaque
+   * appelant, c'est les voir manquer au premier qu'on écrit sans y penser.
+   */
+  it('remplit un lien qu’aucun appelant n’a fourni', () => {
+    const m = composer(
+      { subject: 'Votre inscription est confirmée', body: 'Votre espace :\n\n{{lien_espace}}' },
+      { prenom: 'Léa' },
+    );
+    expect(m.corps).toContain('https://atelier-des-cousettes.fr/espace-membre/');
+    expect(m.corps).not.toContain('{{lien_espace}}');
+    expect(m.html).not.toContain('{{lien_espace}}');
+  });
+
+  it('sert aussi le planning, et {{lien}} en synonyme', () => {
+    const m = composer({ subject: 's', body: '{{lien_planning}} {{lien}}' }, {});
+    expect(m.corps).not.toContain('{{lien');
+  });
+
+  it('laisse l’appelant décider quand il fournit la valeur', () => {
+    // variablesDeplacement et consorts posent déjà leurs liens : une valeur
+    // explicite doit rester la plus forte, sans quoi le défaut la piétinerait.
+    const m = composer({ subject: 's', body: '{{lien_espace}}' }, { lien_espace: 'https://ailleurs.fr/' });
+    expect(m.corps).toContain('https://ailleurs.fr/');
+  });
+
+  it('laisse visible une variable de métier oubliée', () => {
+    // Le défaut ne vaut que pour les liens : un {{prenom}} manquant doit
+    // continuer de se voir, c'est ainsi qu'on repère l'appelant fautif.
+    const m = composer({ subject: 's', body: 'Bonjour {{prenom}}' }, {});
+    expect(m.corps).toContain('{{prenom}}');
+  });
+});
+
+describe('variablesStage', () => {
+  const v = variablesStage({
+    prenom: 'Lucille',
+    creneau: 'Stage gilet de berger réversible',
+    starts_at: '2026-11-21T13:00:00Z',
+    ends_at: '2026-11-21T17:00:00Z',
+    location: 'Revel',
+  });
+
+  it('nomme le stage, que les gabarits d’atelier ne portent pas', () => {
+    // « l'atelier du 21 novembre » ne dit pas de quel stage il s'agit, et
+    // quelqu'un peut en suivre deux dans la saison.
+    expect(v.creneau).toBe('Stage gilet de berger réversible');
+  });
+
+  it('sert les mêmes dates et heures qu’une séance', () => {
+    expect(v.heure_debut).toBe('14:00');
+    expect(v.heure_fin).toBe('18:00');
+    expect(v.lieu).toBe('Revel');
+  });
+
+  it('expose exactement ce que l’écran d’édition annonce', () => {
+    expect(Object.keys(v).sort()).toEqual(
+      ['creneau', 'date', 'heure_debut', 'heure_fin', 'lien', 'lien_espace', 'lien_planning', 'lieu', 'prenom'].sort(),
+    );
   });
 });
