@@ -201,6 +201,13 @@ if (Astro.request.method !== 'POST') {
 
 const cheminActuel = Astro.url.pathname + Astro.url.search;
 
+/*
+ * Être connecté suffit à fixer le foyer : l'adresse décide du compte auquel la
+ * commande se rattache, et la retoucher reviendrait à en ouvrir un second.
+ * Désigner la personne fixe en plus qui vient.
+ */
+const foyerFixe = Boolean(verrouille || Astro.locals.account);
+
 if (Astro.url.searchParams.has('echec')) {
   erreur = 'Le paiement n’a pas abouti. Rien n’a été prélevé — vous pouvez réessayer.';
   // HelloAsso renvoie ici quand le paiement n'a pas abouti. Rien n'a été
@@ -277,7 +284,7 @@ if (Astro.url.searchParams.has('echec')) {
         <div>
           <label for="email" class="block text-sm font-medium mb-1">Votre adresse électronique</label>
           <input id="email" name="email" type="email" required value={saisi.email}
-                 autocomplete="email" class="champ" readonly={verrouille} />
+                 autocomplete="email" class="champ" readonly={foyerFixe} />
           <p class="mt-1 text-sm text-[var(--color-text-light)]">
             C’est elle qui ouvrira l’accès à votre espace, où vous choisirez vos dates.
           </p>
@@ -287,12 +294,12 @@ if (Astro.url.searchParams.has('echec')) {
           <div>
             <label for="payeurPrenom" class="block text-sm font-medium mb-1">Prénom</label>
             <input id="payeurPrenom" name="payeurPrenom" required value={saisi.payeurPrenom}
-                   autocomplete="given-name" class="champ" readonly={verrouille} />
+                   autocomplete="given-name" class="champ" readonly={foyerFixe} />
           </div>
           <div>
             <label for="payeurNom" class="block text-sm font-medium mb-1">Nom</label>
             <input id="payeurNom" name="payeurNom" required value={saisi.payeurNom}
-                   autocomplete="family-name" class="champ" readonly={verrouille} />
+                   autocomplete="family-name" class="champ" readonly={foyerFixe} />
           </div>
         </div>
 

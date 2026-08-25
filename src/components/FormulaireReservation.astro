@@ -47,6 +47,22 @@ const { seances, erreur, saisi, nomProduit, nomCreneau, creneauChoisi, verrouill
         foyer, cheminActuel, connecte } = Astro.props;
 
 /*
+ * DEUX VERROUS, ET ILS NE SE DÉCLENCHENT PAS AU MÊME MOMENT.
+ *
+ * ÊTRE CONNECTÉ SUFFIT À FIXER LE FOYER. L'adresse décide à quel compte la
+ * commande se rattache : laisser la retoucher à quelqu'un dont on connaît déjà
+ * le compte, c'est lui offrir d'en ouvrir un second — et d'y emporter son
+ * adhésion, son solde et son historique. Le nom du payeur suit, pour la même
+ * raison qu'il n'y a pas de demi-verrou : cinq champs dont un modifiable
+ * invitent à le modifier.
+ *
+ * DÉSIGNER LA PERSONNE FIXE EN PLUS QUI VIENT. Tant qu'on n'a cliqué sur
+ * personne, le nom du participant reste libre : c'est ainsi qu'on inscrit
+ * quelqu'un de nouveau au foyer.
+ */
+const foyerFixe = Boolean(verrouille || connecte);
+
+/*
  * LE FORMULAIRE D'UNE PLACE À LA DATE.
  *
  * Il reprend celui du forfait — mêmes trois sections, même case « ce n'est pas
@@ -239,9 +255,9 @@ const mentionPlaces = (s: SeanceAchetable) =>
       <div>
         <label for="email" class="block text-sm font-medium mb-1">Votre adresse électronique</label>
         <input id="email" name="email" type="email" required value={saisi.email}
-               autocomplete="email" class="champ" readonly={verrouille} />
+               autocomplete="email" class="champ" readonly={foyerFixe} />
         <p class="mt-1 text-sm text-[var(--color-text-light)]">
-          {verrouille
+          {foyerFixe
             ? 'Celle de votre compte : la réservation s’y rattachera.'
             : 'C’est elle qui ouvrira l’accès à votre espace, où vous retrouverez votre réservation.'}
         </p>
@@ -251,12 +267,12 @@ const mentionPlaces = (s: SeanceAchetable) =>
         <div>
           <label for="payeurPrenom" class="block text-sm font-medium mb-1">Prénom</label>
           <input id="payeurPrenom" name="payeurPrenom" required value={saisi.payeurPrenom}
-                 autocomplete="given-name" class="champ" readonly={verrouille} />
+                 autocomplete="given-name" class="champ" readonly={foyerFixe} />
         </div>
         <div>
           <label for="payeurNom" class="block text-sm font-medium mb-1">Nom</label>
           <input id="payeurNom" name="payeurNom" required value={saisi.payeurNom}
-                 autocomplete="family-name" class="champ" readonly={verrouille} />
+                 autocomplete="family-name" class="champ" readonly={foyerFixe} />
         </div>
       </div>
 
