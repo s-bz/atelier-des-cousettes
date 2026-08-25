@@ -239,8 +239,27 @@ export function corpsIntention(a: Achat): CorpsIntention {
 // L'appel à l'API
 // ─────────────────────────────────────────────────────────────────────────────
 
-const API = 'https://api.helloasso.com/v5';
-const JETON_URL = 'https://api.helloasso.com/oauth2/token';
+const env = (nom: string) => import.meta.env?.[nom] ?? process.env[nom];
+
+/**
+ * L'hôte de l'API, production par défaut.
+ *
+ * HELLOASSO A UN BAC À SABLE — `api.helloasso-sandbox.com`, avec ses propres
+ * organisations, ses propres clés et des cartes virtuelles. Il faut y éprouver
+ * un paiement de bout en bout : en production, le moindre essai encaisse
+ * réellement, et le remboursement passe par une authentification forte que
+ * notre clé serveur ne sait pas satisfaire.
+ *
+ * Une variable plutôt qu'un drapeau `sandbox` : c'est l'hôte entier qui change,
+ * jeton compris, et le jour où un troisième environnement apparaît il n'y aura
+ * rien à réécrire. Non renseignée, on est en production — le défaut ne peut
+ * donc pas envoyer un paiement réel vers le bac à sable, c'est l'inverse qui
+ * demande un geste.
+ */
+const HOTE = (env('HELLOASSO_API_HOST') ?? 'https://api.helloasso.com').replace(/\/+$/, '');
+
+const API = `${HOTE}/v5`;
+const JETON_URL = `${HOTE}/oauth2/token`;
 
 /**
  * Le slug de l'association, tel qu'il figure dans ses propres URL publiques
@@ -248,8 +267,6 @@ const JETON_URL = 'https://api.helloasso.com/oauth2/token';
  * changer serait un événement bien plus grand qu'une variable d'environnement.
  */
 const ORGANISATION = 'les-p-tits-piafs';
-
-const env = (nom: string) => import.meta.env?.[nom] ?? process.env[nom];
 
 /**
  * Le jeton d'accès, gardé jusqu'à son expiration.
