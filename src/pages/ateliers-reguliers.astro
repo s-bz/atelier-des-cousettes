@@ -282,6 +282,21 @@ const tarifs = tarifsPage.map((t) => ({
 }));
 
 /**
+ * Ce groupe a-t-il seulement une date à venir ?
+ *
+ * VERDALLE N'EN A AUCUNE : ses séances « se calent avec le groupe ». Lui
+ * afficher « 36 €/mois, environ 1 séance/mois » promettait un rythme que
+ * personne ne peut tenir, et un forfait que la page d'inscription refuse déjà
+ * de vendre — elle écarte les créneaux sans date, faute de quoi on paierait une
+ * saison qu'aucune inscription d'office ne pourrait honorer.
+ *
+ * La règle vaut pour tous, pas pour Verdalle seul : un groupe retrouve son
+ * tarif dès qu'on lui programme des dates, sans qu'on y touche.
+ */
+const groupeOuvert = (g: { items: readonly { name: string }[] }) =>
+  g.items.some((c) => datesDe(c.name).length > 0);
+
+/**
  * Une ligne de la grille, tout entière déduite de la base.
  *
  * « 18 séances — 59 €/mois (531 € au total), environ 2 séances/mois — soit
@@ -478,7 +493,7 @@ const courseSchema = buildCourseSchema({
               faute que cette page a déjà connue, du temps où deux ternaires
               rangeaient tout public autre qu'« enfants » chez les adultes.
             */}
-            {lignesDe(g.audience).length > 0 && (
+            {groupeOuvert(g) && lignesDe(g.audience).length > 0 && (
               <ul class="mb-6 space-y-1">
                 {lignesDe(g.audience).map((l) => (
                   <li class="text-sm text-[var(--color-text-light)]">
