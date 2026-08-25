@@ -5,6 +5,7 @@ import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../../utils/guards';
 import { getAdminClient } from '../../../../utils/supabase';
 import { notifier, variablesSeance } from '../../../../utils/emails';
+import { libererPlace } from '../../../../utils/membre';
 import { AUDIENCES, memePublic } from '../../../../utils/ateliers';
 import { trouverOuCreerCompte, inscrireDOffice, saisonDe, bornesSaison,
   premierJourDuMois, dernierJourDuMois }
@@ -218,15 +219,34 @@ if (Astro.request.method === 'POST') {
     if (!cible || cible.participant_id !== id) {
       erreur = 'Cette réservation n’appartient pas à cette personne.';
     } else {
-      const { error } = await supabase.rpc('release_booking', { p_booking: reservation });
-      if (error) {
-        erreur = `Retrait impossible : ${error.message}`;
+      /*
+       * PAR LE MÊME CHEMIN QUE PARTOUT AILLEURS.
+       *
+       * Cet écran appelait `release_booking` directement, et l'annonçait :
+       * « aucun message n'a été envoyé — prévenez la personne vous-même ».
+       * C'était un choix, à l'époque où aucun geste d'administration n'écrivait
+       * à personne ; il a survécu à la correction de la fiche d'une séance, et
+       * la première libération faite depuis ici est repartie muette.
+       *
+       * La place appartient bien à la personne affichée — vérifié juste au-
+       * dessus. Le participant nul dit seulement qui agit : Isabelle, qui n'a
+       * pas à recevoir la copie de son propre geste.
+       */
+      const issue = await libererPlace(reservation, null);
+      if (!issue.ok) {
+        erreur = `Retrait impossible : ${issue.message}`;
       } else {
         const passee = new Date((cible as any).sessions.starts_at) < new Date();
         message = (passee
           ? 'Séance retirée, et le crédit rendu au solde. '
           : 'Place libérée : elle est de nouveau proposée aux autres adhérents. ')
-          + 'Aucun message n’a été envoyé — prévenez la personne vous-même.';
+          + 'La personne vient d’en être prévenue par courriel.'
+          + (issue.commande
+              ? ` Cette place avait été réglée en ligne (commande ${issue.commande}) : replacez-la sur une autre date, ou remboursez-la depuis HelloAsso.`
+              : '')
+          + (issue.prevenus > 0
+              ? ` ${issue.prevenus} personne${issue.prevenus > 1 ? 's' : ''} de la liste d’attente prévenue${issue.prevenus > 1 ? 's' : ''}.`
+              : '');
       }
     }
   }
