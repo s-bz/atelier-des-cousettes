@@ -18,6 +18,7 @@ import {
   grilleAvecPrixDeLaBase,
   lireFormules,
   lireTarifs,
+  montantFr,
   prixDesOffres,
 } from '../utils/tarifs';
 import { getAdminClient } from '../utils/supabase';
@@ -281,6 +282,39 @@ const tarifs = tarifsPage.map((t) => ({
 }));
 
 /**
+ * Ce que coûte un public, en une ligne : « Séances de 3 h · de 36 € à 59 € par
+ * mois ».
+ *
+ * UN RÉSUMÉ, PAS UNE SECONDE GRILLE. Le détail — le nombre de séances, le
+ * total, les mensualités — reste dans la section des tarifs ; ici on répond à
+ * la seule question qu'on se pose en lisant des horaires : « et ça coûte
+ * combien ? ». Deux grilles côte à côte n'auraient fait qu'obliger à les
+ * comparer.
+ *
+ * LES MONTANTS VIENNENT DE `formules`, la même source que la grille du bas —
+ * et non de ses phrases, où le nombre est déjà noyé dans les mots du CMS. Les
+ * relire par une expression régulière aurait donné une troisième copie du
+ * prix, la plus fragile des trois.
+ */
+function tarifParPublic(audience: string): string {
+  const dureeSeance = tarifs.find((x) => x.public === audience)?.dureeSeance;
+
+  const mensuels = [...new Set(
+    (formules ?? [])
+      .filter((f) => f.audience === audience)
+      .map((f) => Math.round(f.prixCents / f.mensualites)),
+  )].sort((a, b) => a - b);
+
+  if (!mensuels.length) return dureeSeance ?? '';
+
+  const prix = mensuels.length === 1
+    ? `${montantFr(mensuels[0])} € par mois`
+    : `de ${montantFr(mensuels[0])} à ${montantFr(mensuels[mensuels.length - 1])} € par mois`;
+
+  return [dureeSeance, prix].filter(Boolean).join(' · ');
+}
+
+/**
  * Le même calendrier que celui affiché, redit en `Course` — voir `schema.ts`.
  *
  * Les séances sont reprises de `enBase`, déjà chargé pour la page : le balisage
@@ -400,9 +434,25 @@ const courseSchema = buildCourseSchema({
 
         {groupes.map((g) => (
           <div id={g.id} class="mb-14 scroll-mt-24 last:mb-0">
-            <h3 class="mb-6 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
+            <h3 class="mb-1 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
               {g.label}
             </h3>
+
+            {/*
+              LE PRIX SOUS LE TITRE, EN RÉSUMÉ. « Revel — Adultes » annonçait
+              des horaires sans dire ce qu'ils coûtent, et il fallait descendre
+              trois écrans pour retrouver son public dans la grille.
+
+              APPARIÉ PAR PUBLIC, jamais par position : la ligne des ados sous
+              le titre des ados, quel que soit l'ordre des deux listes. C'est la
+              faute que cette page a déjà connue, du temps où deux ternaires
+              rangeaient tout public autre qu'« enfants » chez les adultes.
+            */}
+            {tarifParPublic(g.audience) && (
+              <p class="mb-6 text-sm text-[var(--color-text-light)]">
+                {tarifParPublic(g.audience)}
+              </p>
+            )}
 
             {/* Deux colonnes au plus : une liste de dates a besoin de sa largeur. */}
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
