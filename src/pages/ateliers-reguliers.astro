@@ -282,36 +282,66 @@ const tarifs = tarifsPage.map((t) => ({
 }));
 
 /**
- * Ce que coûte un public, en une ligne : « Séances de 3 h · de 36 € à 59 € par
- * mois ».
+ * Une ligne de la grille, tout entière déduite de la base.
  *
- * UN RÉSUMÉ, PAS UNE SECONDE GRILLE. Le détail — le nombre de séances, le
- * total, les mensualités — reste dans la section des tarifs ; ici on répond à
- * la seule question qu'on se pose en lisant des horaires : « et ça coûte
- * combien ? ». Deux grilles côte à côte n'auraient fait qu'obliger à les
- * comparer.
+ * « 18 séances — 59 €/mois (531 € au total), environ 2 séances/mois — soit
+ * 29,50 € la séance, 18 % moins cher »
  *
- * LES MONTANTS VIENNENT DE `formules`, la même source que la grille du bas —
- * et non de ses phrases, où le nombre est déjà noyé dans les mots du CMS. Les
- * relire par une expression régulière aurait donné une troisième copie du
- * prix, la plus fragile des trois.
+ * POURQUOI ELLE N'EST PLUS ÉCRITE DANS LE CMS. La grille tenait ses phrases
+ * d'Isabelle, où `grilleAvecPrixDeLaBase` venait glisser les nombres. Ce
+ * partage tenait tant que la ligne ne disait que ce qui s'écrit : « environ une
+ * fois par mois sur la saison ». Il ne tient plus dès qu'elle compare deux
+ * formules — le prix à la séance et l'écart en pourcentage ne se saisissent
+ * pas, ils se calculent, et un tarif modifié en base les aurait laissés faux
+ * dans le CMS.
+ *
+ * L'AVANTAGE SE MESURE CONTRE LA PLUS PETITE FORMULE du même public, celle
+ * qu'on prend par défaut. C'est bien elle la référence : « moins cher » n'a de
+ * sens que par rapport à ce qu'on aurait payé autrement.
  */
-function tarifParPublic(audience: string): string {
-  const dureeSeance = tarifs.find((x) => x.public === audience)?.dureeSeance;
+interface LigneTarif {
+  produit: string;
+  mensuel: string;
+  /** Le reste de la phrase : total, rythme, et l'avantage s'il y en a un. */
+  suite: string;
+}
 
-  const mensuels = [...new Set(
-    (formules ?? [])
-      .filter((f) => f.audience === audience)
-      .map((f) => Math.round(f.prixCents / f.mensualites)),
-  )].sort((a, b) => a - b);
+function lignesDe(audience: string): LigneTarif[] {
+  const desSiens = (formules ?? [])
+    .filter((f) => f.audience === audience)
+    .sort((a, b) => a.seances - b.seances);
 
-  if (!mensuels.length) return dureeSeance ?? '';
+  if (!desSiens.length) return [];
 
-  const prix = mensuels.length === 1
-    ? `${montantFr(mensuels[0])} € par mois`
-    : `de ${montantFr(mensuels[0])} à ${montantFr(mensuels[mensuels.length - 1])} € par mois`;
+  // La référence : la plus petite formule, et son prix à la séance.
+  const reference = desSiens[0].prixCents / desSiens[0].seances;
 
-  return [dureeSeance, prix].filter(Boolean).join(' · ');
+  return desSiens.map((f) => {
+    const parSeance = f.prixCents / f.seances;
+    // Un pourcentage entier : 18,06 % s'annonce « 18 % ». La décimale ne dit
+    // rien de plus à qui compare deux forfaits, et « 18,1 % » a l'air d'une
+    // précision qu'on n'a pas.
+    const ecart = Math.round((1 - parSeance / reference) * 100);
+
+    /*
+     * LE RYTHME EST UN ARRONDI, ET LE MOT « ENVIRON » LE DIT. Seize séances sur
+     * dix mensualités font 1,6 par mois — un nombre qu'on n'annonce pas à un
+     * parent. On dit « environ 2 », ce qui est la façon dont la saison se vit :
+     * deux séances certains mois, une les autres.
+     */
+    const parMois = Math.max(1, Math.round(f.seances / f.mensualites));
+
+    const rythme = `environ ${parMois} séance${parMois > 1 ? 's' : ''}/mois`;
+    const avantage = ecart >= 1
+      ? ` — soit ${montantFr(Math.round(parSeance))} € la séance, ${ecart} % moins cher`
+      : '';
+
+    return {
+      produit: `${f.seances} séances`,
+      mensuel: `${montantFr(Math.round(f.prixCents / f.mensualites))} €/mois`,
+      suite: ` (${montantFr(f.prixCents)} € au total), ${rythme}${avantage}`,
+    };
+  });
 }
 
 /**
@@ -439,19 +469,26 @@ const courseSchema = buildCourseSchema({
             </h3>
 
             {/*
-              LE PRIX SOUS LE TITRE, EN RÉSUMÉ. « Revel — Adultes » annonçait
-              des horaires sans dire ce qu'ils coûtent, et il fallait descendre
-              trois écrans pour retrouver son public dans la grille.
+              LE TARIF SOUS LE TITRE DE SON PUBLIC. « Revel — Adultes »
+              annonçait des horaires sans dire ce qu'ils coûtent, et il fallait
+              descendre trois écrans pour retrouver son public dans la grille.
 
-              APPARIÉ PAR PUBLIC, jamais par position : la ligne des ados sous
+              APPARIÉ PAR PUBLIC, jamais par position : les lignes des ados sous
               le titre des ados, quel que soit l'ordre des deux listes. C'est la
               faute que cette page a déjà connue, du temps où deux ternaires
               rangeaient tout public autre qu'« enfants » chez les adultes.
             */}
-            {tarifParPublic(g.audience) && (
-              <p class="mb-6 text-sm text-[var(--color-text-light)]">
-                {tarifParPublic(g.audience)}
-              </p>
+            {lignesDe(g.audience).length > 0 && (
+              <ul class="mb-6 space-y-1">
+                {lignesDe(g.audience).map((l) => (
+                  <li class="text-sm text-[var(--color-text-light)]">
+                    <span class="font-semibold text-[var(--color-heading)]"
+                    >{l.produit}</span>{' — '}<span
+                      class="font-semibold text-[var(--color-button)]"
+                    >{l.mensuel}</span>{l.suite}
+                  </li>
+                ))}
+              </ul>
             )}
 
             {/* Deux colonnes au plus : une liste de dates a besoin de sa largeur. */}
