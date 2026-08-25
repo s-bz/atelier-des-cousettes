@@ -237,5 +237,65 @@ select '15 une seance non remboursee octroie toujours',
             then 'OK' else 'ECHEC: octroi '
               ||granted_credits('f1000000-0000-0000-0000-000000000004', current_date)::text end;
 
+-- ── 16-17. LA PLACE DÉPLACÉE SUR UNE AUTRE DATE ─────────────────────────
+--
+-- Suite du cas 12, et il s'est produit le jour même : la place n'a pas été
+-- reposée sur la MÊME date, elle a été replacée par l'administration sur une
+-- AUTRE date du même stage. Le remboursement cherchait la séance payée, ne
+-- trouvait qu'une ligne libérée, et rendait « 0 séance libérée » — sans un mot
+-- à l'adhérente, qui gardait une place remboursée.
+--
+-- La place payée est celle qui a REMPLACÉ la première : même personne, même
+-- stage, et aucune commande à elle. Une place réglée à part, elle, ne bouge pas.
+insert into participants (id, account_id, first_name, last_name, audience)
+values ('f1000000-0000-0000-0000-000000000005', 'f0000000-0000-0000-0000-000000000001',
+        'Deplacee', 'Ailleurs', 'adulte');
+
+insert into creneaux (id, label, audience, kind, group_id, a_l_unite, au_forfait,
+                      default_capacity, default_unit_price_cents,
+                      default_start_time, default_end_time, default_location)
+values ('t-remb-stage', 'Stage de test', 'adultes', 'stage', null, true, false,
+        6, 6000, '14:00', '18:00', 'Revel');
+
+insert into sessions (id, creneau_id, starts_at, ends_at, location, capacity, unit_price_cents, status, places_attente)
+values ('f2000000-0000-0000-0000-000000000021', 't-remb-stage',
+        now() + interval '60 days', now() + interval '60 days 4 hours', 'Revel', 6, 6000, 'scheduled', 0),
+       ('f2000000-0000-0000-0000-000000000022', 't-remb-stage',
+        now() + interval '90 days', now() + interval '90 days 4 hours', 'Revel', 6, 6000, 'scheduled', 0),
+       ('f2000000-0000-0000-0000-000000000023', 't-remb-stage',
+        now() + interval '120 days', now() + interval '120 days 4 hours', 'Revel', 6, 6000, 'scheduled', 0);
+
+-- Achetée sur la première date, puis libérée : elle seule porte la commande.
+insert into bookings (session_id, participant_id, source, status, helloasso_order_id, released_at)
+values ('f2000000-0000-0000-0000-000000000021', 'f1000000-0000-0000-0000-000000000005',
+        'achat', 'released', 'Order:DEPLACEE', now());
+
+-- Replacée par l'administration sur la deuxième date, sans commande à elle.
+insert into bookings (session_id, participant_id, source, status)
+values ('f2000000-0000-0000-0000-000000000022', 'f1000000-0000-0000-0000-000000000005',
+        'admin', 'booked');
+
+-- Et une troisième date, réglée par une autre commande : intouchable.
+insert into bookings (session_id, participant_id, source, status, helloasso_order_id)
+values ('f2000000-0000-0000-0000-000000000023', 'f1000000-0000-0000-0000-000000000005',
+        'achat', 'booked', 'Order:AUTRE-STAGE');
+
+select annuler_pour_remboursement('Order:DEPLACEE');
+
+insert into r(cas, verdict)
+select '16 la place deplacee est liberee',
+       case when count(*) = 0 then 'OK' else 'ECHEC: place encore reservee' end
+from bookings b
+where b.participant_id = 'f1000000-0000-0000-0000-000000000005'
+  and b.session_id = 'f2000000-0000-0000-0000-000000000022' and b.status = 'booked';
+
+insert into r(cas, verdict)
+select '17 l autre commande du meme stage ne bouge pas',
+       case when count(*) = 1 then 'OK' else 'ECHEC: une place reglee a part a saute' end
+from bookings b
+where b.participant_id = 'f1000000-0000-0000-0000-000000000005'
+  and b.session_id = 'f2000000-0000-0000-0000-000000000023' and b.status = 'booked';
+
+
 select verdict, cas from r order by ordre;
 rollback;

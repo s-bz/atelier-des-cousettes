@@ -466,6 +466,16 @@ export function preparerAchat(o: {
       formule_id: o.formule.id,
       creneau_id: o.creneau.id,
       participant: o.participant,
+      /*
+       * L'ADRESSE DU PAYEUR VOYAGE AVEC NOUS.
+       *
+       * La page de paiement peut substituer son propre payeur — celui qu'elle a
+       * retenu du navigateur. Le foyer se lirait alors sur une adresse que
+       * l'acheteur n'a pas désignée, et l'inscription partirait sur un autre
+       * compte, avec son adhésion et son solde. Les métadonnées, elles,
+       * reviennent intactes : c'est ce que nous avons saisi qui décide.
+       */
+      payeur_email: o.payeur?.email ?? null,
       adhesion_cents: adhesion,
       /*
        * CE QUE LA COMMANDE RAPPORTE EN TOUT, adhésion comprise et réduction
@@ -530,6 +540,10 @@ export function preparerAchatUnite(o: {
       session_id: o.seance.id,
       creneau_id: o.creneau.id,
       participant: o.participant,
+      // L'adresse saisie voyage avec nous : la page de paiement peut
+      // substituer son propre payeur, et le foyer se lirait alors sur une
+      // adresse que l'acheteur n'a pas désignée.
+      payeur_email: o.payeur?.email ?? null,
       // Réduction déduite ; rien ne s'y ajoute, l'adhésion est dans le prix.
       montant_cents: Math.max(0, o.seance.prixCents - (o.reductionCents ?? 0)),
       ...(o.codePromo ? { code_promo: o.codePromo, reduction_cents: o.reductionCents ?? 0 } : {}),

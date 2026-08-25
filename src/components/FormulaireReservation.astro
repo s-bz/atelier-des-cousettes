@@ -63,6 +63,17 @@ const { seances, erreur, saisi, nomProduit, nomCreneau, creneauChoisi, verrouill
 const foyerFixe = Boolean(verrouille || connecte);
 
 /*
+ * QUAND NOUS PRÉREMPLISSONS, LE NAVIGATEUR SE TAIT.
+ *
+ * `autocomplete={remplissageAuto('email')}` invite Chrome à proposer — et à substituer — l'adresse
+ * qu'il a retenue d'une autre fois. Utile à un visiteur nouveau, néfaste ici :
+ * il recouvre l'adresse du foyer par une ancienne, et la commande partirait sur
+ * le mauvais compte. Le champ garde donc son `autocomplete` tant qu'il est
+ * vide, et le perd dès qu'il porte une valeur que nous avons choisie.
+ */
+const remplissageAuto = (defaut: string) => (foyerFixe ? 'off' : defaut);
+
+/*
  * LE FORMULAIRE D'UNE PLACE À LA DATE.
  *
  * Il reprend celui du forfait — mêmes trois sections, même case « ce n'est pas
@@ -255,7 +266,7 @@ const mentionPlaces = (s: SeanceAchetable) =>
       <div>
         <label for="email" class="block text-sm font-medium mb-1">Votre adresse électronique</label>
         <input id="email" name="email" type="email" required value={saisi.email}
-               autocomplete="email" class="champ" readonly={foyerFixe} />
+               autocomplete={remplissageAuto('email')} class="champ" readonly={foyerFixe} />
         <p class="mt-1 text-sm text-[var(--color-text-light)]">
           {foyerFixe
             ? 'Celle de votre compte : la réservation s’y rattachera.'
@@ -267,12 +278,12 @@ const mentionPlaces = (s: SeanceAchetable) =>
         <div>
           <label for="payeurPrenom" class="block text-sm font-medium mb-1">Prénom</label>
           <input id="payeurPrenom" name="payeurPrenom" required value={saisi.payeurPrenom}
-                 autocomplete="given-name" class="champ" readonly={foyerFixe} />
+                 autocomplete={remplissageAuto('given-name')} class="champ" readonly={foyerFixe} />
         </div>
         <div>
           <label for="payeurNom" class="block text-sm font-medium mb-1">Nom</label>
           <input id="payeurNom" name="payeurNom" required value={saisi.payeurNom}
-                 autocomplete="family-name" class="champ" readonly={foyerFixe} />
+                 autocomplete={remplissageAuto('family-name')} class="champ" readonly={foyerFixe} />
         </div>
       </div>
 

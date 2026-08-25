@@ -127,5 +127,38 @@ exception when check_violation then
   insert into r(cas, verdict) values ('7 source inconnue refusee', 'OK');
 end $$;
 
+-- ── 8-10. UNE COMMANDE, UNE SEULE ANNONCE ───────────────────────────────
+-- Le premier stage vendu a produit deux courriels à la même seconde : le
+-- retour du payeur et la notification HelloAsso ont provisionné tous les deux,
+-- `book_participant` rendant la place déjà posée au lieu de refuser. La pierre
+-- départage — un passage annonce, les autres se taisent.
+do $$
+declare
+  v_place  uuid;
+  v_autre  uuid;
+  v_un     boolean;
+  v_deux   boolean;
+begin
+  select id into v_place from bookings
+   where session_id = 'd2000000-0000-0000-0000-000000000002'
+     and participant_id = 'd1000000-0000-0000-0000-000000000001';
+  select id into v_autre from bookings
+   where session_id = 'd2000000-0000-0000-0000-000000000002'
+     and participant_id = 'd1000000-0000-0000-0000-000000000002';
+
+  v_un   := reclamer_annonce(v_place);
+  v_deux := reclamer_annonce(v_place);
+
+  insert into r(cas, verdict) values
+    ('8 premiere annonce accordee',
+     case when v_un then 'OK' else 'ECHEC: refusee au premier passage' end),
+    ('9 seconde annonce refusee',
+     case when not v_deux then 'OK' else 'ECHEC: annoncee deux fois' end),
+    -- La pierre est posée sur UNE place : la commande du voisin doit rester
+    -- annonçable, sans quoi un achat simultané perdrait sa confirmation.
+    ('10 la pierre ne vaut que pour sa place',
+     case when reclamer_annonce(v_autre) then 'OK' else 'ECHEC: le voisin est muet' end);
+end $$;
+
 select verdict, cas from r order by ordre;
 rollback;

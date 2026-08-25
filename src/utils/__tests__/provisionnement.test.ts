@@ -202,3 +202,39 @@ describe('lireCommande — le payeur', () => {
     if (r.ok) expect(r.valeur.payeurPrenom).toBeNull();
   });
 });
+
+describe('lireCommande — le foyer est celui qu’on a saisi', () => {
+  it('préfère l’adresse de nos métadonnées à celle de HelloAsso', () => {
+    /*
+     * LA PAGE DE PAIEMENT PEUT SUBSTITUER SON PROPRE PAYEUR — celui qu'elle a
+     * retenu du navigateur. Si le foyer se lisait sur `order.payer.email`,
+     * l'inscription partirait alors sur un compte que l'acheteur n'a pas
+     * désigné : celui d'une commande précédente, avec son adhésion, son solde
+     * et son historique. C'est le dédoublement de foyer qu'on ferme partout
+     * ailleurs, rouvert à la dernière étape par un champ qui ne nous
+     * appartient pas.
+     */
+    const r = lireCommande({
+      ...intentionPayee,
+      metadata: { ...intentionPayee.metadata, payeur_email: 'saisi@exemple.fr' },
+      order: { id: 88123, payer: { email: 'ancien-de-helloasso@exemple.fr' } },
+    });
+
+    expect(r.ok && r.valeur.email).toBe('saisi@exemple.fr');
+  });
+
+  it('retombe sur HelloAsso quand nous n’avons rien transmis', () => {
+    // Les intentions créées avant ce champ n'en portent pas : une commande en
+    // vol ne doit pas se perdre pour autant.
+    const r = lireCommande({
+      ...intentionPayee,
+      order: { id: 88123, payer: { email: 'depuis-helloasso@exemple.fr' } },
+    });
+    expect(r.ok && r.valeur.email).toBe('depuis-helloasso@exemple.fr');
+  });
+
+  it('refuse toujours une commande sans aucune adresse', () => {
+    const r = lireCommande({ ...intentionPayee, order: { id: 88123, payer: {} } });
+    expect(r.ok).toBe(false);
+  });
+});

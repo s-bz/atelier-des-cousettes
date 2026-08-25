@@ -1,5 +1,5 @@
 import { getAdminClient } from './supabase';
-import { notifier, notifierAdmin, variablesSeance, variablesAdmin } from './emails';
+import { notifier, notifierAdmin, variablesSeance, variablesStage, variablesAdmin } from './emails';
 
 /**
  * Personnes rattachées à un compte, et personne sélectionnée.
@@ -106,10 +106,22 @@ export async function previenLaListe(
   return partis;
 }
 
+/**
+ * Libère une place, et prévient.
+ *
+ * PARTAGÉE AVEC L'ADMINISTRATION depuis qu'on a découvert que la fiche d'une
+ * séance appelait `release_booking` toute seule : Isabelle libérait une place,
+ * et l'adhérent n'apprenait rien. Le même geste doit produire le même courriel,
+ * quel que soit celui des deux qui l'accomplit.
+ *
+ * `participantId` nul dit que c'est un geste d'administration : la place n'a
+ * alors pas à appartenir à qui l'exécute, et Isabelle ne s'envoie pas à
+ * elle-même l'avis de désistement qu'elle vient de provoquer.
+ */
 export async function libererPlace(
   reservationId: string,
-  participantId: string,
-): Promise<{ ok: boolean; message: string }> {
+  participantId: string | null,
+): Promise<{ ok: boolean; message: string; tardif: boolean; prevenus: number; commande: string | null }> {
   const supabase = getAdminClient();
 
   // Les détails sont lus AVANT la libération : release_booking pose une pierre
@@ -118,15 +130,15 @@ export async function libererPlace(
   const { data: cible } = await supabase
     .from('bookings')
     .select(`
-      participant_id,
+      participant_id, helloasso_order_id,
       participants(first_name, last_name, accounts(email)),
-      sessions(id, starts_at, ends_at, location, capacity, creneaux(label))
+      sessions(id, starts_at, ends_at, location, capacity, creneaux(label, kind))
     `)
     .eq('id', reservationId)
     .maybeSingle();
 
-  if (!cible || cible.participant_id !== participantId) {
-    return { ok: false, message: 'Cette réservation ne vous appartient pas.' };
+  if (!cible || (participantId !== null && cible.participant_id !== participantId)) {
+    return { ok: false, message: 'Cette réservation ne vous appartient pas.', tardif: false, prevenus: 0, commande: null };
   }
 
   const { data: issue, error } = await supabase.rpc('release_booking', { p_booking: reservationId });
@@ -134,7 +146,7 @@ export async function libererPlace(
     // Le texte de Postgres nomme la fonction et ses contraintes : il va au
     // journal, d'où Isabelle peut le lire, et non à l'écran de l'adhérent.
     console.error('[libererPlace] release_booking a refusé :', error.message);
-    return { ok: false, message: 'La place n’a pas pu être libérée.' };
+    return { ok: false, message: 'La place n’a pas pu être libérée.', tardif: false, prevenus: 0, commande: null };
   }
 
   const tardif = Boolean((issue as any)?.tardif);
@@ -143,17 +155,25 @@ export async function libererPlace(
   const personne = (cible as any).participants;
   const seance = (cible as any).sessions;
   if (seance) {
-    // Deux gabarits, parce que les deux issues ne se ressemblent pas : l'un
-    // annonce que la séance revient au solde, l'autre qu'elle reste due.
-    // Envoyer le premier après un désistement tardif serait un mensonge que la
-    // facturation démentirait.
-    await notifier(tardif ? 'liberation_tardive' : 'liberation',
-      personne?.accounts?.email, variablesSeance({
+    // UN STAGE NE PARLE PAS DE SOLDE. « La séance revient à votre solde » est
+    // vrai d'une séance de forfait et faux d'un stage, vendu à la date et réglé
+    // d'avance : le lui écrire promettrait un crédit qui n'existe pas.
+    const details = {
       prenom: personne?.first_name ?? '',
       starts_at: seance.starts_at,
       ends_at: seance.ends_at,
       location: seance.location,
-    }));
+    };
+
+    if (seance.creneaux?.kind === 'stage') {
+      await notifier('stage_liberee', personne?.accounts?.email,
+        variablesStage({ ...details, creneau: seance.creneaux?.label ?? 'stage' }));
+    } else {
+      // Deux gabarits, parce que les deux issues ne se ressemblent pas : l'un
+      // annonce que la séance revient au solde, l'autre qu'elle reste due.
+      await notifier(tardif ? 'liberation_tardive' : 'liberation',
+        personne?.accounts?.email, variablesSeance(details));
+    }
 
     // Et Isabelle, pour qu'elle puisse proposer la place. C'est le seul avis
     // qui lui laisse un délai utile : sans lui, elle découvre le désistement
@@ -170,7 +190,10 @@ export async function libererPlace(
     // annonce le retour au solde, celui d'un désistement tardif annonce que la
     // séance reste due. Envoyer le premier dans les deux cas ferait croire à
     // Isabelle que personne n'est décompté.
-    await notifierAdmin(tardif ? 'admin_liberation_tardive' : 'admin_liberation',
+    // Pas d'avis à Isabelle quand c'est elle qui vient de libérer : elle a
+    // l'écran sous les yeux, et l'atelier n'a pas à recevoir la copie de ses
+    // propres gestes.
+    if (participantId !== null) await notifierAdmin(tardif ? 'admin_liberation_tardive' : 'admin_liberation',
       variablesAdmin({
       participant: `${personne?.first_name ?? ''} ${personne?.last_name ?? ''}`.trim(),
       participant_id: participantId,
@@ -188,12 +211,25 @@ export async function libererPlace(
   // s'être mis en attente, on peut avoir pris un autre engagement — et se
   // retrouver inscrit, donc décompté, à une séance qu'on ne peut plus faire.
   // La place part ainsi à qui la veut, plutôt qu'à qui s'est inscrit le plus tôt.
+  let prevenus = 0;
   if (attente.length > 0 && seance) {
-    await previenLaListe(attente, seance);
+    prevenus = await previenLaListe(attente, seance);
   }
 
   return {
     ok: true,
+    tardif,
+    prevenus,
+    /*
+     * CE QUI A ÉTÉ RÉGLÉ NE DOIT PAS DISPARAÎTRE EN SILENCE.
+     *
+     * Un stage se paie à la date : libérer la place ne rend aucun crédit — le
+     * solde d'un forfait n'a rien à voir — et l'argent reste chez nous sans
+     * qu'aucun écran ne le rappelle. La commande remonte donc à l'appelant, qui
+     * la met sous les yeux d'Isabelle : à replacer sur une autre date, ou à
+     * rembourser.
+     */
+    commande: (cible as any).helloasso_order_id ?? null,
     // Le message dit ce qui vient de se passer, y compris quand ce n'est pas
     // la bonne nouvelle attendue : annoncer « la séance revient à votre solde »
     // après un désistement tardif serait faux, et la surprise viendrait à la
@@ -203,6 +239,107 @@ export async function libererPlace(
         + 'celle-ci reste due — elle ne revient pas à votre solde.'
       : 'Place libérée. La séance revient à votre solde.',
   };
+}
+
+/**
+ * Prévient l'adhérent qu'une place vient d'être posée à son nom.
+ *
+ * Écrit pour l'administration : quand quelqu'un réserve depuis son espace, il
+ * sait qu'il vient de le faire ; quand Isabelle l'inscrit, il ne l'apprend que
+ * s'il consulte l'écran. C'était le seul geste de l'atelier dont personne
+ * n'était averti.
+ *
+ * UNE PLACE EN ATTENTE N'EST PAS UNE PLACE : rien ne part tant qu'elle n'est
+ * pas acquise, sans quoi le message ferait organiser une journée autour d'une
+ * séance à laquelle on n'est pas inscrit. La liste d'attente a son propre avis,
+ * envoyé le jour où une place se libère.
+ */
+export async function annoncerInscription(bookingId: string): Promise<boolean> {
+  const supabase = getAdminClient();
+
+  const { data } = await supabase
+    .from('bookings')
+    .select(`
+      status,
+      participants(first_name, accounts(email)),
+      sessions(starts_at, ends_at, location, creneaux(label, kind))
+    `)
+    .eq('id', bookingId)
+    .maybeSingle();
+
+  const seance = (data as any)?.sessions;
+  if (!data || data.status !== 'booked' || !seance) return false;
+
+  const personne = (data as any).participants;
+  const details = {
+    prenom: personne?.first_name ?? '',
+    starts_at: seance.starts_at,
+    ends_at: seance.ends_at,
+    location: seance.location,
+  };
+
+  // Le gabarit d'atelier promet un solde et un délai de dix jours : vrais d'une
+  // séance de forfait, faux d'un stage réglé à la date.
+  return seance.creneaux?.kind === 'stage'
+    ? notifier('stage_place', personne?.accounts?.email,
+        variablesStage({ ...details, creneau: seance.creneaux?.label ?? 'stage' }))
+    : notifier('confirmation', personne?.accounts?.email, variablesSeance(details));
+}
+
+/**
+ * Prévient qu'une date de stage vient d'être rendue.
+ *
+ * Séparée de `libererPlace` parce que les stages de plusieurs jours se libèrent
+ * en bloc, par `release_stage` : la libération a déjà eu lieu quand on écrit.
+ * La ligne, elle, survit — une réservation libérée n'est jamais supprimée —
+ * et porte encore de quoi décrire la date.
+ */
+export async function annoncerLiberationDeStage(bookingId: string): Promise<boolean> {
+  const supabase = getAdminClient();
+
+  const { data } = await supabase
+    .from('bookings')
+    .select(`
+      participants(first_name, accounts(email)),
+      sessions(starts_at, ends_at, location, creneaux(label))
+    `)
+    .eq('id', bookingId)
+    .maybeSingle();
+
+  const seance = (data as any)?.sessions;
+  if (!seance) return false;
+
+  const personne = (data as any).participants;
+  return notifier('stage_liberee', personne?.accounts?.email, variablesStage({
+    prenom: personne?.first_name ?? '',
+    creneau: seance.creneaux?.label ?? 'stage',
+    starts_at: seance.starts_at,
+    ends_at: seance.ends_at,
+    location: seance.location,
+  }));
+}
+
+/**
+ * Les réservations d'une personne sur toutes les dates d'un stage.
+ *
+ * Sert aux stages de plusieurs jours, qu'on inscrit et libère en bloc :
+ * `book_stage` et `release_stage` rendent un nombre, pas des identifiants, et
+ * sans eux il n'y aurait personne à prévenir. Les dates se lisent donc à côté —
+ * AVANT une libération, qui pose une pierre tombale sur chaque ligne.
+ */
+export async function placesDuStage(
+  creneauId: string,
+  participantId: string,
+): Promise<string[]> {
+  const supabase = getAdminClient();
+  const { data } = await supabase
+    .from('bookings')
+    .select('id, sessions!inner(creneau_id)')
+    .eq('participant_id', participantId)
+    .eq('status', 'booked')
+    .eq('sessions.creneau_id', creneauId);
+
+  return (data ?? []).map((b: any) => b.id as string);
 }
 
 export const dateLongue = new Intl.DateTimeFormat('fr-FR', {

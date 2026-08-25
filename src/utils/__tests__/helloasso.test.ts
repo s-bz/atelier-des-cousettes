@@ -342,3 +342,29 @@ describe('lireNotification — un paiement qui change d’état', () => {
     expect(sans.cle).toBe('Order:42');
   });
 });
+
+describe('les deux achats emportent l’adresse saisie', () => {
+  it('le forfait la met dans ses métadonnées', () => {
+    const a = preparerAchat({
+      formule: { id: 'f', libelle: '9 séances', prixCents: 32400, mensualites: 9 },
+      creneau: { id: 'c', label: 'Atelier' }, participant: 'Léa', saison: '2026-2027',
+      adhesionDue: false, achatLe: new Date('2026-09-01T10:00:00Z'),
+      payeur: { email: 'saisi@exemple.fr' },
+      urls: { retour: 'https://x.fr/', erreur: 'https://x.fr/', retourArriere: 'https://x.fr/' },
+    });
+    expect(a.metadata.payeur_email).toBe('saisi@exemple.fr');
+  });
+
+  it('la séance à l’unité aussi', () => {
+    // Les deux parcours mènent au même provisionnement : l'oublier d'un côté
+    // rouvrirait le dédoublement de foyer sur ce chemin-là seulement.
+    const a = preparerAchatUnite({
+      seance: { id: 's', debut: new Date('2026-11-26T13:00:00Z'), prixCents: 6000 },
+      creneau: { id: 'c', label: 'Stage' }, participant: 'Léa', saison: '2026-2027',
+      achatLe: new Date('2026-09-01T10:00:00Z'),
+      payeur: { email: 'saisi@exemple.fr' },
+      urls: { retour: 'https://x.fr/', erreur: 'https://x.fr/', retourArriere: 'https://x.fr/' },
+    });
+    expect(a.metadata.payeur_email).toBe('saisi@exemple.fr');
+  });
+});

@@ -97,7 +97,20 @@ export function lireCommande(intention: {
   // serait créer un abonnement pour quelqu'un qui a fermé l'onglet sans payer.
   if (!order?.id) return echec('Le paiement n’est pas encore acquis.');
 
-  const email = typeof order.payer?.email === 'string' ? order.payer.email.trim() : '';
+  /*
+   * L'ADRESSE QUE NOUS AVONS SAISIE L'EMPORTE sur celle que HelloAsso renvoie.
+   *
+   * Leur page peut substituer le payeur qu'elle a retenu du navigateur. Le
+   * foyer se lirait alors sur une adresse que l'acheteur n'a pas désignée, et
+   * l'inscription rejoindrait un autre compte — avec son adhésion, son solde
+   * et son historique. Les métadonnées reviennent intactes ; on s'y fie
+   * d'abord, et l'on retombe sur HelloAsso pour les intentions créées avant ce
+   * champ.
+   */
+  const mBrut = (intention.metadata ?? {}) as Record<string, unknown>;
+  const notre = typeof mBrut.payeur_email === 'string' ? mBrut.payeur_email.trim() : '';
+  const leur = typeof order.payer?.email === 'string' ? order.payer.email.trim() : '';
+  const email = notre || leur;
   if (!email) return echec('Commande sans adresse de payeur : impossible de la rattacher.');
 
   const m = (intention.metadata ?? {}) as Record<string, unknown>;
@@ -198,11 +211,15 @@ async function trouverOuCreerParticipant(
 /**
  * Garde le nom de qui règle sur son compte.
  *
- * ÉCRIT À CHAQUE COMMANDE, et écrase la fois précédente : c'est le nom qui
- * vient d'être présenté au paiement, donc le plus récent que nous ayons. Une
- * correction faite à la main dans l'administration tiendra jusqu'au prochain
- * achat — ce qui est le bon sens de lecture, la banque ayant le dernier mot sur
- * l'identité du porteur.
+ * ÉCRIT UNE FOIS, PUIS PLUS JAMAIS. La première version écrasait à chaque
+ * commande, au motif que la banque a le dernier mot sur l'identité du porteur.
+ * L'usage a tranché autrement : Isabelle corrige un nom dans l'administration
+ * — « Sam Payeur Bultez » — et l'achat suivant le remplace par celui de la
+ * carte, « Sam Test Payment ». La correction ne tenait pas une journée.
+ *
+ * Le nom de la carte sert donc à AMORCER un foyer qui n'en a pas, et rien de
+ * plus. Ce qu'un humain a écrit l'emporte sur ce qu'un formulaire de paiement a
+ * transmis.
  *
  * Un échec ne fait pas échouer la commande : le nom est un confort, la place
  * est l'essentiel.
@@ -214,6 +231,15 @@ async function retenirLePayeur(
   nom: string | null,
 ): Promise<void> {
   if (!prenom && !nom) return;
+
+  // On ne touche pas à un foyer qui porte déjà un nom : le sien fait foi.
+  const { data: connu } = await supabase
+    .from('accounts')
+    .select('payeur_prenom, payeur_nom')
+    .eq('id', compteId)
+    .maybeSingle();
+
+  if (connu?.payeur_prenom || connu?.payeur_nom) return;
 
   const { error } = await supabase
     .from('accounts')
@@ -240,9 +266,10 @@ const enEuros = (cents: number) =>
  * acheté. Il ne dit ni le créneau retenu, ni les dates posées — c'est-à-dire
  * précisément la chose qu'on vient de payer. Personne ne recevait cela.
  *
- * ENVOYÉ UNE SEULE FOIS PAR COMMANDE, parce qu'appelé depuis le chemin qui ne
- * s'exécute qu'une fois : le retour du payeur et la notification arrivent tous
- * deux, et c'est l'unicité de `helloasso_order_id` qui écarte le second.
+ * ENVOYÉ UNE SEULE FOIS PAR COMMANDE, et c'est la base qui le garantit :
+ * l'abonnement par l'unicité de `helloasso_order_id`, la place à l'unité par la
+ * pierre `annonce_le` que `reclamer_annonce` pose. Le retour du payeur et la
+ * notification arrivent tous deux ; un seul des deux annonce.
  *
  * UN ÉCHEC D'ENVOI NE FAIT PAS ÉCHOUER LA COMMANDE. La place est posée, elle
  * est acquise ; un courriel perdu se renvoie à la main, une inscription perdue
@@ -406,6 +433,21 @@ async function provisionnerUnite(
     .select('starts_at, ends_at, location, creneaux(label)')
     .eq('id', commande.sessionId)
     .maybeSingle();
+
+  /*
+   * UN SEUL PASSAGE ANNONCE, ET MESURE.
+   *
+   * Le retour du payeur et la notification HelloAsso provisionnent tous les
+   * deux la même commande, parfois à la même seconde. Sur un forfait, le
+   * second bute sur l'unicité de `subscriptions.helloasso_order_id`. Ici, non :
+   * `book_participant` est délibérément idempotente et REND la place déjà
+   * posée — les deux passages réussissent donc, et le premier stage vendu a
+   * produit deux courriels de confirmation.
+   *
+   * La pierre `annonce_le` départage, en base, comme le reste.
+   */
+  const { data: nous } = await supabase.rpc('reclamer_annonce', { p_booking: place });
+  if (!nous) return succes({ cree: false, participantId: participant.valeur });
 
   await annoncerAchat(supabase, {
     commande,

@@ -189,6 +189,33 @@ export function variablesSeance(c: Contexte): Valeurs {
 }
 
 /**
+ * Valeurs des gabarits qui parlent d'un STAGE.
+ *
+ * Le nom du stage en plus, et pour cause : « l'atelier du 21 novembre » ne dit
+ * pas lequel, et on peut en suivre deux dans la saison. Les gabarits d'atelier
+ * ne le portent pas — ils n'en ont qu'un à décrire, celui du créneau habituel.
+ *
+ * Ce sont deux familles de messages, non par goût de la symétrie, mais parce
+ * que les textes d'atelier promettent un solde et un délai de dix jours : vrais
+ * d'une séance de forfait, faux d'un stage réglé à la date.
+ */
+export function variablesStage(o: {
+  prenom: string;
+  creneau: string;
+  starts_at: string;
+  ends_at: string;
+  location: string;
+}): Valeurs {
+  const { lien, ...reste } = variablesSeance({
+    prenom: o.prenom,
+    starts_at: o.starts_at,
+    ends_at: o.ends_at,
+    location: o.location,
+  });
+  return { ...reste, lien, creneau: o.creneau };
+}
+
+/**
  * Valeurs du message annonçant qu'une séance change de date.
  *
  * Seul gabarit à porter DEUX dates. Sans l'ancienne, le message dirait « votre
@@ -528,8 +555,26 @@ export async function preparer(id: string, valeurs: Valeurs): Promise<Message | 
     return null;
   }
 
-  const sujet = remplir(data.subject, valeurs);
-  const corps = remplir(data.body, valeurs);
+  return composer(data, valeurs);
+}
+
+/**
+ * Le message, à partir du gabarit et des valeurs. Sans base de données.
+ *
+ * LES LIENS DU SERVICE SONT SERVIS SANS QU'ON LES DEMANDE. Ce sont des
+ * constantes — l'espace, le planning — qu'aucun métier n'a de raison de
+ * porter. Le courriel d'achat est parti avec « {{lien_espace}} » en toutes
+ * lettres parce que son appelant passait ce qu'il connaissait, prénom, produit
+ * et dates, et rien d'autre. Les faire réclamer à chaque appelant, c'est les
+ * voir manquer au premier qu'on écrit sans y penser.
+ *
+ * Une valeur explicite reste la plus forte : les gabarits qui posent déjà leurs
+ * liens ne changent pas de comportement.
+ */
+export function composer(gabarit: { subject: string; body: string }, valeurs: Valeurs): Message {
+  const tout = { ...LIENS, lien: LIEN_PLANNING, ...valeurs };
+  const sujet = remplir(gabarit.subject, tout);
+  const corps = remplir(gabarit.body, tout);
 
   // La signature est ajoutée à la version texte, et rendue par l'habillage pour
   // la version HTML : elle ne doit pas apparaître deux fois dans le message
