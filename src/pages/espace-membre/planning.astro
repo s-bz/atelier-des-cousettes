@@ -337,7 +337,7 @@ const lien = personnes.length > 1 && choisie ? `?personne=${choisie.id}` : '';
                   // Moins de 10 jours : se désister ne rend plus la séance. On le
                   // dit AVANT le clic — l'apprendre après serait une mauvaise
                   // surprise, et elle porterait sur de l'argent.
-                  const tardif = new Date(s.starts_at).getTime() - Date.now() < 48 * 3600e3;
+                  const tardif = new Date(s.starts_at).getTime() - Date.now() < 10 * 24 * 3600e3;
                   return (
                     <li class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
                       <div class="min-w-[12rem] flex-1">
