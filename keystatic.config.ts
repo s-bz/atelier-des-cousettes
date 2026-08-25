@@ -359,6 +359,10 @@ export default config({
         ),
         faqItems: faqItemsField(),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
+        stageDetailLabel: fields.text({
+          label: 'Bouton en pied de carte de stage',
+          description: 'Videz-le pour retirer le bouton des cartes.',
+        }),
         inscriptionLabel: fields.text({
           label: 'Bouton de réservation en ligne',
           description: 'Videz-le pour retirer le bouton de la page.',
