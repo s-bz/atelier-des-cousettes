@@ -397,6 +397,9 @@ export default config({
          * montant que l'écran « à facturer » aurait démenti.
          */
         tarifsTitle: fields.text({ label: 'Titre section tarifs' }),
+        tarifsLienLabel: fields.text({
+          label: 'Lien vers les tarifs, sous l’introduction (ex : Voir les tarifs)',
+        }),
         tarifsIntro: fields.text({
           label: 'Phrase au-dessus des tarifs (saison, souplesse, adhésion)',
           multiline: true,
