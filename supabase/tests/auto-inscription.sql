@@ -28,15 +28,31 @@ values ('a1000000-0000-0000-0000-000000000001', 'test', 2, 't-auto',
        ('a1000000-0000-0000-0000-000000000003', 'test', 2, null,
         date_trunc('month', current_date)::date, current_date + 200);
 
--- Trois séances dans les jours qui viennent, toutes dans le mois courant ou le
--- suivant selon la date d'exécution — ce qui est justement le cas réel.
+-- Trois séances À VENIR ET DANS LE MÊME MOIS.
+--
+-- Elles étaient posées à J+3, J+5 et J+7 : trois jours qui tombent dans deux
+-- mois différents dès qu'on approche de la fin du mois. Or les crédits d'un
+-- forfait se comptent PAR MOIS — une séance passée de l'autre côté du 1er
+-- ouvre une réserve neuve, et le cas 6 voyait alors l'auto-inscription poser
+-- une place qu'il attendait absente. La suite échouait donc les six ou sept
+-- derniers jours de chaque mois, et passait le reste du temps.
+--
+-- L'horizon reste glissant — c'est ce que la fonction traite — mais il est
+-- ancré au mois suivant, où les trois dates tombent forcément ensemble : les 4,
+-- 6 et 8, toujours à venir et toujours dans les soixante jours.
 insert into sessions (id, creneau_id, starts_at, ends_at, location, capacity, unit_price_cents)
 values ('b1000000-0000-0000-0000-000000000001', 't-auto',
-        current_date + 3 + time '14:00', current_date + 3 + time '17:00', 'Revel', 2, 2500),
+        date_trunc('month', current_date + interval '1 month')::date + 3 + time '14:00',
+        date_trunc('month', current_date + interval '1 month')::date + 3 + time '17:00',
+        'Revel', 2, 2500),
        ('b1000000-0000-0000-0000-000000000002', 't-auto',
-        current_date + 5 + time '14:00', current_date + 5 + time '17:00', 'Revel', 2, 2500),
+        date_trunc('month', current_date + interval '1 month')::date + 5 + time '14:00',
+        date_trunc('month', current_date + interval '1 month')::date + 5 + time '17:00',
+        'Revel', 2, 2500),
        ('b1000000-0000-0000-0000-000000000003', 't-auto',
-        current_date + 7 + time '14:00', current_date + 7 + time '17:00', 'Revel', 2, 2500);
+        date_trunc('month', current_date + interval '1 month')::date + 7 + time '14:00',
+        date_trunc('month', current_date + interval '1 month')::date + 7 + time '17:00',
+        'Revel', 2, 2500);
 
 -- ── 1. Premier passage ───────────────────────────────────────────────────
 insert into resultats(cas, verdict)

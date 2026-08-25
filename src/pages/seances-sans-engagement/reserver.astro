@@ -45,7 +45,17 @@ if (Astro.request.method === 'POST') {
   if (!r.ok) {
     erreur = r.erreur;
     // Le motif dit pourquoi une famille s'arrête là. Voir /ateliers-reguliers/inscription/.
-    await mesurer('achat_refuse', saisi.email, { motif: r.erreur, depuis: '/seances-sans-engagement/reserver/' });
+    /*
+     * SANS L'ADRESSE, ET C'EST LE POINT. Cette personne n'a rien acheté : son
+     * code était expiré, ou la date venait d'être prise. Elle n'est ni
+     * adhérente ni cliente, et rien ne justifie qu'une adresse saisie dans un
+     * formulaire refusé ouvre une fiche chez un tiers.
+     *
+     * On ne perd presque rien : ce qui fait corriger, c'est le motif — « le
+     * code X n'existe pas » — et non l'identité de qui l'a saisi. Ce qui est
+     * perdu, et assumé : savoir que la même personne est revenue payer ensuite.
+     */
+    await mesurer('achat_refuse', null, { motif: r.erreur, depuis: '/seances-sans-engagement/reserver/' });
   }
   // `redirectUrl` ne vaut que quinze minutes : on y va tout de suite.
   else return Astro.redirect(r.valeur.redirectUrl, 303);
