@@ -73,15 +73,21 @@ if (Astro.request.method === 'POST') {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris',
       });
 
+      /*
+       * ON N'ÉCRIT QUE SI QUELQUE CHOSE A CHANGÉ.
+       *
+       * Une commande peut n'avoir plus rien à libérer — la place avait déjà été
+       * rendue, ou la saison est passée. Annoncer alors « aucune séance à venir
+       * n'était réservée » serait écrire à quelqu'un au sujet d'un changement
+       * qui n'a pas eu lieu : son planning est exactement ce qu'il était.
+       * Isabelle, elle, voit le bilan à l'écran.
+       */
       const lignes = rendues.map((s) => `    ${dateLongue.format(new Date(s.starts_at))}`);
-      const dates = lignes.length
-        ? `Les séances suivantes sont rendues :\n${lignes.join('\n')}`
-        : 'Aucune séance à venir n’était réservée.';
 
-      if (issue.qui?.email) {
+      if (lignes.length && issue.qui?.email) {
         await notifier('remboursement', issue.qui.email, {
           prenom: issue.qui.prenom ?? '',
-          dates,
+          dates: `Les séances suivantes sont rendues :\n${lignes.join('\n')}`,
         });
       }
 

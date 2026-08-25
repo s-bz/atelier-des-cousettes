@@ -165,5 +165,53 @@ select '11 l abonnement se referme sur son premier jour',
             else 'ECHEC: du '||starts_on::text||' au '||ends_on::text end
 from subscriptions where helloasso_order_id = 'Order:RENTREE';
 
+-- ── 12. LA PLACE REPRISE SUR LE CRÉDIT RENDU ────────────────────────────
+--
+-- Cas réel, et il ne se devine pas : on achète une séance, on la libère à temps
+-- — le crédit revient — puis on repose ce crédit SUR LA MÊME DATE. La nouvelle
+-- ligne est une réservation d'adhérent, sans identifiant de commande. Le
+-- remboursement arrivait ensuite et ne trouvait rien : « 0 séance libérée »,
+-- aucun courriel, et la place restait à quelqu'un qu'on venait de rembourser.
+insert into participants (id, account_id, first_name, last_name, audience)
+values ('f1000000-0000-0000-0000-000000000004', 'f0000000-0000-0000-0000-000000000001',
+        'Repris', 'Credit', 'adulte');
+
+insert into sessions (id, creneau_id, starts_at, ends_at, location, capacity, unit_price_cents, status, places_attente)
+values ('f2000000-0000-0000-0000-000000000011', 't-remb',
+        now() + interval '15 days', now() + interval '15 days 3 hours', 'Revel', 5, 4500, 'scheduled', 0),
+       ('f2000000-0000-0000-0000-000000000012', 't-remb',
+        now() + interval '18 days', now() + interval '18 days 3 hours', 'Revel', 5, 4500, 'scheduled', 0);
+
+-- La place achetée, puis libérée : elle seule porte encore la commande.
+insert into bookings (session_id, participant_id, source, status, helloasso_order_id, released_at)
+values ('f2000000-0000-0000-0000-000000000011', 'f1000000-0000-0000-0000-000000000004',
+        'achat', 'released', 'Order:REPRIS', now());
+
+-- Reposée sur la même date, sur le crédit rendu.
+insert into bookings (session_id, participant_id, source, status)
+values ('f2000000-0000-0000-0000-000000000011', 'f1000000-0000-0000-0000-000000000004',
+        'member', 'booked');
+
+-- Et une AUTRE séance, réglée par une autre commande : elle ne doit pas bouger.
+insert into bookings (session_id, participant_id, source, status, helloasso_order_id)
+values ('f2000000-0000-0000-0000-000000000012', 'f1000000-0000-0000-0000-000000000004',
+        'achat', 'booked', 'Order:AUTRE');
+
+select annuler_pour_remboursement('Order:REPRIS');
+
+insert into r(cas, verdict)
+select '12 la place reprise sur le credit est liberee',
+       case when count(*) = 0 then 'OK' else 'ECHEC: place encore reservee' end
+from bookings b
+where b.participant_id = 'f1000000-0000-0000-0000-000000000004'
+  and b.session_id = 'f2000000-0000-0000-0000-000000000011' and b.status = 'booked';
+
+insert into r(cas, verdict)
+select '13 l autre commande n est pas touchee',
+       case when count(*) = 1 then 'OK' else 'ECHEC: la seance d une autre commande a saute' end
+from bookings b
+where b.participant_id = 'f1000000-0000-0000-0000-000000000004'
+  and b.session_id = 'f2000000-0000-0000-0000-000000000012' and b.status = 'booked';
+
 select verdict, cas from r order by ordre;
 rollback;
