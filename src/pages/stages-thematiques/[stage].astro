@@ -259,9 +259,32 @@ const blogIndex = await reader.singletons.blogIndex.read();
             </p>
           )}
           <CalendrierCreneau seances={c.aVenir} erreur={Boolean(error)} />
+
+          {/*
+            LE BOUTON EST DANS LA CARTE, sous les dates de CETTE formule, et il
+            emporte son créneau. Un seul bouton en pied de page aurait renvoyé
+            vers une liste de sept stages, en laissant retrouver celui qu'on
+            venait justement de lire — et sur une fiche qui propose deux
+            formules, il n'aurait pas su laquelle désigner.
+
+            Rien n'est réservé par ce lien : il présélectionne, la date se
+            choisit ensuite, et le paiement décide seul.
+          */}
+          {page.inscriptionLabel && page.inscriptionUrl && c.aVenir.length > 0 && (
+            <p class="mt-4">
+              <a href={`${page.inscriptionUrl}?creneau=${encodeURIComponent(c.id)}`}
+                 class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 text-sm font-medium text-white no-underline">
+                {page.inscriptionLabel}
+              </a>
+            </p>
+          )}
         </div>
       ))}
 
+      {/*
+        Le contact reste, en second : qui a une question plutôt qu'une date à
+        prendre le trouve encore.
+      */}
       <div class="pt-2 text-center">
         <ContactCTA label={page.ctaLabel} />
       </div>

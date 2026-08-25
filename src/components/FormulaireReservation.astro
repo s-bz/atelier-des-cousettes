@@ -10,9 +10,17 @@ interface Props {
   nomProduit: string;
   /** Le libellé du premier choix : « Quel stage ? », « Quel créneau ? ». */
   nomCreneau: string;
+  /**
+   * Le créneau déjà choisi, quand on arrive depuis sa fiche.
+   *
+   * Retenu CÔTÉ SERVEUR, dans l'attribut `selected` : sans JavaScript la liste
+   * des dates les montre encore toutes, groupées, mais le premier choix est
+   * juste — et avec, le filtrage se fait au chargement.
+   */
+  creneauChoisi?: string | null;
 }
 
-const { seances, erreur, saisi, nomProduit, nomCreneau } = Astro.props;
+const { seances, erreur, saisi, nomProduit, nomCreneau, creneauChoisi } = Astro.props;
 
 /*
  * LE FORMULAIRE D'UNE PLACE À LA DATE.
@@ -73,20 +81,36 @@ for (const s of seances) {
  */
 const euroCourt = (c: number) => (c / 100).toFixed(2).replace('.', ',').replace(',00', '');
 
-const horaireDe = (s: SeanceAchetable) =>
+/*
+ * LA DURÉE DANS LE PREMIER CHOIX, L'HEURE DANS LE SECOND.
+ *
+ * Le résumé a d'abord porté l'horaire — mais seulement quand toutes les dates
+ * s'accordaient, faute de quoi il aurait menti. Le résultat était une liste
+ * bancale : « Initiation · 14:00 – 17:00 · 45 € » au-dessus de « Stage sac ·
+ * 45 € », et l'on cherchait ce qui manquait à la seconde.
+ *
+ * La durée règle les deux problèmes à la fois. Elle est CE QU'ON VEUT SAVOIR en
+ * choisissant un stage — trois heures ou une journée —, elle ne dépend pas du
+ * jour, et elle s'affiche donc toujours. L'heure exacte, elle, appartient à la
+ * date : c'est là qu'on la lit, sur chaque ligne, sans exception — début ET
+ * fin, pour qu'on sache à quelle heure on repart sans avoir à faire l'addition.
+ */
+const minutes = (s: SeanceAchetable) =>
+  s.fin ? Math.round((s.fin.getTime() - s.debut.getTime()) / 60000) : 0;
+
+/** « 14:00 – 18:00 », ou l'heure de début seule si la fin manque. */
+const plage = (s: SeanceAchetable) =>
   s.fin ? `${heure.format(s.debut)} – ${heure.format(s.fin)}` : heure.format(s.debut);
 
-/**
- * L'horaire commun à toutes les dates d'un créneau, ou rien.
- *
- * PRENDRE CELUI DE LA PREMIÈRE DATE AURAIT MENTI dès qu'une séance est
- * déplacée — et `update_session_schedule` existe précisément pour cela. Quand
- * les horaires divergent, le résumé n'en annonce aucun et chaque date porte le
- * sien : mieux vaut le dire deux fois que de l'annoncer faux une seule.
- */
-function horaireCommun(g: Groupe): string | null {
-  const tous = [...new Set(g.dates.map(horaireDe))];
-  return tous.length === 1 ? tous[0] : null;
+/** « 3 h », « 1 h 30 » — la même convention que sur les fiches de stage. */
+const enHeures = (m: number) => (m % 60 === 0 ? `${m / 60} h` : `${Math.floor(m / 60)} h ${m % 60}`);
+
+function duree(g: Groupe): string {
+  const toutes = [...new Set(g.dates.map(minutes).filter((m) => m > 0))].sort((a, b) => a - b);
+  if (!toutes.length) return '';
+  return toutes.length === 1
+    ? ` · ${enHeures(toutes[0])}`
+    : ` · de ${enHeures(toutes[0])} à ${enHeures(toutes[toutes.length - 1])}`;
 }
 
 function resume(g: Groupe): string {
@@ -98,8 +122,7 @@ function resume(g: Groupe): string {
   const lieux = [...new Set(g.dates.map((d) => d.lieu).filter(Boolean))];
   const lieu = lieux.length === 1 ? ` · ${lieux[0]}` : '';
 
-  const quand = horaireCommun(g);
-  return `${g.label}${quand ? ` · ${quand}` : ''}${lieu} · ${tarif}`;
+  return `${g.label}${duree(g)}${lieu} · ${tarif}`;
 }
 
 /* La date seule : le créneau est déjà dit par la liste du dessus. */
@@ -198,7 +221,7 @@ const mentionPlaces = (s: SeanceAchetable) =>
         <select id="creneau" class="champ">
           <option value="">Toutes les possibilités</option>
           {groupes.map((g) => (
-            <option value={g.id}>{resume(g)}</option>
+            <option value={g.id} selected={g.id === creneauChoisi}>{resume(g)}</option>
           ))}
         </select>
       </div>
@@ -211,7 +234,7 @@ const mentionPlaces = (s: SeanceAchetable) =>
             <optgroup label={g.label} data-creneau={g.id}>
               {g.dates.map((s) => (
                 <option value={s.id} selected={s.id === saisi.session}>
-                  {jour.format(s.debut)}{horaireCommun(g) ? '' : ` · ${horaireDe(s)}`}{mentionPlaces(s)}
+                  {jour.format(s.debut)} · {plage(s)}{mentionPlaces(s)}
                 </option>
               ))}
             </optgroup>
