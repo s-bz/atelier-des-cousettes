@@ -160,5 +160,43 @@ begin
      case when reclamer_annonce(v_autre) then 'OK' else 'ECHEC: le voisin est muet' end);
 end $$;
 
+-- ── 11-13. UNE PERSONNE PAR FOYER ET PAR NOM ────────────────────────────
+--
+-- Le troisième visage de la même course, et le plus coûteux. Les deux passages
+-- lisent avant d'écrire, ne se voient pas, et créent la même personne deux fois
+-- — 295 millisecondes d'écart sur un stage réel. La place, le solde et
+-- l'historique partent alors sur l'un des deux dossiers, au hasard.
+do $$
+begin
+  insert into participants (account_id, first_name, last_name, audience)
+  values ('d0000000-0000-0000-0000-000000000001', 'Camille', 'Durand', 'adulte');
+  insert into r(cas, verdict) values ('11 meme nom au meme foyer refuse', 'ECHEC: accepte');
+exception when unique_violation then
+  insert into r(cas, verdict) values ('11 meme nom au meme foyer refuse', 'OK');
+end $$;
+
+-- La casse ne fait pas une personne : « CAMILLE » et « Camille » sont la même.
+do $$
+begin
+  insert into participants (account_id, first_name, last_name, audience)
+  values ('d0000000-0000-0000-0000-000000000001', 'CAMILLE', 'durand', 'adulte');
+  insert into r(cas, verdict) values ('12 la casse ne fait pas une personne', 'ECHEC: accepte');
+exception when unique_violation then
+  insert into r(cas, verdict) values ('12 la casse ne fait pas une personne', 'OK');
+end $$;
+
+-- HORS FOYER, PAS DE RÈGLE. `account_id` est nul par conception — l'adhérente
+-- qui ne veut pas de compte existe quand même — et deux homonymes sans compte
+-- sont deux personnes.
+do $$
+begin
+  insert into participants (account_id, first_name, last_name, audience) values
+    (null, 'Marie', 'Durand', 'adulte'),
+    (null, 'Marie', 'Durand', 'adulte');
+  insert into r(cas, verdict) values ('13 deux homonymes sans compte permis', 'OK');
+exception when unique_violation then
+  insert into r(cas, verdict) values ('13 deux homonymes sans compte permis', 'ECHEC: refuse');
+end $$;
+
 select verdict, cas from r order by ordre;
 rollback;

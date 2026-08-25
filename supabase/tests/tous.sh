@@ -23,7 +23,7 @@ declare -a SUITES=(
   "public-enfants-adultes:4"
   "forfaits:8"
   "adhesions:4"
-  "reservation-payee:11"
+  "reservation-payee:14"
   "seance-payee:7"
   "remboursement:18"
 )

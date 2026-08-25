@@ -181,31 +181,80 @@ export interface Provisionnement {
  * compte : deux homonymes dans une même famille sont assez improbables pour
  * que l'inverse — deux fiches pour la même enfant — soit le vrai risque.
  */
-async function trouverOuCreerParticipant(
+/**
+ * Les jokers de LIKE n'ont rien à faire dans un nom.
+ *
+ * `ilike` prend son second argument pour un motif : « Anne_Marie » y désigne
+ * « AnneXMarie », et un nom contenant `%` désignerait n'importe qui du foyer.
+ * C'est la lecture qui décide de l'identité d'un acheteur — elle ne doit pas
+ * pouvoir désigner quelqu'un d'autre.
+ */
+const sansJokers = (t: string) => t.replace(/[\\%_]/g, (c) => `\\${c}`);
+
+/** La personne de ce foyer qui porte ce nom, s'il y en a une. */
+async function personneDuFoyer(
+  supabase: SupabaseClient,
+  compteId: string,
+  prenom: string,
+  nom: string,
+): Promise<string | null> {
+  /*
+   * `limit(1)` ET NON `maybeSingle()` SEUL : ce dernier échoue face à deux
+   * lignes, et son erreur était ignorée — la personne passait pour inconnue et
+   * l'achat suivant en créait une troisième. L'index d'unicité empêche
+   * désormais le doublon de naître ; les foyers déjà dédoublés, eux, ne doivent
+   * pas continuer d'en fabriquer.
+   */
+  const { data } = await supabase
+    .from('participants')
+    .select('id')
+    .eq('account_id', compteId)
+    .ilike('first_name', sansJokers(prenom))
+    .ilike('last_name', sansJokers(nom))
+    .order('created_at')
+    .limit(1)
+    .maybeSingle();
+
+  return (data?.id as string) ?? null;
+}
+
+/**
+ * La personne inscrite : celle du foyer qui porte ce nom, ou une nouvelle.
+ *
+ * DEUX PASSAGES PROVISIONNENT LA MÊME COMMANDE — le retour du payeur et la
+ * notification HelloAsso — et tous deux lisent avant d'écrire. Ils se sont
+ * croisés à 295 millisecondes d'écart sur un stage : deux « John Deer » dans le
+ * même foyer, dont un seul portait la place, le solde et l'historique.
+ *
+ * L'ARBITRE EST L'INDEX, pas ce code : `participants_foyer_nom_unique`. Ce qui
+ * suit se contente de perdre la course proprement — l'insertion refusée, on
+ * relit, et c'est la personne de l'autre passage qu'on rend. Rendre une erreur
+ * ici renverrait dans la file « à traiter » quelqu'un qui vient de payer.
+ */
+export async function trouverOuCreerParticipant(
   supabase: SupabaseClient,
   o: { compteId: string; prenom: string; nom: string; audience: () => Promise<Resultat<string>> },
 ): Promise<Resultat<string>> {
-  const { data: connue } = await supabase
-    .from('participants')
-    .select('id')
-    .eq('account_id', o.compteId)
-    .ilike('first_name', o.prenom)
-    .ilike('last_name', o.nom)
-    .maybeSingle();
-
-  if (connue?.id) return succes(connue.id as string);
+  const connue = await personneDuFoyer(supabase, o.compteId, o.prenom, o.nom);
+  if (connue) return succes(connue);
 
   // Le public ne se lit QUE pour une création : une personne déjà connue garde
   // le sien, et le déduire du catalogue pourrait le contredire.
   const public_ = await o.audience();
   if (!public_.ok) return public_;
 
-  return creerParticipant(supabase, {
+  const cree = await creerParticipant(supabase, {
     compteId: o.compteId,
     prenom: o.prenom,
     nom: o.nom,
     audience: public_.valeur,
   });
+  if (cree.ok) return cree;
+
+  // Course perdue : l'autre passage vient de créer la même personne. On relit
+  // plutôt que de lire le code d'erreur, qui varie avec la couche traversée.
+  const depuis = await personneDuFoyer(supabase, o.compteId, o.prenom, o.nom);
+  return depuis ? succes(depuis) : cree;
 }
 
 /**
