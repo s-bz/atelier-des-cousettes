@@ -33,6 +33,13 @@ const creneaux: CreneauPublic[] = [
  */
 const seancesAVenir: SeancePublique[] = [
   { creneau: 'Atelier de Verdalle', kind: 'atelier', audience: 'adultes', lieu: 'Verdalle', debut: '2026-09-10T07:30:00+00:00', fin: '2026-09-10T10:30:00+00:00', prixCents: 4500, capacite: 6 },
+  /*
+   * L'atelier enfants a une séance PARCE QUE `construireTarifs` n'annonce plus
+   * un créneau qui n'en a aucune. Sans elle, il disparaîtrait de la liste et
+   * les assertions sur son prix à l'unité porteraient sur une ligne absente —
+   * en production, les neuf créneaux de Revel ont tous des séances.
+   */
+  { creneau: 'Atelier enfants du jeudi', kind: 'atelier', audience: 'enfants', lieu: 'Revel', debut: '2026-09-17T15:30:00+00:00', fin: '2026-09-17T17:30:00+00:00', prixCents: 3500, capacite: 6 },
   { creneau: 'Atelier du mardi après-midi', kind: 'atelier', audience: 'adultes', lieu: 'Revel', debut: '2026-09-15T12:00:00+00:00', fin: '2026-09-15T15:00:00+00:00', prixCents: 4500, capacite: 8 },
   { creneau: 'Stage surjeteuse', kind: 'stage', audience: 'adultes', lieu: 'Revel', debut: '2026-10-03T07:30:00+00:00', fin: '2026-10-03T14:30:00+00:00', prixCents: 7000, capacite: 5 },
 ];
@@ -286,6 +293,37 @@ describe('construireTarifs', () => {
     expect(texte).toContain('**Atelier enfants du jeudi** — enfants, 17h30–19h30, au forfait de saison uniquement');
     // Le montant inachetable ne paraît nulle part sur cette ligne.
     expect(texte).not.toContain('17h30–19h30, 35 €');
+  });
+
+  /*
+   * LE CRÉNEAU DORMANT NE DOIT PAS S'ANNONCER.
+   *
+   * `default_start_time` est un gabarit qui sert à créer des séances, pas un
+   * horaire ouvert. L'atelier de Verdalle le portait — 09h30 — sans qu'une
+   * seule séance ne soit programmée de septembre à juin, et ce fichier
+   * l'annonçait comme réservable au milieu de ceux de Revel. Le CMS disait
+   * pourtant « Sur demande », sans horaire.
+   */
+  it('n’annonce pas un créneau dont aucune séance n’est programmée', () => {
+    const sansVerdalle = seancesAVenir.filter((s) => s.lieu !== 'Verdalle');
+    const texte = construireTarifs({ ...faits, seancesAVenir: sansVerdalle });
+
+    expect(texte).not.toContain('Atelier de Verdalle');
+    // Le lieu entier disparaît, faute du moindre créneau à y annoncer.
+    expect(texte).not.toContain('### Verdalle');
+    // Revel, lui, garde les siens : c'est un filtre, pas une panne.
+    expect(texte).toContain('**Atelier du mardi après-midi**');
+  });
+
+  /*
+   * « La base n'a rien renvoyé » et « la saison est finie » ne se distinguent
+   * pas d'ici. Vider la liste sur une lecture partiellement en échec mentirait
+   * plus gravement que de la laisser entière.
+   */
+  it('garde tous les créneaux quand aucune séance ne remonte', () => {
+    const texte = construireTarifs({ ...faits, seancesAVenir: [] });
+    expect(texte).toContain('### Verdalle');
+    expect(texte).toContain('### Revel');
   });
 
   it('reste servable quand la base ne répond pas', () => {

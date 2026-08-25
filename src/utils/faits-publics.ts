@@ -653,9 +653,26 @@ export function construireTarifs(f: FaitsPublics): string {
     return `- **${s.name}** : ${montant}${s.prerequisite ? ` — prérequis : ${minuscule(uneLigne(s.prerequisite).replace(/\.$/, ''))}` : ''}`;
   }).join('\n');
 
+  /*
+   * UN CRÉNEAU SANS DATE N'EST PAS UN CRÉNEAU, C'EST UNE PROMESSE.
+   *
+   * `default_start_time` est un gabarit qui sert à créer des séances, pas un
+   * horaire ouvert au public. L'atelier de Verdalle le portait — 09h30 — sans
+   * qu'une seule séance ne soit programmée de septembre à juin, et ce fichier
+   * l'annonçait comme un créneau réservable au milieu de ceux de Revel. Le CMS
+   * disait pourtant « Sur demande », sans horaire : c'est ce fichier-ci qui
+   * contredisait l'intention, pas l'inverse.
+   *
+   * Le repli quand aucune séance ne remonte est délibéré : « la base n'a rien
+   * renvoyé » et « la saison est finie » ne se distinguent pas d'ici, et vider
+   * la liste sur une lecture partiellement en échec mentirait plus gravement
+   * que de la laisser entière. Même choix qu'à `lireCreneauxPublics`.
+   */
+  const programmes = new Set(f.seancesAVenir.map((s) => s.creneau));
   const creneauxParLieu = ['Revel', 'Verdalle'].map((lieu) => {
     const items = f.creneaux
       .filter((c) => c.kind === 'atelier' && c.lieu.trim().toLowerCase() === lieu.toLowerCase())
+      .filter((c) => programmes.size === 0 || programmes.has(c.label))
       .sort((a, b) => a.label.localeCompare(b.label, 'fr'))
       .map((c) => {
         // Un créneau au forfait seul n'a pas de prix à l'unité à annoncer : on
