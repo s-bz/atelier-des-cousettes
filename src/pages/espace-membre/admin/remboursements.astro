@@ -5,6 +5,8 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../utils/guards';
 import { getAdminClient } from '../../../utils/supabase';
 import { releverRemboursements } from '../../../utils/remboursements';
+import { previenLaListe } from '../../../utils/membre';
+import { notifier } from '../../../utils/emails';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -55,8 +57,48 @@ if (Astro.request.method === 'POST') {
     if (error) {
       erreur = `Libération impossible : ${error.message}`;
     } else {
-      const bilan = `${(data as any)?.liberees ?? 0} séance(s) libérée(s), `
-        + `${(data as any)?.gardees ?? 0} déjà suivie(s) conservée(s).`;
+      const issue = data as {
+        liberees?: number; gardees?: number;
+        seances?: { starts_at: string; ends_at: string; location: string; attente: string[] }[];
+        qui?: { prenom?: string; email?: string } | null;
+      };
+
+      const rendues = issue.seances ?? [];
+
+      /*
+       * ON PRÉVIENT L'ADHÉRENT. Il voit sinon ses dates disparaître de son
+       * planning sans un mot — seize, dans le premier cas réel.
+       */
+      const dateLongue = new Intl.DateTimeFormat('fr-FR', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris',
+      });
+
+      const lignes = rendues.map((s) => `    ${dateLongue.format(new Date(s.starts_at))}`);
+      const dates = lignes.length
+        ? `Les séances suivantes sont rendues :\n${lignes.join('\n')}`
+        : 'Aucune séance à venir n’était réservée.';
+
+      if (issue.qui?.email) {
+        await notifier('remboursement', issue.qui.email, {
+          prenom: issue.qui.prenom ?? '',
+          dates,
+        });
+      }
+
+      /*
+       * ET LES GENS QUI ATTENDAIENT CES PLACES. C'est à eux qu'elles reviennent ;
+       * les libérer sans le dire les laisserait attendre devant une place vide.
+       */
+      let prevenus = 0;
+      for (const seance of rendues) {
+        if (seance.attente?.length) {
+          prevenus += await previenLaListe(seance.attente, seance);
+        }
+      }
+
+      const bilan = `${issue.liberees ?? 0} séance(s) libérée(s), `
+        + `${issue.gardees ?? 0} déjà suivie(s) conservée(s)`
+        + (prevenus ? `, ${prevenus} personne(s) prévenue(s) sur liste d’attente.` : '.');
       /*
        * TOUTES LES LIGNES DE LA COMMANDE, et non celle qu'on a cliquée. Une
        * seule annulation d'échéancier en produit autant qu'il restait
