@@ -37,7 +37,7 @@ importers:
         version: 0.6.8(@keystar/ui@0.9.6(react-aria@3.50.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-stately@3.48.0(react@19.2.8))(react@19.2.8))(react-aria@3.50.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-stately@3.48.0(react@19.2.8))(react@19.2.8)(supports-color@7.2.0)
       '@markdoc/markdoc':
         specifier: ^0.5.7
-        version: 0.5.8(@types/react@19.2.18)(react@19.2.8)
+        version: 0.5.9(@types/react@19.2.18)(react@19.2.8)
       '@supabase/ssr':
         specifier: ^0.12.3
         version: 0.12.4(@supabase/supabase-js@2.112.3)
@@ -847,18 +847,6 @@ packages:
 
   '@markdoc/markdoc@0.4.0':
     resolution: {integrity: sha512-fSh4P3Y4E7oaKYc2oNzSIJVPDto7SMzAuQN1Iyx53UxzleA6QzRdNWRxmiPqtVDaDi5dELd2yICoG91csrGrAw==}
-    engines: {node: '>=14.7.0'}
-    peerDependencies:
-      '@types/react': '*'
-      react: '*'
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-      react:
-        optional: true
-
-  '@markdoc/markdoc@0.5.8':
-    resolution: {integrity: sha512-U0II9ix5O96VWZXurdsw9uxwPFTurWcQyeNVTH5P7Q6kuIfTzjEy7IPJMTTmFefK7V6nRzIARi5+G6kTjuFeCQ==}
     engines: {node: '>=14.7.0'}
     peerDependencies:
       '@types/react': '*'
@@ -4293,13 +4281,6 @@ snapshots:
 
   '@markdoc/markdoc@0.4.0(@types/react@19.2.18)(react@19.2.8)':
     optionalDependencies:
-      '@types/markdown-it': 12.2.3
-      '@types/react': 19.2.18
-      react: 19.2.8
-
-  '@markdoc/markdoc@0.5.8(@types/react@19.2.18)(react@19.2.8)':
-    optionalDependencies:
-      '@types/linkify-it': 3.0.5
       '@types/markdown-it': 12.2.3
       '@types/react': 19.2.18
       react: 19.2.8
