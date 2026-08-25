@@ -213,5 +213,29 @@ from bookings b
 where b.participant_id = 'f1000000-0000-0000-0000-000000000004'
   and b.session_id = 'f2000000-0000-0000-0000-000000000012' and b.status = 'booked';
 
+-- ── 14. LE CRÉDIT S'EN VA AVEC L'ARGENT ─────────────────────────────────
+--
+-- Payer une séance, c'est acheter un crédit ; le poser sur une date, c'est le
+-- dépenser. Libérer à temps le rend — et c'est juste. Mais une fois remboursé,
+-- ce crédit n'a plus lieu d'être : on n'a plus rien payé.
+--
+-- Constaté sur le premier remboursement de séance : place libérée, file vide,
+-- bilan juste… et un solde de 1. La personne gardait une séance à venir
+-- prendre, réglée par un argent qu'on venait de lui rendre.
+insert into remboursements (commande, paiement, montant_cents, etat, confirme_le)
+values ('Order:REPRIS', 'P:REPRIS', 4500, 'Refunded', now());
+
+insert into r(cas, verdict)
+select '14 le credit rembourse ne compte plus',
+       case when balance('f1000000-0000-0000-0000-000000000004') = 0 then 'OK'
+            else 'ECHEC: solde '||balance('f1000000-0000-0000-0000-000000000004') end;
+
+-- Et celle d'une autre commande, non remboursée, continue d'octroyer.
+insert into r(cas, verdict)
+select '15 une seance non remboursee octroie toujours',
+       case when granted_credits('f1000000-0000-0000-0000-000000000004', current_date) = 1
+            then 'OK' else 'ECHEC: octroi '
+              ||granted_credits('f1000000-0000-0000-0000-000000000004', current_date)::text end;
+
 select verdict, cas from r order by ordre;
 rollback;
