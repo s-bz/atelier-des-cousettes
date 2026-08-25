@@ -4,6 +4,7 @@ export const prerender = false;
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../utils/guards';
 import { getAdminClient } from '../../../utils/supabase';
+import { releverRemboursements } from '../../../utils/remboursements';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -30,7 +31,19 @@ if (Astro.request.method === 'POST') {
   const id = String(form.get('id') ?? '');
   const commande = String(form.get('commande') ?? '');
 
-  if (form.get('action') === 'ignorer') {
+  if (form.get('action') === 'verifier') {
+    /*
+     * LE MÊME RELEVÉ QUE LA NUIT, à la demande. Un remboursement arrive par
+     * notification en quelques secondes ; une annulation d'échéances n'en émet
+     * aucune et n'apparaîtrait qu'au prochain passage. Ce bouton évite
+     * d'attendre demain pour voir ce qu'on vient de faire.
+     */
+    const releve = await releverRemboursements(supabase);
+    message = releve.deposes > 0
+      ? `${releve.deposes} nouveau(x) mouvement(s) trouvé(s) sur ${releve.commandes} commande(s).`
+      : `Rien de neuf — ${releve.commandes} commande(s) vérifiée(s).`;
+    if (releve.echecs) erreur = `${releve.echecs} commande(s) illisible(s) ; voir le journal.`;
+  } else if (form.get('action') === 'ignorer') {
     const { error } = await supabase.from('remboursements')
       .update({ confirme_le: new Date().toISOString(), bilan: 'Écarté sans action.' })
       .eq('commande', commande).is('confirme_le', null);
@@ -134,6 +147,18 @@ const motDe = (etat: string) =>
 ---
 
 <AdminLayout title="Remboursements" soustitre="Repérés chez HelloAsso, à confirmer.">
+  <form method="post" class="mb-6">
+    <input type="hidden" name="action" value="verifier" />
+    <button type="submit"
+            class="rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)]">
+      Vérifier maintenant
+    </button>
+    <span class="ml-3 text-sm text-[var(--color-text-light)]">
+      Interroge HelloAsso commande par commande. Utile après une annulation d’échéances, qui
+      n’envoie aucun avis.
+    </span>
+  </form>
+
   {message && <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] px-4 py-3">{message}</p>}
   {erreur && <p class="mb-6 rounded-xl bg-[var(--color-bg-pink)] px-4 py-3 text-white">{erreur}</p>}
 

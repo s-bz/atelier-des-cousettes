@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getAdminClient } from '../../../utils/supabase';
-import { defaitsDeLaCommande } from '../../../utils/helloasso';
+import { releverRemboursements } from '../../../utils/remboursements';
 import { notifier, notifierAdmins, variablesSeance, variablesSemaine } from '../../../utils/emails';
 
 export const prerender = false;
@@ -111,62 +111,12 @@ export const GET: APIRoute = async ({ request }) => {
   // pour lui — sa date part à un autre — et un état mal lu ne doit pas vider un
   // planning tout seul. La confirmation appartient à Isabelle.
   //
-  // ON INTERROGE CHAQUE COMMANDE VIVANTE, UNE PAR UNE.
-  //
-  // La liste des paiements de l'organisation aurait été plus courte — un appel
-  // au lieu de N — mais elle NE CONTIENT QUE LES PAIEMENTS TRAITÉS. Mesuré sur
-  // une vraie annulation : neuf échéances passées à `Canceled` dans la
-  // commande, et la liste continuait de ne rendre que les paiements
-  // `Authorized`, quel que soit le filtre. Une annulation d'échéances y est
-  // invisible.
-  //
-  // N reste petit : ce sont les commandes dont l'inscription court encore.
-  const { data: commandes } = await supabase
-    .from('subscriptions')
-    .select('helloasso_order_id')
-    .not('helloasso_order_id', 'is', null)
-    .gte('ends_on', new Date().toISOString().slice(0, 10));
-
-  const { data: placesPayees } = await supabase
-    .from('bookings')
-    .select('helloasso_order_id')
-    .not('helloasso_order_id', 'is', null)
-    .eq('status', 'booked');
-
-  const aVerifier = [...new Set([
-    ...(commandes ?? []).map((c) => c.helloasso_order_id as string),
-    ...(placesPayees ?? []).map((b) => b.helloasso_order_id as string),
-  ])].filter((c) => c && !c.startsWith('GRATUIT-'));
-
-  for (const commande of aVerifier) {
-    const defaits = await defaitsDeLaCommande(commande);
-
-    if (!defaits.ok) {
-      console.error(`[cron] commande ${commande} illisible :`, defaits.erreur);
-      bilan.echecs++;
-      continue;
-    }
-
-    for (const p of defaits.valeur) {
-      // `paiement` est unique : un remboursement déjà déposé ne se redépose
-      // pas, et la tâche peut donc repasser chaque nuit sans dommage.
-      const { error } = await supabase.from('remboursements').upsert(
-        {
-          commande: p.commandeId,
-          paiement: p.paiementId,
-          montant_cents: p.montantCents,
-          etat: p.etat,
-        },
-        { onConflict: 'paiement', ignoreDuplicates: true },
-      );
-      if (error) {
-        console.error(`[cron] remboursement ${p.paiementId} non déposé :`, error.message);
-        bilan.echecs++;
-      } else {
-        bilan.remboursements++;
-      }
-    }
-  }
+  // Le relevé lui-même vit dans `releverRemboursements`, partagé avec le
+  // bouton de l'écran d'administration : deux chemins qui répondraient
+  // différemment à la même question finiraient par se contredire.
+  const releve = await releverRemboursements(supabase);
+  bilan.remboursements += releve.deposes;
+  bilan.echecs += releve.echecs;
 
   // ── 4. Récapitulatif de la semaine, le dimanche ────────────────────────
   //
