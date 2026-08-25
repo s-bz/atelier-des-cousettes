@@ -483,6 +483,16 @@ export default config({
           description: 'Videz-le pour retirer le bouton de la page.',
         }),
         inscriptionUrl: fields.text({ label: 'Lien du bouton d’inscription' }),
+        adhesionNote: fields.text({
+          label: 'Mention de l’adhésion, sous les tarifs de chaque groupe',
+          description:
+            'Le montant y est remplacé par celui de l’application — écrivez-le tel quel. '
+            + 'Videz le champ pour retirer la ligne.',
+        }),
+        creneauChoisirLabel: fields.text({
+          label: 'Bouton de sélection d’un créneau',
+          description: 'Videz-le pour retirer le bouton des cartes de créneau.',
+        }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
     }),

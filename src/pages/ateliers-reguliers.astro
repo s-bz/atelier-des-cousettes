@@ -21,6 +21,7 @@ import {
   montantFr,
   prixDesOffres,
 } from '../utils/tarifs';
+import { ADHESION_CENTS } from '../utils/helloasso';
 import { getAdminClient } from '../utils/supabase';
 import { ATELIER_GROUPS, titreAudience } from '../utils/ateliers';
 
@@ -136,7 +137,7 @@ const supabase = getAdminClient();
 const { data: enBase, error } = await supabase
   .from('creneaux')
   .select(`
-    label, audience, default_location, default_start_time, default_end_time,
+    id, label, audience, default_location, default_start_time, default_end_time,
     default_unit_price_cents, default_capacity,
     sessions(starts_at, ends_at, capacity, places_attente, status, bookings(status))
   `)
@@ -167,6 +168,9 @@ const datesDe = (nom: string) =>
  * cette page sert à découvrir avant de basculer les pages publiées.
  */
 const inconnuEnBase = (nom: string) => !parNom.has(cle(nom));
+
+/** L'identifiant en base d'un créneau du contenu — celui que porte le lien d'inscription. */
+const idDe = (nom: string) => parNom.get(cle(nom))?.id as string | undefined;
 
 /**
  * ET L'INVERSE : un créneau en base qu'aucune fiche du contenu ne décrit.
@@ -280,6 +284,20 @@ const tarifs = tarifsPage.map((t) => ({
   titre: titreAudience(t.audience),
   public: t.audience,
 }));
+
+/**
+ * La mention de l'adhésion, son montant repris de `ADHESION_CENTS`.
+ *
+ * LA PHRASE APPARTIENT AU CMS, LE NOMBRE À L'APPLICATION — le même partage que
+ * partout ailleurs sur cette page. Isabelle écrit « S'y ajoute l'adhésion à
+ * l'association Les P'tits Piafs, 15 € par an et par famille » ; le 15 est
+ * remplacé par celui que le parcours d'achat facturera réellement, de sorte
+ * qu'une cotisation revue à l'assemblée générale ne laisse pas la page
+ * promettre l'ancienne.
+ */
+const noteAdhesion = page.adhesionNote
+  ? page.adhesionNote.replace(/\d+(?:[.,]\d+)?(\s*€)/, `${montantFr(ADHESION_CENTS)}$1`)
+  : '';
 
 /**
  * Comment se règle un forfait : « En 9 mensualités ou en une fois. »
@@ -446,6 +464,22 @@ const courseSchema = buildCourseSchema({
   */}
   {page.introduction && (
     <IntroSection text={page.introduction} cta={false} fond>
+      {/*
+        CE QU'ON ACHÈTE, DIT AVANT LES HORAIRES ET AVANT LES PRIX.
+        « Un forfait s'achète pour la saison et se pose sur les dates de votre
+        choix » répond à la question que pose toute grille d'abonnement — suis-je
+        tenu de venir tel jour ? — et il valait mieux y répondre au seuil de la
+        page qu'à mi-chemin, une fois les créneaux parcourus sans savoir ce
+        qu'on en ferait.
+
+        Elle s'y trouvait, en tête de la section des tarifs ; elle est ici et
+        n'y est plus. Deux fois la même phrase sur une page, c'est une phrase
+        qu'on cesse de lire.
+      */}
+      {page.tarifsIntro && (
+        <p class="mt-4 text-[var(--color-text-light)]">{page.tarifsIntro}</p>
+      )}
+
       {page.inscriptionLabel && page.inscriptionUrl && (
         <p class="mt-8">
           <a href={page.inscriptionUrl}
@@ -533,6 +567,9 @@ const courseSchema = buildCourseSchema({
                     {reglementDe(g.audience)}
                   </p>
                 )}
+                {noteAdhesion && (
+                  <p class="mt-1 text-sm text-[var(--color-text-light)]">{noteAdhesion}</p>
+                )}
               </div>
             )}
 
@@ -602,6 +639,27 @@ const courseSchema = buildCourseSchema({
                         : undefined}
                     />
                   </div>
+
+                  {/*
+                    « SÉLECTIONNER » PLUTÔT QUE « S'INSCRIRE » : on désigne un
+                    créneau, on ne conclut pas — le formulaire demandera encore
+                    la formule et le règlement. Le lien l'emporte pour éviter de
+                    le rechercher dans une liste de sept où l'on vient
+                    justement de le lire.
+
+                    PAS DE BOUTON SANS DATE. Un créneau sans séance programmée
+                    n'est pas vendable : la page d'inscription l'écarte déjà de
+                    sa liste, et l'y envoyer mènerait à un choix introuvable.
+                  */}
+                  {page.creneauChoisirLabel && page.inscriptionUrl
+                    && idDe(c.name) && datesDe(c.name).length > 0 && (
+                    <p class="mt-4">
+                      <a href={`${page.inscriptionUrl}?creneau=${encodeURIComponent(idDe(c.name)!)}`}
+                         class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-5 py-2 text-sm font-medium text-white no-underline">
+                        {page.creneauChoisirLabel}
+                      </a>
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -637,17 +695,6 @@ const courseSchema = buildCourseSchema({
         <h2 class="mb-4 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
           {page.tarifsTitle}
         </h2>
-
-        {/*
-          La souplesse avant les chiffres. « Suis-je tenue de venir tel jour ? »
-          est la première inquiétude de qui lit une grille d'abonnement ; y
-          répondre d'abord retire l'objection avant qu'un prix ne l'installe.
-        */}
-        {page.tarifsIntro && (
-          <p class="mx-auto mb-10 max-w-xl text-center text-[var(--color-text)]">
-            {page.tarifsIntro}
-          </p>
-        )}
 
         {/*
           UNE SEULE COLONNE, du public le plus âgé au plus jeune. Côte à côte,

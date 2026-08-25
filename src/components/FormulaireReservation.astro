@@ -258,12 +258,16 @@ const mentionPlaces = (s: SeanceAchetable) =>
         </label>
         <input id="code" name="code" value={saisi.code} autocapitalize="characters"
                class="champ" placeholder="Si vous en avez un" />
+        {/*
+          LE VERDICT DU CODE SOUS LE CHAMP DU CODE, et non dans le devis : c'est
+          ici qu'on peut encore en essayer un autre.
+        */}
+        <p id="code-retour" class="mt-1 text-sm" aria-live="polite"></p>
       </div>
     </fieldset>
 
     <div id="devis" hidden class="rounded-xl bg-[var(--color-bg-accent)] px-4 py-3">
       <p class="font-medium text-[var(--color-heading)]" id="devis-total"></p>
-      <p class="mt-1 text-sm" id="devis-code"></p>
       <p class="mt-2 text-sm text-[var(--color-text-light)]">
         HelloAsso proposera d’y ajouter une contribution facultative, modifiable jusqu’à zéro.
       </p>
@@ -370,7 +374,7 @@ const mentionPlaces = (s: SeanceAchetable) =>
   const session = document.getElementById('session') as HTMLSelectElement | null;
   const champCode = document.getElementById('code') as HTMLInputElement | null;
   const total = document.getElementById('devis-total');
-  const ligneCode = document.getElementById('devis-code');
+  const ligneCode = document.getElementById('code-retour');
 
   if (devis && session && total) {
     const euros = (c: number) =>

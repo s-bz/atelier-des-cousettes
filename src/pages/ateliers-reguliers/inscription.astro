@@ -122,6 +122,19 @@ if (Astro.request.method === 'POST') {
   else return Astro.redirect(r.valeur.redirectUrl, 303);
 }
 
+/*
+ * ON PEUT ARRIVER D'UNE CARTE DE CRÉNEAU, qui sait déjà lequel. Le paramètre ne
+ * fait que préremplir la liste : le serveur revérifie l'accord du créneau, de
+ * la formule et du public, et un créneau inconnu laisse simplement l'invite —
+ * « Choisissez un créneau » — plutôt que de vider la liste.
+ *
+ * Lu seulement hors POST : après un envoi, c'est ce qui a été saisi qui fait
+ * foi, et non l'URL par laquelle on était entré.
+ */
+if (Astro.request.method !== 'POST') {
+  saisi.creneau = Astro.url.searchParams.get('creneau') ?? '';
+}
+
 if (Astro.url.searchParams.has('echec')) {
   erreur = 'Le paiement n’a pas abouti. Rien n’a été prélevé — vous pouvez réessayer.';
   // HelloAsso renvoie ici quand le paiement n'a pas abouti. Rien n'a été
@@ -301,6 +314,17 @@ if (Astro.url.searchParams.has('echec')) {
         </label>
         <input id="code" name="code" value={saisi.code} autocapitalize="characters"
                class="champ" placeholder="Si vous en avez un" />
+        {/*
+          LE VERDICT DU CODE SOUS LE CHAMP DU CODE. « Ce code n'existe pas »
+          s'affichait dans le devis, trois éléments plus bas, au milieu de
+          montants : on lisait un reproche sans voir à quoi il se rapportait.
+          Il se lit ici, à l'endroit où l'on peut encore en essayer un autre.
+
+          Rempli par le script du devis, qui interroge déjà le serveur pour le
+          chiffrage : c'est la même réponse, et la faire dire deux fois aurait
+          demandé un second appel pour la même question.
+        */}
+        <p id="code-retour" class="mt-1 text-sm" aria-live="polite"></p>
       </div>
 
       <fieldset>
