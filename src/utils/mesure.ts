@@ -83,6 +83,20 @@ export async function mesurer(
           // — donc établi — de ce que le navigateur a bien voulu envoyer.
           source: 'serveur',
           /*
+           * PAS DE GÉOLOCALISATION SUR CES ÉVÉNEMENTS-LÀ.
+           *
+           * Le mode sans cookie retire l'adresse IP des événements du
+           * navigateur avant enrichissement — mais ceux-ci n'y passent pas :
+           * ils arrivent d'un POST ordinaire, et PostHog géolocaliserait donc
+           * l'IP de l'appel. Or c'est celle de notre serveur. Tous les
+           * paiements de l'association se rangeraient sous la région Vercel qui
+           * a répondu, et le tableau de bord affirmerait qu'on vend à Francfort.
+           *
+           * Une géographie fausse est pire qu'une géographie absente : la
+           * seconde se remarque, la première se croit.
+           */
+          $geoip_disable: true,
+          /*
            * L'ADRESSE EST POSÉE SUR LA PERSONNE, PAS SUR L'ÉVÉNEMENT.
            * `$set` alimente la fiche ; répétée sur chaque événement, elle
            * encombrerait chaque ligne sans rien apprendre de plus.

@@ -1,18 +1,16 @@
 title: Ateliers réguliers
-subtitle: Trois places par séance, une à deux fois par mois, de septembre à juin
+subtitle: >-
+  Petits groupes de couture de septembre à juin, une à deux fois par mois.
+  Isabelle vous accompagne sur le projet de votre choix, à votre rythme.
 seoDescription: >-
   Ateliers de couture réguliers à Revel (Haute-Garonne) et Verdalle (Tarn). Tous niveaux, petits groupes. De 25€ à 59€ par mois, de septembre à juin.
 coverImage: /src/assets/images/covers/ateliers-reguliers/coverImage.webp
 coverImageAlt: Atelier de couture régulier en petits groupes à Revel
-introduction: >-
-  Rejoignez un groupe de couture convivial et progressez à votre rythme, de
-  septembre à juin. Isabelle vous accompagne sur le projet de votre choix en
-  petits groupes à Revel et Verdalle.
+introduction: ''
 creneauxSectionTitle: Nos créneaux
 calendarLabel: 'Calendrier :'
 faqSectionTitle: Questions fréquentes
-tarifsTitle: Tarifs
-tarifsLienLabel: Voir les tarifs
+tarifsTitle: S’inscrire
 tarifsIntro: >-
   Un forfait s'achète pour la saison, de septembre à juin, et se pose sur les
   dates de votre choix, dans le créneau qui vous convient. S'y ajoute l'adhésion
@@ -145,8 +143,8 @@ crossLinksText: >-
   à utiliser la surjeteuse, réaliser un sac, une trousse ? Vous souhaitez
   apprendre une technique précise — coudre un ourlet, savoir lire un patron ?
   Rejoignez une séance sans engagement !
-adhesionNote: S’y ajoute l’adhésion à l’association Les P’tits Piafs, 15 € par an et par famille.
 creneauChoisirLabel: Sélectionner
+voirCreneauxLabel: Voir les créneaux
 inscriptionLabel: Réserver ma place
 inscriptionUrl: /ateliers-reguliers/inscription/
 ctaLabel: Demander une place dans un créneau

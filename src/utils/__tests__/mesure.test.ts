@@ -47,6 +47,12 @@ describe('mesurer', () => {
     expect(corps.distinct_id).toBe('marie@exemple.fr');
     expect(corps.properties.montant_cents).toBe(32400);
     expect(corps.properties.$set).toEqual({ email: 'marie@exemple.fr' });
+    /*
+     * L'IP de cet appel est celle de notre serveur, pas celle du payeur.
+     * Laisser PostHog l'enrichir rangerait toutes les ventes de l'association
+     * sous la région du centre de données qui a répondu.
+     */
+    expect(corps.properties.$geoip_disable).toBe(true);
   });
 
   it('n’identifie personne quand l’événement n’appartient à personne', async () => {
