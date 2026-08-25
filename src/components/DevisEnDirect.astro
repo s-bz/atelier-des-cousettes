@@ -37,6 +37,16 @@ const { email } = Astro.props;
     frais caché — mais elle ne mérite pas le paragraphe qu'elle avait : au
     moment de décider, quatre blocs de texte se neutralisent.
   */}
+  {/*
+    LE CODE DE RÉDUCTION VIT ICI, replié derrière un lien.
+
+    En champ ouvert au milieu du formulaire, il annonçait à tous qu'une remise
+    existe — et qui n'en a pas se demande ce qu'il rate, juste avant de payer.
+    Replié, il ne coûte rien à qui l'ignore et reste à un clic de qui a reçu un
+    code. Sa place est dans ce cadre : c'est le montant qu'il change.
+  */}
+  <slot />
+
   <p class="mt-2 text-sm text-[var(--color-text-light)]">
     HelloAsso proposera d’y ajouter une contribution facultative, modifiable jusqu’à zéro.
   </p>

@@ -476,8 +476,12 @@ const courseSchema = buildCourseSchema({
         n'y est plus. Deux fois la même phrase sur une page, c'est une phrase
         qu'on cesse de lire.
       */}
+      {/* Même corps et même couleur que l'introduction : deux paragraphes qui
+          se suivent et se lisent d'affilée n'ont pas à changer de voix. */}
       {page.tarifsIntro && (
-        <p class="mt-4 text-[var(--color-text-light)]">{page.tarifsIntro}</p>
+        <p class="mt-4 text-base md:text-lg leading-relaxed text-[var(--color-text)]">
+          {page.tarifsIntro}
+        </p>
       )}
 
       {page.inscriptionLabel && page.inscriptionUrl && (
