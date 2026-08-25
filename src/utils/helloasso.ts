@@ -58,7 +58,10 @@ function empreinte(brut: unknown): string {
 }
 
 export function lireNotification(brut: unknown): NotificationHelloAsso {
-  const enveloppe = (brut ?? {}) as { eventType?: unknown; data?: { id?: unknown } };
+  const enveloppe = (brut ?? {}) as {
+    eventType?: unknown;
+    data?: { id?: unknown; meta?: { updatedAt?: unknown } };
+  };
 
   const type =
     typeof enveloppe.eventType === 'string' && enveloppe.eventType ? enveloppe.eventType : 'Inconnu';
@@ -74,10 +77,26 @@ export function lireNotification(brut: unknown): NotificationHelloAsso {
    * l'idempotence (une réémission à l'octet près garde sa clé) sans jamais
    * confondre deux charges utiles distinctes.
    */
+  /*
+   * LA DATE DE MISE À JOUR ENTRE DANS LA CLÉ, quand la charge en porte une.
+   *
+   * Un paiement nous est annoncé plusieurs fois dans sa vie : autorisé, puis
+   * remboursé, puis peut-être remboursé de nouveau. C'est LE MÊME identifiant à
+   * chaque fois. Réduite à « Payment:<id> », la clé faisait passer le
+   * remboursement pour un doublon de l'autorisation, et `ignoreDuplicates`
+   * l'écartait en silence : on aurait remboursé sans jamais l'apprendre.
+   *
+   * `meta.updatedAt` distingue ces annonces sans casser l'idempotence : une
+   * réémission à l'identique — le fonctionnement normal de HelloAsso — porte la
+   * même date, donc la même clé. Absente, on retombe sur l'identifiant seul.
+   */
+  const maj = enveloppe.data?.meta?.updatedAt;
+  const version = typeof maj === 'string' && maj ? `:${maj}` : '';
+
   return {
     type,
     identifiant,
-    cle: identifiant ? `${type}:${identifiant}` : `${type}:sha:${empreinte(brut)}`,
+    cle: identifiant ? `${type}:${identifiant}${version}` : `${type}:sha:${empreinte(brut)}`,
   };
 }
 
