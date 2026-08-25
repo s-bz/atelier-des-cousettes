@@ -78,9 +78,41 @@ const creneauChoisi = Astro.url.searchParams.get('creneau');
  * réglée. Le reste du formulaire ne change pas — la page reste publique, et
  * c'est le serveur qui revérifie tout.
  */
+let verrouille = false;
+
 if (Astro.request.method !== 'POST') {
   saisi.session = Astro.url.searchParams.get('session') ?? '';
   saisi.email = Astro.locals.account?.email ?? '';
+
+  /*
+   * ACHETER POUR QUELQU'UN DE DÉJÀ CONNU : son nom se remplit et se verrouille.
+   *
+   * Le provisionnement rapproche la commande d'une personne existante PAR SON
+   * NOM. Laisser le champ libre alors qu'on sait de qui il s'agit, c'est
+   * inviter à créer un second dossier au même foyer — avec son propre solde,
+   * son propre historique, et la place au mauvais endroit. C'est exactement ce
+   * qui est arrivé au premier achat réel.
+   *
+   * L'APPARTENANCE SE VÉRIFIE, elle ne se croit pas : l'identifiant vient de
+   * l'URL. Sans compte connecté, ou pour une personne d'un autre foyer, on ne
+   * verrouille rien et le formulaire reste ce qu'il est.
+   */
+  const personne = Astro.url.searchParams.get('personne');
+  if (personne && Astro.locals.account) {
+    const { data } = await supabase
+      .from('participants')
+      .select('first_name, last_name')
+      .eq('id', personne)
+      .eq('account_id', Astro.locals.account.id)
+      .maybeSingle();
+
+    if (data) {
+      saisi.autre = true;
+      saisi.prenom = data.first_name ?? '';
+      saisi.nom = data.last_name ?? '';
+      verrouille = true;
+    }
+  }
 }
 
 if (Astro.url.searchParams.has('echec')) {
@@ -103,6 +135,6 @@ if (Astro.url.searchParams.has('echec')) {
       Réserver une séance sans engagement
     </h1>
 
-    <FormulaireReservation seances={seances} erreur={erreur} saisi={saisi} creneauChoisi={creneauChoisi} nomProduit="cette séance" nomCreneau="Quel créneau ?" />
+    <FormulaireReservation seances={seances} erreur={erreur} saisi={saisi} creneauChoisi={creneauChoisi} verrouille={verrouille} nomProduit="cette séance" nomCreneau="Quel créneau ?" />
   </section>
 </BaseLayout>

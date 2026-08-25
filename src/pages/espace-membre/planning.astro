@@ -414,7 +414,7 @@ const lien = personnes.length > 1 && choisie ? `?personne=${choisie.id}` : '';
                             elle est déjà choisie, il ne reste qu'à régler.
                           */}
                           {!aUnForfait && solde <= 0 && etat !== 'attente' ? (
-                            <a href={`/seances-sans-engagement/reserver/?session=${s.id}`}
+                            <a href={`/seances-sans-engagement/reserver/?session=${s.id}&personne=${choisie.id}`}
                                class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-4 py-1.5 text-sm font-medium text-white no-underline">
                               Acheter cette séance
                             </a>
