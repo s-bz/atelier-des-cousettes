@@ -28,9 +28,39 @@ interface Props {
    * est né à côté de « Sam Bultez », et la place est allée au nouveau venu.
    */
   verrouille?: boolean;
+  /**
+   * Les personnes du foyer de qui est connecté, pour le désigner d'un clic.
+   *
+   * SANS CELA, UN ADHÉRENT CONNU RETAPE SON NOM — et la moindre variante
+   * (« Sam » pour « Samuel », un nom d'épouse, une majuscule accentuée) fait
+   * naître un second dossier à côté du sien, avec son propre solde. Le
+   * rapprochement se fait par le nom ; le meilleur moyen de ne pas le rater est
+   * de ne pas le faire ressaisir.
+   */
+  foyer?: { id: string; first_name: string; last_name: string }[] | null;
+  /** Le chemin où revenir après s'être connecté. */
+  cheminActuel: string;
+  connecte?: boolean;
 }
 
-const { seances, erreur, saisi, nomProduit, nomCreneau, creneauChoisi, verrouille } = Astro.props;
+const { seances, erreur, saisi, nomProduit, nomCreneau, creneauChoisi, verrouille,
+        foyer, cheminActuel, connecte } = Astro.props;
+
+/*
+ * DEUX VERROUS, ET ILS NE SE DÉCLENCHENT PAS AU MÊME MOMENT.
+ *
+ * ÊTRE CONNECTÉ SUFFIT À FIXER LE FOYER. L'adresse décide à quel compte la
+ * commande se rattache : laisser la retoucher à quelqu'un dont on connaît déjà
+ * le compte, c'est lui offrir d'en ouvrir un second — et d'y emporter son
+ * adhésion, son solde et son historique. Le nom du payeur suit, pour la même
+ * raison qu'il n'y a pas de demi-verrou : cinq champs dont un modifiable
+ * invitent à le modifier.
+ *
+ * DÉSIGNER LA PERSONNE FIXE EN PLUS QUI VIENT. Tant qu'on n'a cliqué sur
+ * personne, le nom du participant reste libre : c'est ainsi qu'on inscrit
+ * quelqu'un de nouveau au foyer.
+ */
+const foyerFixe = Boolean(verrouille || connecte);
 
 /*
  * LE FORMULAIRE D'UNE PLACE À LA DATE.
@@ -175,6 +205,47 @@ const mentionPlaces = (s: SeanceAchetable) =>
   </p>
 ) : (
   <form method="post" class="mt-8 space-y-6">
+    {/*
+      DÉSIGNER PLUTÔT QUE RETAPER. Qui est connecté choisit la personne d'un
+      clic : le nom vient alors de la base, et non d'une saisie qui peut varier
+      d'une lettre. C'est le seul moyen sûr d'éviter un second dossier au même
+      foyer — le rapprochement se fait par le nom.
+    */}
+    {!verrouille && foyer && foyer.length > 0 && (
+      <div class="rounded-xl bg-[var(--color-bg-accent)] px-4 py-3">
+        <p class="text-sm font-medium text-[var(--color-heading)]">Pour qui réservez-vous ?</p>
+        <div class="mt-2 flex flex-wrap gap-2">
+          {foyer.map((p) => (
+            <a href={`${cheminActuel}${cheminActuel.includes('?') ? '&' : '?'}personne=${p.id}`}
+               class="rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-4 py-1.5 text-sm font-medium text-[var(--color-button)] no-underline">
+              {p.first_name} {p.last_name}
+            </a>
+          ))}
+        </div>
+        <p class="mt-2 text-sm text-[var(--color-text-light)]">
+          Pour quelqu’un qui ne vient pas encore, remplissez le formulaire ci-dessous.
+        </p>
+      </div>
+    )}
+
+    {/*
+      QUI EST DÉJÀ VENU A UN DOSSIER, et le retrouver vaut mieux que d'en ouvrir
+      un second. On propose, on n'impose pas : une famille nouvelle ne PEUT pas
+      se connecter — `signInWithOtp` refuse de créer un compte — et lui barrer
+      la route fermerait la vente à ceux qu'on cherche justement à accueillir.
+    */}
+    {!connecte && (
+      <p class="rounded-xl bg-[var(--color-bg-accent)] px-4 py-3 text-sm">
+        Déjà venu à l’atelier ?{' '}
+        <a href={`/espace-membre/connexion/?suite=${encodeURIComponent(cheminActuel)}`}
+           class="font-medium text-[var(--color-button)] underline">
+          Connectez-vous
+        </a>{' '}
+        pour retrouver votre foyer : vos coordonnées seront reprises, et votre inscription
+        rejoindra votre dossier plutôt que d’en ouvrir un second.
+      </p>
+    )}
+
     <fieldset class="space-y-4">
       <legend class="mb-2 text-lg font-bold text-[var(--color-heading)]"
               style="font-family: var(--font-heading)">
@@ -184,9 +255,9 @@ const mentionPlaces = (s: SeanceAchetable) =>
       <div>
         <label for="email" class="block text-sm font-medium mb-1">Votre adresse électronique</label>
         <input id="email" name="email" type="email" required value={saisi.email}
-               autocomplete="email" class="champ" readonly={verrouille} />
+               autocomplete="email" class="champ" readonly={foyerFixe} />
         <p class="mt-1 text-sm text-[var(--color-text-light)]">
-          {verrouille
+          {foyerFixe
             ? 'Celle de votre compte : la réservation s’y rattachera.'
             : 'C’est elle qui ouvrira l’accès à votre espace, où vous retrouverez votre réservation.'}
         </p>
@@ -196,12 +267,12 @@ const mentionPlaces = (s: SeanceAchetable) =>
         <div>
           <label for="payeurPrenom" class="block text-sm font-medium mb-1">Prénom</label>
           <input id="payeurPrenom" name="payeurPrenom" required value={saisi.payeurPrenom}
-                 autocomplete="given-name" class="champ" />
+                 autocomplete="given-name" class="champ" readonly={foyerFixe} />
         </div>
         <div>
           <label for="payeurNom" class="block text-sm font-medium mb-1">Nom</label>
           <input id="payeurNom" name="payeurNom" required value={saisi.payeurNom}
-                 autocomplete="family-name" class="champ" />
+                 autocomplete="family-name" class="champ" readonly={foyerFixe} />
         </div>
       </div>
 

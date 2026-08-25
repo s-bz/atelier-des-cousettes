@@ -137,9 +137,76 @@ if (Astro.request.method === 'POST') {
  * Lu seulement hors POST : après un envoi, c'est ce qui a été saisi qui fait
  * foi, et non l'URL par laquelle on était entré.
  */
+/*
+ * QUI EST CONNECTÉ NE RETAPE NI SON ADRESSE NI SON NOM.
+ *
+ * Le provisionnement rapproche une commande d'une personne existante PAR SON
+ * NOM. Un adhérent connu qui ressaisit « Sam » pour « Samuel » ouvre un second
+ * dossier à côté du sien, avec son propre solde et son propre historique.
+ * Désigner la personne d'un clic supprime la ressaisie, donc le risque.
+ *
+ * ON PROPOSE, ON N'IMPOSE PAS. Une famille nouvelle ne peut pas se connecter —
+ * `signInWithOtp` refuse de créer un compte — et exiger la connexion fermerait
+ * la vente à ceux qu'on cherche justement à accueillir.
+ */
+let foyer: { id: string; first_name: string; last_name: string }[] | null = null;
+let verrouille = false;
+
 if (Astro.request.method !== 'POST') {
   saisi.creneau = Astro.url.searchParams.get('creneau') ?? '';
+  saisi.email = Astro.locals.account?.email ?? '';
+
+  if (Astro.locals.account) {
+    const { data: sien } = await supabase
+      .from('accounts')
+      .select('payeur_prenom, payeur_nom')
+      .eq('id', Astro.locals.account.id)
+      .maybeSingle();
+    saisi.payeurPrenom = sien?.payeur_prenom ?? '';
+    saisi.payeurNom = sien?.payeur_nom ?? '';
+  }
+
+  const personne = Astro.url.searchParams.get('personne');
+
+  if (personne && Astro.locals.account) {
+    const { data } = await supabase
+      .from('participants')
+      .select('first_name, last_name, account_id, accounts(email, payeur_prenom, payeur_nom)')
+      .eq('id', personne)
+      .maybeSingle();
+
+    const leSien = data?.account_id === Astro.locals.account.id;
+
+    if (data && (leSien || Astro.locals.isAdmin)) {
+      const compteDeLaPersonne = data.accounts as
+        { email?: string; payeur_prenom?: string | null; payeur_nom?: string | null } | null;
+
+      if (compteDeLaPersonne?.email) saisi.email = compteDeLaPersonne.email;
+      saisi.payeurPrenom = compteDeLaPersonne?.payeur_prenom ?? '';
+      saisi.payeurNom = compteDeLaPersonne?.payeur_nom ?? '';
+      saisi.autre = true;
+      saisi.prenom = data.first_name ?? '';
+      saisi.nom = data.last_name ?? '';
+      verrouille = true;
+    }
+  } else if (Astro.locals.account) {
+    const { data } = await supabase
+      .from('participants')
+      .select('id, first_name, last_name')
+      .eq('account_id', Astro.locals.account.id)
+      .order('first_name');
+    foyer = data ?? null;
+  }
 }
+
+const cheminActuel = Astro.url.pathname + Astro.url.search;
+
+/*
+ * Être connecté suffit à fixer le foyer : l'adresse décide du compte auquel la
+ * commande se rattache, et la retoucher reviendrait à en ouvrir un second.
+ * Désigner la personne fixe en plus qui vient.
+ */
+const foyerFixe = Boolean(verrouille || Astro.locals.account);
 
 if (Astro.url.searchParams.has('echec')) {
   erreur = 'Le paiement n’a pas abouti. Rien n’a été prélevé — vous pouvez réessayer.';
@@ -178,6 +245,36 @@ if (Astro.url.searchParams.has('echec')) {
         et rien ne disait à qui « Votre prénom » s'adressait quand une mère
         inscrit sa fille. Le titre le dit une fois pour les trois.
       */}
+      {/* Désigner plutôt que retaper : le nom vient alors de la base. */}
+      {!verrouille && foyer && foyer.length > 0 && (
+        <div class="rounded-xl bg-[var(--color-bg-accent)] px-4 py-3">
+          <p class="text-sm font-medium text-[var(--color-heading)]">Pour qui inscrivez-vous ?</p>
+          <div class="mt-2 flex flex-wrap gap-2">
+            {foyer.map((p) => (
+              <a href={`${cheminActuel}${cheminActuel.includes('?') ? '&' : '?'}personne=${p.id}`}
+                 class="rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-4 py-1.5 text-sm font-medium text-[var(--color-button)] no-underline">
+                {p.first_name} {p.last_name}
+              </a>
+            ))}
+          </div>
+          <p class="mt-2 text-sm text-[var(--color-text-light)]">
+            Pour quelqu’un qui ne vient pas encore, remplissez le formulaire ci-dessous.
+          </p>
+        </div>
+      )}
+
+      {!Astro.locals.account && (
+        <p class="rounded-xl bg-[var(--color-bg-accent)] px-4 py-3 text-sm">
+          Déjà venu à l’atelier ?{' '}
+          <a href={`/espace-membre/connexion/?suite=${encodeURIComponent(cheminActuel)}`}
+             class="font-medium text-[var(--color-button)] underline">
+            Connectez-vous
+          </a>{' '}
+          pour retrouver votre foyer : vos coordonnées seront reprises, et l’inscription
+          rejoindra votre dossier plutôt que d’en ouvrir un second.
+        </p>
+      )}
+
       <fieldset class="space-y-4">
         <legend class="mb-2 text-lg font-bold text-[var(--color-heading)]"
                 style="font-family: var(--font-heading)">
@@ -187,7 +284,7 @@ if (Astro.url.searchParams.has('echec')) {
         <div>
           <label for="email" class="block text-sm font-medium mb-1">Votre adresse électronique</label>
           <input id="email" name="email" type="email" required value={saisi.email}
-                 autocomplete="email" class="champ" />
+                 autocomplete="email" class="champ" readonly={foyerFixe} />
           <p class="mt-1 text-sm text-[var(--color-text-light)]">
             C’est elle qui ouvrira l’accès à votre espace, où vous choisirez vos dates.
           </p>
@@ -197,16 +294,17 @@ if (Astro.url.searchParams.has('echec')) {
           <div>
             <label for="payeurPrenom" class="block text-sm font-medium mb-1">Prénom</label>
             <input id="payeurPrenom" name="payeurPrenom" required value={saisi.payeurPrenom}
-                   autocomplete="given-name" class="champ" />
+                   autocomplete="given-name" class="champ" readonly={foyerFixe} />
           </div>
           <div>
             <label for="payeurNom" class="block text-sm font-medium mb-1">Nom</label>
             <input id="payeurNom" name="payeurNom" required value={saisi.payeurNom}
-                   autocomplete="family-name" class="champ" />
+                   autocomplete="family-name" class="champ" readonly={foyerFixe} />
           </div>
         </div>
 
-        <label class="flex items-start gap-2">
+        {verrouille && <input type="hidden" name="autre" value="oui" />}
+        <label class="flex items-start gap-2" hidden={verrouille}>
           <input type="checkbox" id="autre" name="autre" value="oui" checked={saisi.autre}
                  class="mt-1" />
           <span class="text-sm">
@@ -215,7 +313,7 @@ if (Astro.url.searchParams.has('echec')) {
         </label>
       </fieldset>
 
-      <fieldset id="participant" class="space-y-4" hidden={!saisi.autre}>
+      <fieldset id="participant" class="space-y-4" hidden={!saisi.autre && !verrouille}>
         <legend class="mb-2 text-lg font-bold text-[var(--color-heading)]"
                 style="font-family: var(--font-heading)">
           La personne qui participe
@@ -223,11 +321,11 @@ if (Astro.url.searchParams.has('echec')) {
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
             <label for="prenom" class="block text-sm font-medium mb-1">Prénom</label>
-            <input id="prenom" name="prenom" value={saisi.prenom} class="champ" />
+            <input id="prenom" name="prenom" value={saisi.prenom} class="champ" readonly={verrouille} />
           </div>
           <div>
             <label for="nom" class="block text-sm font-medium mb-1">Nom</label>
-            <input id="nom" name="nom" value={saisi.nom} class="champ" />
+            <input id="nom" name="nom" value={saisi.nom} class="champ" readonly={verrouille} />
           </div>
         </div>
       </fieldset>

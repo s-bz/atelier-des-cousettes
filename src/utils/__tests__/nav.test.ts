@@ -1,27 +1,25 @@
 import { describe, it, expect } from 'vitest';
-import { SERVICE_LINKS, getCrossLinks } from '../nav';
+import { suiteSure } from '../nav';
 
-describe('SERVICE_LINKS', () => {
-  it('contains 3 service links', () => {
-    expect(SERVICE_LINKS).toHaveLength(3);
+describe('suiteSure', () => {
+  it('accepte un chemin interne', () => {
+    expect(suiteSure('/stages-thematiques/reserver/?creneau=x'))
+      .toBe('/stages-thematiques/reserver/?creneau=x');
   });
 
-  it('all links have href starting with / and ending with /', () => {
-    SERVICE_LINKS.forEach((link) => {
-      expect(link.href).toMatch(/^\/.*\/$/);
-    });
-  });
-});
-
-describe('getCrossLinks', () => {
-  it('excludes the specified href', () => {
-    const links = getCrossLinks('/ateliers-reguliers/');
-    expect(links).toHaveLength(2);
-    expect(links.every((l) => l.href !== '/ateliers-reguliers/')).toBe(true);
+  it('refuse une adresse absolue', () => {
+    // Sans quoi la page de connexion devient un tremplin : on se connecte chez
+    // nous, on atterrit ailleurs, et le lien avait l'air d'être le nôtre.
+    expect(suiteSure('https://exemple-hostile.fr/')).toBe('/espace-membre/');
   });
 
-  it('returns all links when href does not match any', () => {
-    const links = getCrossLinks('/nonexistent');
-    expect(links).toHaveLength(3);
+  it('refuse le double slash, que le navigateur lit comme un hôte', () => {
+    // « //exemple.fr » n'est pas un chemin : c'est une URL sans protocole.
+    expect(suiteSure('//exemple-hostile.fr/piege')).toBe('/espace-membre/');
+  });
+
+  it('retombe sur l’espace adhérent quand rien n’est demandé', () => {
+    expect(suiteSure(null)).toBe('/espace-membre/');
+    expect(suiteSure('')).toBe('/espace-membre/');
   });
 });

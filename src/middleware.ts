@@ -36,7 +36,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
    * toujours null, connecté ou non — et le préremplissage ne pouvait pas
    * fonctionner.
    */
-  const ACHAT = ['/seances-sans-engagement/reserver', '/stages-thematiques/reserver'];
+  const ACHAT = [
+    '/seances-sans-engagement/reserver',
+    '/stages-thematiques/reserver',
+    // Oubliée du premier passage, et le symptôme était trompeur : la page
+    // affichait « Déjà venu ? Connectez-vous » à quelqu'un qui l'était.
+    '/ateliers-reguliers/inscription',
+  ];
   const chemin = context.url.pathname.replace(/\/+$/, '');
 
   if (!chemin.startsWith('/espace-membre') && !ACHAT.includes(chemin)) {

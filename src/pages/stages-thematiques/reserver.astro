@@ -80,6 +80,13 @@ const creneauChoisi = Astro.url.searchParams.get('creneau');
  */
 let verrouille = false;
 
+/*
+ * LES PERSONNES DU FOYER, quand quelqu'un est connecté et n'a pas déjà désigné
+ * qui vient. Les proposer d'un clic évite la ressaisie d'un nom — et le second
+ * dossier qu'une variante d'orthographe fait naître.
+ */
+let foyer: { id: string; first_name: string; last_name: string }[] | null = null;
+
 if (Astro.request.method !== 'POST') {
   saisi.session = Astro.url.searchParams.get('session') ?? '';
   saisi.email = Astro.locals.account?.email ?? '';
@@ -113,6 +120,16 @@ if (Astro.request.method !== 'POST') {
    * verrouille rien et le formulaire reste ce qu'il est.
    */
   const personne = Astro.url.searchParams.get('personne');
+
+  if (!personne && Astro.locals.account) {
+    const { data } = await supabase
+      .from('participants')
+      .select('id, first_name, last_name')
+      .eq('account_id', Astro.locals.account.id)
+      .order('first_name');
+    foyer = data ?? null;
+  }
+
   if (personne && Astro.locals.account) {
     const { data } = await supabase
       .from('participants')
@@ -172,6 +189,8 @@ if (Astro.url.searchParams.has('echec')) {
       Réserver un stage
     </h1>
 
-    <FormulaireReservation seances={seances} erreur={erreur} saisi={saisi} creneauChoisi={creneauChoisi} verrouille={verrouille} nomProduit="ce stage" nomCreneau="Quel stage ?" />
+    <FormulaireReservation seances={seances} erreur={erreur} saisi={saisi} creneauChoisi={creneauChoisi} verrouille={verrouille} foyer={foyer}
+      cheminActuel={Astro.url.pathname + Astro.url.search}
+      connecte={Boolean(Astro.locals.account)} nomProduit="ce stage" nomCreneau="Quel stage ?" />
   </section>
 </BaseLayout>
