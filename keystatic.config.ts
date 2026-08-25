@@ -377,7 +377,11 @@ export default config({
       previewUrl: '/ateliers-reguliers/',
       schema: {
         title: fields.text({ label: 'Titre' }),
-        subtitle: fields.text({ label: 'Sous-titre' }),
+        subtitle: fields.text({
+          label: 'Sous-titre',
+          description: 'Un retour à la ligne est conservé tel quel.',
+          multiline: true,
+        }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         ...coverImageFields('ateliers-reguliers'),
         introduction: fields.text({ label: 'Introduction', multiline: true }),
