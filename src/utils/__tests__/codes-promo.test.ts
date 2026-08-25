@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { reductionDe, normaliserCode } from '../codes-promo';
+import { reductionDe, normaliserCode, etatDe } from '../codes-promo';
 
 const base = {
   code: 'RENTREE26',
@@ -76,5 +76,56 @@ describe('reductionDe', () => {
     // Ni pourcentage ni montant : une saisie fautive côté admin. Mieux vaut le
     // dire que d'accorder une remise de zéro sans que personne ne comprenne.
     expect(reductionDe(32400, base, contexte).ok).toBe(false);
+  });
+});
+
+describe('etatDe', () => {
+  it('dit actif un code sans limite', () => {
+    expect(etatDe({ ...base, reductionPourcent: 10 }, contexte)).toBe('actif');
+  });
+
+  it('dit épuisé un code dont les usages sont consommés', () => {
+    expect(etatDe({ ...base, usagesMax: 1, usages: 1 }, contexte)).toBe('epuise');
+    expect(etatDe({ ...base, usagesMax: 5, usages: 4 }, contexte)).toBe('actif');
+  });
+
+  it('dit expiré un code dont le dernier jour est passé', () => {
+    expect(etatDe({ ...base, expireLe: '2026-08-31' }, contexte)).toBe('expire');
+    // Le dernier jour est inclus : il vaut encore aujourd'hui.
+    expect(etatDe({ ...base, expireLe: '2026-09-01' }, contexte)).toBe('actif');
+  });
+
+  it('dit hors saison un code d’une autre saison', () => {
+    expect(etatDe({ ...base, saison: '2025-2026' }, contexte)).toBe('hors-saison');
+    expect(etatDe({ ...base, saison: null }, contexte)).toBe('actif');
+  });
+
+  /*
+   * L'ORDRE COMPTE : l'état affiché à Isabelle doit être celui que l'adhérent
+   * lit à l'écran. Deux raisons de refus, un seul motif montré — le même des
+   * deux côtés, sinon elle cherche un code « épuisé » qu'on a dit « expiré ».
+   */
+  it('retient le même motif que le refus à l’encaissement', () => {
+    const cumule = { ...base, reductionPourcent: 10, saison: '2025-2026', expireLe: '2026-08-31', usagesMax: 1, usages: 1 };
+    expect(etatDe(cumule, contexte)).toBe('hors-saison');
+
+    const perime = { ...base, reductionPourcent: 10, expireLe: '2026-08-31', usagesMax: 1, usages: 1 };
+    expect(etatDe(perime, contexte)).toBe('expire');
+    const r = reductionDe(32400, perime, contexte);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.erreur).toMatch(/expir/i);
+  });
+
+  it('ne dit actif que ce que le moteur accepte vraiment', () => {
+    // Le lien entre les deux : tout code dit « actif » doit produire une remise.
+    const cas = [
+      { ...base, reductionPourcent: 10 },
+      { ...base, reductionCents: 2000, usagesMax: 5, usages: 4 },
+      { ...base, reductionPourcent: 50, expireLe: '2026-09-30', saison: '2026-2027' },
+    ];
+    for (const c of cas) {
+      expect(etatDe(c, contexte)).toBe('actif');
+      expect(reductionDe(32400, c, contexte).ok).toBe(true);
+    }
   });
 });
