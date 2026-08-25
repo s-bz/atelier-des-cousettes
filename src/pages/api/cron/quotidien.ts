@@ -5,7 +5,7 @@ import { notifier, notifierAdmins, variablesSeance, variablesSemaine } from '../
 export const prerender = false;
 
 /**
- * Tâche quotidienne : auto-inscription, puis rappels à trois jours.
+ * Tâche quotidienne : auto-inscription, puis rappels à onze jours.
  *
  * Une seule route pour les deux, parce que le palier Hobby de Vercel n'autorise
  * qu'une exécution par jour. L'ordre compte : on inscrit d'abord, on prévient
@@ -13,7 +13,7 @@ export const prerender = false;
  * lendemain.
  *
  * La précision de déclenchement est de l'ordre de l'heure sur Hobby. Sans
- * importance pour un rappel à trois jours ; ce serait rédhibitoire pour un
+ * importance pour un rappel à onze jours ; ce serait rédhibitoire pour un
  * rappel à deux heures.
  */
 export const GET: APIRoute = async ({ request }) => {

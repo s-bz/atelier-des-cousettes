@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Resultat } from './inscriptions';
 import { compterUsage } from './codes-promo';
+import { notifier, notifierAdmin } from './emails';
 import { mesurer } from './mesure';
 import {
   trouverOuCreerCompte, creerParticipant, creerAbonnement,
@@ -222,6 +223,75 @@ async function retenirLePayeur(
   if (error) console.error('[provisionnement] nom du payeur non retenu :', error.message);
 }
 
+const dateLongue = new Intl.DateTimeFormat('fr-FR', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris',
+});
+const heureCourte = new Intl.DateTimeFormat('fr-FR', {
+  hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris',
+});
+
+const enEuros = (cents: number) =>
+  `${(cents / 100).toFixed(2).replace('.', ',').replace(',00', '')} €`;
+
+/**
+ * Annonce l'achat, à l'acheteur et à l'atelier.
+ *
+ * LE REÇU HELLOASSO NE SUFFIT PAS : il parle du paiement, pas de ce qui a été
+ * acheté. Il ne dit ni le créneau retenu, ni les dates posées — c'est-à-dire
+ * précisément la chose qu'on vient de payer. Personne ne recevait cela.
+ *
+ * ENVOYÉ UNE SEULE FOIS PAR COMMANDE, parce qu'appelé depuis le chemin qui ne
+ * s'exécute qu'une fois : le retour du payeur et la notification arrivent tous
+ * deux, et c'est l'unicité de `helloasso_order_id` qui écarte le second.
+ *
+ * UN ÉCHEC D'ENVOI NE FAIT PAS ÉCHOUER LA COMMANDE. La place est posée, elle
+ * est acquise ; un courriel perdu se renvoie à la main, une inscription perdue
+ * ne se retrouve pas.
+ */
+async function annoncerAchat(
+  supabase: SupabaseClient,
+  o: {
+    commande: Commande;
+    participantId: string;
+    produit: string;
+    /** Les séances retenues, dans l'ordre. Vide pour un forfait sans date encore posée. */
+    seances: { starts_at: string; ends_at: string | null; location: string | null }[];
+  },
+): Promise<void> {
+  const lignes = o.seances.map((s) => {
+    const debut = new Date(s.starts_at);
+    const fin = s.ends_at ? ` à ${heureCourte.format(new Date(s.ends_at))}` : '';
+    return `    ${dateLongue.format(debut)}, de ${heureCourte.format(debut)}${fin}`
+      + (s.location ? ` — ${s.location}` : '');
+  });
+
+  const dates = lignes.length
+    ? `Vos dates :\n${lignes.join('\n')}`
+    : 'Vos dates seront posées sous peu ; vous les retrouverez dans votre espace.';
+
+  const prenom = [o.commande.prenom, o.commande.nom].filter(Boolean).join(' ');
+  const montant = enEuros(o.commande.montantCents);
+
+  try {
+    await notifier('achat', o.commande.email, {
+      prenom, produit: o.produit, montant, dates,
+    });
+
+    await notifierAdmin('admin_achat', {
+      payeur: [o.commande.payeurPrenom, o.commande.payeurNom].filter(Boolean).join(' ')
+        || '(nom non transmis)',
+      courriel: o.commande.email,
+      prenom,
+      produit: o.produit,
+      montant,
+      commande: o.commande.orderId,
+      dates,
+    });
+  } catch (e) {
+    console.error('[provisionnement] annonce d’achat non envoyée :', e);
+  }
+}
+
 /** « adultes » → « adulte » : le public d'une personne est le singulier de celui de son groupe. */
 const auSingulier = (public_: string) => public_.replace(/s$/, '');
 
@@ -331,6 +401,19 @@ async function provisionnerUnite(
 
   if (commande.codePromo) await compterUsage(supabase, commande.codePromo);
 
+  const { data: laSeance } = await supabase
+    .from('sessions')
+    .select('starts_at, ends_at, location, creneaux(label)')
+    .eq('id', commande.sessionId)
+    .maybeSingle();
+
+  await annoncerAchat(supabase, {
+    commande,
+    participantId: participant.valeur,
+    produit: (laSeance?.creneaux as { label?: string } | null)?.label ?? 'Séance',
+    seances: laSeance ? [laSeance] : [],
+  });
+
   return succes({ cree: true, participantId: participant.valeur, placesPosees: 1 });
 }
 
@@ -404,6 +487,31 @@ async function provisionnerForfait(
   // Les places s'ouvrent tout de suite : quelqu'un qui vient de payer veut voir
   // son planning, pas attendre le cron du lendemain.
   const auto = await inscrireDOffice(supabase);
+
+  /*
+   * LES DATES SE LISENT APRÈS L'INSCRIPTION D'OFFICE, jamais avant : c'est elle
+   * qui les pose, et un courriel envoyé plus tôt annoncerait un planning vide à
+   * quelqu'un qui vient de payer la saison.
+   */
+  const { data: posees } = await supabase
+    .from('bookings')
+    .select('sessions!inner(starts_at, ends_at, location)')
+    .eq('participant_id', participant.valeur)
+    .eq('status', 'booked')
+    .eq('sessions.creneau_id', commande.creneauId)
+    .order('starts_at', { referencedTable: 'sessions', ascending: true });
+
+  const { data: laFormule } = await supabase
+    .from('formules').select('libelle').eq('id', commande.formuleId).maybeSingle();
+  const { data: leCreneau } = await supabase
+    .from('creneaux').select('label').eq('id', commande.creneauId).maybeSingle();
+
+  await annoncerAchat(supabase, {
+    commande,
+    participantId: participant.valeur,
+    produit: [laFormule?.libelle, leCreneau?.label].filter(Boolean).join(' — ') || 'Forfait',
+    seances: ((posees ?? []) as { sessions: any }[]).map((b) => b.sessions),
+  });
 
   return succes({
     cree: true,
