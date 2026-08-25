@@ -479,6 +479,42 @@ pas de relance ; elle se contente de savoir.
 
 ---
 
+## 7 bis. Où regarder avant de demander
+
+**Le contrat OpenAPI, complet et à jour :**
+<https://api.helloasso.com/v5/swagger/public/swagger.json>
+
+L'interface Swagger est à `/v5/swagger/index.html`, mais **cette page n'est pas
+la spécification** : elle la charge. `/v5/swagger/v1/swagger.json` répond 404 —
+c'est `public`, et non `v1`, qu'il faut. Trente-quatre chemins, et la réponse à
+la plupart des questions qu'on s'apprêtait à poser au support.
+
+**Le bac à sable**, que la documentation publique ne met pas en avant :
+
+| | |
+| --- | --- |
+| Back-office | <https://www.helloasso-sandbox.com/> — y créer une organisation |
+| API | `https://api.helloasso-sandbox.com/v5` |
+| Clés | à relever dans le back-office du bac à sable, distinctes de la production |
+| Cartes | numéros virtuels fournis par HelloAsso |
+
+`HELLOASSO_API_HOST` bascule l'hôte entier, jeton OAuth compris. Non renseignée,
+on est en production.
+
+**Ce que la lecture du contrat a appris**, et qu'aucun essai n'aurait révélé
+sans dépenser :
+
+| Constat | Portée |
+| --- | --- |
+| `POST /payments/{paymentId}/refund` est **« protected with strong authentication »** | En-têtes `x-mfa-access-authorization`, `x-mfa-sms-access-authorization`, `x-mfa-password-authorization`. Une clé `client_credentials` n'a personne derrière pour recevoir le SMS : **le remboursement automatique est douteux**, et c'est ce qui bloque la rétractation |
+| `amount` (centimes) permet un **remboursement partiel** | Mais la description précise « only for a partial refund **for stripe** » — dépendance au prestataire encaisseur, à confirmer |
+| `cancelOrder=true` sur un remboursement annule les échéances à venir | **« possible only if the payment is fully refunded »** — donc inutilisable pour notre cas, qui retient le prix d'une séance suivie |
+| `POST /orders/{orderId}/cancel` annule les échéances à venir | « no refunds will be given ». Sa description **ne mentionne pas** l'authentification forte |
+| `ApiUrlNotificationModel` porte un champ **`signatureKey`** | Sous `/partners/me/api-notifications`, qui nous répond 403. Une signature existe donc ; reste à savoir si une association y a droit |
+| Types de notification déclarés | `Payment`, `Order`, `Form`, `Organization` |
+
+---
+
 ## 8. Les contraintes vérifiées
 
 Mesurées le 24/08/2026 contre l'organisation réelle, pas lues dans la
