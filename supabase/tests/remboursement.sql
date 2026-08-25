@@ -43,7 +43,16 @@ select '0 depart : 5 places, solde nul',
                  ||balance('f1000000-0000-0000-0000-000000000001') end
 from bookings where participant_id = 'f1000000-0000-0000-0000-000000000001' and status = 'booked';
 
-select annuler_pour_remboursement('Order:REMB');
+-- Quelqu'un attend l'une des séances à venir : c'est à lui qu'elle revient.
+insert into participants (id, account_id, first_name, last_name, audience)
+values ('f1000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000001',
+        'Patient', 'Attend', 'adulte');
+insert into bookings (session_id, participant_id, source, status)
+values ('f2000000-0000-0000-0000-000000000003',
+        'f1000000-0000-0000-0000-000000000002', 'member', 'waiting');
+
+create temp table issue on commit drop as
+select annuler_pour_remboursement('Order:REMB') as j;
 
 -- ── 1. Les séances à venir sont rendues ─────────────────────────────────
 insert into r(cas, verdict)
@@ -89,6 +98,29 @@ select '6 les places sont rendues au creneau',
 from sessions s
 where s.creneau_id = 't-remb' and s.starts_at > now()
   and (select count(*) from bookings b where b.session_id = s.id and b.status = 'booked') = 0;
+
+-- ── 7. Ce qu'il faut pour écrire à l'adhérent ───────────────────────────
+-- Sans ces dates, le courriel d'annulation ne pourrait rien énumérer.
+insert into r(cas, verdict)
+select '7 les seances rendues sont restituees',
+       case when jsonb_array_length(j->'seances') = 3 then 'OK'
+            else 'ECHEC: '||jsonb_array_length(j->'seances')::text||' séance(s)' end
+from issue;
+
+insert into r(cas, verdict)
+select '8 le destinataire est nomme',
+       case when j->'qui'->>'email' = 'rembourse@test.fr' then 'OK'
+            else 'ECHEC: '||coalesce(j->'qui'->>'email','(aucun)') end
+from issue;
+
+-- ── 9. Et la liste d'attente est recensée ───────────────────────────────
+-- C'est ce que le contournement de `release_booking` avait fait sauter : les
+-- places repartaient sans être proposées à qui les attendait.
+insert into r(cas, verdict)
+select '9 la personne en attente est signalee',
+       case when j::text like '%f1000000-0000-0000-0000-000000000002%' then 'OK'
+            else 'ECHEC: personne en attente absente du bilan' end
+from issue;
 
 select verdict, cas from r order by ordre;
 rollback;
