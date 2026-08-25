@@ -8,9 +8,11 @@ interface Props {
            prenom: string; nom: string; session: string; code: string };
   /** Ce qu'on achète, au singulier : « ce stage », « cette séance ». */
   nomProduit: string;
+  /** Le libellé du premier choix : « Quel stage ? », « Quel créneau ? ». */
+  nomCreneau: string;
 }
 
-const { seances, erreur, saisi, nomProduit } = Astro.props;
+const { seances, erreur, saisi, nomProduit, nomCreneau } = Astro.props;
 
 /*
  * LE FORMULAIRE D'UNE PLACE À LA DATE.
@@ -28,22 +30,82 @@ const { seances, erreur, saisi, nomProduit } = Astro.props;
  * PAS D'ÉCHELONNEMENT NON PLUS : quarante-cinq euros se règlent en une fois.
  */
 
-const dateLongue = new Intl.DateTimeFormat('fr-FR', {
-  weekday: 'long', day: 'numeric', month: 'long',
+/*
+ * DEUX CHOIX PLUTÔT QU'UN, parce qu'il y a quatre-vingts dates.
+ *
+ * Une seule liste les mélangeait toutes : six créneaux, trois tarifs et deux
+ * horaires dans quatre-vingts lignes, où il fallait lire chaque date pour
+ * retrouver celles du jeudi matin. On choisit maintenant d'abord SON CRÉNEAU —
+ * le jour, l'heure, le lieu et le prix, c'est-à-dire tout ce qui décide — puis
+ * la date parmi les siennes seulement, qui sont une dizaine.
+ *
+ * SANS JAVASCRIPT, LES DEUX LISTES RESTENT UTILISABLES : la seconde contient
+ * toujours l'ensemble des dates, groupées par créneau, et c'est elle seule qui
+ * part au serveur. Le premier choix n'est qu'un filtre — il n'a pas de `name`
+ * et n'est jamais envoyé.
+ */
+const heure = new Intl.DateTimeFormat('fr-FR', {
   hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris',
 });
 
-const euros = (c: number) => (c / 100).toFixed(2).replace('.', ',').replace(',00', '');
+interface Groupe {
+  id: string;
+  label: string;
+  dates: SeanceAchetable[];
+}
+
+const groupes: Groupe[] = [];
+for (const s of seances) {
+  let g = groupes.find((x) => x.id === s.creneauId);
+  if (!g) {
+    g = { id: s.creneauId, label: s.creneauLabel, dates: [] };
+    groupes.push(g);
+  }
+  g.dates.push(s);
+}
 
 /*
- * GROUPÉES PAR CRÉNEAU, dans l'ordre où elles arrivent. Une liste à plat de
- * quatre-vingts dates mélangeant six stages ne se parcourt pas ; groupée, on
- * cherche d'abord son stage, puis sa date.
+ * LE PRIX D'UN CRÉNEAU EST CELUI DE SES DATES, et rien ne garantit qu'elles
+ * s'accordent : une date peut être tarifée à part. On annonce donc une
+ * fourchette dès qu'elles divergent, plutôt qu'un montant qui en démentirait
+ * une — c'est la même règle que pour les places, dont on ne recopie jamais le
+ * nombre.
  */
-const groupes = seances.reduce((acc, s) => {
-  (acc[s.creneauLabel] ??= []).push(s);
-  return acc;
-}, {} as Record<string, SeanceAchetable[]>);
+const euroCourt = (c: number) => (c / 100).toFixed(2).replace('.', ',').replace(',00', '');
+
+const horaireDe = (s: SeanceAchetable) =>
+  s.fin ? `${heure.format(s.debut)} – ${heure.format(s.fin)}` : heure.format(s.debut);
+
+/**
+ * L'horaire commun à toutes les dates d'un créneau, ou rien.
+ *
+ * PRENDRE CELUI DE LA PREMIÈRE DATE AURAIT MENTI dès qu'une séance est
+ * déplacée — et `update_session_schedule` existe précisément pour cela. Quand
+ * les horaires divergent, le résumé n'en annonce aucun et chaque date porte le
+ * sien : mieux vaut le dire deux fois que de l'annoncer faux une seule.
+ */
+function horaireCommun(g: Groupe): string | null {
+  const tous = [...new Set(g.dates.map(horaireDe))];
+  return tous.length === 1 ? tous[0] : null;
+}
+
+function resume(g: Groupe): string {
+  const prix = [...new Set(g.dates.map((d) => d.prixCents))].sort((a, b) => a - b);
+  const tarif = prix.length === 1
+    ? `${euroCourt(prix[0])} €`
+    : `de ${euroCourt(prix[0])} à ${euroCourt(prix[prix.length - 1])} €`;
+
+  const lieux = [...new Set(g.dates.map((d) => d.lieu).filter(Boolean))];
+  const lieu = lieux.length === 1 ? ` · ${lieux[0]}` : '';
+
+  const quand = horaireCommun(g);
+  return `${g.label}${quand ? ` · ${quand}` : ''}${lieu} · ${tarif}`;
+}
+
+/* La date seule : le créneau est déjà dit par la liste du dessus. */
+const jour = new Intl.DateTimeFormat('fr-FR', {
+  weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris',
+});
 
 /*
  * LA RARETÉ SE DIT QUAND ELLE EST VRAIE, et se calcule ici plutôt que dans le
@@ -130,14 +192,26 @@ const mentionPlaces = (s: SeanceAchetable) =>
       </legend>
 
       <div>
-        <label for="session" class="block text-sm font-medium mb-1">Quand souhaitez-vous venir ?</label>
+        <label for="creneau" class="block text-sm font-medium mb-1">
+          {nomCreneau}
+        </label>
+        <select id="creneau" class="champ">
+          <option value="">Toutes les possibilités</option>
+          {groupes.map((g) => (
+            <option value={g.id}>{resume(g)}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label for="session" class="block text-sm font-medium mb-1">Quelle date ?</label>
         <select id="session" name="session" required class="champ">
           <option value="">Choisissez une date</option>
-          {Object.entries(groupes).map(([label, dates]) => (
-            <optgroup label={label}>
-              {dates.map((s) => (
+          {groupes.map((g) => (
+            <optgroup label={g.label} data-creneau={g.id}>
+              {g.dates.map((s) => (
                 <option value={s.id} selected={s.id === saisi.session}>
-                  {dateLongue.format(s.debut)} · {euros(s.prixCents)} €{s.lieu ? ` · ${s.lieu}` : ''}{mentionPlaces(s)}
+                  {jour.format(s.debut)}{horaireCommun(g) ? '' : ` · ${horaireDe(s)}`}{mentionPlaces(s)}
                 </option>
               ))}
             </optgroup>
@@ -209,6 +283,58 @@ const mentionPlaces = (s: SeanceAchetable) =>
     const suivre = () => { bloc.hidden = !autre.checked; };
     autre.addEventListener('change', suivre);
     suivre();
+  }
+
+  /*
+   * LES DATES SUIVENT LE CRÉNEAU CHOISI.
+   *
+   * Les groupes sont DÉTACHÉS puis rattachés, non masqués : `hidden` sur une
+   * <option> n'est pas honoré partout, et une date grisée reste une ligne qu'on
+   * lit et qu'on écarte. Une liste qui ne contient que le possible se parcourt
+   * plus vite — c'est le même geste que sur l'inscription au forfait, où le
+   * créneau suit le public de la formule.
+   *
+   * Ce premier choix ne part jamais au serveur : il n'a pas de `name`, et c'est
+   * `session` seule qui dit ce qui est acheté.
+   */
+  const creneau = document.getElementById('creneau');
+  const dates = document.getElementById('session');
+
+  if (creneau instanceof HTMLSelectElement && dates instanceof HTMLSelectElement) {
+    const groupes = [...dates.querySelectorAll('optgroup')];
+
+    const filtrer = () => {
+      const voulu = creneau.value;
+      const choisie = dates.value;
+
+      for (const g of groupes) g.remove();
+      for (const g of groupes) {
+        if (!voulu || g.dataset.creneau === voulu) dates.append(g);
+      }
+
+      // Le choix survit s'il reste possible ; sinon on revient à l'invite.
+      const existe = [...dates.options].some((o) => o.value === choisie && o.value !== '');
+      if (existe) dates.value = choisie;
+      else dates.selectedIndex = 0;
+
+      dates.dispatchEvent(new Event('change'));
+    };
+
+    /*
+     * AU RETOUR D'UNE ERREUR, la date saisie est encore là mais le filtre est
+     * vide : on le règle sur le créneau de cette date, faute de quoi la page
+     * afficherait « Toutes les possibilités » au-dessus d'une date déjà choisie.
+     */
+    const dejaChoisie = dates.selectedOptions[0];
+    if (dejaChoisie?.value) {
+      const parent = dejaChoisie.parentElement;
+      if (parent instanceof HTMLOptGroupElement && parent.dataset.creneau) {
+        creneau.value = parent.dataset.creneau;
+      }
+    }
+
+    creneau.addEventListener('change', filtrer);
+    filtrer();
   }
 
   /*

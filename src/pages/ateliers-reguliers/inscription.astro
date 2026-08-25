@@ -268,11 +268,28 @@ if (Astro.url.searchParams.has('echec')) {
           Sans JavaScript la phrase reste vraie, simplement sans le compte —
           c'est pourquoi elle est écrite d'abord dans sa forme générale.
         */}
-        <p class="mt-1 text-sm text-[var(--color-text-light)]">
-          <span data-echo-seances>Vous serez inscrit d’office aux séances de votre formule</span>,
-          réparties sur la saison. Vous pourrez changer vos dates depuis votre espace, au plus
-          tard 10 jours avant chaque séance ; il reste possible de venir à un autre créneau.
-        </p>
+        {/*
+          DEUX POINTS, PARCE QU'IL Y A DEUX FAITS. En un seul paragraphe, ce
+          qu'on obtient et ce qu'on peut encore changer se lisaient d'un bloc,
+          et la liberté de bouger — la vraie réponse à « et si je ne peux pas un
+          samedi ? » — se perdait en fin de phrase.
+        */}
+        <ul class="mt-2 space-y-1 text-sm text-[var(--color-text-light)]">
+          <li class="flex gap-2">
+            <span aria-hidden="true">·</span>
+            <span>
+              <span data-echo-seances>Vous serez inscrit d’office aux séances de votre
+              formule</span>, réparties sur la saison.
+            </span>
+          </li>
+          <li class="flex gap-2">
+            <span aria-hidden="true">·</span>
+            <span>
+              Vous pourrez changer vos dates depuis votre espace, au plus tard 10 jours avant
+              chaque séance — y compris vers d’autres jours ou d’autres horaires.
+            </span>
+          </li>
+        </ul>
       </div>
 
       <div>
