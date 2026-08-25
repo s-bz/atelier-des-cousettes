@@ -357,7 +357,10 @@ export interface IntentionLue {
  * décider. La commande n'apparaît ici qu'une fois le paiement autorisé.
  */
 export async function lireIntention(id: number | string): Promise<Resultat<IntentionLue>> {
-  const r = await appeler(`/organizations/${ORGANISATION}/checkout-intents/${id}`);
+  // `fetch` réduit les `..` d'un chemin : un identifiant qui en contient
+  // désignerait une autre ressource de l'association, avec notre jeton. Les
+  // appelants le valident déjà ; l'encoder ici ferme la porte pour de bon.
+  const r = await appeler(`/organizations/${ORGANISATION}/checkout-intents/${encodeURIComponent(String(id))}`);
   if (!r.ok) return r;
   return succes(r.valeur as IntentionLue);
 }
@@ -422,6 +425,71 @@ export function preparerAchat(o: {
       creneau_id: o.creneau.id,
       participant: o.participant,
       adhesion_cents: adhesion,
+      /*
+       * CE QUE LA COMMANDE RAPPORTE EN TOUT, adhésion comprise et réduction
+       * déduite — pas ce qui sera prélevé aujourd'hui. Les métadonnées sont le
+       * seul endroit où ce montant revient au provisionnement : `order` ne dit
+       * que ce qui a été autorisé, et sur un règlement échelonné c'est la
+       * première échéance. Une saison vendue vaut son prix entier le jour où
+       * elle est vendue, et c'est ce chiffre-là qui a un sens.
+       */
+      montant_cents: forfaitCents + adhesion,
+      ...(o.codePromo ? { code_promo: o.codePromo, reduction_cents: o.reductionCents ?? 0 } : {}),
+    },
+    ...(o.payeur ? { payeur: o.payeur } : {}),
+    urls: o.urls,
+  };
+}
+
+/**
+ * Une place à une date, mise en forme pour HelloAsso.
+ *
+ * C'est ainsi que se vendent les stages et les séances sans engagement : une
+ * place, une séance, le prix porté par la séance elle-même.
+ *
+ * L'ADHÉSION EST DÉJÀ COMPRISE DANS CE PRIX — les pages publiques l'écrivent,
+ * « il n'y a rien à régler en plus ». On n'ajoute donc pas les 15 € annuels du
+ * forfait, et l'on ne demande rien au payeur à ce sujet : la question n'a pas
+ * lieu d'être posée.
+ *
+ * ON NE L'ÉCHELONNE PAS. Quarante-cinq ou soixante euros se règlent en une
+ * fois ; un échéancier sur trois mois coûterait à l'association trois
+ * commissions pour un montant qui tient en une.
+ *
+ * LE LIBELLÉ PORTE LA DATE. Le relevé bancaire dira « Les P'tits Piafs » : sans
+ * la date, deux inscriptions au même stage — pour deux enfants, ou deux
+ * sessions — donnent deux lignes identiques que personne ne sait départager.
+ */
+export function preparerAchatUnite(o: {
+  seance: { id: string; debut: Date; prixCents: number };
+  creneau: { id: string; label: string };
+  participant: string;
+  saison: string;
+  /** Réduction accordée, déjà validée. */
+  reductionCents?: number;
+  /** Le code employé, pour la trace et le décompte des usages. */
+  codePromo?: string | null;
+  achatLe: Date;
+  payeur?: Payeur;
+  urls: { retour: string; erreur: string; retourArriere: string };
+}): Achat {
+  const quand = new Intl.DateTimeFormat('fr-FR', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris',
+  }).format(o.seance.debut);
+
+  return {
+    libelle: `${o.creneau.label} — ${quand} — ${o.participant} (adhésion comprise)`,
+    totalCents: Math.max(0, o.seance.prixCents - (o.reductionCents ?? 0)),
+    versements: 1,
+    achatLe: o.achatLe,
+    metadata: {
+      saison: o.saison,
+      produit: 'seance',
+      session_id: o.seance.id,
+      creneau_id: o.creneau.id,
+      participant: o.participant,
+      // Réduction déduite ; rien ne s'y ajoute, l'adhésion est dans le prix.
+      montant_cents: Math.max(0, o.seance.prixCents - (o.reductionCents ?? 0)),
       ...(o.codePromo ? { code_promo: o.codePromo, reduction_cents: o.reductionCents ?? 0 } : {}),
     },
     ...(o.payeur ? { payeur: o.payeur } : {}),

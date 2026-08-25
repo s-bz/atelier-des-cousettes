@@ -85,9 +85,12 @@ const schemas = buildServicePageSchemas({
   <Hero flush title={page.title} subtitle={page.subtitle}
         coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
 
-  {page.introduction && (
-    <IntroSection text={page.introduction} cta={false} fond />
-  )}
+  {/*
+    PAS DE BOUTON D'EN-TÊTE. Il menait à la liste des sept stages, en tête
+    d'une page qui EST cette liste — et il fallait de toute façon en choisir un
+    ensuite. Chaque carte porte le sien, qui sait de quel stage il parle.
+  */}
+  {page.introduction && <IntroSection text={page.introduction} cta={false} fond />}
 
   {stages.length === 0 ? (
     <section class="py-16 md:py-20">
@@ -118,6 +121,7 @@ const schemas = buildServicePageSchemas({
                   ? `${f.formules.length} formules${f.lieuCommun ? ` · ${f.lieuCommun}` : ''}`
                   : `${formule(f.formules[0].seances_par_stage)}${f.lieuCommun ? ` · ${f.lieuCommun}` : ''}`,
               ].filter((l): l is string => Boolean(l))}
+              actionLabel={page.stageDetailLabel ?? undefined}
             />
           ))}
         </div>
@@ -125,11 +129,13 @@ const schemas = buildServicePageSchemas({
     </section>
   )}
 
-  <Temoignages page="stages" />
+  {/* Les fonds alternent : introduction, stages, témoignages, FAQ, liens. */}
+  <Temoignages page="stages" fond />
 
-  <FaqSection title={page.faqSectionTitle} items={faqAJour} ctaLabel={page.ctaLabel} fond />
+  <FaqSection title={page.faqSectionTitle} items={faqAJour} ctaLabel={page.ctaLabel} fond={false} />
 
   {page.crossLinksText && (
-    <CrossLinksSection text={page.crossLinksText} excludeHref="/stages-thematiques/" />
+    <CrossLinksSection text={page.crossLinksText} excludeHref="/stages-thematiques/"
+                       class="bg-[var(--color-bg-accent)]" />
   )}
 </BaseLayout>

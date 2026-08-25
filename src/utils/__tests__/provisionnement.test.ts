@@ -24,6 +24,7 @@ describe('lireCommande', () => {
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.valeur).toEqual({
+      produit: 'forfait',
       orderId: '88123',
       codePromo: null,
       email: 'marie@exemple.fr',
@@ -33,6 +34,10 @@ describe('lireCommande', () => {
       formuleId: '2026-2027-adultes-9',
       creneauId: 'atelier-du-jeudi-matin',
       adhesionCents: 1500,
+      // Cette intention-là n'en porte pas : elle est du même âge que celles
+      // créées avant que le champ existe. Zéro plutôt qu'absent — la mesure
+      // d'audience additionne, elle ne doit pas rencontrer `undefined`.
+      montantCents: 0,
     });
   });
 
@@ -81,7 +86,7 @@ describe('lireCommande', () => {
     const { adhesion_cents, ...metadata } = intentionPayee.metadata;
     const r = lireCommande({ ...intentionPayee, metadata });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.valeur.adhesionCents).toBe(0);
+    if (r.ok && r.valeur.produit === 'forfait') expect(r.valeur.adhesionCents).toBe(0);
   });
 
   it('sépare le prénom du nom, et supporte un nom composé', () => {
@@ -95,5 +100,76 @@ describe('lireCommande', () => {
 
     const seul = avec('Léa');
     expect(seul.ok && seul.valeur).toMatchObject({ prenom: 'Léa', nom: '' });
+  });
+
+  it('tient pour un forfait une intention d’avant les achats à l’unité', () => {
+    // Les intentions créées avant l'ajout des stages ne portent pas `produit`.
+    // Une famille qui paie le lendemain de la mise en ligne ne doit pas tomber
+    // dans la file « à traiter » pour un champ qui n'existait pas.
+    const { produit, ...sansProduit } = intentionPayee.metadata as Record<string, unknown>;
+    const r = lireCommande({ ...intentionPayee, metadata: sansProduit });
+    expect(r.ok && r.valeur.produit).toBe('forfait');
+  });
+});
+
+const seancePayee = {
+  id: 7001,
+  metadata: {
+    saison: '2026-2027',
+    produit: 'seance',
+    session_id: '5f0f9f2e-1111-4222-8333-444455556666',
+    creneau_id: 'stage-banane',
+    participant: 'Léa D.',
+  },
+  order: { id: 90210, payer: { email: 'marie@exemple.fr' } },
+};
+
+describe('lireCommande — une place à l’unité', () => {
+  it('lit la séance achetée', () => {
+    const r = lireCommande(seancePayee);
+    expect(r.ok).toBe(true);
+    if (!r.ok || r.valeur.produit !== 'seance') throw new Error('produit inattendu');
+    expect(r.valeur).toEqual({
+      produit: 'seance',
+      orderId: '90210',
+      codePromo: null,
+      email: 'marie@exemple.fr',
+      prenom: 'Léa',
+      nom: 'D.',
+      saison: '2026-2027',
+      sessionId: '5f0f9f2e-1111-4222-8333-444455556666',
+      creneauId: 'stage-banane',
+      montantCents: 0,
+    });
+  });
+
+  it('lit le montant quand l’intention le porte', () => {
+    /*
+     * C'EST LE SEUL CHEMIN PAR LEQUEL UN CHIFFRE D'AFFAIRES REMONTE. `order` ne
+     * dit que ce qui a été autorisé — la première échéance sur un règlement
+     * échelonné — et le provisionnement ne relit ni la formule ni le tarif.
+     * Sans ce champ, une saison vendue vaudrait zéro dans la mesure.
+     */
+    const r = lireCommande({
+      ...seancePayee,
+      metadata: { ...seancePayee.metadata, montant_cents: 4500 },
+    });
+    expect(r.ok && r.valeur.montantCents).toBe(4500);
+  });
+
+  it('exige la date précise, et non le seul créneau', () => {
+    // Un stage a plusieurs dates au catalogue : sans `session_id`, provisionner
+    // reviendrait à choisir une date au hasard pour quelqu'un qui en a payé une.
+    const { session_id, ...metadata } = seancePayee.metadata;
+    const r = lireCommande({ ...seancePayee, metadata });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.erreur).toMatch(/session_id/);
+  });
+
+  it('n’attend aucune adhésion : elle est comprise dans le prix', () => {
+    // Les pages publiques l'écrivent — « il n'y a rien à régler en plus ». Un
+    // achat à l'unité ne porte donc pas d'`adhesion_cents`, et n'en réclame pas.
+    const r = lireCommande(seancePayee);
+    expect(r.ok && 'adhesionCents' in r.valeur).toBe(false);
   });
 });

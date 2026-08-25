@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import { getRequestClient, getAdminClient } from '../../utils/supabase';
+import { mesurer } from '../../utils/mesure';
 
 /**
  * Retour de Google. Échange le code d'autorisation contre une session, côté
@@ -61,15 +62,25 @@ if (!compte) {
   // session immédiatement : sans cela, une session ouverte subsisterait pour
   // quelqu'un qui n'a aucun droit.
   await supabase.auth.signOut();
+  /*
+   * CE REFUS-LÀ MÉRITE D'ÊTRE COMPTÉ. Il désigne presque toujours quelqu'un qui
+   * a une adresse chez nous et une autre chez Google — et qui est renvoyé vers
+   * Isabelle sans comprendre pourquoi. En volume, c'est un défaut à corriger,
+   * pas un incident isolé.
+   */
+  await mesurer('connexion_refusee', email, { motif: 'google_inconnu', etape: 'callback' });
   return Astro.redirect('/espace-membre/connexion/?inconnu=1');
 }
 
-if (!compte.auth_user_id) {
+const premiere = !compte.auth_user_id;
+if (premiere) {
   await admin
     .from('accounts')
     .update({ auth_user_id: data.user.id })
     .eq('id', compte.id);
 }
+
+await mesurer('connexion_reussie', email, { methode: 'google', premiere });
 
 return Astro.redirect('/espace-membre/');
 ---

@@ -25,7 +25,7 @@ Le **registre des adhérents de l'association est tenu dans l'espace adhérent d
 
 ### En visitant le site
 
-Aucun compte n'est nécessaire pour consulter le site. Une mesure d'audience est réalisée afin de savoir quelles pages sont consultées ; le détail figure au paragraphe « Cookies et mesure d'audience ».
+Aucun compte n'est nécessaire pour consulter le site. Une mesure d'audience sans cookie est réalisée afin de savoir quelles pages sont consultées ; le détail figure au paragraphe « Cookies et mesure d'audience ».
 
 Si vous utilisez le formulaire de contact, vous transmettez les informations que vous y saisissez : nom, adresse e-mail, et le contenu de votre message.
 
@@ -49,7 +49,7 @@ Pour gérer les inscriptions et les présences :
 | Vous prévenir d'une séance à venir ou annulée | Exécution du contrat |
 | Vous permettre d'accéder à votre espace personnel | Exécution du contrat |
 | Répondre à une demande envoyée par le formulaire de contact | Intérêt légitime à répondre |
-| Mesurer l'audience du site, sans cookie ni identification | Intérêt légitime |
+| Mesurer l'audience du site, et le bon déroulement des inscriptions et des règlements | Intérêt légitime |
 | Respecter les obligations comptables | Obligation légale |
 
 Vos données ne sont **jamais vendues**, ni cédées à des fins publicitaires.
@@ -64,7 +64,7 @@ Seuls des prestataires techniques strictement nécessaires au fonctionnement du 
 | Resend | Envoi des e-mails du service | Union européenne |
 | Vercel | Hébergement du site | Union européenne |
 | Tally | Formulaire de contact | Union européenne |
-| PostHog | Mesure d'audience du site | Union européenne |
+| PostHog | Mesure d'audience du site et des inscriptions | Union européenne |
 | HelloAsso | Encaissement des adhésions, forfaits, stages et séances | France |
 | Google | Connexion « Continuer avec Google », si vous la choisissez | États-Unis |
 
@@ -123,15 +123,27 @@ Si la réponse ne vous satisfait pas, vous pouvez saisir la **CNIL** — 3 place
 
 **Ce site ne dépose aucun cookie de mesure d'audience, et n'affiche donc aucun bandeau de consentement.**
 
-La fréquentation est mesurée par PostHog, hébergé dans l'Union européenne et configuré en **mode sans cookie** : rien n'est écrit ni lu sur votre appareil, ni cookie ni aucune autre forme de stockage.
+La fréquentation est mesurée par **PostHog**, hébergé dans l'Union européenne et configuré en **mode sans cookie** : rien n'est écrit ni lu sur votre appareil, ni cookie ni aucune autre forme de stockage.
 
-Pour compter les visiteurs sans vous suivre, PostHog calcule sur ses propres serveurs un **condensat non réversible** à partir de données techniques ordinaires (adresse IP, navigateur). Ce condensat change régulièrement, ne permet pas de remonter jusqu'à vous, et n'est jamais rapproché de votre compte adhérent. L'enregistrement de session et la capture automatique des interactions sont désactivés.
+Pour compter les visiteurs sans vous suivre, PostHog calcule sur ses propres serveurs un **condensat non réversible** à partir de données techniques ordinaires (adresse IP, navigateur). Ce condensat change régulièrement, ne permet pas de remonter jusqu'à vous, et n'est jamais rapproché de votre compte adhérent. L'enregistrement de session et la capture automatique des interactions sont désactivés : seules les actions que nous avons nommées une à une — l'ouverture d'un formulaire de contact, le départ vers une page d'inscription — sont comptées.
 
 Les mesures transitent par le sous-domaine `b.atelier-des-cousettes.fr`, qui relaie vers PostHog.
 
 Une seconde mesure, également sans cookie, est réalisée par l'hébergeur.
 
 Ni l'une ni l'autre ne permet de vous suivre sur d'autres sites, et aucune donnée n'est transmise à des fins publicitaires.
+
+### Ce que nous mesurons de nos propres inscriptions
+
+Une inscription, un règlement, une place réservée ou libérée, une connexion : ces événements sont enregistrés **depuis nos serveurs**, et **rattachés à votre adresse électronique**. Rien n'est écrit sur votre appareil pour cela — c'est notre serveur qui les transmet à PostHog, pas votre navigateur.
+
+Ils servent à une seule chose : comprendre comment fonctionne le service que nous vous rendons. Combien d'inscriptions s'interrompent au moment de payer, si le délai d'annulation de dix jours est tenable, si un règlement encaissé n'a pas été rattaché à la bonne personne. C'est aussi ce qui nous alerte lorsqu'une commande payée n'a pas abouti à une inscription — le pire incident que ce site puisse produire.
+
+Cette mesure repose sur notre **intérêt légitime** à faire fonctionner correctement le service. Elle ne sert à aucun profilage, aucune publicité, et n'est transmise à personne d'autre que PostHog.
+
+**Vous pouvez vous y opposer à tout moment** en écrivant à **info@atelier-des-cousettes.fr** : nous cesserons alors de vous mesurer, sans que cela change quoi que ce soit à votre inscription ni à votre accès.
+
+### Le reste
 
 Les vidéos intégrées proviennent de YouTube en mode de confidentialité renforcée : aucun cookie n'est déposé tant que vous ne lancez pas la lecture.
 

@@ -1,0 +1,430 @@
+---
+import type { SeanceAchetable } from '../utils/achat-unite';
+
+interface Props {
+  seances: SeanceAchetable[];
+  erreur: string | null;
+  saisi: { email: string; payeurPrenom: string; payeurNom: string; autre: boolean;
+           prenom: string; nom: string; session: string; code: string };
+  /** Ce qu'on achète, au singulier : « ce stage », « cette séance ». */
+  nomProduit: string;
+  /** Le libellé du premier choix : « Quel stage ? », « Quel créneau ? ». */
+  nomCreneau: string;
+  /**
+   * Le créneau déjà choisi, quand on arrive depuis sa fiche.
+   *
+   * Retenu CÔTÉ SERVEUR, dans l'attribut `selected` : sans JavaScript la liste
+   * des dates les montre encore toutes, groupées, mais le premier choix est
+   * juste — et avec, le filtrage se fait au chargement.
+   */
+  creneauChoisi?: string | null;
+}
+
+const { seances, erreur, saisi, nomProduit, nomCreneau, creneauChoisi } = Astro.props;
+
+/*
+ * LE FORMULAIRE D'UNE PLACE À LA DATE.
+ *
+ * Il reprend celui du forfait — mêmes trois sections, même case « ce n'est pas
+ * moi qui participe », même code de réduction — parce que c'est la même
+ * personne qui remplit l'un ou l'autre, et qu'un second formulaire aux
+ * habitudes différentes se remplit moins vite.
+ *
+ * TROIS QUESTIONS EN MOINS, pourtant : pas de formule (le prix est celui de la
+ * date), pas de créneau (la date le porte), et PAS D'ADHÉSION — elle est
+ * comprise dans le prix, les pages publiques l'annoncent, et la redemander
+ * ici contredirait ce qu'on vient de lire.
+ *
+ * PAS D'ÉCHELONNEMENT NON PLUS : quarante-cinq euros se règlent en une fois.
+ */
+
+/*
+ * DEUX CHOIX PLUTÔT QU'UN, parce qu'il y a quatre-vingts dates.
+ *
+ * Une seule liste les mélangeait toutes : six créneaux, trois tarifs et deux
+ * horaires dans quatre-vingts lignes, où il fallait lire chaque date pour
+ * retrouver celles du jeudi matin. On choisit maintenant d'abord SON CRÉNEAU —
+ * le jour, l'heure, le lieu et le prix, c'est-à-dire tout ce qui décide — puis
+ * la date parmi les siennes seulement, qui sont une dizaine.
+ *
+ * SANS JAVASCRIPT, LES DEUX LISTES RESTENT UTILISABLES : la seconde contient
+ * toujours l'ensemble des dates, groupées par créneau, et c'est elle seule qui
+ * part au serveur. Le premier choix n'est qu'un filtre — il n'a pas de `name`
+ * et n'est jamais envoyé.
+ */
+const heure = new Intl.DateTimeFormat('fr-FR', {
+  hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris',
+});
+
+interface Groupe {
+  id: string;
+  label: string;
+  dates: SeanceAchetable[];
+}
+
+const groupes: Groupe[] = [];
+for (const s of seances) {
+  let g = groupes.find((x) => x.id === s.creneauId);
+  if (!g) {
+    g = { id: s.creneauId, label: s.creneauLabel, dates: [] };
+    groupes.push(g);
+  }
+  g.dates.push(s);
+}
+
+/*
+ * LE PRIX D'UN CRÉNEAU EST CELUI DE SES DATES, et rien ne garantit qu'elles
+ * s'accordent : une date peut être tarifée à part. On annonce donc une
+ * fourchette dès qu'elles divergent, plutôt qu'un montant qui en démentirait
+ * une — c'est la même règle que pour les places, dont on ne recopie jamais le
+ * nombre.
+ */
+const euroCourt = (c: number) => (c / 100).toFixed(2).replace('.', ',').replace(',00', '');
+
+/*
+ * LA DURÉE DANS LE PREMIER CHOIX, L'HEURE DANS LE SECOND.
+ *
+ * Le résumé a d'abord porté l'horaire — mais seulement quand toutes les dates
+ * s'accordaient, faute de quoi il aurait menti. Le résultat était une liste
+ * bancale : « Initiation · 14:00 – 17:00 · 45 € » au-dessus de « Stage sac ·
+ * 45 € », et l'on cherchait ce qui manquait à la seconde.
+ *
+ * La durée règle les deux problèmes à la fois. Elle est CE QU'ON VEUT SAVOIR en
+ * choisissant un stage — trois heures ou une journée —, elle ne dépend pas du
+ * jour, et elle s'affiche donc toujours. L'heure exacte, elle, appartient à la
+ * date : c'est là qu'on la lit, sur chaque ligne, sans exception — début ET
+ * fin, pour qu'on sache à quelle heure on repart sans avoir à faire l'addition.
+ */
+const minutes = (s: SeanceAchetable) =>
+  s.fin ? Math.round((s.fin.getTime() - s.debut.getTime()) / 60000) : 0;
+
+/** « 14:00 – 18:00 », ou l'heure de début seule si la fin manque. */
+const plage = (s: SeanceAchetable) =>
+  s.fin ? `${heure.format(s.debut)} – ${heure.format(s.fin)}` : heure.format(s.debut);
+
+/** « 3 h », « 1 h 30 » — la même convention que sur les fiches de stage. */
+const enHeures = (m: number) => (m % 60 === 0 ? `${m / 60} h` : `${Math.floor(m / 60)} h ${m % 60}`);
+
+function duree(g: Groupe): string {
+  const toutes = [...new Set(g.dates.map(minutes).filter((m) => m > 0))].sort((a, b) => a - b);
+  if (!toutes.length) return '';
+  return toutes.length === 1
+    ? ` · ${enHeures(toutes[0])}`
+    : ` · de ${enHeures(toutes[0])} à ${enHeures(toutes[toutes.length - 1])}`;
+}
+
+function resume(g: Groupe): string {
+  const prix = [...new Set(g.dates.map((d) => d.prixCents))].sort((a, b) => a - b);
+  const tarif = prix.length === 1
+    ? `${euroCourt(prix[0])} €`
+    : `de ${euroCourt(prix[0])} à ${euroCourt(prix[prix.length - 1])} €`;
+
+  const lieux = [...new Set(g.dates.map((d) => d.lieu).filter(Boolean))];
+  const lieu = lieux.length === 1 ? ` · ${lieux[0]}` : '';
+
+  return `${g.label}${duree(g)}${lieu} · ${tarif}`;
+}
+
+/* La date seule : le créneau est déjà dit par la liste du dessus. */
+const jour = new Intl.DateTimeFormat('fr-FR', {
+  weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris',
+});
+
+/*
+ * LA RARETÉ SE DIT QUAND ELLE EST VRAIE, et se calcule ici plutôt que dans le
+ * gabarit : une comparaison `<=` au milieu du JSX se lit mal, et le compilateur
+ * la prend volontiers pour une balise ouvrante.
+ */
+const mentionPlaces = (s: SeanceAchetable) =>
+  s.placesRestantes > 2 ? ''
+  : s.placesRestantes === 1 ? ' · dernière place'
+  : ` · plus que ${s.placesRestantes} places`;
+---
+
+{erreur && (
+  <p class="mt-6 rounded-xl bg-[var(--color-bg-pink)] px-4 py-3 text-white">{erreur}</p>
+)}
+
+{!seances.length ? (
+  <p class="mt-8 rounded-xl bg-[var(--color-bg-accent)] px-4 py-4 text-[var(--color-text)]">
+    Aucune date n’est ouverte à la réservation pour le moment. Écrivez-nous à{' '}
+    <a href="mailto:info@atelier-des-cousettes.fr" class="underline">
+      info@atelier-des-cousettes.fr</a>{' '}
+    et nous vous préviendrons dès que le calendrier est publié.
+  </p>
+) : (
+  <form method="post" class="mt-8 space-y-6">
+    <fieldset class="space-y-4">
+      <legend class="mb-2 text-lg font-bold text-[var(--color-heading)]"
+              style="font-family: var(--font-heading)">
+        Vous, qui réglez
+      </legend>
+
+      <div>
+        <label for="email" class="block text-sm font-medium mb-1">Votre adresse électronique</label>
+        <input id="email" name="email" type="email" required value={saisi.email}
+               autocomplete="email" class="champ" />
+        <p class="mt-1 text-sm text-[var(--color-text-light)]">
+          C’est elle qui ouvrira l’accès à votre espace, où vous retrouverez votre réservation.
+        </p>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="payeurPrenom" class="block text-sm font-medium mb-1">Prénom</label>
+          <input id="payeurPrenom" name="payeurPrenom" required value={saisi.payeurPrenom}
+                 autocomplete="given-name" class="champ" />
+        </div>
+        <div>
+          <label for="payeurNom" class="block text-sm font-medium mb-1">Nom</label>
+          <input id="payeurNom" name="payeurNom" required value={saisi.payeurNom}
+                 autocomplete="family-name" class="champ" />
+        </div>
+      </div>
+
+      <label class="flex items-start gap-2">
+        <input type="checkbox" id="autre" name="autre" value="oui" checked={saisi.autre}
+               class="mt-1" />
+        <span class="text-sm">
+          La personne qui participe n’est pas moi
+        </span>
+      </label>
+    </fieldset>
+
+    <fieldset id="participant" class="space-y-4" hidden={!saisi.autre}>
+      <legend class="mb-2 text-lg font-bold text-[var(--color-heading)]"
+              style="font-family: var(--font-heading)">
+        La personne qui participe
+      </legend>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="prenom" class="block text-sm font-medium mb-1">Prénom</label>
+          <input id="prenom" name="prenom" value={saisi.prenom} class="champ" />
+        </div>
+        <div>
+          <label for="nom" class="block text-sm font-medium mb-1">Nom</label>
+          <input id="nom" name="nom" value={saisi.nom} class="champ" />
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="space-y-4">
+      <legend class="mb-2 text-lg font-bold text-[var(--color-heading)]"
+              style="font-family: var(--font-heading)">
+        La date
+      </legend>
+
+      <div>
+        <label for="creneau" class="block text-sm font-medium mb-1">
+          {nomCreneau}
+        </label>
+        <select id="creneau" class="champ">
+          <option value="">Toutes les possibilités</option>
+          {groupes.map((g) => (
+            <option value={g.id} selected={g.id === creneauChoisi}>{resume(g)}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label for="session" class="block text-sm font-medium mb-1">Quelle date ?</label>
+        <select id="session" name="session" required class="champ">
+          <option value="">Choisissez une date</option>
+          {groupes.map((g) => (
+            <optgroup label={g.label} data-creneau={g.id}>
+              {g.dates.map((s) => (
+                <option value={s.id} selected={s.id === saisi.session}>
+                  {jour.format(s.debut)} · {plage(s)}{mentionPlaces(s)}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        {/*
+          LES DATES COMPLÈTES NE SONT PAS DANS LA LISTE — ni grisées, ni
+          barrées : on ne fait pas lire ce qu'on ne peut pas choisir. Le compte
+          affiché vieillit de quelques minutes, et c'est la base qui tranche au
+          moment de poser la place.
+        */}
+        <p class="mt-1 text-sm text-[var(--color-text-light)]">
+          Seules les dates où il reste de la place apparaissent. L’adhésion à l’association
+          est comprise dans le tarif : il n’y a rien à régler en plus.
+        </p>
+      </div>
+
+    </fieldset>
+
+    <div id="devis" hidden class="rounded-xl bg-[var(--color-bg-accent)] px-4 py-3">
+      <p class="font-medium text-[var(--color-heading)]" id="devis-total"></p>
+
+      {/*
+        LE CODE DE RÉDUCTION, REPLIÉ DERRIÈRE UN LIEN.
+
+        En champ ouvert au milieu du formulaire, il annonçait à tous qu'une
+        remise existe — et qui n'en a pas se demande ce qu'il rate, juste avant
+        de payer. Replié, il ne coûte rien à qui l'ignore et reste à un clic de
+        qui a reçu un code. Sa place est dans ce cadre : c'est le montant qu'il
+        change, et le verdict s'affiche sous le champ, là où l'on peut encore en
+        essayer un autre.
+      */}
+      <details class="mt-2" open={Boolean(saisi.code)}>
+        <summary class="cursor-pointer text-sm text-[var(--color-button)] underline">
+          Code promo ?
+        </summary>
+        <input id="code" name="code" value={saisi.code} autocapitalize="characters"
+               class="champ mt-2" placeholder="Saisissez votre code" />
+        <p id="code-retour" class="mt-1 text-sm" aria-live="polite"></p>
+      </details>
+
+      <p class="mt-2 text-sm text-[var(--color-text-light)]">
+        HelloAsso proposera d’y ajouter une contribution facultative, modifiable jusqu’à zéro.
+      </p>
+    </div>
+
+    <button type="submit"
+            class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
+      Réserver ma place
+    </button>
+
+    {/*
+      CE QUI SE DIT AU MOMENT DE PAYER, ET PAS AVANT. Ces deux phrases ouvraient
+      la page, en bandeau, avant qu'on ait rien choisi : un mur de réassurance
+      posé devant quelqu'un qui n'a encore aucune décision à rassurer.
+
+      Elles se sont séparées selon ce qu'elles sont. « L'adhésion est comprise »
+      est un fait de PRIX : il vit sous la liste des dates et dans le devis, là
+      où le montant s'affiche. Le nom qui paraîtra sur le relevé est un fait de
+      PAIEMENT : il ne sert qu'ici, sous le bouton, où il évite le « qui m'a
+      prélevé ? » du lendemain.
+    */}
+    <p class="text-sm text-[var(--color-text-light)]">
+      Le règlement se fait sur la page sécurisée de HelloAsso : votre relevé bancaire portera
+      « Les P’tits Piafs », le nom de l’association.
+    </p>
+
+    <p class="text-sm text-[var(--color-text-light)]">
+      En réservant {nomProduit}, vous acceptez les{' '}
+      <a href="/conditions/" class="underline">conditions de vente</a> — quatorze jours pour
+      vous rétracter.
+    </p>
+  </form>
+)}
+
+<script>
+  /* Les champs du participant n'apparaissent que s'il diffère du payeur. */
+  const autre = document.getElementById('autre');
+  const bloc = document.getElementById('participant');
+  if (autre instanceof HTMLInputElement && bloc) {
+    const suivre = () => { bloc.hidden = !autre.checked; };
+    autre.addEventListener('change', suivre);
+    suivre();
+  }
+
+  /*
+   * LES DATES SUIVENT LE CRÉNEAU CHOISI.
+   *
+   * Les groupes sont DÉTACHÉS puis rattachés, non masqués : `hidden` sur une
+   * <option> n'est pas honoré partout, et une date grisée reste une ligne qu'on
+   * lit et qu'on écarte. Une liste qui ne contient que le possible se parcourt
+   * plus vite — c'est le même geste que sur l'inscription au forfait, où le
+   * créneau suit le public de la formule.
+   *
+   * Ce premier choix ne part jamais au serveur : il n'a pas de `name`, et c'est
+   * `session` seule qui dit ce qui est acheté.
+   */
+  const creneau = document.getElementById('creneau');
+  const dates = document.getElementById('session');
+
+  if (creneau instanceof HTMLSelectElement && dates instanceof HTMLSelectElement) {
+    const groupes = [...dates.querySelectorAll('optgroup')];
+
+    const filtrer = () => {
+      const voulu = creneau.value;
+      const choisie = dates.value;
+
+      for (const g of groupes) g.remove();
+      for (const g of groupes) {
+        if (!voulu || g.dataset.creneau === voulu) dates.append(g);
+      }
+
+      // Le choix survit s'il reste possible ; sinon on revient à l'invite.
+      const existe = [...dates.options].some((o) => o.value === choisie && o.value !== '');
+      if (existe) dates.value = choisie;
+      else dates.selectedIndex = 0;
+
+      dates.dispatchEvent(new Event('change'));
+    };
+
+    /*
+     * AU RETOUR D'UNE ERREUR, la date saisie est encore là mais le filtre est
+     * vide : on le règle sur le créneau de cette date, faute de quoi la page
+     * afficherait « Toutes les possibilités » au-dessus d'une date déjà choisie.
+     */
+    const dejaChoisie = dates.selectedOptions[0];
+    if (dejaChoisie?.value) {
+      const parent = dejaChoisie.parentElement;
+      if (parent instanceof HTMLOptGroupElement && parent.dataset.creneau) {
+        creneau.value = parent.dataset.creneau;
+      }
+    }
+
+    creneau.addEventListener('change', filtrer);
+    filtrer();
+  }
+
+  /*
+   * CE QUE ÇA VA COÛTER, PENDANT QU'ON REMPLIT. Le chiffrage vient du serveur :
+   * c'est le prix de la base qui sera facturé, et le refaire ici donnerait deux
+   * arithmétiques à tenir d'accord. Sans JavaScript, le bloc reste vide et le
+   * formulaire fonctionne — le devis est un confort, pas une étape.
+   */
+  const devis = document.getElementById('devis');
+  const session = document.getElementById('session') as HTMLSelectElement | null;
+  const champCode = document.getElementById('code') as HTMLInputElement | null;
+  const total = document.getElementById('devis-total');
+  const ligneCode = document.getElementById('code-retour');
+
+  if (devis && session && total) {
+    const euros = (c: number) =>
+      (c / 100).toFixed(2).replace('.', ',').replace(',00', '') + ' €';
+
+    let enVol: AbortController | null = null;
+    let minuterie: ReturnType<typeof setTimeout> | undefined;
+
+    async function chiffrer() {
+      if (!session!.value) { devis!.hidden = true; return; }
+
+      const params = new URLSearchParams({ session: session!.value });
+      if (champCode?.value.trim()) params.set('code', champCode.value.trim());
+
+      // Une réponse tardive ne doit pas écraser une plus récente.
+      enVol?.abort();
+      enVol = new AbortController();
+
+      try {
+        const r = await fetch(`/api/devis-unite.json?${params}`, { signal: enVol.signal });
+        const d = await r.json();
+        if (!r.ok) { devis!.hidden = true; return; }
+
+        total!.textContent = `À régler : ${euros(d.totalCents)} — adhésion comprise`;
+        if (ligneCode) {
+          ligneCode.textContent = d.codeErreur
+            ? d.codeErreur
+            : d.reductionCents ? `Code appliqué : ${euros(d.reductionCents)} de moins.` : '';
+          ligneCode.className = `mt-1 text-sm ${d.codeErreur ? 'text-[var(--color-bg-pink)]' : 'text-[var(--color-button)]'}`;
+        }
+        devis!.hidden = false;
+      } catch (e) {
+        if ((e as Error)?.name !== 'AbortError') devis!.hidden = true;
+      }
+    }
+
+    session.addEventListener('change', chiffrer);
+    champCode?.addEventListener('input', () => {
+      clearTimeout(minuterie);
+      minuterie = setTimeout(chiffrer, 400);
+    });
+
+    chiffrer();
+  }
+</script>

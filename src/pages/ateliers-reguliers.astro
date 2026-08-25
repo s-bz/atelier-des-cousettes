@@ -18,6 +18,7 @@ import {
   grilleAvecPrixDeLaBase,
   lireFormules,
   lireTarifs,
+  montantFr,
   prixDesOffres,
 } from '../utils/tarifs';
 import { getAdminClient } from '../utils/supabase';
@@ -135,7 +136,7 @@ const supabase = getAdminClient();
 const { data: enBase, error } = await supabase
   .from('creneaux')
   .select(`
-    label, audience, default_location, default_start_time, default_end_time,
+    id, label, audience, default_location, default_start_time, default_end_time,
     default_unit_price_cents, default_capacity,
     sessions(starts_at, ends_at, capacity, places_attente, status, bookings(status))
   `)
@@ -166,6 +167,9 @@ const datesDe = (nom: string) =>
  * cette page sert à découvrir avant de basculer les pages publiées.
  */
 const inconnuEnBase = (nom: string) => !parNom.has(cle(nom));
+
+/** L'identifiant en base d'un créneau du contenu — celui que porte le lien d'inscription. */
+const idDe = (nom: string) => parNom.get(cle(nom))?.id as string | undefined;
 
 /**
  * ET L'INVERSE : un créneau en base qu'aucune fiche du contenu ne décrit.
@@ -281,6 +285,87 @@ const tarifs = tarifsPage.map((t) => ({
 }));
 
 /**
+ * Ce groupe a-t-il seulement une date à venir ?
+ *
+ * VERDALLE N'EN A AUCUNE : ses séances « se calent avec le groupe ». Lui
+ * afficher « 36 €/mois, environ 1 séance/mois » promettait un rythme que
+ * personne ne peut tenir, et un forfait que la page d'inscription refuse déjà
+ * de vendre — elle écarte les créneaux sans date, faute de quoi on paierait une
+ * saison qu'aucune inscription d'office ne pourrait honorer.
+ *
+ * La règle vaut pour tous, pas pour Verdalle seul : un groupe retrouve son
+ * tarif dès qu'on lui programme des dates, sans qu'on y touche.
+ */
+const groupeOuvert = (g: { items: readonly { name: string }[] }) =>
+  g.items.some((c) => datesDe(c.name).length > 0);
+
+/**
+ * Une ligne de la grille, tout entière déduite de la base.
+ *
+ * « 18 séances — 59 €/mois (531 € au total), environ 2 séances/mois — soit
+ * 29,50 € la séance, 18 % moins cher »
+ *
+ * POURQUOI ELLE N'EST PLUS ÉCRITE DANS LE CMS. La grille tenait ses phrases
+ * d'Isabelle, où `grilleAvecPrixDeLaBase` venait glisser les nombres. Ce
+ * partage tenait tant que la ligne ne disait que ce qui s'écrit : « environ une
+ * fois par mois sur la saison ». Il ne tient plus dès qu'elle compare deux
+ * formules — le prix à la séance et l'écart en pourcentage ne se saisissent
+ * pas, ils se calculent, et un tarif modifié en base les aurait laissés faux
+ * dans le CMS.
+ *
+ * L'AVANTAGE SE MESURE CONTRE LA PLUS PETITE FORMULE du même public, celle
+ * qu'on prend par défaut. C'est bien elle la référence : « moins cher » n'a de
+ * sens que par rapport à ce qu'on aurait payé autrement.
+ */
+interface LigneTarif {
+  produit: string;
+  mensuel: string;
+  /** Le reste de la phrase : total, rythme, et l'avantage s'il y en a un. */
+  suite: string;
+}
+
+function lignesDe(audience: string): LigneTarif[] {
+  const desSiens = (formules ?? [])
+    .filter((f) => f.audience === audience)
+    .sort((a, b) => a.seances - b.seances);
+
+  if (!desSiens.length) return [];
+
+  // La référence : la plus petite formule, et son prix à la séance.
+  const reference = desSiens[0].prixCents / desSiens[0].seances;
+
+  return desSiens.map((f) => {
+    const parSeance = f.prixCents / f.seances;
+    // Un pourcentage entier : 18,06 % s'annonce « 18 % ». La décimale ne dit
+    // rien de plus à qui compare deux forfaits, et « 18,1 % » a l'air d'une
+    // précision qu'on n'a pas.
+    const ecart = Math.round((1 - parSeance / reference) * 100);
+
+    /*
+     * LE RYTHME EST UN ARRONDI, ET LE MOT « ENVIRON » LE DIT. Seize séances sur
+     * dix mensualités font 1,6 par mois — un nombre qu'on n'annonce pas à un
+     * parent. On dit « environ 2 », ce qui est la façon dont la saison se vit :
+     * deux séances certains mois, une les autres.
+     */
+    const parMois = Math.max(1, Math.round(f.seances / f.mensualites));
+
+    const rythme = `environ ${parMois} séance${parMois > 1 ? 's' : ''}/mois`;
+    const avantage = ecart >= 1
+      ? ` — soit ${montantFr(Math.round(parSeance))} € la séance, ${ecart} % moins cher`
+      : '';
+
+    return {
+      // « 9 séances sur 9 mois » : le volume et l'étalement dans le même
+      // souffle. C'est `mensualites` qui donne les mois, comme il donnait les
+      // échéances — la phrase qui les annonçait séparément n'a plus lieu d'être.
+      produit: `${f.seances} séances sur ${f.mensualites} mois`,
+      mensuel: `${montantFr(Math.round(f.prixCents / f.mensualites))} €/mois`,
+      suite: ` (${montantFr(f.prixCents)} € au total), ${rythme}${avantage}`,
+    };
+  });
+}
+
+/**
  * Le même calendrier que celui affiché, redit en `Course` — voir `schema.ts`.
  *
  * Les séances sont reprises de `enBase`, déjà chargé pour la page : le balisage
@@ -342,13 +427,58 @@ const courseSchema = buildCourseSchema({
     couleurs le coupait en deux. Un composant ne sait pas ce qui le suit, mais
     il sait ce qu'il contient.
   */}
-  {page.introduction && (
-    <IntroSection text={page.introduction} cta={false} fond>
-      {page.inscriptionLabel && page.inscriptionUrl && (
+  {/*
+    L'ACCUEIL EST DANS LE HÉROS, CETTE BANDE DIT CE QU'ON ACHÈTE.
+
+    « Rejoignez un groupe de couture convivial » et le sous-titre du héros se
+    répondaient à deux lignes d'écart, en disant la même chose deux fois. La
+    phrase d'accueil est donc remontée sur l'image, et la bande qui suit
+    commence là où le lecteur en est : un forfait s'achète pour la saison et se
+    pose sur les dates de son choix — la réponse à « suis-je tenu de venir tel
+    jour ? », posée avant les horaires et avant les prix plutôt qu'à mi-page.
+  */}
+  {page.tarifsIntro && (
+    <IntroSection text={page.tarifsIntro} cta={false} fond>
+
+      {/*
+        La séance à l'unité sort des cartes : c'est l'essai de qui hésite
+        encore, non une troisième formule à comparer aux deux autres. Les
+        montants viennent de la base, où ils facturent aussi les séances
+        au-delà du forfait.
+      */}
+      {page.tarifsUniteQuestion && phraseUnite && (
+        <p class="mt-8 text-center text-[var(--color-text)]">
+          {/*
+            LE PRÉFIXE « La séance est à » A DISPARU. Il complétait un montant
+            nu — « 45 € » — quand la phrase se construisait public par public.
+            L'offre porte désormais son unité (« 45 € la séance de 3 h »), et
+            le préfixe la redisait : « La séance est à 45 € la séance de 3 h ».
+          */}
+          {/*
+            LA PHRASE MÈNE À LA PAGE QU'ELLE DÉCRIT. Elle posait la question
+            — « vous préférez venir une seule fois ? » — et laissait le
+            lecteur la résoudre seul, alors que la réponse a sa page. Le
+            montant porte le lien : c'est lui qu'on lit, et il était déjà
+            coloré comme un lien sans en être un.
+          */}
+          {page.tarifsUniteQuestion}{' '}
+          <a href="/seances-sans-engagement/"
+             class="font-semibold text-[var(--color-button)] underline">{phraseUnite}</a>.
+        </p>
+      )}
+
+      {page.voirCreneauxLabel && (
         <p class="mt-8">
-          <a href={page.inscriptionUrl}
+          {/*
+            EN HAUT ON REGARDE, EN BAS ON DÉCIDE. « Réserver ma place » ouvrait
+            le formulaire de paiement à quelqu'un qui n'avait encore vu ni un
+            horaire ni un tarif — il fallait revenir en arrière pour choisir son
+            créneau. Le bouton descend donc vers les créneaux, et celui du pied
+            de page, une fois tout lu, garde l'achat.
+          */}
+          <a href="#creneaux"
              class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 font-medium text-white">
-            {page.inscriptionLabel}
+            {page.voirCreneauxLabel}
           </a>
         </p>
       )}
@@ -356,7 +486,7 @@ const courseSchema = buildCourseSchema({
   )}
 
   {groupes.length > 0 && (
-    <section class="pt-8 pb-16 md:pt-10 md:pb-20">
+    <section id="creneaux" class="scroll-mt-24 pt-8 pb-16 md:pt-10 md:pb-20">
       <div class="mx-auto max-w-4xl px-4">
         <h2 class="mb-6 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
           {page.creneauxSectionTitle}
@@ -400,9 +530,34 @@ const courseSchema = buildCourseSchema({
 
         {groupes.map((g) => (
           <div id={g.id} class="mb-14 scroll-mt-24 last:mb-0">
-            <h3 class="mb-6 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
+            <h3 class="mb-1 text-xl md:text-2xl font-bold text-[var(--color-heading)]">
               {g.label}
             </h3>
+
+            {/*
+              LE TARIF SOUS LE TITRE DE SON PUBLIC. « Revel — Adultes »
+              annonçait des horaires sans dire ce qu'ils coûtent, et il fallait
+              descendre trois écrans pour retrouver son public dans la grille.
+
+              APPARIÉ PAR PUBLIC, jamais par position : les lignes des ados sous
+              le titre des ados, quel que soit l'ordre des deux listes. C'est la
+              faute que cette page a déjà connue, du temps où deux ternaires
+              rangeaient tout public autre qu'« enfants » chez les adultes.
+            */}
+            {groupeOuvert(g) && lignesDe(g.audience).length > 0 && (
+              <div class="mb-6">
+                <ul class="space-y-1">
+                  {lignesDe(g.audience).map((l) => (
+                    <li class="text-sm text-[var(--color-text-light)]">
+                      <span class="font-semibold text-[var(--color-heading)]"
+                      >{l.produit}</span>{' — '}<span
+                        class="font-semibold text-[var(--color-button)]"
+                      >{l.mensuel}</span>{l.suite}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Deux colonnes au plus : une liste de dates a besoin de sa largeur. */}
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -470,22 +625,31 @@ const courseSchema = buildCourseSchema({
                         : undefined}
                     />
                   </div>
+
+                  {/*
+                    « SÉLECTIONNER » PLUTÔT QUE « S'INSCRIRE » : on désigne un
+                    créneau, on ne conclut pas — le formulaire demandera encore
+                    la formule et le règlement. Le lien l'emporte pour éviter de
+                    le rechercher dans une liste de sept où l'on vient
+                    justement de le lire.
+
+                    PAS DE BOUTON SANS DATE. Un créneau sans séance programmée
+                    n'est pas vendable : la page d'inscription l'écarte déjà de
+                    sa liste, et l'y envoyer mènerait à un choix introuvable.
+                  */}
+                  {page.creneauChoisirLabel && page.inscriptionUrl
+                    && idDe(c.name) && datesDe(c.name).length > 0 && (
+                    <p class="mt-4">
+                      <a href={`${page.inscriptionUrl}?creneau=${encodeURIComponent(idDe(c.name)!)}`}
+                         class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-5 py-2 text-sm font-medium text-white no-underline">
+                        {page.creneauChoisirLabel}
+                      </a>
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
 
-            {/*
-              MARGE POSITIVE : le « -mt-6 » d'origine remontait ce lien contre
-              le bouton de contact qui le précédait. Ce bouton retiré, la marge
-              négative le faisait chevaucher les cartes.
-            */}
-            {page.tarifsLienLabel && tarifs.length > 0 && (
-              <p class="mt-6 text-center">
-                <a href="#tarifs" class="text-sm font-medium text-[var(--color-button)] underline">
-                  {page.tarifsLienLabel}
-                </a>
-              </p>
-            )}
           </div>
         ))}
       </div>
@@ -497,144 +661,29 @@ const courseSchema = buildCourseSchema({
     le seul bouton de la page : ils ne pouvaient donc convaincre personne au
     moment où l'on décide. Ils la précèdent désormais.
   */}
-  <Temoignages page="ateliers" />
-
-  {tarifs.length > 0 && (
-    <section id="tarifs" class="scroll-mt-24 bg-[var(--color-bg-accent)] py-16 md:py-20">
-      <div class="mx-auto max-w-2xl px-4">
-        <h2 class="mb-4 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
-          {page.tarifsTitle}
-        </h2>
-
-        {/*
-          La souplesse avant les chiffres. « Suis-je tenue de venir tel jour ? »
-          est la première inquiétude de qui lit une grille d'abonnement ; y
-          répondre d'abord retire l'objection avant qu'un prix ne l'installe.
-        */}
-        {page.tarifsIntro && (
-          <p class="mx-auto mb-10 max-w-xl text-center text-[var(--color-text)]">
-            {page.tarifsIntro}
-          </p>
-        )}
-
-        {/*
-          UNE SEULE COLONNE, du public le plus âgé au plus jeune. Côte à côte,
-          les cartes invitaient à une comparaison que personne ne fait : on sait
-          pour qui l'on vient. L'ordre suffit à hiérarchiser, à l'identique sur
-          téléphone et sur écran, sans dépliant ni bouton à découvrir — et il
-          tient aussi bien à trois publics qu'à deux, là où deux colonnes
-          auraient dû être repensées à l'arrivée des ados.
-        */}
-        <div class="space-y-6">
-          {tarifs.map((t) => (
-            <div class="rounded-xl bg-white p-5 shadow-md dark:bg-[var(--color-card-bg)]">
-              <h3 class="text-lg font-bold text-[var(--color-heading)]">{t.titre}</h3>
-              {t.dureeSeance && (
-                <p class="mb-4 text-sm text-[var(--color-text-light)]">{t.dureeSeance}</p>
-              )}
-              <ul class="space-y-4">
-                {(t.formules ?? []).map((f) => (
-                  <li>
-                    {/*
-                      Ce qu'on achète et ce que ça coûte, côte à côte : le nombre
-                      de séances est le produit, le prix mensuel la façon de le
-                      régler. Séparés, on lisait un prix sans savoir de quoi.
-                      Un seul chiffre en couleur — six accents de même force ne
-                      donnaient à l'œil aucun endroit où se poser.
-                    */}
-                    <p class="flex flex-wrap items-baseline gap-x-3">
-                      <span class="text-lg font-semibold text-[var(--color-heading)]">
-                        {f.seances}
-                      </span>
-                      <span class="text-lg font-semibold text-[var(--color-button)]">
-                        {f.mensuel}
-                      </span>
-                    </p>
-                    {f.detail && (
-                      <p class="text-sm text-[var(--color-text-light)]">{f.detail}</p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        {/*
-          La séance à l'unité sort des cartes : c'est l'essai de qui hésite
-          encore, non une troisième formule à comparer aux deux autres. Les
-          montants viennent de la base, où ils facturent aussi les séances
-          au-delà du forfait.
-        */}
-        {page.tarifsUniteQuestion && phraseUnite && (
-          <p class="mt-8 text-center text-[var(--color-text)]">
-            {/*
-              LE PRÉFIXE « La séance est à » A DISPARU. Il complétait un montant
-              nu — « 45 € » — quand la phrase se construisait public par public.
-              L'offre porte désormais son unité (« 45 € la séance de 3 h »), et
-              le préfixe la redisait : « La séance est à 45 € la séance de 3 h ».
-            */}
-            {/*
-              LA PHRASE MÈNE À LA PAGE QU'ELLE DÉCRIT. Elle posait la question
-              — « vous préférez venir une seule fois ? » — et laissait le
-              lecteur la résoudre seul, alors que la réponse a sa page. Le
-              montant porte le lien : c'est lui qu'on lit, et il était déjà
-              coloré comme un lien sans en être un.
-            */}
-            {page.tarifsUniteQuestion}{' '}
-            <a href="/seances-sans-engagement/"
-               class="font-semibold text-[var(--color-button)] underline">{phraseUnite}</a>.
-          </p>
-        )}
-
-        {page.tarifsNote && (
-          <p class="mt-4 text-center text-sm text-[var(--color-text-light)]">
-            {page.tarifsNote}
-          </p>
-        )}
-
-        {/*
-          LE SEUL BOUTON DE LA PAGE, sous la grille : c'est là qu'on décide, les
-          prix sous les yeux. Les « Demander une place dans un créneau » qui le
-          précédaient ont été retirés — on n'écrit plus pour demander une place,
-          on la prend.
-        */}
-        {page.inscriptionLabel && page.inscriptionUrl && (
-          <p class="mt-8 text-center">
-            <a href={page.inscriptionUrl}
-               class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 font-medium text-white">
-              {page.inscriptionLabel}
-            </a>
-          </p>
-        )}
-
-      </div>
-    </section>
-  )}
-
-
-  <FaqSection title={page.faqSectionTitle} items={faqItems} fond cta={false} />
+  {/* Les fonds alternent : introduction, créneaux, témoignages, FAQ, liens. */}
+  <Temoignages page="ateliers" fond />
 
   {/*
-    LE DERNIER BOUTON EST APRÈS LA FAQ, et non avant : c'est là qu'on a fini de
-    lever ses objections. Le laisser uniquement sous la grille obligeait à
-    remonter la page pour agir sur une décision qu'on venait de prendre.
+    LA SECTION « S'INSCRIRE » A DISPARU, faute de rien dire qui ne soit dit
+    ailleurs : sa grille avait rejoint les créneaux, sa phrase sur la séance à
+    l'unité est remontée sous l'introduction, sa note sur les fournitures vit
+    dans la FAQ, et son bouton faisait double emploi avec le « Sélectionner »
+    que porte désormais chaque créneau — lequel a l'avantage de savoir lequel.
   */}
-  {page.inscriptionLabel && page.inscriptionUrl && (
-    <section class="py-12 md:py-16">
-      <p class="px-4 text-center">
-        <a href={page.inscriptionUrl}
-           class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 font-medium text-white">
-          {page.inscriptionLabel}
-        </a>
-        <span class="mt-3 block text-sm text-[var(--color-text-light)]">
-          Vous choisirez vos dates ensuite, et pourrez en changer jusqu’à 10 jours avant chaque séance.
-        </span>
-      </p>
-    </section>
-  )}
+
+  <FaqSection title={page.faqSectionTitle} items={faqItems} fond={false} cta={false} />
+
+  {/*
+    PLUS DE BOUTON GLOBAL SUR CETTE PAGE. Il y en a eu un sous la grille, puis
+    un après la FAQ — l'un et l'autre menaient au formulaire sans savoir quel
+    créneau on avait retenu, et le formulaire redemandait donc tout. Chaque
+    carte porte maintenant « Sélectionner », qui l'emporte avec elle ; un
+    bouton de plus ne ferait que proposer le chemin le plus long.
+  */}
 
   {page.crossLinksText && (
-    <CrossLinksSection text={page.crossLinksText} excludeHref="/ateliers-reguliers/" />
+    <CrossLinksSection text={page.crossLinksText} excludeHref="/ateliers-reguliers/"
+                       class="bg-[var(--color-bg-accent)]" />
   )}
 </BaseLayout>

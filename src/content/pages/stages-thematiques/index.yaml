@@ -124,11 +124,18 @@ faqItems:
       avec l'aide d'Isabelle.
   - question: Comment s'inscrire à un stage ?
     answer: >-
-      L'inscription se fait directement auprès d'Isabelle via le formulaire de
-      contact ou par téléphone. Les places étant limitées, il est conseillé de
-      réserver à l'avance.
+      La réservation se fait en ligne : le bouton « Réserver un stage », en haut
+      de cette page, vous laisse choisir votre date et régler votre place, qui
+      est retenue aussitôt. L'adhésion à l'association est comprise dans le
+      tarif — il n'y a rien à régler en plus le jour du stage. Seules les dates
+      où il reste de la place apparaissent, et elles partent vite : mieux vaut
+      s'y prendre à l'avance. Si vous préférez vous arranger autrement, écrivez
+      à Isabelle.
 crossLinksText: >-
   Vous souhaitez un suivi régulier ? Découvrez nos ateliers réguliers. Envie
   d'une séance ponctuelle sans thème imposé ? Essayez nos séances sans
   engagement, ouvertes à tous.
-ctaLabel: M'inscrire à un stage
+ctaLabel: Nous écrire
+stageDetailLabel: Plus d’infos
+inscriptionLabel: Réserver un stage
+inscriptionUrl: /stages-thematiques/reserver/

@@ -11,6 +11,7 @@ import '../styles/global.css';
 const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
 const posthogHost = import.meta.env.PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com';
 
+
 interface Props {
   title: string;
   description?: string;
@@ -85,10 +86,10 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
     {/*
       PostHog, cloud UE, sans cookie.
 
-      `persistence: 'memory'` supprime tout stockage persistant : aucun cookie,
-      rien dans localStorage. Sans cookie ni identifiant durable, la mesure
-      d'audience n'exige pas de bandeau de consentement — ce qui évite d'en
-      construire un, et rend la politique de confidentialité exacte.
+      `cookieless_mode: 'always'` supprime tout stockage persistant : aucun
+      cookie, rien dans localStorage. Sans écriture sur l'appareil, l'article 82
+      de la loi Informatique et Libertés ne s'applique pas, et la mesure
+      n'exige pas de bandeau de consentement.
 
       Le comptage des visiteurs reste juste malgré l'absence de stockage :
       PostHog calcule un condensat préservant la vie privée sur ses serveurs.
@@ -96,16 +97,29 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
       aurait fait repartir chaque page vue d'un identifiant neuf et rendu toute
       métrique de visiteurs uniques absurde.
 
-      `identify()` est impossible dans ce mode — un identifiant durable serait
-      une donnée personnelle. On n'identifie personne ici, la contrainte est
-      donc sans effet.
+      `identify()` EST IMPOSSIBLE ICI, ET ON N'ESSAIE PAS DE CONTOURNER. Il a
+      été essayé : cookie d'un an, adhérent connecté nommé par son adresse. Une
+      mesure d'audience qui dépose un cookie ET se rattache à un compte sort de
+      l'exemption CNIL — le consentement redevenait exigible, et l'association a
+      préféré renoncer à l'identification plutôt qu'imposer un bandeau.
+
+      CE QUI A ÉTÉ SAUVÉ DU DEMI-TOUR : la mesure de ce qui compte vraiment — un
+      paiement, une inscription, une place réservée — ne vit plus ici mais dans
+      `src/utils/mesure.ts`, appelée depuis le serveur. Elle n'écrit rien sur
+      aucun appareil, ne relève donc pas de l'article 82, et porte l'adresse de
+      l'adhérent au titre de l'intérêt légitime. Le navigateur compte les pages
+      et les départs vers l'achat ; le serveur compte l'argent et les gestes.
+      Deux moitiés qui ne se rejoignent pas — c'est le prix exact de l'absence
+      de bandeau, et il est payé en connaissance de cause.
+
+      L'enregistrement de session est coupé, et la capture automatique aussi :
+      l'un filmerait ce qui se saisit dans l'espace adhérent, l'autre remonterait
+      le texte des boutons — dont des noms de participants. Ce qui est mesuré est
+      donc uniquement ce que ce fichier et les pages nomment explicitement.
 
       PRÉREQUIS : « Cookieless server hash mode » doit être activé dans les
       réglages du projet PostHog (Project settings → Web analytics). Sans lui,
       rien n'est compté.
-
-      L'enregistrement de session est coupé : il capterait le contenu saisi
-      dans l'espace membre.
 
       Le bloc ne s'affiche que si la clé est définie, pour que rien ne casse
       tant que le projet PostHog n'existe pas.
@@ -182,6 +196,88 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
         iframe.allowFullscreen = true;
         container.replaceChildren(iframe);
       });
+    </script>
+
+    {/*
+      LES DÉPARTS VERS L'ACHAT.
+
+      L'autocapture est coupée : sans elle, plus rien ne relie « a lu la page
+      des ateliers » à « a ouvert le formulaire d'inscription », et le premier
+      décrochage du parcours — de loin le plus gros — est invisible. Plutôt que
+      de rallumer une capture qui remonterait le texte de tous les boutons, y
+      compris les noms de participants de l'espace adhérent, on ne nomme que
+      les liens qui mènent à un achat.
+
+      Un écouteur délégué sur le document : les liens sont nombreux, dispersés
+      dans une douzaine de composants, et aucun n'a à savoir qu'il est mesuré.
+    */}
+    <script is:inline>
+      (function () {
+        var VERS_ACHAT = /^\/(ateliers-reguliers|espace-membre)\/inscription\/$|^\/(stages-thematiques|seances-sans-engagement)\/reserver\/$/;
+
+        document.addEventListener('click', function (e) {
+          if (typeof window.posthog === 'undefined') return;
+          if (!e.target || !e.target.closest) return;
+
+          /*
+           * LE BOUTON FLOTTANT OUVRE UN FORMULAIRE, PAS UNE PAGE. Tally
+           * l'intercepte et retire le `href` ; sans ce cas, le seul geste de
+           * contact visible depuis n'importe quelle page ne serait mesuré nulle
+           * part. Les événements du formulaire lui-même viennent de /contact/.
+           */
+          var tally = e.target.closest('[data-tally-open], [data-tally-fallback]');
+          if (tally) {
+            window.posthog.capture('contact_ouvert', { depuis: location.pathname });
+            return;
+          }
+
+          var lien = e.target.closest('a[href]');
+          if (!lien) return;
+
+          var brut = lien.getAttribute('href') || '';
+
+          /*
+           * APPELER, ÉCRIRE, ENVOYER UN MESSAGE : trois conversions qui quittent
+           * le site sans laisser la moindre trace. Une page vue de plus ne dit
+           * pas qu'on a décroché son téléphone.
+           */
+          var direct = brut.slice(0, 7).toLowerCase();
+          if (direct.indexOf('tel:') === 0 || direct.indexOf('mailto:') === 0) {
+            window.posthog.capture('contact_direct', {
+              moyen: direct.indexOf('tel:') === 0 ? 'telephone' : 'courriel',
+              depuis: location.pathname,
+            });
+            return;
+          }
+
+          var url;
+          try {
+            url = new URL(brut, location.href);
+          } catch (err) {
+            return;
+          }
+
+          if (url.hostname === 'wa.me' || url.hostname === 'api.whatsapp.com') {
+            window.posthog.capture('contact_direct', {
+              moyen: 'whatsapp',
+              depuis: location.pathname,
+            });
+            return;
+          }
+
+          if (url.origin !== location.origin) return;
+          if (!VERS_ACHAT.test(url.pathname)) return;
+
+          window.posthog.capture('depart_vers_achat', {
+            destination: url.pathname,
+            depuis: location.pathname,
+            // Le libellé du lien, borné : « Réserver ma place » et « S'inscrire »
+            // ne se valent pas, et savoir lequel décide vaut la peine. Les
+            // liens visés sont publics, aucun ne porte de nom de personne.
+            libelle: (lien.textContent || '').trim().slice(0, 60),
+          });
+        });
+      })();
     </script>
   </body>
 </html>

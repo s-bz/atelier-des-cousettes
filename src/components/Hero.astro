@@ -52,8 +52,11 @@ const preloadImage = coverImage
     <div class="absolute inset-0 bg-black/50" />
     <div class="relative h-full flex flex-col items-center justify-center px-4 text-center">
       <h1 class="hero-title text-3xl md:text-5xl font-medium leading-tight text-white">{title}</h1>
+      {/* `whitespace-pre-line` : le retour à la ligne du CMS est conservé, et
+          chaque ligne se replie d'elle-même sur un écran étroit — là où un <br>
+          imposerait sa césure à un texte déjà retourné deux fois. */}
       {subtitle && (
-        <p class="hero-subtitle mt-3 text-lg md:text-xl text-white/90">{subtitle}</p>
+        <p class="hero-subtitle mt-3 whitespace-pre-line text-lg md:text-xl text-white/90">{subtitle}</p>
       )}
       {action && (
         <a
@@ -70,7 +73,7 @@ const preloadImage = coverImage
     <div class="max-w-3xl mx-auto px-4 text-center">
       <h1 class="text-4xl md:text-5xl font-medium leading-tight">{title}</h1>
       {subtitle && (
-        <p class="mt-4 text-lg md:text-xl text-[var(--color-text)]">{subtitle}</p>
+        <p class="mt-4 whitespace-pre-line text-lg md:text-xl text-[var(--color-text)]">{subtitle}</p>
       )}
     </div>
   </section>

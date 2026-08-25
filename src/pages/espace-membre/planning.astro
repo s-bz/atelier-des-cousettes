@@ -6,6 +6,7 @@ import SelecteurParticipant from '../../components/SelecteurParticipant.astro';
 import { getAdminClient } from '../../utils/supabase';
 import { participantsDuCompte, soldeDe, libererPlace, dateLongue, heure } from '../../utils/membre';
 import { notifier, notifierAdmin, variablesSeance, variablesAdmin } from '../../utils/emails';
+import { mesurer } from '../../utils/mesure';
 
 const { session, account, isAdmin } = Astro.locals;
 if (!session) return Astro.redirect('/espace-membre/connexion/');
@@ -77,10 +78,26 @@ if (Astro.request.method === 'POST' && choisie) {
       p_source: pour ? 'admin' : 'member',
     });
     if (error) {
-      erreur = error.message;
+      // Le message de Postgres nomme la fonction, la contrainte et son RAISE :
+      // il éclaire Isabelle dans le journal, pas l'adhérent devant l'écran.
+      console.error('[planning] réservation refusée :', error.message);
+      erreur = 'La réservation n’a pas pu être enregistrée.';
     } else {
       message = 'Place réservée.';
       const seanceId = String(form.get('seance'));
+
+      /*
+       * LA RÉSERVATION EST L'USAGE, ET NON L'ACHAT. Un forfait vendu ne dit
+       * rien de ce qu'il devient : neuf séances payées et deux venues, c'est un
+       * réabonnement qui ne reviendra pas. `par` distingue la place posée par
+       * l'adhérent de celle qu'Isabelle pose pour lui depuis la feuille de
+       * présence — les confondre ferait passer pour de l'autonomie ce qui est
+       * du travail administratif.
+       */
+      await mesurer('place_reservee', destinataire, {
+        par: pour ? 'admin' : 'adherent',
+        session_id: seanceId,
+      });
       const { data: s } = await supabase
         .from('sessions')
         .select('starts_at, ends_at, location, capacity, creneaux(label)')
@@ -128,6 +145,17 @@ if (Astro.request.method === 'POST' && choisie) {
     const r = await libererPlace(String(form.get('reservation')), choisie.id);
     if (r.ok) message = r.message;
     else erreur = r.message;
+
+    /*
+     * LA PLACE LIBÉRÉE COMPTE AUTANT QUE LA PLACE PRISE. C'est elle qui dit si
+     * le délai de dix jours est vivable, et si les créneaux du soir tiennent.
+     * Le motif d'échec est un message écrit par nous — le plus souvent « trop
+     * tard pour annuler », qui est une information et non une panne.
+     */
+    await mesurer(r.ok ? 'place_liberee' : 'place_liberee_refusee', destinataire, {
+      par: pour ? 'admin' : 'adherent',
+      ...(r.ok ? {} : { motif: r.message }),
+    });
   }
 }
 

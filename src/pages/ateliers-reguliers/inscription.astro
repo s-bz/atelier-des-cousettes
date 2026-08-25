@@ -8,7 +8,7 @@ import { lireCatalogueFormules, heureCourte } from '../../utils/tarifs';
 import { AUDIENCES, personneDe } from '../../utils/ateliers';
 import { saisonDe } from '../../utils/inscriptions';
 import { demarrerAchat } from '../../utils/achat';
-import { ADHESION_CENTS } from '../../utils/helloasso';
+import { mesurer } from '../../utils/mesure';
 
 /*
  * L'INSCRIPTION, POUR QUI N'A PAS ENCORE DE COMPTE.
@@ -108,16 +108,42 @@ if (Astro.request.method === 'POST') {
     cheminRetour: '/ateliers-reguliers/inscription/retour/',
   });
 
-  if (!r.ok) erreur = r.erreur;
+  if (!r.ok) {
+    erreur = r.erreur;
+    /*
+     * UN ACHAT REFUSÉ EST UN ACHAT PERDU, et le motif dit pourquoi. C'est le
+     * seul endroit où l'on apprend qu'un code de réduction expiré, ou une date
+     * devenue complète entre l'affichage et l'envoi, renvoie des familles. Le
+     * motif est un message écrit par nous, jamais une saisie de l'internaute.
+     */
+    await mesurer('achat_refuse', saisi.email, { motif: r.erreur, depuis: '/ateliers-reguliers/inscription/' });
+  }
   // `redirectUrl` ne vaut que quinze minutes : on y va tout de suite.
   else return Astro.redirect(r.valeur.redirectUrl, 303);
 }
 
-if (Astro.url.searchParams.has('echec')) {
-  erreur = 'Le paiement n’a pas abouti. Rien n’a été prélevé — vous pouvez réessayer.';
+/*
+ * ON PEUT ARRIVER D'UNE CARTE DE CRÉNEAU, qui sait déjà lequel. Le paramètre ne
+ * fait que préremplir la liste : le serveur revérifie l'accord du créneau, de
+ * la formule et du public, et un créneau inconnu laisse simplement l'invite —
+ * « Choisissez un créneau » — plutôt que de vider la liste.
+ *
+ * Lu seulement hors POST : après un envoi, c'est ce qui a été saisi qui fait
+ * foi, et non l'URL par laquelle on était entré.
+ */
+if (Astro.request.method !== 'POST') {
+  saisi.creneau = Astro.url.searchParams.get('creneau') ?? '';
 }
 
-const euros = (c: number) => String(c / 100);
+if (Astro.url.searchParams.has('echec')) {
+  erreur = 'Le paiement n’a pas abouti. Rien n’a été prélevé — vous pouvez réessayer.';
+  // HelloAsso renvoie ici quand le paiement n'a pas abouti. Rien n'a été
+  // prélevé ; ce qui se mesure, c'est le renoncement au moment de payer.
+  await mesurer('paiement_echoue', Astro.locals.account?.email ?? null, {
+    depuis: '/ateliers-reguliers/inscription/',
+  });
+}
+
 ---
 
 <BaseLayout
@@ -133,15 +159,6 @@ const euros = (c: number) => String(c / 100);
       Saison {saison}, de septembre à juin. <strong>Trois places par séance</strong>, avec
       Isabelle à côté de vous. Choisissez votre formule et votre créneau ; vous choisirez vos
       dates ensuite, et vous pourrez les changer.
-    </p>
-
-    <p class="mt-4 rounded-xl bg-[var(--color-bg-accent)] px-4 py-3 text-sm">
-      Le règlement se fait sur la page sécurisée de <strong>HelloAsso</strong>, qui encaisse pour
-      l’association <strong>Les P’tits Piafs</strong> — c’est ce nom qui figurera sur votre relevé
-      bancaire. L’adhésion à l’association, <strong>{euros(ADHESION_CENTS)} € par an et par
-      famille</strong>, s’ajoute au premier versement — <strong>sauf si votre famille l’a déjà
-      réglée cette saison</strong> : elle est alors reconnue à votre adresse, et vous n’avez
-      pas à vous connecter pour cela.
     </p>
 
     {erreur && (
@@ -216,22 +233,6 @@ const euros = (c: number) => String(c / 100);
         </legend>
 
       <div>
-        <label for="formule" class="block text-sm font-medium mb-1">Formule</label>
-        <select id="formule" name="formule" required class="champ">
-          <option value="">Choisissez une formule</option>
-          {AUDIENCES.map((a) => (
-            <optgroup label={a.label}>
-              {formules.filter((f) => f.audience === a.creneau).map((f) => (
-                <option value={f.id} data-public={f.audience} selected={f.id === saisi.formule}>
-                  {f.libelle} · {Math.round(f.prixCents / 100)} €
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-      </div>
-
-      <div>
         <label for="creneau" class="block text-sm font-medium mb-1">Créneau</label>
         <select id="creneau" name="creneau" required class="champ">
           <option value="">Choisissez un créneau</option>
@@ -249,22 +250,63 @@ const euros = (c: number) => String(c / 100);
           LA RÉASSURANCE OÙ LA QUESTION SE POSE. « Et si je ne peux pas un
           samedi ? » se demande en choisissant le créneau, pas sous le bouton de
           paiement où la réponse traînait auparavant.
+
+          LE NOMBRE DE SÉANCES SE LIT SUR LA FORMULE CHOISIE, il ne s'écrit pas
+          ici : neuf ou dix-huit selon ce qu'on a pris, seize pour un enfant.
+          Sans JavaScript la phrase reste vraie, simplement sans le compte —
+          c'est pourquoi elle est écrite d'abord dans sa forme générale.
         */}
-        <p class="mt-1 text-sm text-[var(--color-text-light)]">
-          Celui où vous serez inscrit d’office. Vos dates se choisissent ensuite et se
-          modifient jusqu’à 10 jours avant chaque séance ; venir à un autre créneau reste
-          possible.
-        </p>
+        {/*
+          DEUX POINTS, PARCE QU'IL Y A DEUX FAITS. En un seul paragraphe, ce
+          qu'on obtient et ce qu'on peut encore changer se lisaient d'un bloc,
+          et la liberté de bouger — la vraie réponse à « et si je ne peux pas un
+          samedi ? » — se perdait en fin de phrase.
+
+          « TOUTES LES SÉANCES DE VOTRE FORMULE » plutôt qu'un nombre : la
+          phrase est juste pour les cinq formules sans avoir à compter, et rien
+          ne peut la contredire le jour où une formule change.
+        */}
+        <ul class="mt-2 space-y-1 text-sm text-[var(--color-text-light)]">
+          <li class="flex gap-2">
+            <span aria-hidden="true">·</span>
+            <span>
+              Inscription automatique à toutes les séances de votre formule, sur toute la
+              saison.
+            </span>
+          </li>
+          <li class="flex gap-2">
+            <span aria-hidden="true">·</span>
+            <span>
+              Changement de date possible dans votre espace jusqu’à 10 jours avant la séance
+              (autre jour ou autre horaire).
+            </span>
+          </li>
+        </ul>
       </div>
 
       <div>
-        <label for="code" class="block text-sm font-medium mb-1">
-          Code de réduction — facultatif
-        </label>
-        <input id="code" name="code" value={saisi.code} autocapitalize="characters"
-               class="champ" placeholder="Si vous en avez un" />
+        <label for="formule" class="block text-sm font-medium mb-1">Formule</label>
+        <select id="formule" name="formule" required class="champ">
+          <option value="">Choisissez une formule</option>
+          {/*
+            LE PUBLIC EST RÉPÉTÉ DANS CHAQUE LIGNE, et pas seulement dans le
+            titre du groupe. Refermée, une liste déroulante n'affiche que
+            l'option retenue : le titre du groupe disparaît, et « 9 séances ·
+            324 € » ne dit plus s'il s'agit d'un adulte, d'un ado ou d'un
+            enfant. Redondant tant que la liste est ouverte, ce préfixe est la
+            seule chose qui reste une fois qu'elle est refermée.
+          */}
+          {AUDIENCES.map((a) => (
+            <optgroup label={a.label}>
+              {formules.filter((f) => f.audience === a.creneau).map((f) => (
+                <option value={f.id} data-public={f.audience} selected={f.id === saisi.formule}>
+                  {a.label} · {f.libelle} · {Math.round(f.prixCents / 100)} €
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
       </div>
-
       <fieldset>
         <legend class="block text-sm font-medium mb-1">Règlement</legend>
         <label class="flex items-center gap-2">
@@ -278,7 +320,20 @@ const euros = (c: number) => String(c / 100);
       </fieldset>
       </fieldset>
 
-      <DevisEnDirect />
+      <DevisEnDirect>
+        <details class="mt-2" open={Boolean(saisi.code)}>
+          <summary class="cursor-pointer text-sm text-[var(--color-button)] underline">
+            Code promo ?
+          </summary>
+          <input id="code" name="code" value={saisi.code} autocapitalize="characters"
+                 class="champ mt-2" placeholder="Saisissez votre code" />
+          {/*
+            LE VERDICT DU CODE SOUS LE CHAMP DU CODE : c'est ici qu'on peut
+            encore en essayer un autre.
+          */}
+          <p id="code-retour" class="mt-1 text-sm" aria-live="polite"></p>
+        </details>
+      </DevisEnDirect>
 
       <button type="submit"
               class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-3 font-medium text-white">
@@ -291,6 +346,20 @@ const euros = (c: number) => String(c / 100);
         réassurance se neutralisent. Reste ce qui lève vraiment l'hésitation —
         les dates se choisissent après et se changent — et la mention due.
       */}
+      {/*
+        CE QUI SE DIT AU MOMENT DE PAYER, ET PAS AVANT. Un bandeau ouvrait cette
+        page et disait trois choses à qui n'avait encore rien choisi : le nom du
+        relevé, le montant de l'adhésion, et le cas de la famille qui l'a déjà
+        réglée. Les deux derniers sont des faits de PRIX, et le devis les dit
+        déjà — au centime, et pour la situation réelle du visiteur plutôt qu'en
+        énonçant la règle. Reste le nom du relevé, un fait de PAIEMENT, qui ne
+        sert qu'ici.
+      */}
+      <p class="text-sm text-[var(--color-text-light)]">
+        Le règlement se fait sur la page sécurisée de HelloAsso : votre relevé bancaire portera
+        « Les P’tits Piafs », le nom de l’association.
+      </p>
+
       <p class="text-sm text-[var(--color-text-light)]">
         En vous inscrivant, vous acceptez les{' '}
         <a href="/conditions/" class="underline">conditions de vente</a> — quatorze jours pour
@@ -303,44 +372,53 @@ const euros = (c: number) => String(c / 100);
 
 <script>
   /*
-   * LE CRÉNEAU SUIT LE PUBLIC DE LA FORMULE.
+   * LA FORMULE SUIT LE PUBLIC DU CRÉNEAU.
    *
-   * Les deux listes sont groupées par public, mais rien n'empêchait de choisir
-   * « adultes — 9 séances » puis un créneau ados : le serveur le refuse, mais
-   * après coup, une fois le formulaire rempli. Un choix impossible ne doit pas
-   * être proposé.
+   * Le filtre allait dans l'autre sens : on choisissait sa formule, et les
+   * créneaux se réduisaient. Mais c'est le créneau qu'on connaît en arrivant —
+   * un jour, une heure, un lieu, et depuis peu un bouton « Sélectionner » qui
+   * le désigne d'avance. La formule, elle, est ce qu'on décide ensuite : neuf
+   * séances ou dix-huit, une fois le rendez-vous trouvé.
+   *
+   * Les deux listes restent groupées par public, mais rien n'empêchait de
+   * choisir un créneau ados puis une formule adultes : le serveur le refuse,
+   * mais après coup, une fois le formulaire rempli. Un choix impossible ne doit
+   * pas être proposé.
    *
    * Le contrôle serveur reste la garantie — ceci n'est qu'une commodité, et son
    * absence ne laisse rien passer.
    */
-  const formule = document.getElementById('formule');
   const creneau = document.getElementById('creneau');
+  const formule = document.getElementById('formule');
 
-  if (formule instanceof HTMLSelectElement && creneau instanceof HTMLSelectElement) {
+  if (creneau instanceof HTMLSelectElement && formule instanceof HTMLSelectElement) {
     // Les groupes sont DÉTACHÉS puis rattachés, non masqués : `hidden` sur une
-    // <option> n'est pas honoré partout, et un créneau grisé reste une ligne
+    // <option> n'est pas honoré partout, et une formule grisée reste une ligne
     // qu'on lit et qu'on écarte. Une liste qui ne contient que le possible se
     // parcourt plus vite.
-    const groupes = [...creneau.querySelectorAll('optgroup')];
+    const groupes = [...formule.querySelectorAll('optgroup')];
 
     const accorder = () => {
-      const attendu = formule.selectedOptions[0]?.dataset.public;
-      const choisi = creneau.value;
+      const attendu = creneau.selectedOptions[0]?.dataset.public;
+      const choisie = formule.value;
 
       for (const g of groupes) g.remove();
       for (const g of groupes) {
         const garde = !attendu || [...g.querySelectorAll('option')]
           .some((o) => (o as HTMLOptionElement).dataset.public === attendu);
-        if (garde) creneau.append(g);
+        if (garde) formule.append(g);
       }
 
       // Le choix survit s'il reste possible ; sinon on revient à l'invite.
-      const existe = [...creneau.options].some((o) => o.value === choisi && o.value !== '');
-      if (existe) creneau.value = choisi;
-      else creneau.selectedIndex = 0;
+      const existe = [...formule.options].some((o) => o.value === choisie && o.value !== '');
+      if (existe) formule.value = choisie;
+      else formule.selectedIndex = 0;
+
+      // Le devis dépend de la formule : il doit se refaire quand elle change.
+      formule.dispatchEvent(new Event('change'));
     };
 
-    formule.addEventListener('change', accorder);
+    creneau.addEventListener('change', accorder);
     accorder();
   }
 

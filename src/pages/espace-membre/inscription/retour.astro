@@ -5,6 +5,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { getAdminClient } from '../../../utils/supabase';
 import { lireIntention } from '../../../utils/helloasso';
 import { lireCommande, provisionner } from '../../../utils/provisionnement';
+import { mesurer } from '../../../utils/mesure';
 
 /*
  * LE RETOUR DU PAYEUR.
@@ -25,7 +26,10 @@ const { session, account } = Astro.locals;
 if (!session || !account) return Astro.redirect('/espace-membre/connexion/');
 
 const supabase = getAdminClient();
-const idIntention = Astro.url.searchParams.get('checkoutIntentId');
+// Un nombre, et rien d'autre : il sert de segment de chemin à un appel
+// authentifié chez HelloAsso, où `fetch` réduit les `..`.
+const brutIntention = Astro.url.searchParams.get('checkoutIntentId');
+const idIntention = brutIntention && /^\d{1,20}$/.test(brutIntention) ? brutIntention : null;
 
 let titre = 'Votre inscription';
 let message: string | null = null;
@@ -37,7 +41,14 @@ if (!idIntention) {
   const intention = await lireIntention(idIntention);
 
   if (!intention.ok) {
-    ennui = intention.erreur;
+    /*
+     * LE MESSAGE D'EN FACE RESTE AU JOURNAL. Il porte les erreurs brutes de
+     * HelloAsso — jusqu'au nom des variables d'environnement manquantes — et
+     * la page publique voisine dit déjà la même chose en une phrase fixe.
+     */
+    console.error(`[inscription adhérent] ${idIntention} : ${intention.erreur}`);
+    ennui = 'Nous n’arrivons pas à vérifier ce paiement pour l’instant. S’il a été prélevé, '
+      + 'il est bien enregistré chez HelloAsso : écrivez-nous et nous le rattacherons.';
   } else {
     const commande = lireCommande(intention.valeur);
 
@@ -59,6 +70,14 @@ if (!idIntention) {
         { onConflict: 'cle', ignoreDuplicates: true },
       );
       console.error(`[inscription] ${idIntention} non provisionnée : ${commande.erreur}`);
+      // Le même signal que sur le parcours public : un paiement acquis dont
+      // l'inscription n'a pas suivi. Ici l'adresse est connue — c'est celle du
+      // compte connecté, et le rattachement se fera sans la chercher.
+      await mesurer('paiement_a_rattacher', account.email, {
+        contexte: 'inscription adhérent',
+        intention: idIntention,
+        motif: commande.erreur,
+      });
       ennui = 'Votre règlement est bien enregistré. Il nous reste à finir de vous inscrire — '
         + 'Isabelle s’en occupe et vous recevrez une confirmation.';
     } else {
@@ -66,6 +85,12 @@ if (!idIntention) {
 
       if (!fait.ok) {
         console.error(`[inscription] ${idIntention} : ${fait.erreur}`);
+        await mesurer('paiement_a_rattacher', account.email, {
+          contexte: 'inscription adhérent',
+          intention: idIntention,
+          motif: fait.erreur,
+          produit: commande.valeur.produit,
+        });
         ennui = 'Votre règlement est bien enregistré. Il nous reste à finir de vous inscrire — '
           + 'Isabelle s’en occupe et vous recevrez une confirmation.';
       } else {

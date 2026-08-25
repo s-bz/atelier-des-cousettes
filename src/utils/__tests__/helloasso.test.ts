@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { lireNotification, jetonValide, construireEcheancier, corpsIntention, preparerAchat }
+import { lireNotification, jetonValide, construireEcheancier, corpsIntention, preparerAchat, preparerAchatUnite }
   from '../helloasso';
 
 describe('lireNotification', () => {
@@ -223,5 +223,86 @@ describe('preparerAchat', () => {
 
   it('règle en une fois quand on le demande', () => {
     expect(preparerAchat({ ...base, comptant: true }).versements).toBe(1);
+  });
+
+  it('écrit ce que la commande rapporte en tout, adhésion comprise', () => {
+    /*
+     * `totalCents` et `supplementInitialCents` disent comment PRÉLEVER ; ce
+     * champ dit ce que la vente VAUT. Ils ne coïncident pas : l'adhésion vit à
+     * part pour ne pas grossir les échéances suivantes, et la mesure d'audience
+     * ne saurait pas les rapprocher — elle ne voit que les métadonnées, seules
+     * à revenir avec la commande payée.
+     */
+    const a = preparerAchat({ ...base, adhesionDue: true, reductionCents: 2400 });
+    expect(a.metadata.montant_cents).toBe(32400 - 2400 + 1500);
+  });
+});
+
+describe('preparerAchatUnite', () => {
+  const base = {
+    seance: {
+      id: '5f0f9f2e-1111-4222-8333-444455556666',
+      debut: new Date('2026-11-26T13:00:00Z'), // 14 h à Paris
+      prixCents: 6000,
+    },
+    creneau: { id: 'stage-banane', label: 'Stage banane' },
+    participant: 'Léa D.',
+    saison: '2026-2027',
+    achatLe: new Date('2026-09-01T10:00:00Z'),
+    urls: { retour: 'https://x.fr/r/', erreur: 'https://x.fr/e/', retourArriere: 'https://x.fr/b/' },
+  };
+
+  it('nomme la date sur le relevé, et pas seulement le stage', () => {
+    // Le relevé portera « Les P'tits Piafs » : sans la date, un stage acheté
+    // deux fois — pour deux enfants, ou deux sessions — donne deux lignes
+    // rigoureusement identiques que personne ne sait départager.
+    const a = preparerAchatUnite(base);
+    expect(a.libelle).toContain('Stage banane');
+    expect(a.libelle).toContain('26 novembre 2026');
+    expect(a.libelle).toContain('Léa D.');
+  });
+
+  it('règle en une fois : on n’échelonne pas soixante euros', () => {
+    const a = preparerAchatUnite(base);
+    expect(a.versements).toBe(1);
+    expect(a.totalCents).toBe(6000);
+  });
+
+  it('n’ajoute aucune adhésion : elle est comprise dans le prix', () => {
+    // Les pages publiques l'annoncent — « il n'y a rien à régler en plus ».
+    const a = preparerAchatUnite(base);
+    expect(a.supplementInitialCents ?? 0).toBe(0);
+    expect(a.metadata.adhesion_cents).toBeUndefined();
+  });
+
+  it('porte la date précise dans les métadonnées', () => {
+    // Un stage a plusieurs dates au catalogue : le créneau seul ne suffirait
+    // pas à savoir laquelle a été payée.
+    const a = preparerAchatUnite(base);
+    expect(a.metadata).toMatchObject({
+      produit: 'seance',
+      session_id: '5f0f9f2e-1111-4222-8333-444455556666',
+      creneau_id: 'stage-banane',
+      participant: 'Léa D.',
+      saison: '2026-2027',
+    });
+  });
+
+  it('déduit le code du prix de la place', () => {
+    const a = preparerAchatUnite({ ...base, reductionCents: 1000, codePromo: 'RENTREE26' });
+    expect(a.totalCents).toBe(5000);
+    expect(a.metadata).toMatchObject({ code_promo: 'RENTREE26', reduction_cents: 1000 });
+  });
+
+  it('ne descend jamais sous zéro', () => {
+    const a = preparerAchatUnite({ ...base, reductionCents: 99999, codePromo: 'CADEAU' });
+    expect(a.totalCents).toBe(0);
+    // Y compris pour la mesure : une place offerte vaut zéro, jamais un négatif.
+    expect(a.metadata.montant_cents).toBe(0);
+  });
+
+  it('écrit le montant de la place, réduction déduite', () => {
+    const a = preparerAchatUnite({ ...base, reductionCents: 1000, codePromo: 'RENTREE26' });
+    expect(a.metadata.montant_cents).toBe(5000);
   });
 });

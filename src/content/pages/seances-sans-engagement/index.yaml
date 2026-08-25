@@ -77,12 +77,15 @@ faqItems:
       nombre suffisant d'inscriptions.
   - question: Comment s'inscrire ?
     answer: >-
-      Pour une première venue, écrivez à Isabelle par le formulaire de
-      contact ou appelez-la. Elle vous inscrit et vous ouvre l'accès à votre
-      espace adhérent, où vous choisissez ensuite vos dates et les libérez
-      si besoin. Les places étant limitées, mieux vaut s'y prendre à
-      l'avance.
+      La réservation se fait en ligne : le bouton « Réserver une date », en haut
+      de cette page, vous laisse choisir votre séance et régler votre place, qui
+      est retenue aussitôt. L'adhésion à l'association est comprise dans le
+      tarif — il n'y a rien à régler en plus. Vous recevez ensuite l'accès à
+      votre espace adhérent, où vous retrouvez vos dates. Seules les séances où
+      il reste de la place apparaissent : mieux vaut s'y prendre à l'avance.
 crossLinksText: >-
   Envie d'un engagement régulier ? Découvrez nos ateliers réguliers. Pour
   apprendre une technique précise, consultez nos stages thématiques.
-ctaLabel: Réserver ma place
+ctaLabel: Nous écrire
+inscriptionLabel: Réserver une date
+inscriptionUrl: /seances-sans-engagement/reserver/

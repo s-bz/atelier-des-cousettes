@@ -18,9 +18,18 @@ interface Props {
   details?: string[];
   /** Optional italic note */
   note?: string;
+  /**
+   * Le libellé d'un bouton visible en pied de carte.
+   *
+   * RENDU EN <span>, ET NON EN <a> : la carte entière est déjà un lien, et
+   * imbriquer une ancre dans une ancre est invalide — les navigateurs la
+   * remontent d'un cran, ce qui casse silencieusement la carte. Le pointeur et
+   * le clic viennent du lien qui l'entoure ; ce bouton ne fait que le dire.
+   */
+  actionLabel?: string;
 }
 
-const { name, href, primaryBadge, secondaryBadge, details = [], note } = Astro.props;
+const { name, href, primaryBadge, secondaryBadge, details = [], note, actionLabel } = Astro.props;
 ---
 
 <a href={href} class="detail-card group flex flex-col rounded-xl bg-white dark:bg-[var(--color-card-bg)] overflow-hidden transition-all p-5 h-full" aria-label={name}>
@@ -39,6 +48,11 @@ const { name, href, primaryBadge, secondaryBadge, details = [], note } = Astro.p
     <span class="text-[var(--color-button)]">{primaryBadge}</span>
     {secondaryBadge && <span class="text-[var(--color-text-light)]">{secondaryBadge}</span>}
   </div>
+  {actionLabel && (
+    <span class="mt-4 inline-block self-start rounded-[var(--radius-button)] bg-[var(--color-button)] px-5 py-2 text-sm font-medium text-white transition-colors group-hover:bg-[var(--color-button-hover)]">
+      {actionLabel}
+    </span>
+  )}
 </a>
 
 <style>

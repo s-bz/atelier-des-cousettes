@@ -37,7 +37,16 @@ const { email } = Astro.props;
     frais caché — mais elle ne mérite pas le paragraphe qu'elle avait : au
     moment de décider, quatre blocs de texte se neutralisent.
   */}
-  <p class="mt-1 text-sm" id="devis-code"></p>
+  {/*
+    LE CODE DE RÉDUCTION VIT ICI, replié derrière un lien.
+
+    En champ ouvert au milieu du formulaire, il annonçait à tous qu'une remise
+    existe — et qui n'en a pas se demande ce qu'il rate, juste avant de payer.
+    Replié, il ne coûte rien à qui l'ignore et reste à un clic de qui a reçu un
+    code. Sa place est dans ce cadre : c'est le montant qu'il change.
+  */}
+  <slot />
+
   <p class="mt-2 text-sm text-[var(--color-text-light)]">
     HelloAsso proposera d’y ajouter une contribution facultative, modifiable jusqu’à zéro.
   </p>
@@ -50,7 +59,12 @@ const { email } = Astro.props;
   const reglements = [...document.querySelectorAll<HTMLInputElement>('input[name="reglement"]')];
 
   const champCode = document.getElementById('code') as HTMLInputElement | null;
-  const ligneCode = document.getElementById('devis-code');
+  /*
+   * LE VERDICT DU CODE VIT SOUS LE CHAMP DU CODE, pas dans le devis : c'est là
+   * qu'on peut encore en essayer un autre. L'élément appartient donc à la page,
+   * et peut manquer — l'espace adhérent n'a pas de champ code.
+   */
+  const ligneCode = document.getElementById('code-retour');
   const aujourdhui = document.getElementById('devis-aujourdhui');
   const suite = document.getElementById('devis-suite');
 

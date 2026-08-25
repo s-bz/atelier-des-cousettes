@@ -359,6 +359,15 @@ export default config({
         ),
         faqItems: faqItemsField(),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
+        stageDetailLabel: fields.text({
+          label: 'Bouton en pied de carte de stage',
+          description: 'Videz-le pour retirer le bouton des cartes.',
+        }),
+        inscriptionLabel: fields.text({
+          label: 'Bouton de réservation en ligne',
+          description: 'Videz-le pour retirer le bouton de la page.',
+        }),
+        inscriptionUrl: fields.text({ label: 'Lien du bouton de réservation' }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
     }),
@@ -368,7 +377,11 @@ export default config({
       previewUrl: '/ateliers-reguliers/',
       schema: {
         title: fields.text({ label: 'Titre' }),
-        subtitle: fields.text({ label: 'Sous-titre' }),
+        subtitle: fields.text({
+          label: 'Sous-titre',
+          description: 'Un retour à la ligne est conservé tel quel.',
+          multiline: true,
+        }),
         seoDescription: fields.text({ label: 'Description SEO', multiline: true }),
         ...coverImageFields('ateliers-reguliers'),
         introduction: fields.text({ label: 'Introduction', multiline: true }),
@@ -392,9 +405,6 @@ export default config({
          * montant que l'écran « à facturer » aurait démenti.
          */
         tarifsTitle: fields.text({ label: 'Titre section tarifs' }),
-        tarifsLienLabel: fields.text({
-          label: 'Lien vers les tarifs, sous l’introduction (ex : Voir les tarifs)',
-        }),
         tarifsIntro: fields.text({
           label: 'Phrase au-dessus des tarifs (saison, souplesse, adhésion)',
           multiline: true,
@@ -473,11 +483,19 @@ export default config({
         ),
         faqItems: faqItemsField(),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
+        voirCreneauxLabel: fields.text({
+          label: 'Bouton d’en-tête, vers les créneaux',
+          description: 'Videz-le pour retirer le bouton du haut de page.',
+        }),
         inscriptionLabel: fields.text({
           label: 'Bouton d’inscription en ligne',
           description: 'Videz-le pour retirer le bouton de la page.',
         }),
         inscriptionUrl: fields.text({ label: 'Lien du bouton d’inscription' }),
+        creneauChoisirLabel: fields.text({
+          label: 'Bouton de sélection d’un créneau',
+          description: 'Videz-le pour retirer le bouton des cartes de créneau.',
+        }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
     }),
@@ -541,6 +559,11 @@ export default config({
         faqSectionTitle: fields.text({ label: 'Titre section FAQ' }),
         faqItems: faqItemsField(),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
+        inscriptionLabel: fields.text({
+          label: 'Bouton de réservation en ligne',
+          description: 'Videz-le pour retirer le bouton de la page.',
+        }),
+        inscriptionUrl: fields.text({ label: 'Lien du bouton de réservation' }),
         ctaLabel: fields.text({ label: 'Libellé du bouton CTA' }),
       },
     }),
