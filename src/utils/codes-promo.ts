@@ -37,6 +37,38 @@ export function normaliserCode(code: string): string {
   return code.trim().toUpperCase();
 }
 
+/** Pourquoi un code ne s'applique plus — ou qu'il s'applique encore. */
+export type EtatCode = 'actif' | 'hors-saison' | 'expire' | 'epuise';
+
+/**
+ * L'état d'un code, indépendamment de tout prix.
+ *
+ * IL EXISTE POUR QUE L'ADMINISTRATION ET L'ENCAISSEMENT DISENT LA MÊME CHOSE.
+ * Une liste qui range un code sous « en vigueur » pendant que la caisse le
+ * refuse envoie Isabelle chercher une panne qui n'existe pas : c'est la même
+ * fonction qui décide des deux côtés, et `reductionDe` en dérive son motif.
+ *
+ * L'ordre des causes est celui du refus : un code hors saison ET épuisé se
+ * présente comme hors saison aux deux bouts.
+ *
+ * L'ARCHIVAGE N'EST PAS UN ÉTAT ICI : un code archivé n'est pas relu du tout
+ * (`lireCode` l'écarte en base), il ne peut donc jamais arriver jusqu'ici.
+ */
+export function etatDe(code: CodePromo, o: { saison: string; aujourdhui: Date }): EtatCode {
+  if (code.saison && code.saison !== o.saison) return 'hors-saison';
+
+  if (code.expireLe) {
+    // Le dernier jour est inclus : « valable jusqu'au 1er septembre » se
+    // comprend comme « le 1er compris », et l'inverse ferait des mécontents.
+    const jour = o.aujourdhui.toISOString().slice(0, 10);
+    if (jour > code.expireLe) return 'expire';
+  }
+
+  if (code.usagesMax !== null && code.usages >= code.usagesMax) return 'epuise';
+
+  return 'actif';
+}
+
 /**
  * Ce que ce code retranche au forfait, ou pourquoi il ne s'applique pas.
  *
@@ -48,19 +80,10 @@ export function reductionDe(
   code: CodePromo,
   o: { saison: string; aujourdhui: Date },
 ): Resultat<number> {
-  if (code.saison && code.saison !== o.saison) {
-    return echec(`Ce code ne vaut pas pour la saison ${o.saison}.`);
-  }
-
-  if (code.expireLe) {
-    // Le dernier jour est inclus : « valable jusqu'au 1er septembre » se
-    // comprend comme « le 1er compris », et l'inverse ferait des mécontents.
-    const jour = o.aujourdhui.toISOString().slice(0, 10);
-    if (jour > code.expireLe) return echec('Ce code a expiré.');
-  }
-
-  if (code.usagesMax !== null && code.usages >= code.usagesMax) {
-    return echec('Ce code n’est plus disponible.');
+  switch (etatDe(code, o)) {
+    case 'hors-saison': return echec(`Ce code ne vaut pas pour la saison ${o.saison}.`);
+    case 'expire': return echec('Ce code a expiré.');
+    case 'epuise': return echec('Ce code n’est plus disponible.');
   }
 
   const brute = code.reductionPourcent !== null

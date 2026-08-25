@@ -164,8 +164,30 @@ let seances: any[] = [];
 let mesReservations = new Map<string, string>();
 const mesAttentes = new Set<string>();
 
+/*
+ * A-T-IL UN FORFAIT ? La question décide de ce qu'on propose quand il ne reste
+ * plus de crédit.
+ *
+ * « Réserver en plus » et « à régler avec Isabelle » sont les habitudes de la
+ * maison : un adhérent au forfait qui vient une fois de trop le règle à la
+ * séance suivante, et `extra_sessions` le porte sur sa facture. Cela suppose un
+ * forfait dont on dépasse, et une facture à laquelle rattacher le supplément.
+ *
+ * QUI N'EN A PAS N'A NI L'UN NI L'AUTRE. Il a acheté une séance, il en veut une
+ * seconde : son solde n'a rien à dépasser, et le faire descendre sous zéro ne
+ * lui dit que d'aller voir quelqu'un. Depuis que le site vend en ligne, il peut
+ * simplement l'acheter.
+ */
+let aUnForfait = false;
+
 if (choisie) {
   ({ solde } = await soldeDe(choisie.id));
+
+  const { count } = await supabase
+    .from('subscriptions')
+    .select('id', { count: 'exact', head: true })
+    .eq('participant_id', choisie.id);
+  aUnForfait = (count ?? 0) > 0;
 
   const debutDuJour = new Date();
   debutDuJour.setHours(0, 0, 0, 0);
@@ -290,9 +312,11 @@ const lien = personnes.length > 1 && choisie ? `?personne=${choisie.id}` : '';
           <p class="mb-6 text-[var(--color-text)]">
             {solde > 0
               ? `${solde} séance${solde > 1 ? 's' : ''} disponible${solde > 1 ? 's' : ''}.`
-              : solde === 0
-                ? 'Vos séances du moment sont toutes réservées. Réserver au-delà sera facturé en supplément.'
-                : `${-solde} séance${-solde < -1 ? 's' : ''} déjà au-delà de votre forfait.`}
+              : !aUnForfait
+                ? 'Vous n’avez pas de séance en réserve : choisissez une date et réglez-la en ligne.'
+                : solde === 0
+                  ? 'Vos séances du moment sont toutes réservées. Réserver au-delà sera facturé en supplément.'
+                  : `${-solde} séance${-solde < -1 ? 's' : ''} déjà au-delà de votre forfait.`}
           </p>
 
           {seances.length === 0 && (
@@ -384,12 +408,24 @@ const lien = personnes.length > 1 && choisie ? `?personne=${choisie.id}` : '';
                               ? `${s.capacity - prises} place${s.capacity - prises > 1 ? 's' : ''}`
                               : 'Complet'}
                           </span>
+                          {/*
+                            SANS FORFAIT ET SANS CRÉDIT, ON ACHÈTE — on ne
+                            réserve pas à découvert. Le lien emporte la date :
+                            elle est déjà choisie, il ne reste qu'à régler.
+                          */}
+                          {!aUnForfait && solde <= 0 && etat !== 'attente' ? (
+                            <a href={`/seances-sans-engagement/reserver/?session=${s.id}&personne=${choisie.id}`}
+                               class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-4 py-1.5 text-sm font-medium text-white no-underline">
+                              Acheter cette séance
+                            </a>
+                          ) : (
                           <button type="submit"
                                   class="rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-4 py-1.5 text-sm font-medium text-[var(--color-button)] transition-colors hover:bg-[var(--color-button)] hover:text-white">
                             {etat === 'attente'
                               ? 'Liste d’attente'
                               : solde > 0 ? 'Réserver' : 'Réserver en plus'}
                           </button>
+                          )}
                           {/* La liste d'attente ne promet rien : le dire ici
                               évite qu'on la prenne pour une inscription. */}
                           {etat === 'attente' && (

@@ -18,9 +18,19 @@ interface Props {
    * juste — et avec, le filtrage se fait au chargement.
    */
   creneauChoisi?: string | null;
+  /**
+   * L'achat se fait pour une personne déjà connue, depuis l'espace adhérent.
+   *
+   * SON NOM ET L'ADRESSE SE VERROUILLENT ALORS. Le provisionnement rapproche la
+   * commande d'une personne existante PAR SON NOM ; un nom retouché en cours de
+   * route crée un second dossier au même foyer, avec son propre solde et son
+   * propre historique. C'est arrivé au premier achat réel — « Sam Test Usage »
+   * est né à côté de « Sam Bultez », et la place est allée au nouveau venu.
+   */
+  verrouille?: boolean;
 }
 
-const { seances, erreur, saisi, nomProduit, nomCreneau, creneauChoisi } = Astro.props;
+const { seances, erreur, saisi, nomProduit, nomCreneau, creneauChoisi, verrouille } = Astro.props;
 
 /*
  * LE FORMULAIRE D'UNE PLACE À LA DATE.
@@ -131,6 +141,17 @@ const jour = new Intl.DateTimeFormat('fr-FR', {
 });
 
 /*
+ * QUAND LA DATE EST DÉJÀ CHOISIE, SON CRÉNEAU L'EST AUSSI. On arrive ainsi
+ * depuis le planning de l'espace adhérent, qui envoie la séance et non le
+ * créneau. Le déduire ici plutôt que de s'en remettre au script : sans
+ * JavaScript, la première liste afficherait « toutes les possibilités »
+ * au-dessus d'une date déjà retenue.
+ */
+const creneauRetenu = creneauChoisi
+  ?? groupes.find((g) => g.dates.some((d) => d.id === saisi.session))?.id
+  ?? null;
+
+/*
  * LA RARETÉ SE DIT QUAND ELLE EST VRAIE, et se calcule ici plutôt que dans le
  * gabarit : une comparaison `<=` au milieu du JSX se lit mal, et le compilateur
  * la prend volontiers pour une balise ouvrante.
@@ -163,9 +184,11 @@ const mentionPlaces = (s: SeanceAchetable) =>
       <div>
         <label for="email" class="block text-sm font-medium mb-1">Votre adresse électronique</label>
         <input id="email" name="email" type="email" required value={saisi.email}
-               autocomplete="email" class="champ" />
+               autocomplete="email" class="champ" readonly={verrouille} />
         <p class="mt-1 text-sm text-[var(--color-text-light)]">
-          C’est elle qui ouvrira l’accès à votre espace, où vous retrouverez votre réservation.
+          {verrouille
+            ? 'Celle de votre compte : la réservation s’y rattachera.'
+            : 'C’est elle qui ouvrira l’accès à votre espace, où vous retrouverez votre réservation.'}
         </p>
       </div>
 
@@ -182,28 +205,38 @@ const mentionPlaces = (s: SeanceAchetable) =>
         </div>
       </div>
 
-      <label class="flex items-start gap-2">
-        <input type="checkbox" id="autre" name="autre" value="oui" checked={saisi.autre}
-               class="mt-1" />
-        <span class="text-sm">
-          La personne qui participe n’est pas moi
-        </span>
-      </label>
+      {verrouille ? (
+        <input type="hidden" name="autre" value="oui" />
+      ) : (
+        <label class="flex items-start gap-2">
+          <input type="checkbox" id="autre" name="autre" value="oui" checked={saisi.autre}
+                 class="mt-1" />
+          <span class="text-sm">
+            La personne qui participe n’est pas moi
+          </span>
+        </label>
+      )}
     </fieldset>
 
-    <fieldset id="participant" class="space-y-4" hidden={!saisi.autre}>
+    <fieldset id="participant" class="space-y-4" hidden={!saisi.autre && !verrouille}>
       <legend class="mb-2 text-lg font-bold text-[var(--color-heading)]"
               style="font-family: var(--font-heading)">
         La personne qui participe
       </legend>
+      {verrouille && (
+        <p class="text-sm text-[var(--color-text-light)]">
+          La place ira à cette personne, sur votre compte. Pour quelqu’un d’autre, passez par
+          la page publique.
+        </p>
+      )}
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
           <label for="prenom" class="block text-sm font-medium mb-1">Prénom</label>
-          <input id="prenom" name="prenom" value={saisi.prenom} class="champ" />
+          <input id="prenom" name="prenom" value={saisi.prenom} class="champ" readonly={verrouille} />
         </div>
         <div>
           <label for="nom" class="block text-sm font-medium mb-1">Nom</label>
-          <input id="nom" name="nom" value={saisi.nom} class="champ" />
+          <input id="nom" name="nom" value={saisi.nom} class="champ" readonly={verrouille} />
         </div>
       </div>
     </fieldset>
@@ -221,7 +254,7 @@ const mentionPlaces = (s: SeanceAchetable) =>
         <select id="creneau" class="champ">
           <option value="">Toutes les possibilités</option>
           {groupes.map((g) => (
-            <option value={g.id} selected={g.id === creneauChoisi}>{resume(g)}</option>
+            <option value={g.id} selected={g.id === creneauRetenu}>{resume(g)}</option>
           ))}
         </select>
       </div>

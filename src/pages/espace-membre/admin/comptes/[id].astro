@@ -1,0 +1,172 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../../utils/guards';
+import { getAdminClient } from '../../../../utils/supabase';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const supabase = getAdminClient();
+const id = Astro.params.id!;
+
+/*
+ * LE FOYER, ET NON LES PERSONNES QUI LE COMPOSENT.
+ *
+ * L'administration savait modifier un participant — son prénom, son public, ses
+ * abonnements — mais rien du compte auquel il se rattache. Or ce sont deux
+ * choses distinctes, et les confondre a déjà coûté : le payeur est celui qui
+ * règle et reçoit les courriels, le participant est celui qui coud. Une mère
+ * qui inscrit ses deux filles est un payeur et zéro participant.
+ *
+ * C'est ici que se corrige ce que le paiement a rapporté : HelloAsso renvoie le
+ * nom du porteur de la carte, nous le gardons, et il n'est pas toujours celui
+ * qu'on veut lire dans une liste d'adhérents.
+ */
+
+let message: string | null = null;
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const texte = (cle: string) => String(form.get(cle) ?? '').trim();
+
+  const courriel = texte('email').toLowerCase();
+  if (!courriel.includes('@')) {
+    erreur = 'Indiquez une adresse électronique valide.';
+  } else {
+    const { error } = await supabase
+      .from('accounts')
+      .update({
+        email: courriel,
+        payeur_prenom: texte('payeur_prenom') || null,
+        payeur_nom: texte('payeur_nom') || null,
+      })
+      .eq('id', id);
+
+    if (error) {
+      erreur = error.message.includes('duplicate')
+        ? 'Un autre foyer porte déjà cette adresse.'
+        : `Enregistrement impossible : ${error.message}`;
+    } else {
+      message = 'Foyer mis à jour.';
+    }
+  }
+}
+
+const { data: compte } = await supabase
+  .from('accounts')
+  .select('id, email, payeur_prenom, payeur_nom, role, created_at')
+  .eq('id', id)
+  .maybeSingle();
+
+if (!compte) return Astro.redirect('/espace-membre/admin/participants/');
+
+const { data: membres } = await supabase
+  .from('participants')
+  .select('id, first_name, last_name, audience')
+  .eq('account_id', id)
+  .order('first_name');
+
+const { data: adhesion } = await supabase
+  .from('adhesions')
+  .select('saison, montant_cents, paye_le')
+  .eq('account_id', id)
+  .order('saison', { ascending: false });
+
+const dateFr = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+---
+
+<AdminLayout title="Le foyer" soustitre="Qui règle, et pour qui.">
+  <p class="mb-6">
+    <a href="/espace-membre/admin/participants/" class="text-sm text-[var(--color-button)] underline">
+      ← Tous les adhérents
+    </a>
+  </p>
+
+  {message && <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] px-4 py-3">{message}</p>}
+  {erreur && <p class="mb-6 rounded-xl bg-[var(--color-bg-pink)] px-4 py-3 text-white">{erreur}</p>}
+
+  <form method="post" class="rounded-xl bg-[var(--color-card-bg)] p-5 shadow-md">
+    <h2 class="mb-1 text-lg font-bold text-[var(--color-heading)]">Le payeur</h2>
+    <p class="mb-4 text-sm text-[var(--color-text-light)]">
+      Le nom se remplit tout seul à chaque paiement : HelloAsso renvoie celui du porteur de la
+      carte. Vous pouvez le corriger — la prochaine commande le réécrira.
+    </p>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="payeur_prenom" class="block text-sm font-medium mb-1">Prénom</label>
+        <input id="payeur_prenom" name="payeur_prenom" value={compte.payeur_prenom ?? ''} class="champ" />
+      </div>
+      <div>
+        <label for="payeur_nom" class="block text-sm font-medium mb-1">Nom</label>
+        <input id="payeur_nom" name="payeur_nom" value={compte.payeur_nom ?? ''} class="champ" />
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <label for="email" class="block text-sm font-medium mb-1">Adresse électronique</label>
+      <input id="email" name="email" type="email" required value={compte.email ?? ''} class="champ" />
+      {/*
+        CE QUE CHANGER L'ADRESSE FAIT, ET CE QU'ELLE NE FAIT PAS. Le dire ici
+        plutôt que de laisser le découvrir : c'est sur elle que les commandes se
+        rattachent à un foyer, mais la connexion passe par le compte
+        d'authentification, qu'une modification ici ne touche pas.
+      */}
+      <p class="mt-1 text-sm text-[var(--color-text-light)]">
+        C’est elle qui rattache les commandes à ce foyer, et qui reçoit les courriels. La
+        connexion, elle, reste attachée à l’identifiant d’origine : changer l’adresse ici ne
+        change pas celle avec laquelle la personne se connecte.
+      </p>
+    </div>
+
+    <button type="submit"
+            class="mt-4 rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-2 font-medium text-white">
+      Enregistrer
+    </button>
+  </form>
+
+  <h2 class="mt-8 mb-3 text-lg font-bold text-[var(--color-heading)]">
+    Les personnes qui viennent {membres?.length ? `(${membres.length})` : ''}
+  </h2>
+
+  {!membres?.length ? (
+    <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text-light)] shadow-md">
+      Personne n’est rattaché à ce foyer. Un payeur sans participant est possible — une mère qui
+      inscrit ses filles en est un — mais un foyer entièrement vide n’a pas lieu d’être.
+    </p>
+  ) : (
+    <ul class="space-y-2">
+      {membres.map((p) => (
+        <li class="flex flex-wrap items-baseline gap-x-3 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
+          <a href={`/espace-membre/admin/participants/${p.id}/`}
+             class="font-medium text-[var(--color-heading)] underline">
+            {p.first_name} {p.last_name}
+          </a>
+          <span class="text-sm text-[var(--color-text-light)]">{p.audience}</span>
+        </li>
+      ))}
+    </ul>
+  )}
+
+  <h2 class="mt-8 mb-3 text-lg font-bold text-[var(--color-heading)]">Adhésion</h2>
+  {!adhesion?.length ? (
+    <p class="rounded-xl bg-[var(--color-card-bg)] p-5 text-[var(--color-text-light)] shadow-md">
+      Aucune adhésion enregistrée. Elle se règle une fois par saison et par foyer.
+    </p>
+  ) : (
+    <ul class="space-y-2">
+      {adhesion.map((a) => (
+        <li class="rounded-xl bg-[var(--color-card-bg)] p-4 text-sm shadow-md">
+          <span class="font-medium text-[var(--color-heading)]">Saison {a.saison}</span>
+          <span class="ml-3 text-[var(--color-text-light)]">
+            {(a.montant_cents ?? 0) / 100} €
+            {a.paye_le && ` · réglée le ${dateFr.format(new Date(a.paye_le))}`}
+          </span>
+        </li>
+      ))}
+    </ul>
+  )}
+</AdminLayout>

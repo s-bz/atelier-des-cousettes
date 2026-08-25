@@ -5,7 +5,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { requireAdmin } from '../../../utils/guards';
 import { getAdminClient } from '../../../utils/supabase';
 import { saisonDe } from '../../../utils/inscriptions';
-import { normaliserCode } from '../../../utils/codes-promo';
+import { normaliserCode, etatDe, type EtatCode } from '../../../utils/codes-promo';
 
 const garde = requireAdmin(Astro);
 if (garde) return garde;
@@ -79,8 +79,57 @@ const { data: codes } = await supabase
   .order('archived_at', { nullsFirst: true })
   .order('cree_le', { ascending: false });
 
-const actifs = (codes ?? []).filter((c) => !c.archived_at);
-const archives = (codes ?? []).filter((c) => c.archived_at);
+/*
+ * TROIS RANGS, PAS DEUX.
+ *
+ * « Non archivé » n'a jamais voulu dire « utilisable » : un code épuisé ou
+ * périmé reste en base, intact, et la caisse le refuse déjà. Le laisser sous
+ * « en vigueur » faisait mentir le seul coup d'œil que cette page sert — un
+ * « En vigueur (1) » alors que plus rien ne s'applique.
+ *
+ * L'état vient de `etatDe`, celui-là même dont l'encaissement tire son refus :
+ * ce qui est écrit ici est ce que l'adhérent lira.
+ */
+const aujourdhui = new Date();
+const enrichis = (codes ?? []).map((c) => ({
+  ...c,
+  etat: (c.archived_at ? 'archive' : etatDe({
+    code: c.code,
+    reductionPourcent: c.reduction_pourcent,
+    reductionCents: c.reduction_cents,
+    saison: c.saison,
+    usagesMax: c.usages_max,
+    usages: c.usages,
+    expireLe: c.expire_le,
+  }, { saison, aujourdhui })) as EtatCode | 'archive',
+}));
+
+const actifs = enrichis.filter((c) => c.etat === 'actif');
+const horsUsage = enrichis.filter((c) => c.etat !== 'actif' && c.etat !== 'archive');
+const archives = enrichis.filter((c) => c.etat === 'archive');
+
+/* Le motif, dit à Isabelle dans les mots qu'emploie le refus à l'écran. */
+const MOTIF: Record<string, string> = {
+  epuise: 'épuisé',
+  expire: 'expiré',
+  'hors-saison': `hors de la saison ${saison}`,
+};
+
+const sections = [
+  {
+    titre: 'En vigueur',
+    codes: actifs,
+    note: null as string | null,
+    vide: 'Aucun code actif.' as string | null,
+  },
+  {
+    titre: 'Hors d’usage',
+    codes: horsUsage,
+    // Ils ne sont pas archivés : ils ont servi. Le rangement reste une décision.
+    note: 'Ils ne s’appliquent plus. Archivez-les quand la liste s’allonge.',
+    vide: null as string | null,
+  },
+];
 
 const dateFr = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const remise = (c: { reduction_pourcent: number | null; reduction_cents: number | null }) =>
@@ -162,41 +211,57 @@ const remise = (c: { reduction_pourcent: number | null; reduction_cents: number 
     </form>
   </details>
 
-  <h2 class="text-xl font-bold" style="font-family: var(--font-heading)">
-    En vigueur {actifs.length ? `(${actifs.length})` : ''}
-  </h2>
+  {sections.filter((sec) => sec.codes.length || sec.vide).map((sec) => (
+    <section class="mb-8">
+      <h2 class="text-xl font-bold" style="font-family: var(--font-heading)">
+        {sec.titre} {sec.codes.length ? `(${sec.codes.length})` : ''}
+      </h2>
 
-  {!actifs.length ? (
-    <p class="mt-3 text-[var(--color-text-light)]">Aucun code actif.</p>
-  ) : (
-    <ul class="mt-4 space-y-3">
-      {actifs.map((c) => (
-        <li class="rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
-          <div class="flex flex-wrap items-baseline gap-x-3">
-            <span class="font-mono font-medium text-[var(--color-heading)]">{c.code}</span>
-            <span class="font-medium text-[var(--color-button)]">−{remise(c)}</span>
-            {c.libelle && <span class="text-sm text-[var(--color-text-light)]">{c.libelle}</span>}
-            <span class="ml-auto text-sm text-[var(--color-text-light)]">
-              {c.usages} employé{c.usages > 1 ? 's' : ''}
-              {c.usages_max ? ` sur ${c.usages_max}` : ''}
-            </span>
-          </div>
-          <p class="mt-1 text-sm text-[var(--color-text-light)]">
-            {c.saison ? `Saison ${c.saison}` : 'Toutes saisons'}
-            {c.expire_le ? ` · jusqu’au ${dateFr.format(new Date(c.expire_le))}` : ' · sans date de fin'}
-            {c.usages_max === 1 ? ' · usage unique' : ''}
-          </p>
-          <form method="post" class="mt-2">
-            <input type="hidden" name="action" value="archiver" />
-            <input type="hidden" name="code" value={c.code} />
-            <button type="submit" class="text-sm text-[var(--color-button)] underline">
-              Archiver
-            </button>
-          </form>
-        </li>
-      ))}
-    </ul>
-  )}
+      {!sec.codes.length ? (
+        <p class="mt-3 text-[var(--color-text-light)]">{sec.vide}</p>
+      ) : (
+        <>
+          {sec.note && <p class="mt-1 text-sm text-[var(--color-text-light)]">{sec.note}</p>}
+          <ul class="mt-4 space-y-3">
+            {sec.codes.map((c) => (
+              <li class="rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
+                <div class="flex flex-wrap items-baseline gap-x-3">
+                  <span class={`font-mono font-medium ${c.etat === 'actif' ? 'text-[var(--color-heading)]' : 'text-[var(--color-text-light)] line-through'}`}>
+                    {c.code}
+                  </span>
+                  <span class={c.etat === 'actif' ? 'font-medium text-[var(--color-button)]' : 'text-[var(--color-text-light)]'}>
+                    −{remise(c)}
+                  </span>
+                  {c.libelle && <span class="text-sm text-[var(--color-text-light)]">{c.libelle}</span>}
+                  {c.etat !== 'actif' && (
+                    <span class="rounded-full bg-[var(--color-bg-accent)] px-2 py-0.5 text-sm text-[var(--color-heading)]">
+                      {MOTIF[c.etat]}
+                    </span>
+                  )}
+                  <span class="ml-auto text-sm text-[var(--color-text-light)]">
+                    {c.usages} employé{c.usages > 1 ? 's' : ''}
+                    {c.usages_max ? ` sur ${c.usages_max}` : ''}
+                  </span>
+                </div>
+                <p class="mt-1 text-sm text-[var(--color-text-light)]">
+                  {c.saison ? `Saison ${c.saison}` : 'Toutes saisons'}
+                  {c.expire_le ? ` · jusqu’au ${dateFr.format(new Date(c.expire_le))}` : ' · sans date de fin'}
+                  {c.usages_max === 1 ? ' · usage unique' : ''}
+                </p>
+                <form method="post" class="mt-2">
+                  <input type="hidden" name="action" value="archiver" />
+                  <input type="hidden" name="code" value={c.code} />
+                  <button type="submit" class="text-sm text-[var(--color-button)] underline">
+                    Archiver
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  ))}
 
   {archives.length > 0 && (
     <details class="mt-8">

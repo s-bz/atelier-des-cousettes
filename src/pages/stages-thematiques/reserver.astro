@@ -69,6 +69,89 @@ if (Astro.request.method === 'POST') {
  */
 const creneauChoisi = Astro.url.searchParams.get('creneau');
 
+/*
+ * ON PEUT AUSSI ARRIVER AVEC SA DATE DÉJÀ CHOISIE — depuis le planning de
+ * l'espace adhérent, où l'on vient de la voir. Il ne reste alors qu'à régler.
+ *
+ * Et si la personne est connectée, son adresse est connue : la resaisir
+ * n'apprendrait rien, et c'est elle qui fait reconnaître une adhésion déjà
+ * réglée. Le reste du formulaire ne change pas — la page reste publique, et
+ * c'est le serveur qui revérifie tout.
+ */
+let verrouille = false;
+
+if (Astro.request.method !== 'POST') {
+  saisi.session = Astro.url.searchParams.get('session') ?? '';
+  saisi.email = Astro.locals.account?.email ?? '';
+
+  /*
+   * LE NOM DU PAYEUR SE REPROPOSE, MAIS NE SE VERROUILLE PAS. C'est celui du
+   * porteur de la carte : il peut changer d'une fois sur l'autre, et le figer
+   * obligerait à passer par la page publique pour un cas parfaitement normal.
+   */
+  if (Astro.locals.account) {
+    const { data: sien } = await supabase
+      .from('accounts')
+      .select('payeur_prenom, payeur_nom')
+      .eq('id', Astro.locals.account.id)
+      .maybeSingle();
+    saisi.payeurPrenom = sien?.payeur_prenom ?? '';
+    saisi.payeurNom = sien?.payeur_nom ?? '';
+  }
+
+  /*
+   * ACHETER POUR QUELQU'UN DE DÉJÀ CONNU : son nom se remplit et se verrouille.
+   *
+   * Le provisionnement rapproche la commande d'une personne existante PAR SON
+   * NOM. Laisser le champ libre alors qu'on sait de qui il s'agit, c'est
+   * inviter à créer un second dossier au même foyer — avec son propre solde,
+   * son propre historique, et la place au mauvais endroit. C'est exactement ce
+   * qui est arrivé au premier achat réel.
+   *
+   * L'APPARTENANCE SE VÉRIFIE, elle ne se croit pas : l'identifiant vient de
+   * l'URL. Sans compte connecté, ou pour une personne d'un autre foyer, on ne
+   * verrouille rien et le formulaire reste ce qu'il est.
+   */
+  const personne = Astro.url.searchParams.get('personne');
+  if (personne && Astro.locals.account) {
+    const { data } = await supabase
+      .from('participants')
+      .select('first_name, last_name, account_id, accounts(email, payeur_prenom, payeur_nom)')
+      .eq('id', personne)
+      .maybeSingle();
+
+    /*
+     * SON FOYER, OU CELUI D'ISABELLE POUR TOUS. Un adhérent n'inscrit que les
+     * siens ; l'administration achète pour n'importe qui, c'est son métier.
+     */
+    const leSien = data?.account_id === Astro.locals.account.id;
+
+    if (data && (leSien || Astro.locals.isAdmin)) {
+      /*
+       * L'ADRESSE EST CELLE DU FOYER DE LA PERSONNE, PAS CELLE DE QUI CLIQUE.
+       *
+       * Sans cela, une inscription prise par Isabelle pour un adhérent serait
+       * rattachée au compte d'Isabelle : c'est l'adresse du payeur qui décide
+       * du foyer au provisionnement, et la place serait allée chez elle.
+       */
+      const foyer = data.accounts as
+        { email?: string; payeur_prenom?: string | null; payeur_nom?: string | null } | null;
+
+      if (foyer?.email) saisi.email = foyer.email;
+
+      // Le payeur du foyer de la personne, et non celui de qui clique : Isabelle
+      // achetant pour un adhérent ne doit pas voir son propre nom proposé.
+      saisi.payeurPrenom = foyer?.payeur_prenom ?? '';
+      saisi.payeurNom = foyer?.payeur_nom ?? '';
+
+      saisi.autre = true;
+      saisi.prenom = data.first_name ?? '';
+      saisi.nom = data.last_name ?? '';
+      verrouille = true;
+    }
+  }
+}
+
 if (Astro.url.searchParams.has('echec')) {
   erreur = 'Le paiement n’a pas abouti. Rien n’a été prélevé — vous pouvez réessayer.';
   // HelloAsso renvoie ici quand le paiement n'a pas abouti. Rien n'a été
@@ -89,6 +172,6 @@ if (Astro.url.searchParams.has('echec')) {
       Réserver un stage
     </h1>
 
-    <FormulaireReservation seances={seances} erreur={erreur} saisi={saisi} creneauChoisi={creneauChoisi} nomProduit="ce stage" nomCreneau="Quel stage ?" />
+    <FormulaireReservation seances={seances} erreur={erreur} saisi={saisi} creneauChoisi={creneauChoisi} verrouille={verrouille} nomProduit="ce stage" nomCreneau="Quel stage ?" />
   </section>
 </BaseLayout>

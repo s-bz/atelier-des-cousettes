@@ -141,9 +141,19 @@ if (choisie) {
                 'Votre forfait de la saison est entièrement placé. Libérez une date pour pouvoir en réserver une autre.'}
               {solde === 0 && formule === 'terminee' &&
                 'Votre abonnement est arrivé à son terme. Contactez Isabelle pour le renouveler.'}
+              {/*
+                CE QUI SUPPOSE UN FORFAIT NE SE DIT QU'À QUI EN A UN. « Au-delà
+                de votre forfait, à régler avec Isabelle » n'a aucun sens pour
+                quelqu'un qui n'en a jamais pris : son solde n'a rien à
+                dépasser, et il n'y a pas de facture où porter le supplément.
+                Depuis que le site vend en ligne, il achète sa séance.
+              */}
               {solde === 0 && formule === null &&
-                'Aucun abonnement en cours. Contactez Isabelle pour vous inscrire.'}
-              {solde < 0 && `${-solde} séance${-solde < -1 ? 's' : ''} au-delà de votre forfait, à régler avec Isabelle.`}
+                'Choisissez une date et réglez-la en ligne : votre place est retenue aussitôt.'}
+              {solde < 0 && formule === null &&
+                `${-solde} séance${-solde < -1 ? 's' : ''} réservée${-solde < -1 ? 's' : ''} sans avoir été réglée. Achetez-la pour régulariser.`}
+              {solde < 0 && formule !== null &&
+                `${-solde} séance${-solde < -1 ? 's' : ''} au-delà de votre forfait, à régler avec Isabelle.`}
             </p>
             <p class="mt-1 text-sm text-[var(--color-text-light)]">
               {octroye} acquise{octroye > 1 ? 's' : ''} depuis le début, {consomme} déjà réservée{consomme > 1 ? 's' : ''}.
@@ -156,10 +166,22 @@ if (choisie) {
             discret en bout de ligne demandait en plus de deviner que c'était là
             qu'on réservait.
           */}
-          <a href={`/espace-membre/planning/${personnes.length > 1 ? `?personne=${choisie.id}` : ''}`}
-             class="mb-8 flex items-center justify-center gap-2 rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-4 text-lg font-medium text-white transition-opacity hover:opacity-90">
-            Réserver une séance
-          </a>
+          {/*
+            SANS FORFAIT ET SANS CRÉDIT, L'ACTION EST D'ACHETER. Envoyer vers le
+            planning y proposerait de réserver à découvert, ce qui creusait un
+            solde négatif dont personne ne savait que faire.
+          */}
+          {formule === null && solde <= 0 ? (
+            <a href={`/seances-sans-engagement/reserver/?personne=${choisie.id}`}
+               class="mb-8 flex items-center justify-center gap-2 rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-4 text-lg font-medium text-white transition-opacity hover:opacity-90">
+              Acheter une séance
+            </a>
+          ) : (
+            <a href={`/espace-membre/planning/${personnes.length > 1 ? `?personne=${choisie.id}` : ''}`}
+               class="mb-8 flex items-center justify-center gap-2 rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-4 text-lg font-medium text-white transition-opacity hover:opacity-90">
+              Réserver une séance
+            </a>
+          )}
 
           <h2 class="mb-4 text-lg font-bold text-[var(--color-heading)]">Prochaines séances</h2>
 

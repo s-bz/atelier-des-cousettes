@@ -13,7 +13,10 @@ const supabase = getAdminClient();
 
 const { data: personnes } = await supabase
   .from('participants')
-  .select('id, first_name, last_name, phone, account_id, accounts(email), subscriptions(id)')
+  // Une seule chaîne littérale : concaténée, PostgREST la lit encore mais
+  // l'inférence de types s'effondre, et toutes les colonnes deviennent
+  // inconnues.
+  .select('id, first_name, last_name, phone, account_id, accounts(email), subscriptions(id), bookings(id, source, status)')
   .order('last_name');
 
 const soldes = new Map<string, number>();
@@ -50,6 +53,15 @@ for (const [compte, membres] of parCompte) {
 foyers.sort((a, b) => a.membres[0].last_name.localeCompare(b.membres[0].last_name, 'fr'));
 
 /**
+ * Vient-il à la séance plutôt qu'au forfait ?
+ *
+ * Une place `achat` est une séance réglée à l'unité. Qui n'en a que de
+ * celles-là n'a pas d'abonnement — et n'en a pas besoin.
+ */
+const aLaSeance = (p: Personne) =>
+  ((p.bookings ?? []) as { source: string }[]).some((b) => b.source === 'achat');
+
+/**
  * L'état d'un adhérent, en un mot.
  *
  * Le solde était affiché tel quel — « 5 séances » — ce qui se lit comme un
@@ -62,9 +74,23 @@ foyers.sort((a, b) => a.membres[0].last_name.localeCompare(b.membres[0].last_nam
  *   • séances toutes réservées — rien à faire, et c'est le cas normal ;
  *   • à facturer               — plus de séances prises que d'acquises.
  */
-function etatDe(solde: number, sansAbonnement: boolean) {
+function etatDe(solde: number, sansAbonnement: boolean, paieALaSeance = false) {
+  /*
+   * « AUCUN ABONNEMENT » N'EST PLUS UNE ANOMALIE POUR TOUT LE MONDE.
+   *
+   * La pastille rouge datait du temps où l'on ne venait qu'au forfait :
+   * quelqu'un sans abonnement était forcément une fiche à compléter. La vente à
+   * la séance a créé un adhérent parfaitement en règle qui n'en aura jamais —
+   * il paie sa date, il vient, et rien ne manque à son dossier.
+   *
+   * On ne garde donc l'alerte que pour celui qui n'a NI abonnement NI séance
+   * achetée : celui-là, personne ne sait pourquoi il est là.
+   */
+  if (sansAbonnement && paieALaSeance) {
+    return { texte: 'à la séance', urgent: false, discret: true };
+  }
   if (sansAbonnement) {
-    return { texte: 'aucun abonnement', urgent: true, discret: false };
+    return { texte: 'aucune inscription', urgent: true, discret: false };
   }
   if (solde < 0) {
     return { texte: `${-solde} à facturer`, urgent: true, discret: false };
@@ -157,7 +183,7 @@ const aFacturer = (personnes ?? []).filter((p) => (soldes.get(p.id) ?? 0) < 0).l
                 à ne rien marquer.
               */}
               {(() => {
-                const etat = etatDe(solde, sansAbonnement);
+                const etat = etatDe(solde, sansAbonnement, aLaSeance(p));
                 return (
                   <span class={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${
                     etat.urgent
@@ -214,7 +240,12 @@ const aFacturer = (personnes ?? []).filter((p) => (soldes.get(p.id) ?? 0) < 0).l
         return (
           <div class="rounded-xl border border-[var(--color-border-prominent)] bg-[var(--color-card-bg)] shadow-md">
             <p class="border-b border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-light)]">
-              Même compte · {foyer.email}
+              Même compte ·{' '}
+              {foyer.compte ? (
+                <a href={`/espace-membre/admin/comptes/${foyer.compte}/`} class="underline">
+                  {foyer.email}
+                </a>
+              ) : foyer.email}
             </p>
             <div class="divide-y divide-[var(--color-border)]">
               {foyer.membres.map(ligne)}

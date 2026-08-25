@@ -20,10 +20,26 @@ export const onRequest = defineMiddleware(async (context, next) => {
   context.locals.account = null;
   context.locals.isAdmin = false;
 
-  // Les pages publiques sont prérendues : le middleware s'exécute alors au
-  // moment du build, sans requête réelle. On sort immédiatement — et surtout
-  // sans lever d'erreur, sinon le build entier échouerait.
-  if (!context.url.pathname.startsWith('/espace-membre')) {
+  /*
+   * Les pages publiques sont prérendues : le middleware s'exécute alors au
+   * moment du build, sans requête réelle. On sort immédiatement — et surtout
+   * sans lever d'erreur, sinon le build entier échouerait.
+   *
+   * DEUX EXCEPTIONS, ET ELLES SONT RENDUES À LA DEMANDE. Les pages d'achat sont
+   * publiques — on doit pouvoir y venir sans compte — mais un adhérent connecté
+   * qui arrive de son espace ne devrait pas resaisir son adresse ni le nom de
+   * la personne qu'il inscrit. Le nom mal ressaisi crée un second dossier au
+   * même foyer ; c'est arrivé au premier achat réel.
+   *
+   * Elles portent `prerender = false` : la session s'y résout donc pour de
+   * vrai, et non au build. Sans cette dérogation, `locals.account` y valait
+   * toujours null, connecté ou non — et le préremplissage ne pouvait pas
+   * fonctionner.
+   */
+  const ACHAT = ['/seances-sans-engagement/reserver', '/stages-thematiques/reserver'];
+  const chemin = context.url.pathname.replace(/\/+$/, '');
+
+  if (!chemin.startsWith('/espace-membre') && !ACHAT.includes(chemin)) {
     return next();
   }
 
