@@ -285,29 +285,6 @@ const tarifs = tarifsPage.map((t) => ({
 }));
 
 /**
- * Comment se règle un forfait : « En 9 mensualités ou en une fois. »
- *
- * LE NOMBRE VIENT DE LA BASE, comme le reste — neuf pour les adultes et les
- * ados, dix pour les enfants, et c'est `mensualites` qui le dit. Dit une seule
- * fois sous les deux formules plutôt que répété dans chacune : c'est la même
- * facilité de paiement pour l'une et pour l'autre.
- *
- * Les deux formules d'un même public partagent leur nombre d'échéances
- * aujourd'hui ; si elles venaient à diverger, la phrase les nomme toutes plutôt
- * que d'en choisir une.
- */
-function reglementDe(audience: string): string {
-  const echeances = [...new Set(
-    (formules ?? []).filter((f) => f.audience === audience).map((f) => f.mensualites),
-  )].sort((a, b) => a - b);
-
-  if (!echeances.length) return '';
-  return echeances.length === 1
-    ? `En ${echeances[0]} mensualités ou en une fois.`
-    : `En ${echeances.join(' ou ')} mensualités, ou en une fois.`;
-}
-
-/**
  * Ce groupe a-t-il seulement une date à venir ?
  *
  * VERDALLE N'EN A AUCUNE : ses séances « se calent avec le groupe ». Lui
@@ -378,7 +355,10 @@ function lignesDe(audience: string): LigneTarif[] {
       : '';
 
     return {
-      produit: `${f.seances} séances`,
+      // « 9 séances sur 9 mois » : le volume et l'étalement dans le même
+      // souffle. C'est `mensualites` qui donne les mois, comme il donnait les
+      // échéances — la phrase qui les annonçait séparément n'a plus lieu d'être.
+      produit: `${f.seances} séances sur ${f.mensualites} mois`,
       mensuel: `${montantFr(Math.round(f.prixCents / f.mensualites))} €/mois`,
       suite: ` (${montantFr(f.prixCents)} € au total), ${rythme}${avantage}`,
     };
@@ -576,11 +556,6 @@ const courseSchema = buildCourseSchema({
                     </li>
                   ))}
                 </ul>
-                {reglementDe(g.audience) && (
-                  <p class="mt-1 text-sm text-[var(--color-text-light)]">
-                    {reglementDe(g.audience)}
-                  </p>
-                )}
               </div>
             )}
 
