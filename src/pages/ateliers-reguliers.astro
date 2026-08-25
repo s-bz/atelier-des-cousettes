@@ -282,6 +282,29 @@ const tarifs = tarifsPage.map((t) => ({
 }));
 
 /**
+ * Comment se règle un forfait : « En 9 mensualités ou en une fois. »
+ *
+ * LE NOMBRE VIENT DE LA BASE, comme le reste — neuf pour les adultes et les
+ * ados, dix pour les enfants, et c'est `mensualites` qui le dit. Dit une seule
+ * fois sous les deux formules plutôt que répété dans chacune : c'est la même
+ * facilité de paiement pour l'une et pour l'autre.
+ *
+ * Les deux formules d'un même public partagent leur nombre d'échéances
+ * aujourd'hui ; si elles venaient à diverger, la phrase les nomme toutes plutôt
+ * que d'en choisir une.
+ */
+function reglementDe(audience: string): string {
+  const echeances = [...new Set(
+    (formules ?? []).filter((f) => f.audience === audience).map((f) => f.mensualites),
+  )].sort((a, b) => a - b);
+
+  if (!echeances.length) return '';
+  return echeances.length === 1
+    ? `En ${echeances[0]} mensualités ou en une fois.`
+    : `En ${echeances.join(' ou ')} mensualités, ou en une fois.`;
+}
+
+/**
  * Ce groupe a-t-il seulement une date à venir ?
  *
  * VERDALLE N'EN A AUCUNE : ses séances « se calent avec le groupe ». Lui
@@ -494,16 +517,23 @@ const courseSchema = buildCourseSchema({
               rangeaient tout public autre qu'« enfants » chez les adultes.
             */}
             {groupeOuvert(g) && lignesDe(g.audience).length > 0 && (
-              <ul class="mb-6 space-y-1">
-                {lignesDe(g.audience).map((l) => (
-                  <li class="text-sm text-[var(--color-text-light)]">
-                    <span class="font-semibold text-[var(--color-heading)]"
-                    >{l.produit}</span>{' — '}<span
-                      class="font-semibold text-[var(--color-button)]"
-                    >{l.mensuel}</span>{l.suite}
-                  </li>
-                ))}
-              </ul>
+              <div class="mb-6">
+                <ul class="space-y-1">
+                  {lignesDe(g.audience).map((l) => (
+                    <li class="text-sm text-[var(--color-text-light)]">
+                      <span class="font-semibold text-[var(--color-heading)]"
+                      >{l.produit}</span>{' — '}<span
+                        class="font-semibold text-[var(--color-button)]"
+                      >{l.mensuel}</span>{l.suite}
+                    </li>
+                  ))}
+                </ul>
+                {reglementDe(g.audience) && (
+                  <p class="mt-1 text-sm text-[var(--color-text-light)]">
+                    {reglementDe(g.audience)}
+                  </p>
+                )}
+              </div>
             )}
 
             {/* Deux colonnes au plus : une liste de dates a besoin de sa largeur. */}
