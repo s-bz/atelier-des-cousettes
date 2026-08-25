@@ -263,10 +263,16 @@ const JETON_URL = `${HOTE}/oauth2/token`;
 
 /**
  * Le slug de l'association, tel qu'il figure dans ses propres URL publiques
- * (helloasso.com/associations/les-p-tits-piafs). Ce n'est pas un secret, et le
- * changer serait un événement bien plus grand qu'une variable d'environnement.
+ * (helloasso.com/associations/les-p-tits-piafs).
+ *
+ * IL A LONGTEMPS ÉTÉ ÉCRIT EN DUR, et l'argument tenait : ce n'est pas un
+ * secret, et en changer serait un événement bien plus grand qu'une variable
+ * d'environnement. Le bac à sable a défait ce raisonnement — l'organisation
+ * qu'on y crée porte forcément un autre slug, et le sien ne dit rien de la
+ * vraie. Il suit donc l'hôte : les deux désignent ensemble un environnement, et
+ * les séparer permettrait d'appeler la production avec l'organisation d'essai.
  */
-const ORGANISATION = 'les-p-tits-piafs';
+const ORGANISATION = env('HELLOASSO_ORGANISATION') ?? 'les-p-tits-piafs';
 
 /**
  * Le jeton d'accès, gardé jusqu'à son expiration.

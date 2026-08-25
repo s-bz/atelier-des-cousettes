@@ -63,7 +63,7 @@ if (Astro.request.method === 'POST') {
         expire_le: String(form.get('expire_le') ?? '') || null,
       });
       if (error) {
-        erreur = error.message.includes('duplicate')
+        erreur = error.code === '23505'
           ? `Le code « ${code} » existe déjà.`
           : `Création impossible : ${error.message}`;
       } else {
