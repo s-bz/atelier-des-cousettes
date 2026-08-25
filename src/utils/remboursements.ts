@@ -21,25 +21,38 @@ export async function releverRemboursements(
 ): Promise<{ commandes: number; deposes: number; echecs: number }> {
   const bilan = { commandes: 0, deposes: 0, echecs: 0 };
 
-  const [{ data: abonnements }, { data: places }] = await Promise.all([
-    supabase
-      .from('subscriptions')
-      .select('helloasso_order_id')
-      .not('helloasso_order_id', 'is', null)
-      .gte('ends_on', new Date().toISOString().slice(0, 10)),
-    supabase
-      .from('bookings')
-      .select('helloasso_order_id')
-      .not('helloasso_order_id', 'is', null)
-      .eq('status', 'booked'),
+  /*
+   * TOUTES LES COMMANDES, QUEL QUE SOIT L'ÉTAT DE LA PLACE.
+   *
+   * Le premier tri ne gardait que les places encore réservées et les
+   * abonnements en cours. Il a manqué un remboursement réel dès le premier
+   * essai : la place avait été libérée la veille, sa commande sortait donc de
+   * la liste, et le remboursement est resté invisible.
+   *
+   * Ce n'est pas qu'un manque d'information. Quelqu'un qui libère sa séance
+   * récupère son crédit — puis se fait rembourser : sans ce relevé, il garde un
+   * crédit pour une séance qu'on lui a rendue en argent.
+   *
+   * La liste est bornée par ce qui a DÉJÀ été traité, non par l'état des
+   * places : une commande dont le remboursement est confirmé ne se réinterroge
+   * plus, et la liste cesse donc de grandir.
+   */
+  const [{ data: abonnements }, { data: places }, { data: classees }] = await Promise.all([
+    supabase.from('subscriptions').select('helloasso_order_id')
+      .not('helloasso_order_id', 'is', null),
+    supabase.from('bookings').select('helloasso_order_id')
+      .not('helloasso_order_id', 'is', null),
+    supabase.from('remboursements').select('commande').not('confirme_le', 'is', null),
   ]);
+
+  const deja = new Set((classees ?? []).map((r) => r.commande as string));
 
   // Une place offerte n'a pas de commande chez HelloAsso : l'interroger
   // rendrait un 404 par nuit, pour rien.
   const commandes = [...new Set([
     ...(abonnements ?? []).map((a) => a.helloasso_order_id as string),
     ...(places ?? []).map((b) => b.helloasso_order_id as string),
-  ])].filter((c) => c && !c.startsWith('GRATUIT-'));
+  ])].filter((c) => c && !c.startsWith('GRATUIT-') && !deja.has(c));
 
   bilan.commandes = commandes.length;
 

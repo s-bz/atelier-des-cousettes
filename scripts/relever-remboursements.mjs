@@ -32,10 +32,9 @@ const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
 // Les commandes encore vivantes — celles dont l'inscription court.
 const [{ data: abos }, { data: places }] = await Promise.all([
   supabase.from('subscriptions').select('helloasso_order_id')
-    .not('helloasso_order_id', 'is', null)
-    .gte('ends_on', new Date().toISOString().slice(0, 10)),
+    .not('helloasso_order_id', 'is', null),
   supabase.from('bookings').select('helloasso_order_id')
-    .not('helloasso_order_id', 'is', null).eq('status', 'booked'),
+    .not('helloasso_order_id', 'is', null),
 ]);
 
 const commandes = [...new Set([
