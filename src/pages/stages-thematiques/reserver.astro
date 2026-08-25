@@ -101,12 +101,27 @@ if (Astro.request.method !== 'POST') {
   if (personne && Astro.locals.account) {
     const { data } = await supabase
       .from('participants')
-      .select('first_name, last_name')
+      .select('first_name, last_name, account_id, accounts(email)')
       .eq('id', personne)
-      .eq('account_id', Astro.locals.account.id)
       .maybeSingle();
 
-    if (data) {
+    /*
+     * SON FOYER, OU CELUI D'ISABELLE POUR TOUS. Un adhérent n'inscrit que les
+     * siens ; l'administration achète pour n'importe qui, c'est son métier.
+     */
+    const leSien = data?.account_id === Astro.locals.account.id;
+
+    if (data && (leSien || Astro.locals.isAdmin)) {
+      /*
+       * L'ADRESSE EST CELLE DU FOYER DE LA PERSONNE, PAS CELLE DE QUI CLIQUE.
+       *
+       * Sans cela, une inscription prise par Isabelle pour un adhérent serait
+       * rattachée au compte d'Isabelle : c'est l'adresse du payeur qui décide
+       * du foyer au provisionnement, et la place serait allée chez elle.
+       */
+      const courriel = (data.accounts as { email?: string } | null)?.email;
+      if (courriel) saisi.email = courriel;
+
       saisi.autre = true;
       saisi.prenom = data.first_name ?? '';
       saisi.nom = data.last_name ?? '';
