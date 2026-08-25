@@ -21,7 +21,7 @@ declare -a SUITES=(
   "facturation:8"
   "auto-inscription:8"
   "public-enfants-adultes:4"
-  "forfaits:7"
+  "forfaits:8"
   "adhesions:4"
   "reservation-payee:8"
   "seance-payee:7"
