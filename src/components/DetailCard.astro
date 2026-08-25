@@ -49,7 +49,7 @@ const { name, href, primaryBadge, secondaryBadge, details = [], note, actionLabe
     {secondaryBadge && <span class="text-[var(--color-text-light)]">{secondaryBadge}</span>}
   </div>
   {actionLabel && (
-    <span class="mt-4 inline-block self-start rounded-[var(--radius-button)] border-2 border-[var(--color-button)] px-5 py-2 text-sm font-medium text-[var(--color-button)] transition-colors group-hover:bg-[var(--color-button)] group-hover:text-white">
+    <span class="mt-4 inline-block self-start rounded-[var(--radius-button)] bg-[var(--color-button)] px-5 py-2 text-sm font-medium text-white transition-colors group-hover:bg-[var(--color-button-hover)]">
       {actionLabel}
     </span>
   )}

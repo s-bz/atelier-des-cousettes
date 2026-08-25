@@ -86,22 +86,11 @@ const schemas = buildServicePageSchemas({
         coverImage={couverture ?? undefined} altText={page.coverImageAlt ?? undefined} />
 
   {/*
-    Le bouton vit DANS la section d'introduction, jamais après : posé dehors,
-    il tombe sur la couture entre le fond chaud et la section suivante, et la
-    limite des deux couleurs le coupe en deux.
+    PAS DE BOUTON D'EN-TÊTE. Il menait à la liste des sept stages, en tête
+    d'une page qui EST cette liste — et il fallait de toute façon en choisir un
+    ensuite. Chaque carte porte le sien, qui sait de quel stage il parle.
   */}
-  {page.introduction && (
-    <IntroSection text={page.introduction} cta={false} fond>
-      {page.inscriptionLabel && page.inscriptionUrl && (
-        <p class="mt-8">
-          <a href={page.inscriptionUrl}
-             class="inline-block rounded-[var(--radius-button)] bg-[var(--color-button)] px-8 py-3 font-medium text-white">
-            {page.inscriptionLabel}
-          </a>
-        </p>
-      )}
-    </IntroSection>
-  )}
+  {page.introduction && <IntroSection text={page.introduction} cta={false} fond />}
 
   {stages.length === 0 ? (
     <section class="py-16 md:py-20">
@@ -140,11 +129,13 @@ const schemas = buildServicePageSchemas({
     </section>
   )}
 
-  <Temoignages page="stages" />
+  {/* Les fonds alternent : introduction, stages, témoignages, FAQ, liens. */}
+  <Temoignages page="stages" fond />
 
-  <FaqSection title={page.faqSectionTitle} items={faqAJour} ctaLabel={page.ctaLabel} fond />
+  <FaqSection title={page.faqSectionTitle} items={faqAJour} ctaLabel={page.ctaLabel} fond={false} />
 
   {page.crossLinksText && (
-    <CrossLinksSection text={page.crossLinksText} excludeHref="/stages-thematiques/" />
+    <CrossLinksSection text={page.crossLinksText} excludeHref="/stages-thematiques/"
+                       class="bg-[var(--color-bg-accent)]" />
   )}
 </BaseLayout>
