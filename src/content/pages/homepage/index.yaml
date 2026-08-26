@@ -3,7 +3,9 @@ heroTitle: Apprenez à coudre en petits groupes, entre Haute-Garonne et Tarn
 subtitle: À Revel et Verdalle, à 20 min de Castres — débutants bienvenus
 seoTitle: Cours de couture à Revel et Castres
 seoDescription: >-
-  Cours de couture, ateliers et stages à Revel (Haute-Garonne) et Verdalle (Tarn), à 20 min de Castres. Petits groupes, de 28 € à 95 €. Isabelle, couturière diplômée CAP.
+  Cours de couture, ateliers et stages à Revel (Haute-Garonne) et Verdalle
+  (Tarn), à 20 min de Castres. Petits groupes, à partir de 22€. Isabelle,
+  couturière diplômée CAP.
 coverImage: /src/assets/images/covers/homepage/coverImage.jpeg
 heroLinkLabel: Voir les formules
 introductionTitle: Le plaisir de coudre entre Haute-Garonne et Tarn
@@ -20,7 +22,9 @@ serviceCards:
       Une participante pose un patron sur un coton fleuri, entre ciseaux, mètre
       ruban, règle de patronage et pelote à épingles
     priceRange: 36 €/mois pour 9 séances (25 € ado, 34 € enfant)
-    shortDescription: Progressez en petits groupes, une à deux fois par mois, de septembre à juin.
+    shortDescription: >-
+      Progressez en petits groupes, une à deux fois par mois, de septembre à
+      juin.
   - label: Stages thématiques
     href: /stages-thematiques/
     image: /src/assets/images/homepage/serviceCards/1/image.jpg
@@ -34,7 +38,9 @@ serviceCards:
   - label: Séances sans engagement
     href: /seances-sans-engagement/
     image: /src/assets/images/homepage/serviceCards/2/image.jpg
-    imageAlt: Bobines de fil, dé à coudre, mètre ruban et ciseaux posés près d'une machine à coudre
+    imageAlt: >-
+      Bobines de fil, dé à coudre, mètre ruban et ciseaux posés près d'une
+      machine à coudre
     priceRange: 45 € la séance de 3 h (22 € en 1 h 30)
     shortDescription: >-
       Une séance ponctuelle, sans engagement, pour apprendre une technique
@@ -69,8 +75,8 @@ valuePropositions:
     description: De 22 € à 80 € selon la formule choisie, tissu et fournitures non compris.
   - title: Deux lieux de cours
     description: >-
-      À la maison des associations de Revel (Haute-Garonne) et à l'atelier
-      privé de Verdalle (Tarn).
+      À la maison des associations de Revel (Haute-Garonne) et à l'atelier privé
+      de Verdalle (Tarn).
 animatriceTitle: Votre animatrice
 animatriceText: >
   Isabelle Bultez enseigne la couture depuis plus de dix ans. Diplômée du CAP
@@ -89,10 +95,10 @@ youtubeTitle: Découvrez l'atelier en vidéo
 youtubeVideoId: VmuGxe5MIK4
 youtubeDescription: >-
   Découvrez L'Atelier des Cousettes en vidéo : l'ambiance des cours, les projets
-  des élèves et le plaisir de coudre ensemble à Revel et Verdalle.
-  Isabelle Bultez, couturière diplômée CAP couture flou, vous accueille en
-  petits groupes pour des ateliers réguliers, des stages thématiques et des
-  séances sans engagement ouvertes à tous.
+  des élèves et le plaisir de coudre ensemble à Revel et Verdalle. Isabelle
+  Bultez, couturière diplômée CAP couture flou, vous accueille en petits groupes
+  pour des ateliers réguliers, des stages thématiques et des séances sans
+  engagement ouvertes à tous.
 youtubeCredit: Un grand merci à Yan Kwai Maurel pour sa vidéo !
 actualitesTitle: Actualités de l'atelier
 blogSectionTitle: Derniers articles du blog
