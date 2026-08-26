@@ -482,6 +482,30 @@ export default config({
           },
         ),
         faqItems: faqItemsField(),
+        /*
+         * LES ARTICLES QUI PRÉPARENT UN ATELIER RÉGULIER.
+         *
+         * Même champ que sur les fiches de stage, et pour la même raison : le
+         * blog ne recevait de liens que du blog. Un article dont la seule porte
+         * d'entrée est un autre article vit dans une boucle fermée, que Google
+         * explore peu et finit par ne plus indexer du tout — quatre des
+         * vingt-trois y étaient, dont celui sur la couture avec les enfants
+         * alors que cette page vend des créneaux enfants et ados le samedi.
+         *
+         * À choisir sur le SUJET, non sur la fraîcheur : un article rattaché
+         * ici doit préparer ce qu'on vient y faire — ce qu'un enfant peut
+         * coudre, ce qu'il faut apporter dans sa trousse. Deux renvois justes
+         * valent mieux que six décoratifs, qui diluent les premiers sans rien
+         * apprendre à personne.
+         */
+        articlesSectionTitle: fields.text({ label: 'Titre section articles liés' }),
+        articles: fields.array(
+          fields.relationship({ label: 'Article', collection: 'blog' }),
+          {
+            label: 'Articles de blog liés (optionnel)',
+            itemLabel: (props) => props.value || 'Article',
+          },
+        ),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
         voirCreneauxLabel: fields.text({
           label: 'Bouton d’en-tête, vers les créneaux',
@@ -558,6 +582,27 @@ export default config({
         lienDeroulement: fields.text({ label: 'Bouton vers le déroulement (ex : Comment ça se passe)' }),
         faqSectionTitle: fields.text({ label: 'Titre section FAQ' }),
         faqItems: faqItemsField(),
+        /*
+         * LES ARTICLES QUI PRÉPARENT UNE SÉANCE PONCTUELLE.
+         *
+         * Même champ que sur les fiches de stage et sur les ateliers
+         * réguliers : sans lui, un article n'a d'autres liens entrants que
+         * ceux d'autres articles, et le blog tourne en vase clos.
+         *
+         * Ce que cette page promet dicte ce qu'on y rattache : « un petit
+         * projet adapté à votre niveau » quand on arrive sans idée, et « un
+         * projet plus ambitieux que vous poursuivrez chez vous ». Les deux
+         * phrases appellent chacune leur article, et aucune autre page du site
+         * ne les tient.
+         */
+        articlesSectionTitle: fields.text({ label: 'Titre section articles liés' }),
+        articles: fields.array(
+          fields.relationship({ label: 'Article', collection: 'blog' }),
+          {
+            label: 'Articles de blog liés (optionnel)',
+            itemLabel: (props) => props.value || 'Article',
+          },
+        ),
         crossLinksText: fields.text({ label: 'Texte liens croisés', multiline: true }),
         inscriptionLabel: fields.text({
           label: 'Bouton de réservation en ligne',
