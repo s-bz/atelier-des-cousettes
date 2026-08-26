@@ -8,6 +8,7 @@ import vercel from '@astrojs/vercel';
 import tailwindcss from '@tailwindcss/vite';
 import { readFileSync, readdirSync } from 'node:fs';
 import { toSlug } from './src/utils/strings';
+import { estHorsPlanDuSite } from './src/utils/hors-index';
 
 /**
  * Les fichiers de contenu à embarquer dans la fonction Vercel.
@@ -59,17 +60,7 @@ for (const entry of readdirSync('src/content/blog', { withFileTypes: true })) {
   if (date) blogLastmod.set(`${SITE}/blog/${entry.name}/`, date);
 }
 
-/**
- * Les pages écartées du plan du site.
- *
- * Une seule règle les réunit : AUCUNE N'EST INDEXABLE. Les y laisser demandait
- * à Google de venir voir des pages qu'on lui interdit de retenir — la Search
- * Console le signale comme « URL envoyée marquée noindex ». Le plan du site est
- * une invitation à explorer, pas un inventaire de ce qui existe.
- *
- * Aucune ne devient pour autant inaccessible : elles répondent comme avant, et
- * les mentions légales gardent leur lien en pied de page.
- */
+
 /**
  * Les fiches de stage, ajoutées au plan du site à la main.
  *
@@ -92,33 +83,16 @@ function fichesDeStage() {
   return noms.map((nom) => `${SITE}/stages-thematiques/${toSlug(nom)}/`);
 }
 
-const HORS_PLAN = [
-  // Douze adresses, dont les neuf écrans d'administration. Pour un visiteur
-  // anonyme — donc pour Google — toutes répondent 302 vers la connexion.
-  // La connexion elle-même répond 200 mais porte `noIndex` ; elle demeure la
-  // page d'accueil déclarée pour la validation OAuth de Google, qui ne dépend
-  // pas du plan du site.
-  '/espace-membre/',
-  // Marquées `noIndex` de longue date : elles n'ont rien à dire à une recherche.
-  '/mentions-legales/',
-  '/confidentialite/',
-  // Les trois fichiers écrits pour les machines. Ils ne sont pas des pages : les
-  // annoncer au plan du site inviterait Google à indexer trois textes bruts qui
-  // répètent, sans mise en page, ce que les pages disent déjà — le doublon exact
-  // qu'une balise canonique sert d'ordinaire à éviter. Les robots qui les lisent
-  // vont les chercher à une adresse convenue, pas dans un plan de site.
-  '/llms.txt',
-  '/llms-full.txt',
-  '/tarifs.md',
-];
-
 // https://astro.build/config
 export default defineConfig({
   site: SITE,
   adapter: vercel({ includeFiles: contenuKeystatic() }),
   integrations: [react(), markdoc(), keystatic(), sitemap({
     customPages: fichesDeStage(),
-    filter: (page) => !HORS_PLAN.some((motif) => page.includes(motif)),
+    // Le plan du site et la balise `robots` disent la même chose parce qu'ils
+    // lisent la même liste : `src/utils/hors-index.ts`. Une page en noindex ne
+    // peut donc plus se retrouver ici par oubli.
+    filter: (page) => !estHorsPlanDuSite(page),
     serialize(item) {
       const lastmod = blogLastmod.get(item.url);
       if (lastmod) item.lastmod = lastmod;
