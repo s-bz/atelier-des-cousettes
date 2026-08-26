@@ -35,7 +35,26 @@ let titre = 'Votre inscription';
 let message: string | null = null;
 let ennui: string | null = null;
 
-if (!idIntention) {
+/*
+ * DEUX INSCRIPTIONS N'ONT AUCUN PAIEMENT À RELIRE, et ce n'est pas une panne.
+ *
+ * Un règlement hors ligne — chèque ou espèces, déjà encaissé — et un code qui
+ * couvre la totalité ne passent pas par HelloAsso : l'inscription est
+ * enregistrée AVANT la redirection, et il n'y a pas d'intention à retrouver.
+ * Sans ces deux branches, la page annonçait « Nous n'avons pas retrouvé le
+ * paiement » à quelqu'un qui venait de s'inscrire correctement.
+ */
+if (Astro.url.searchParams.get('horsligne') === '1') {
+  titre = 'C’est enregistré, et vous êtes inscrit';
+  // Surtout pas « il n'y a rien eu à régler » : la famille a payé, en chèque
+  // ou en espèces, avant même de recevoir son code.
+  message = 'Votre règlement est enregistré et vos premières séances sont déjà posées sur '
+    + 'votre créneau. Vous pouvez les modifier depuis votre espace.';
+} else if (Astro.url.searchParams.get('gratuit') === '1') {
+  titre = 'C’est enregistré, et vous êtes inscrit';
+  message = 'Votre code couvrait la totalité : il n’y a rien eu à régler. Vos premières '
+    + 'séances sont déjà posées sur votre créneau.';
+} else if (!idIntention) {
   ennui = 'Nous n’avons pas retrouvé le paiement. Si vous avez été débité, écrivez-nous.';
 } else {
   const intention = await lireIntention(idIntention);

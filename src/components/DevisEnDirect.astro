@@ -97,19 +97,33 @@ const { email } = Astro.props;
         if (!r.ok) { bloc!.hidden = true; return; }
         const d = await r.json();
 
-        aujourdhui!.textContent = `À régler aujourd’hui : ${euros(d.premierCents)}`;
+        /*
+         * UN RÈGLEMENT DÉJÀ ENCAISSÉ NE SE CHIFFRE PAS EN « À RÉGLER ».
+         *
+         * Les prix ne bougent pas d'un centime — c'est le canal qui change, pas
+         * le montant. Annoncer « À régler aujourd'hui : 339 € » à quelqu'un qui
+         * a remis son chèque la semaine dernière lui ferait craindre d'être
+         * prélevé une seconde fois.
+         */
+        aujourdhui!.textContent = d.horsLigne
+          ? `Déjà réglé : ${euros(d.totalCents)}`
+          : `À régler aujourd’hui : ${euros(d.premierCents)}`;
         const dont = d.adhesionCents
           ? `, dont ${euros(d.adhesionCents)} d’adhésion (une fois par famille)`
           : ` — adhésion déjà réglée`;
-        suite!.textContent = d.nbEcheances
-          ? `puis ${d.nbEcheances} versements de ${euros(d.suivantsCents)} — ${euros(d.totalCents)} en tout${dont}.`
-          : `C’est le total${dont}.`;
+        suite!.textContent = d.horsLigne
+          ? `Votre règlement par chèque ou en espèces couvre l’inscription${dont}. Il n’y aura rien à payer en ligne.`
+          : d.nbEcheances
+            ? `puis ${d.nbEcheances} versements de ${euros(d.suivantsCents)} — ${euros(d.totalCents)} en tout${dont}.`
+            : `C’est le total${dont}.`;
         if (ligneCode) {
           // Un code refusé se dit ici, pas au moment de payer : c'est le seul
           // endroit où l'on peut encore en essayer un autre.
           ligneCode.textContent = d.codeErreur
             ? d.codeErreur
-            : d.reductionCents ? `Code appliqué : ${euros(d.reductionCents)} de moins sur le forfait.` : '';
+            : d.horsLigne
+              ? 'Code de règlement reconnu : votre inscription est déjà payée.'
+              : d.reductionCents ? `Code appliqué : ${euros(d.reductionCents)} de moins sur le forfait.` : '';
           ligneCode.className = `mt-1 text-sm ${d.codeErreur ? 'text-[var(--color-bg-pink)]' : 'text-[var(--color-button)]'}`;
         }
         bloc!.hidden = false;

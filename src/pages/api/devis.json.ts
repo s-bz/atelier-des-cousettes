@@ -3,6 +3,8 @@ import { getAdminClient } from '../../utils/supabase';
 import { lireCatalogueFormules } from '../../utils/tarifs';
 import { adhesionDuePour, devis } from '../../utils/achat';
 import { lireCode, reductionDe } from '../../utils/codes-promo';
+import { lireReglement, verifierReglement } from '../../utils/hors-ligne';
+import { ADHESION_CENTS } from '../../utils/helloasso';
 import { saisonDe } from '../../utils/inscriptions';
 
 export const prerender = false;
@@ -46,15 +48,37 @@ export const GET: APIRoute = async ({ url }) => {
   const saisi = url.searchParams.get('code');
   let reductionCents = 0;
   let codeErreur: string | null = null;
+  /** Vrai si le code saisi atteste d'un règlement déjà encaissé. */
+  let horsLigne = false;
 
   if (saisi?.trim()) {
     const saison = saisonDe(new Date());
     const code = await lireCode(supabase, saisi);
-    if (!code) codeErreur = 'Ce code n’existe pas.';
-    else {
+
+    if (code) {
       const r = reductionDe(formule.prixCents, code, { saison, aujourdhui: new Date() });
       if (r.ok) reductionCents = r.valeur;
       else codeErreur = r.erreur;
+    } else {
+      /*
+       * UN CODE DE RÈGLEMENT HORS LIGNE N'EST PAS UN CODE INCONNU.
+       *
+       * La famille a reçu « un code » et ne sait pas de quelle sorte. Répondre
+       * « ce code n'existe pas » à un chèque déjà encaissé la ferait ressaisir
+       * en boucle un code parfaitement valable — et probablement renoncer.
+       *
+       * Le contrôle du montant est le MÊME qu'à l'achat, appelé ici pour que
+       * l'écart se voie avant le clic plutôt qu'après.
+       */
+      const reglement = await lireReglement(supabase, saisi);
+      if (!reglement) {
+        codeErreur = 'Ce code n’existe pas.';
+      } else {
+        const total = formule.prixCents + (adhesionDue ? ADHESION_CENTS : 0);
+        const v = verifierReglement(total, reglement, { saison, aujourdhui: new Date() });
+        if (v.ok) horsLigne = true;
+        else codeErreur = v.erreur;
+      }
     }
   }
 
@@ -68,6 +92,7 @@ export const GET: APIRoute = async ({ url }) => {
         reductionCents,
       }),
       codeErreur,
+      horsLigne,
     }),
     { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } },
   );

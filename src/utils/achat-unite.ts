@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Resultat } from './inscriptions';
 import { saisonDe } from './inscriptions';
-import { preparerAchatUnite, creerIntention } from './helloasso';
+import { preparerAchatUnite, creerIntention, MINIMUM_PRELEVEMENT_CENTS } from './helloasso';
 import { lireCode, reductionDe, normaliserCode } from './codes-promo';
 import { provisionner } from './provisionnement';
 import { mesurer } from './mesure';
@@ -203,6 +203,17 @@ export async function demarrerAchatUnite(
     if (!r.ok) return r;
     reductionCents = r.valeur;
     codeApplique = code.code;
+
+    // Comme au forfait : en dessous de cinquante centimes, HelloAsso ne prélève
+    // pas, et le chemin gratuit ne vaut qu'à zéro. Il n'y a pas de commande à
+    // former entre les deux.
+    const reste = prixCents - reductionCents;
+    if (reste > 0 && reste < MINIMUM_PRELEVEMENT_CENTS) {
+      return echec(
+        'Ce code laisse un montant trop faible pour être prélevé. '
+        + 'Écrivez-nous : nous finaliserons l’inscription à la main.',
+      );
+    }
   }
 
   const base = origineJoignable(o.origine, o.site);
