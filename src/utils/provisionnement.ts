@@ -415,6 +415,14 @@ export async function provisionner(
       // Un code à 100 % ne passe pas par HelloAsso : la référence le dit, et
       // sans elle une inscription offerte gonflerait le chiffre d'affaires.
       gratuit: commande.orderId.startsWith('GRATUIT-'),
+      /*
+       * NI GRATUIT NI PAR CARTE. Un chèque ne passe pas davantage par
+       * HelloAsso, mais l'argent est bien entré : `montant_cents` le compte, et
+       * ce drapeau dit par quel canal. Sans lui, les encaissements hors ligne
+       * seraient indiscernables des paiements par carte, et le rapprochement
+       * bancaire n'aurait plus de point de départ.
+       */
+      hors_ligne: commande.orderId.startsWith('HORSLIGNE-'),
     });
   }
 

@@ -1,0 +1,282 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { requireAdmin } from '../../../utils/guards';
+import { getAdminClient } from '../../../utils/supabase';
+import { saisonDe } from '../../../utils/inscriptions';
+import { normaliserCode, etatDe } from '../../../utils/hors-ligne';
+import type { EtatReglement } from '../../../utils/hors-ligne';
+
+const garde = requireAdmin(Astro);
+if (garde) return garde;
+
+const supabase = getAdminClient();
+const saison = saisonDe(new Date());
+
+/*
+ * LES RÈGLEMENTS PAR CHÈQUE ET EN ESPÈCES.
+ *
+ * CE N'EST PAS UNE REMISE. Un code de réduction à 100 % en tenait lieu : la
+ * commande partait à zéro euro, et les livres annonçaient une place offerte là
+ * où l'association avait encaissé trois cent trente-neuf euros. Ici les prix ne
+ * bougent pas — c'est le CANAL de paiement qui change, et le montant reçu qui
+ * est consigné.
+ *
+ * LE CODE EST LE REÇU. Pour une carte, HelloAsso tient le registre ; pour un
+ * chèque, il n'existait aucune trace nulle part. Cette page est le livre de
+ * caisse qui manquait.
+ *
+ * ON NE LE CRÉE QU'APRÈS AVOIR ENCAISSÉ. Le code n'est remis qu'une fois le
+ * chèque en main : il n'y a donc pas d'état « en attente », et la date
+ * d'encaissement est un fait, pas une promesse.
+ */
+
+let message: string | null = null;
+let erreur: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = String(form.get('action') ?? '');
+
+  if (action === 'archiver') {
+    const { error } = await supabase.from('reglements_hors_ligne')
+      .update({ archived_at: new Date().toISOString() })
+      .eq('code', String(form.get('code') ?? ''));
+    if (error) erreur = `Archivage impossible : ${error.message}`;
+    else message = 'Règlement archivé : son code ne vaut plus.';
+  } else {
+    const code = normaliserCode(String(form.get('code') ?? ''));
+    const moyen = String(form.get('moyen') ?? '');
+    const montant = Number(form.get('montant') ?? 0);
+
+    if (!code) {
+      erreur = 'Donnez un code.';
+    } else if (moyen !== 'cheque' && moyen !== 'especes') {
+      erreur = 'Indiquez chèque ou espèces.';
+    } else if (!montant || montant <= 0) {
+      erreur = 'Indiquez le montant reçu.';
+    } else {
+      const { error } = await supabase.from('reglements_hors_ligne').insert({
+        code,
+        moyen,
+        // Saisi en euros, conservé en centimes comme partout ailleurs.
+        montant_cents: Math.round(montant * 100),
+        saison,
+        encaisse_le: String(form.get('encaisse_le') ?? '') || undefined,
+        expire_le: String(form.get('expire_le') ?? '') || null,
+      });
+      if (error) {
+        erreur = error.code === '23505'
+          ? `Le code « ${code} » existe déjà.`
+          : `Création impossible : ${error.message}`;
+      } else {
+        message = `Code « ${code} » créé pour ${montant} €. Remettez-le à la famille.`;
+      }
+    }
+  }
+}
+
+const { data: lignes } = await supabase
+  .from('reglements_hors_ligne')
+  .select('code, moyen, montant_cents, saison, encaisse_le, utilise_le, reference, expire_le, archived_at')
+  .order('archived_at', { nullsFirst: true })
+  .order('cree_le', { ascending: false });
+
+const aujourdhui = new Date();
+const enrichis = (lignes ?? []).map((r) => ({
+  ...r,
+  etat: (r.archived_at ? 'archive' : etatDe({
+    code: r.code,
+    moyen: r.moyen,
+    montantCents: r.montant_cents,
+    saison: r.saison,
+    encaisseLe: r.encaisse_le,
+    utiliseLe: r.utilise_le,
+    expireLe: r.expire_le,
+  }, { saison, aujourdhui })) as EtatReglement | 'archive',
+}));
+
+const disponibles = enrichis.filter((r) => r.etat === 'disponible');
+const utilises = enrichis.filter((r) => r.etat === 'utilise');
+const perimes = enrichis.filter((r) => r.etat === 'expire' || r.etat === 'hors-saison');
+const archives = enrichis.filter((r) => r.etat === 'archive');
+
+/*
+ * CE QUE LA CAISSE A REÇU. La somme des règlements utilisés est le seul chiffre
+ * qui dise ce qui est entré hors HelloAsso — celui qu'on cherche au moment de
+ * rapprocher le relevé bancaire.
+ */
+const encaisse = utilises.reduce((n, r) => n + r.montant_cents, 0);
+const enAttente = disponibles.reduce((n, r) => n + r.montant_cents, 0);
+
+const euros = (cents: number) => (cents / 100).toFixed(2).replace('.', ',').replace(',00', '');
+const dateFr = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const MOYEN: Record<string, string> = { cheque: 'chèque', especes: 'espèces' };
+const MOTIF: Record<string, string> = {
+  'utilise': 'a servi',
+  'expire': 'périmé',
+  'hors-saison': 'autre saison',
+};
+---
+
+<AdminLayout title="Règlements hors ligne" soustitre="Chèques et espèces — un code par règlement encaissé">
+  {message && <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] px-4 py-3">{message}</p>}
+  {erreur && <p class="mb-6 rounded-xl bg-[var(--color-bg-pink)] px-4 py-3 text-white">{erreur}</p>}
+
+  <p class="mb-6 text-[var(--color-text)]">
+    Vous avez reçu un chèque ou des espèces : créez le code ici, puis remettez-le à la famille.
+    Elle s’inscrit elle-même avec, choisit son créneau et ses dates, et <strong>rien n’est
+    prélevé en ligne</strong>. Les prix ne changent pas — le code atteste du règlement, il ne
+    fait pas de remise.
+  </p>
+
+  <div class="mb-8 grid gap-4 sm:grid-cols-2">
+    <div class="rounded-xl bg-[var(--color-bg-accent)] px-4 py-3">
+      <p class="text-sm text-[var(--color-text-light)]">Encaissé et inscrit</p>
+      <p class="text-xl font-bold text-[var(--color-heading)]">{euros(encaisse)} €</p>
+    </div>
+    <div class="rounded-xl bg-[var(--color-bg-accent)] px-4 py-3">
+      <p class="text-sm text-[var(--color-text-light)]">Encaissé, code pas encore employé</p>
+      <p class="text-xl font-bold text-[var(--color-heading)]">{euros(enAttente)} €</p>
+    </div>
+  </div>
+
+  <details class="mb-8 rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
+    <summary class="cursor-pointer font-medium text-[var(--color-heading)]">
+      Enregistrer un règlement
+    </summary>
+
+    <form method="post" class="mt-4 space-y-4">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="code" class="block text-sm font-medium mb-1">Code</label>
+          <div class="flex gap-2">
+            <input id="code" name="code" required autocapitalize="characters"
+                   class="champ flex-1" placeholder="K7M4PQ2R" />
+            <button type="button" id="tirer"
+                    class="rounded-[var(--radius-button)] border border-[var(--color-border-prominent)] px-3 text-sm">
+              Générer
+            </button>
+          </div>
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Tirez-le au sort plutôt que de l’inventer : celui-ci donne une inscription entière.
+          </p>
+        </div>
+
+        <div>
+          <label for="moyen" class="block text-sm font-medium mb-1">Reçu en</label>
+          <select id="moyen" name="moyen" class="champ">
+            <option value="cheque">Chèque</option>
+            <option value="especes">Espèces</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="montant" class="block text-sm font-medium mb-1">Montant reçu, en euros</label>
+          <input id="montant" name="montant" type="number" min="1" step="0.01" required class="champ" />
+          <p class="mt-1 text-sm text-[var(--color-text-light)]">
+            Le forfait <strong>et l’adhésion s’il y a lieu</strong> : 339 € pour un forfait de
+            324 € chez une famille qui n’a pas encore adhéré. L’inscription sera refusée si le
+            total ne tombe pas exactement sur ce chiffre.
+          </p>
+        </div>
+
+        <div>
+          <label for="encaisse_le" class="block text-sm font-medium mb-1">Reçu le — aujourd’hui par défaut</label>
+          <input id="encaisse_le" name="encaisse_le" type="date" class="champ" />
+          <label for="expire_le" class="mt-3 block text-sm font-medium mb-1">Dernier jour — facultatif</label>
+          <input id="expire_le" name="expire_le" type="date" class="champ" />
+        </div>
+      </div>
+
+      <button type="submit"
+              class="rounded-[var(--radius-button)] bg-[var(--color-button)] px-6 py-2 font-medium text-white">
+        Enregistrer
+      </button>
+    </form>
+  </details>
+
+  {[
+    { titre: 'À remettre ou en attente', lignes: disponibles, vide: 'Aucun règlement en attente.' },
+    { titre: 'Employés', lignes: utilises, vide: null },
+    { titre: 'Hors d’usage', lignes: perimes, vide: null },
+  ].filter((sec) => sec.lignes.length || sec.vide).map((sec) => (
+    <section class="mb-8">
+      <h2 class="text-xl font-bold" style="font-family: var(--font-heading)">
+        {sec.titre} {sec.lignes.length ? `(${sec.lignes.length})` : ''}
+      </h2>
+
+      {!sec.lignes.length ? (
+        <p class="mt-3 text-[var(--color-text-light)]">{sec.vide}</p>
+      ) : (
+        <ul class="mt-4 space-y-3">
+          {sec.lignes.map((r) => (
+            <li class="rounded-xl bg-[var(--color-card-bg)] p-4 shadow-md">
+              <div class="flex flex-wrap items-baseline gap-x-3">
+                <span class={`font-mono font-medium ${r.etat === 'disponible' ? 'text-[var(--color-heading)]' : 'text-[var(--color-text-light)]'}`}>
+                  {r.code}
+                </span>
+                <span class="font-medium text-[var(--color-button)]">{euros(r.montant_cents)} €</span>
+                <span class="text-sm text-[var(--color-text-light)]">en {MOYEN[r.moyen] ?? r.moyen}</span>
+                {r.etat !== 'disponible' && (
+                  <span class="rounded-full bg-[var(--color-bg-accent)] px-2 py-0.5 text-sm text-[var(--color-heading)]">
+                    {MOTIF[r.etat]}
+                  </span>
+                )}
+              </div>
+              <p class="mt-1 text-sm text-[var(--color-text-light)]">
+                Reçu le {dateFr.format(new Date(r.encaisse_le))} · saison {r.saison}
+                {r.expire_le ? ` · jusqu’au ${dateFr.format(new Date(r.expire_le))}` : ''}
+                {r.utilise_le ? ` · employé le ${dateFr.format(new Date(r.utilise_le))}` : ''}
+              </p>
+              {r.reference && (
+                <p class="mt-1 font-mono text-sm text-[var(--color-text-light)]">{r.reference}</p>
+              )}
+              {r.etat !== 'utilise' && (
+                <form method="post" class="mt-2">
+                  <input type="hidden" name="action" value="archiver" />
+                  <input type="hidden" name="code" value={r.code} />
+                  <button type="submit" class="text-sm text-[var(--color-button)] underline">
+                    Archiver
+                  </button>
+                </form>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  ))}
+
+  {archives.length > 0 && (
+    <details class="mt-8">
+      <summary class="cursor-pointer text-sm text-[var(--color-text-light)]">
+        {archives.length} règlement{archives.length > 1 ? 's' : ''} archivé{archives.length > 1 ? 's' : ''}
+      </summary>
+      <ul class="mt-3 space-y-1 text-sm text-[var(--color-text-light)]">
+        {archives.map((r) => (
+          <li><span class="font-mono">{r.code}</span> · {euros(r.montant_cents)} € en {MOYEN[r.moyen] ?? r.moyen}</li>
+        ))}
+      </ul>
+    </details>
+  )}
+</AdminLayout>
+
+<script>
+  /*
+   * TIRÉ AU SORT, ET PLUS LONG QU'UN CODE DE REMISE. Un code de règlement donne
+   * une inscription ENTIÈRE : deviné, il coûte un forfait, pas une remise. Les
+   * caractères ambigus — O/0, I/1/L — restent écartés, parce qu'il se dicte au
+   * téléphone.
+   */
+  const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const bouton = document.getElementById('tirer');
+  const champ = document.getElementById('code');
+
+  bouton?.addEventListener('click', () => {
+    if (!(champ instanceof HTMLInputElement)) return;
+    const tirage = crypto.getRandomValues(new Uint32Array(10));
+    champ.value = [...tirage].map((n) => ALPHABET[n % ALPHABET.length]).join('');
+  });
+</script>

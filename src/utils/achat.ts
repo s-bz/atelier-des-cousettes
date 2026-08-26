@@ -2,9 +2,14 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Resultat } from './inscriptions';
 import { adhesionReglee, saisonDe } from './inscriptions';
 import { memePublic } from './ateliers';
-import { preparerAchat, creerIntention, construireEcheancier, ADHESION_CENTS } from './helloasso';
+import {
+  preparerAchat, creerIntention, construireEcheancier,
+  ADHESION_CENTS, MINIMUM_PRELEVEMENT_CENTS,
+} from './helloasso';
 import type { FormuleCatalogue } from './tarifs';
 import { lireCode, reductionDe, normaliserCode } from './codes-promo';
+import type { ReglementHorsLigne } from './hors-ligne';
+import { lireReglement, verifierReglement, consommerReglement } from './hors-ligne';
 import { provisionner } from './provisionnement';
 import { mesurer } from './mesure';
 
@@ -201,15 +206,95 @@ export async function demarrerAchat(
    */
   let reductionCents = 0;
   let codeApplique: string | null = null;
+  let reglement: ReglementHorsLigne | null = null;
 
   if (o.codePromo?.trim()) {
+    const saisi = normaliserCode(o.codePromo);
     const code = await lireCode(supabase, o.codePromo);
-    if (!code) return echec(`Le code « ${normaliserCode(o.codePromo)} » n'existe pas.`);
 
-    const r = reductionDe(o.formule!.prixCents, code, { saison, aujourdhui: new Date() });
-    if (!r.ok) return r;
-    reductionCents = r.valeur;
-    codeApplique = code.code;
+    /*
+     * UN SEUL CHAMP, DEUX SORTES DE CODES.
+     *
+     * Une remise et un règlement hors ligne ne se ressemblent en rien — l'une
+     * réduit ce qui est dû, l'autre atteste que ce qui était dû a été réglé par
+     * chèque ou en espèces — mais la famille, elle, a reçu « un code » et n'a
+     * pas à savoir lequel. On cherche donc dans les deux registres avant de dire
+     * qu'il n'existe pas.
+     */
+    if (code) {
+      const r = reductionDe(o.formule!.prixCents, code, { saison, aujourdhui: new Date() });
+      if (!r.ok) return r;
+      reductionCents = r.valeur;
+      codeApplique = code.code;
+
+      /*
+       * ENTRE ZÉRO ET CINQUANTE CENTIMES, IL N'Y A PAS DE COMMANDE POSSIBLE.
+       *
+       * HelloAsso ne prélève rien en dessous de cinquante centimes, et le chemin
+       * gratuit ne vaut qu'à zéro. Un reste de trente centimes n'est donc ni
+       * encaissable ni offert : l'intention partirait pour être refusée d'un
+       * message que personne ne saurait lire. On s'arrête ici, en le disant.
+       *
+       * Le cas demande une remise au centime près — la création d'un code n'en
+       * accepte plus, mais un code plus ancien peut en porter.
+       */
+      const reste = o.formule!.prixCents - reductionCents
+        + (adhesionDue ? ADHESION_CENTS : 0);
+      if (reste > 0 && reste < MINIMUM_PRELEVEMENT_CENTS) {
+        return echec(
+          'Ce code laisse un montant trop faible pour être prélevé. '
+          + 'Écrivez-nous : nous finaliserons l’inscription à la main.',
+        );
+      }
+    } else {
+      reglement = await lireReglement(supabase, saisi);
+      if (!reglement) return echec(`Le code « ${saisi} » n'existe pas.`);
+
+      const total = o.formule!.prixCents + (adhesionDue ? ADHESION_CENTS : 0);
+      const v = verifierReglement(total, reglement, { saison, aujourdhui: new Date() });
+      if (!v.ok) return v;
+    }
+  }
+
+  /*
+   * LE RÈGLEMENT HORS LIGNE NE PASSE PAS PAR HELLOASSO, ET NE TOUCHE À AUCUN
+   * PRIX.
+   *
+   * L'argent est déjà encaissé — Isabelle ne remet le code qu'une fois le chèque
+   * en main. Il ne reste qu'à inscrire, aux montants VRAIS : le forfait vaut son
+   * prix, l'adhésion le sien, et le registre des adhérents reçoit les quinze
+   * euros que la famille a bel et bien versés. C'est toute la différence avec le
+   * code à 100 % qui en tenait lieu : celui-là écrivait zéro partout.
+   *
+   * ON CONSOMME AVANT D'INSCRIRE. Il n'y a pas de paiement pour arbitrer, et
+   * chaque tentative forge sa propre référence : sans ce verrou, deux onglets
+   * inscriraient deux fois la même famille sur le même chèque. Un code brûlé par
+   * un échec se réémet en dix secondes ; un doublon se démêle à la main dans
+   * quatre tables.
+   */
+  if (reglement) {
+    const reference = `HORSLIGNE-${crypto.randomUUID()}`;
+    const pris = await consommerReglement(supabase, reglement.code, reference);
+    if (!pris) return echec('Ce code a déjà servi à une inscription.');
+
+    const fait = await provisionner(supabase, {
+      produit: 'forfait',
+      payeurPrenom: o.payeurPrenom?.trim() || null,
+      payeurNom: o.payeurNom?.trim() || null,
+      orderId: reference,
+      codePromo: null,
+      montantCents: reglement.montantCents,
+      email,
+      prenom: o.prenom.trim().split(/\s+/)[0],
+      nom: o.prenom.trim().split(/\s+/).slice(1).join(' '),
+      saison,
+      formuleId: o.formule!.id,
+      creneauId: o.creneau!.id,
+      adhesionCents: adhesionDue ? ADHESION_CENTS : 0,
+    });
+    if (!fait.ok) return fait;
+
+    return succes({ redirectUrl: `${base}${o.cheminRetour}?horsligne=1` });
   }
 
   const achat = preparerAchat({

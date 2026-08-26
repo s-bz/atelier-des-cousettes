@@ -11,11 +11,13 @@ interface Props {
   messageDeja: string;
   /** Quand un code couvrait la totalité et qu'il n'y a rien eu à régler. */
   messageGratuit: string;
+  /** Le règlement par chèque ou en espèces. Absent là où il ne peut pas arriver. */
+  messageHorsLigne?: string;
   /** Ce qui préfixe les traces, pour retrouver le parcours en cause. */
   contexte: string;
 }
 
-const { messageCree, messageDeja, messageGratuit, contexte } = Astro.props;
+const { messageCree, messageDeja, messageGratuit, messageHorsLigne, contexte } = Astro.props;
 
 /*
  * LE RETOUR DU PAYEUR, SANS COMPTE.
@@ -61,7 +63,16 @@ const RATTACHEMENT_EN_COURS =
   'Votre règlement est bien enregistré. Il nous reste à finir de vous inscrire — '
   + 'Isabelle s’en occupe et vous recevrez une confirmation.';
 
-if (Astro.url.searchParams.get('gratuit') === '1') {
+if (Astro.url.searchParams.get('horsligne') === '1') {
+  /*
+   * Le chèque était déjà encaissé quand le code a été remis : il n'y a ni
+   * paiement à relire ni intention à retrouver, l'inscription a été enregistrée
+   * avant la redirection. Et surtout : ce n'est PAS une place offerte — le dire
+   * ainsi ferait croire à la famille qu'elle n'a rien payé.
+   */
+  titre = 'C’est enregistré, bienvenue';
+  message = messageHorsLigne ?? messageCree;
+} else if (Astro.url.searchParams.get('gratuit') === '1') {
   // Le total étant nul, aucun paiement n'a eu lieu et il n'y a pas d'intention
   // à relire : l'inscription a été enregistrée avant la redirection.
   titre = 'C’est enregistré, bienvenue';

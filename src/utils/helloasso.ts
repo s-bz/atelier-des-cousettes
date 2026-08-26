@@ -105,6 +105,16 @@ const JOUR_MAX = 27;
 /** Aucune échéance ne peut être programmée au-delà de douze mois. */
 const HORIZON_MOIS = 12;
 
+/**
+ * Le plus petit prélèvement que HelloAsso accepte : cinquante centimes.
+ *
+ * LA BORNE VAUT PAR PRÉLÈVEMENT, pas pour la commande : neuf mensualités de
+ * trente-trois centimes sont refusées, quand bien même leur somme fait trois
+ * euros. L'API rejette alors l'intention ENTIÈRE, d'un « Les montants sont
+ * invalides » qui ne désigne pas le montant fautif.
+ */
+export const MINIMUM_PRELEVEMENT_CENTS = 50;
+
 export interface Echeance {
   /** Montant de l'échéance, en centimes. */
   amount: number;
@@ -150,14 +160,37 @@ export function construireEcheancier(o: {
 
   const supplement = o.supplementInitialCents ?? 0;
   const jour = Math.min(o.jour ?? JOUR_MAX, JOUR_MAX);
-  const nbEcheances = versements - 1;
 
-  if (nbEcheances > HORIZON_MOIS) {
+  /*
+   * LA GRILLE EST-ELLE SEULEMENT TENABLE ? La question porte sur ce qui a été
+   * DEMANDÉ, non sur ce qu'on en fera : une formule à quatorze mensualités est
+   * une erreur de catalogue, et elle doit crier même si le montant à étaler la
+   * ramenait de toute façon à un versement unique.
+   */
+  if (versements - 1 > HORIZON_MOIS) {
     throw new Error(
-      `${versements} versements demandent ${nbEcheances} échéances, `
+      `${versements} versements demandent ${versements - 1} échéances, `
       + `soit au-delà de 12 mois — HelloAsso les refuse.`,
     );
   }
+
+  /*
+   * CE QUI NE S'ÉTALE PAS SE RÈGLE EN UNE FOIS.
+   *
+   * Aucun prélèvement ne peut valoir moins de cinquante centimes. Or une remise
+   * généreuse peut ne laisser que trois euros de forfait, que neuf mensualités
+   * découperaient en trente-trois centimes chacune : l'API refuserait
+   * l'intention entière.
+   *
+   * ON NE DÉGRADE PAS L'ÉCHÉANCIER, ON L'ABANDONNE : étaler trois euros sur six
+   * mois plutôt que neuf resterait absurde, et coûterait à l'association six
+   * commissions pour un montant qui tient en une. C'est donc l'échéancier
+   * demandé, ou un règlement unique — jamais un entre-deux que personne n'a
+   * choisi. Le devis l'annonce avant le clic : il passe par ici lui aussi.
+   */
+  const etalable = totalCents >= versements * MINIMUM_PRELEVEMENT_CENTS;
+  const versementsTenus = etalable ? versements : 1;
+  const nbEcheances = versementsTenus - 1;
 
   /*
    * LE RESTE SE POSE SUR LE PREMIER VERSEMENT. Un total qui ne se divise pas
@@ -167,8 +200,8 @@ export function construireEcheancier(o: {
    * le seul que le payeur voie avant de s'engager : c'est là que la différence
    * est honnête.
    */
-  const part = Math.floor(totalCents / versements);
-  const reste = totalCents - part * versements;
+  const part = Math.floor(totalCents / versementsTenus);
+  const reste = totalCents - part * versementsTenus;
 
   const terms: Echeance[] = Array.from({ length: nbEcheances }, (_, i) => {
     // i = 0 → le mois suivant l'achat.

@@ -51,6 +51,20 @@ if (Astro.request.method === 'POST') {
       erreur = 'Indiquez une réduction.';
     } else if (type === 'pourcent' && valeur > 100) {
       erreur = 'Un pourcentage ne dépasse pas 100.';
+    } else if (!Number.isInteger(valeur)) {
+      /*
+       * NI CENTIMES NI DEMI-POURCENTS.
+       *
+       * Un code au centime près peut laisser un reste dû de quelques centimes,
+       * que HelloAsso refuse de prélever — il ne descend pas sous cinquante
+       * centimes — et que le chemin gratuit ne ramasse pas non plus, puisqu'il
+       * ne vaut qu'à zéro. L'achat s'arrêterait alors sans que personne
+       * comprenne pourquoi. En euros et en pourcents entiers, le reste dû est
+       * toujours nul ou largement au-dessus de la borne.
+       */
+      erreur = type === 'pourcent'
+        ? 'Un pourcentage s’écrit en nombre entier.'
+        : 'Une réduction s’écrit en euros entiers.';
     } else {
       const { error } = await supabase.from('codes_promo').insert({
         code,

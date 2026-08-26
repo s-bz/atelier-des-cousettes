@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { verifierAchat, origineJoignable, devis } from '../achat';
+import { preparerAchat, corpsIntention } from '../helloasso';
 
 const formule = {
   id: '2026-2027-adultes-9', libelle: '9 séances', audience: 'adultes',
@@ -137,6 +138,91 @@ describe('devis', () => {
     expect(d.nbEcheances).toBe(0);
     expect(d.premierCents).toBe(33900);
     expect(d.totalCents).toBe(33900);
+  });
+
+  /*
+   * CE QUI NE S'ÉTALE PAS SE RÈGLE EN UNE FOIS. Aucun prélèvement ne peut valoir
+   * moins de cinquante centimes : trois euros sur neuf mois font trente-trois
+   * centimes, et l'API refuse l'intention ENTIÈRE. On ne dégrade pas
+   * l'échéancier en six versements de cinquante centimes — six commissions pour
+   * un montant qui tient en une — on l'abandonne.
+   */
+  it('règle en une fois ce qu’un échéancier ne peut pas porter', () => {
+    const achatLe = new Date('2026-08-25T00:00:00Z');
+    // 324 € de remise sur 327 € : il reste 3 € de forfait, plus l'adhésion.
+    const d = devis({ formule: { ...f, prixCents: 32700 }, adhesionDue: true,
+                      comptant: false, achatLe, reductionCents: 32400 });
+    expect(d.nbEcheances).toBe(0);
+    expect(d.premierCents).toBe(300 + 1500);
+    expect(d.totalCents).toBe(1800);
+  });
+
+  it('garde l’échéancier demandé dès qu’il tient debout', () => {
+    const achatLe = new Date('2026-08-25T00:00:00Z');
+    // 4,50 € sur neuf mois : cinquante centimes par mois, tout juste la borne.
+    const d = devis({ formule: { ...f, prixCents: 32850 }, adhesionDue: false,
+                      comptant: false, achatLe, reductionCents: 32400 });
+    expect(d.nbEcheances).toBe(8);
+    expect(d.suivantsCents).toBe(50);
+    expect(d.premierCents).toBe(50);
+  });
+
+  /*
+   * RIEN NE RESTE JAMAIS DÛ, ET L'ADHÉSION NE SE REMISE PAS.
+   *
+   * Une commande n'existe que si son prix est intégralement couvert — par la
+   * remise, par la carte, ou par les deux : `subscriptions` n'a ni statut de
+   * paiement ni solde, un abonnement existe ou n'existe pas. Et la remise
+   * s'arrête au forfait : la cotisation à l'association n'est pas un prix qu'on
+   * négocie. Un règlement par chèque, lui, ne passe pas par ici — il ne touche
+   * à aucun montant.
+   *
+   * ET LE DEVIS DOIT DIRE CE QUE LE PRÉLÈVEMENT FERA : `devis` s'affiche,
+   * `preparerAchat` s'encaisse. Deux calculs qui divergeraient annonceraient un
+   * montant que la carte démentirait.
+   */
+  it('couvre toujours le prix en entier, et annonce ce qui sera prélevé', () => {
+    const achatLe = new Date('2026-08-25T00:00:00Z');
+    const prix = [22500, 32400, 53100];
+    const remises = [0, 1, 5000, 22499, 22500, 32400, 33899, 33900, 999999];
+
+    for (const prixCents of prix) {
+      for (const adhesionDue of [true, false]) {
+        for (const comptant of [true, false]) {
+          for (const reductionCents of remises) {
+            const formule = { ...f, prixCents };
+            const d = devis({ formule, adhesionDue, comptant, achatLe, reductionCents });
+
+            const adhesionPleine = adhesionDue ? 1500 : 0;
+            // La remise ne mord que sur le forfait : l'adhésion reste entière.
+            const attendu = Math.max(0, prixCents - reductionCents) + adhesionPleine;
+
+            expect(d.totalCents).toBe(attendu);
+            expect(d.adhesionCents).toBe(adhesionPleine);
+            expect(d.premierCents + d.nbEcheances * d.suivantsCents).toBe(d.totalCents);
+
+            // Le même chiffre que ce qui partira chez HelloAsso.
+            const a = preparerAchat({
+              formule: { ...formule, libelle: '9 séances' },
+              creneau: { id: 'atelier-du-jeudi-matin', label: 'Atelier du jeudi matin' },
+              participant: 'Léa D.', saison: '2026-2027',
+              adhesionDue, comptant, reductionCents, achatLe,
+              urls: { retour: 'https://x/r/', erreur: 'https://x/e/', retourArriere: 'https://x/b/' },
+            });
+            expect(a.totalCents + (a.supplementInitialCents ?? 0)).toBe(attendu);
+            expect(a.metadata.montant_cents).toBe(attendu);
+
+            const corps = corpsIntention(a);
+            expect(corps.initialAmount + corps.terms.reduce((n, t) => n + t.amount, 0))
+              .toBe(corps.totalAmount);
+            // Cinquante centimes est le plus petit prélèvement que HelloAsso
+            // accepte : une seule échéance en dessous fait refuser l'intention
+            // entière, sans dire laquelle est en cause.
+            for (const t of corps.terms) expect(t.amount).toBeGreaterThanOrEqual(50);
+          }
+        }
+      }
+    }
   });
 
   it('donne toujours un premier versement égal au total moins les échéances', () => {
