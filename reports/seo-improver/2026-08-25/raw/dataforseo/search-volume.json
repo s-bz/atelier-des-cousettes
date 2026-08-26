@@ -1,0 +1,1526 @@
+{
+    "version": "0.1.20260806",
+    "status_code": 20000,
+    "status_message": "Ok.",
+    "time": "2.8539 sec.",
+    "cost": 0.09,
+    "tasks_count": 1,
+    "tasks_error": 0,
+    "tasks": [
+        {
+            "id": "08252355-2078-0367-0000-09cd97364666",
+            "status_code": 20000,
+            "status_message": "Ok.",
+            "time": "2.7786 sec.",
+            "cost": 0.09,
+            "result_count": 22,
+            "path": [
+                "v3",
+                "keywords_data",
+                "google_ads",
+                "search_volume",
+                "live"
+            ],
+            "data": {
+                "api": "keywords_data",
+                "function": "search_volume",
+                "se": "google_ads",
+                "location_name": "France",
+                "language_code": "fr",
+                "keywords": [
+                    "cousette",
+                    "couturiere revel",
+                    "atelier couture",
+                    "couturiere castres",
+                    "cours de couture autour de moi",
+                    "couture",
+                    "poser une fermeture eclair sur une trousse",
+                    "atelier de couture",
+                    "trousse fermeture eclair 20 cm",
+                    "couturiere revel",
+                    "cours de couture",
+                    "couturiere independante",
+                    "trousse fermeture eclair",
+                    "studio de couture",
+                    "stage couture",
+                    "cours de couture castres",
+                    "cours de couture revel",
+                    "cours de couture tarn",
+                    "atelier de couture et bordure",
+                    "cours couture",
+                    "entreprise de couture",
+                    "l atelier des cousettes"
+                ]
+            },
+            "result": [
+                {
+                    "keyword": "cousette",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "MEDIUM",
+                    "competition_index": 37,
+                    "search_volume": 6600,
+                    "low_top_of_page_bid": 0.02,
+                    "high_top_of_page_bid": 1.47,
+                    "cpc": 0.29,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 5400
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 5400
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 6600
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 6600
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 6600
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 5400
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 6600
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 5400
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 6600
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 6600
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 6600
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 5400
+                        }
+                    ]
+                },
+                {
+                    "keyword": "couturiere revel",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "LOW",
+                    "competition_index": 0,
+                    "search_volume": 50,
+                    "low_top_of_page_bid": null,
+                    "high_top_of_page_bid": null,
+                    "cpc": 0.09,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 70
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 70
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 50
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 90
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 50
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 50
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 20
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 50
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 70
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 70
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 50
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 40
+                        }
+                    ]
+                },
+                {
+                    "keyword": "atelier couture",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "LOW",
+                    "competition_index": 10,
+                    "search_volume": 3600,
+                    "low_top_of_page_bid": 0.41,
+                    "high_top_of_page_bid": 2.26,
+                    "cpc": 1.37,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 2900
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 2900
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 3600
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 3600
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 4400
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 3600
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 3600
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 3600
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 4400
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 4400
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 4400
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 2900
+                        }
+                    ]
+                },
+                {
+                    "keyword": "couturiere castres",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "LOW",
+                    "competition_index": 0,
+                    "search_volume": 390,
+                    "low_top_of_page_bid": null,
+                    "high_top_of_page_bid": null,
+                    "cpc": null,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 390
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 390
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 480
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 390
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 480
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 390
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 390
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 390
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 480
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 390
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 480
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 480
+                        }
+                    ]
+                },
+                {
+                    "keyword": "cours de couture autour de moi",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "MEDIUM",
+                    "competition_index": 34,
+                    "search_volume": 1300,
+                    "low_top_of_page_bid": 0.65,
+                    "high_top_of_page_bid": 2.11,
+                    "cpc": 1.9,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 1300
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 1000
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 1300
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 1000
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 1600
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 880
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 1000
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 1000
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 1300
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 1300
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 2400
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 1600
+                        }
+                    ]
+                },
+                {
+                    "keyword": "couture",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "LOW",
+                    "competition_index": 6,
+                    "search_volume": 40500,
+                    "low_top_of_page_bid": 0.17,
+                    "high_top_of_page_bid": 1.59,
+                    "cpc": 0.51,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 27100
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 33100
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 27100
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 33100
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 74000
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 60500
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 33100
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 27100
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 33100
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 40500
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 33100
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 27100
+                        }
+                    ]
+                },
+                {
+                    "keyword": "poser une fermeture eclair sur une trousse",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "LOW",
+                    "competition_index": 1,
+                    "search_volume": 70,
+                    "low_top_of_page_bid": null,
+                    "high_top_of_page_bid": null,
+                    "cpc": null,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 40
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 50
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 50
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 90
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 90
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 110
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 110
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 90
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 70
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 70
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 70
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 70
+                        }
+                    ]
+                },
+                {
+                    "keyword": "atelier de couture",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "LOW",
+                    "competition_index": 4,
+                    "search_volume": 2900,
+                    "low_top_of_page_bid": 0.56,
+                    "high_top_of_page_bid": 2.05,
+                    "cpc": 0.9,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 2400
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 2900
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 2900
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 2900
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 3600
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 2900
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 3600
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 2900
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 3600
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 4400
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 4400
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 2900
+                        }
+                    ]
+                },
+                {
+                    "keyword": "trousse fermeture eclair 20 cm",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": null,
+                    "competition_index": null,
+                    "search_volume": null,
+                    "low_top_of_page_bid": null,
+                    "high_top_of_page_bid": null,
+                    "cpc": null,
+                    "monthly_searches": null
+                },
+                {
+                    "keyword": "couturiere revel",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "LOW",
+                    "competition_index": 0,
+                    "search_volume": 50,
+                    "low_top_of_page_bid": null,
+                    "high_top_of_page_bid": null,
+                    "cpc": 0.09,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 70
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 70
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 50
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 90
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 50
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 50
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 20
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 50
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 70
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 70
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 50
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 40
+                        }
+                    ]
+                },
+                {
+                    "keyword": "cours de couture",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "MEDIUM",
+                    "competition_index": 50,
+                    "search_volume": 2900,
+                    "low_top_of_page_bid": 0.8,
+                    "high_top_of_page_bid": 2.71,
+                    "cpc": 2.43,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 2400
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 2400
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 2900
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 2400
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 3600
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 2900
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 3600
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 3600
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 2900
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 2900
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 3600
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 2900
+                        }
+                    ]
+                },
+                {
+                    "keyword": "couturiere independante",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "LOW",
+                    "competition_index": 2,
+                    "search_volume": 10,
+                    "low_top_of_page_bid": null,
+                    "high_top_of_page_bid": null,
+                    "cpc": null,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 20
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 40
+                        }
+                    ]
+                },
+                {
+                    "keyword": "trousse fermeture eclair",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "HIGH",
+                    "competition_index": 100,
+                    "search_volume": 110,
+                    "low_top_of_page_bid": null,
+                    "high_top_of_page_bid": null,
+                    "cpc": 0.16,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 170
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 90
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 110
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 90
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 90
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 70
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 70
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 110
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 110
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 110
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 110
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 110
+                        }
+                    ]
+                },
+                {
+                    "keyword": "studio de couture",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "LOW",
+                    "competition_index": 0,
+                    "search_volume": 10,
+                    "low_top_of_page_bid": null,
+                    "high_top_of_page_bid": null,
+                    "cpc": null,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 20
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 0
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 10
+                        }
+                    ]
+                },
+                {
+                    "keyword": "stage couture",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "LOW",
+                    "competition_index": 26,
+                    "search_volume": 390,
+                    "low_top_of_page_bid": 0.57,
+                    "high_top_of_page_bid": 2.07,
+                    "cpc": 1.4,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 260
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 320
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 390
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 320
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 480
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 320
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 390
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 390
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 390
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 480
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 480
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 210
+                        }
+                    ]
+                },
+                {
+                    "keyword": "cours de couture castres",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "LOW",
+                    "competition_index": 16,
+                    "search_volume": 20,
+                    "low_top_of_page_bid": null,
+                    "high_top_of_page_bid": null,
+                    "cpc": null,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 20
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 20
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 20
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 20
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 20
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 30
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 20
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 30
+                        }
+                    ]
+                },
+                {
+                    "keyword": "cours de couture revel",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": null,
+                    "competition_index": null,
+                    "search_volume": null,
+                    "low_top_of_page_bid": null,
+                    "high_top_of_page_bid": null,
+                    "cpc": null,
+                    "monthly_searches": null
+                },
+                {
+                    "keyword": "cours de couture tarn",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "LOW",
+                    "competition_index": 14,
+                    "search_volume": 10,
+                    "low_top_of_page_bid": null,
+                    "high_top_of_page_bid": null,
+                    "cpc": null,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 10
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 10
+                        }
+                    ]
+                },
+                {
+                    "keyword": "atelier de couture et bordure",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": null,
+                    "competition_index": null,
+                    "search_volume": null,
+                    "low_top_of_page_bid": null,
+                    "high_top_of_page_bid": null,
+                    "cpc": null,
+                    "monthly_searches": null
+                },
+                {
+                    "keyword": "cours couture",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "MEDIUM",
+                    "competition_index": 43,
+                    "search_volume": 880,
+                    "low_top_of_page_bid": 0.67,
+                    "high_top_of_page_bid": 2.63,
+                    "cpc": 2.44,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 590
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 590
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 720
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 720
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 880
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 880
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 880
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 880
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 880
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 720
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 1000
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 880
+                        }
+                    ]
+                },
+                {
+                    "keyword": "entreprise de couture",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "LOW",
+                    "competition_index": 4,
+                    "search_volume": 390,
+                    "low_top_of_page_bid": 0.58,
+                    "high_top_of_page_bid": 1.33,
+                    "cpc": 0.29,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 260
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 170
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 390
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 260
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 390
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 390
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 390
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 320
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 480
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 480
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 880
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 260
+                        }
+                    ]
+                },
+                {
+                    "keyword": "l atelier des cousettes",
+                    "spell": null,
+                    "location_code": 2250,
+                    "language_code": "fr",
+                    "search_partners": false,
+                    "competition": "LOW",
+                    "competition_index": 3,
+                    "search_volume": 140,
+                    "low_top_of_page_bid": null,
+                    "high_top_of_page_bid": null,
+                    "cpc": 2.8,
+                    "monthly_searches": [
+                        {
+                            "year": 2026,
+                            "month": 7,
+                            "search_volume": 210
+                        },
+                        {
+                            "year": 2026,
+                            "month": 6,
+                            "search_volume": 170
+                        },
+                        {
+                            "year": 2026,
+                            "month": 5,
+                            "search_volume": 170
+                        },
+                        {
+                            "year": 2026,
+                            "month": 4,
+                            "search_volume": 140
+                        },
+                        {
+                            "year": 2026,
+                            "month": 3,
+                            "search_volume": 170
+                        },
+                        {
+                            "year": 2026,
+                            "month": 2,
+                            "search_volume": 140
+                        },
+                        {
+                            "year": 2026,
+                            "month": 1,
+                            "search_volume": 110
+                        },
+                        {
+                            "year": 2025,
+                            "month": 12,
+                            "search_volume": 170
+                        },
+                        {
+                            "year": 2025,
+                            "month": 11,
+                            "search_volume": 140
+                        },
+                        {
+                            "year": 2025,
+                            "month": 10,
+                            "search_volume": 140
+                        },
+                        {
+                            "year": 2025,
+                            "month": 9,
+                            "search_volume": 140
+                        },
+                        {
+                            "year": 2025,
+                            "month": 8,
+                            "search_volume": 110
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
