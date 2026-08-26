@@ -1,0 +1,558 @@
+[
+  {
+    "url": "https://atelier-des-cousettes.fr/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-22T05:14:44Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/ateliers-reguliers/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-07-28T15:39:45Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/ateliers-reguliers/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/ateliers-reguliers/inscription/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/ateliers-reguliers/inscription/retour/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-03T16:20:08Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/blog/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/choisir-fil-aiguille/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/choisir-machine-a-coudre/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/comprendre-patrons-couture/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/coudre-jupe-elastiquee-premier-vetement/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-07-24T12:59:10Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/blog/coudre-jupe-elastiquee-premier-vetement/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/coudre-ourlet-invisible/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-18T04:26:58Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/blog/coudre-ourlet-invisible/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/coudre-tote-bag/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-18T14:14:29Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/blog/coudre-tote-bag/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/coudre-trousse-fermeture-eclair/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-17T17:53:25Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/blog/coudre-trousse-fermeture-eclair/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/couture-enfants-projets-faciles/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/couture-ete-accessoires-vacances/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-03T17:14:15Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/blog/couture-ete-accessoires-vacances/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/couture-zero-dechet-projets-pratiques/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/coutures-de-base/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/debuter-couture-conseils/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/entretenir-machine-a-coudre/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Duplicate, Google chose different canonical than user",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-07-28T15:39:45Z",
+    "googleCanonical": "https://couture-tarn.fr/blog/entretenir-machine-a-coudre/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/erreurs-debutant-couture/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/idees-cadeaux-couture-faits-main/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-07-24T04:02:05Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/blog/idees-cadeaux-couture-faits-main/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/organiser-espace-couture/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/points-couture-main-essentiels/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/prendre-ses-mesures/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/rentree-couture-revel-verdalle/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/retouches-simples-ourlet-bouton-fermeture/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/surjeteuse-a-quoi-ca-sert/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-07-28T15:41:59Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/blog/surjeteuse-a-quoi-ca-sert/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/tissus-debutants/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-03T21:11:23Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/blog/tissus-debutants/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/blog/trousse-couture-indispensables/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/conditions/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/contact/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-03T19:51:45Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/glossaire/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/batir/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/biais/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/boutonniere/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/canette/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/coulisse/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-03T11:22:11Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/glossaire/coulisse/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/couture-anglaise/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/couture-rabattue/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/cran-de-montage/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/cranter/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/decatir/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/droit-fil/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/embu/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/emmanchure/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/empiecement/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/encolure/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/endroit-contre-endroit/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-03T13:51:54Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/glossaire/endroit-contre-endroit/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/entoilage/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-13T05:47:51Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/glossaire/entoilage/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/fronces/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/griffes-d-entrainement/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/jersey/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/laize/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-02T22:51:44Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/glossaire/laize/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/lisiere/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/marge-de-couture/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/molleton/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/ourlet/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/parementure/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/passepoil/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/patronage/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/pied-de-biche/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/pince/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/point-d-arret/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/point-de-chainette/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/point-invisible/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-21T15:16:48Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/glossaire/point-invisible/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/point-zigzag/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/popeline/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/recouvreuse/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/surfilage/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/surpiqure/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/tension-du-fil/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/glossaire/thermocollant/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-03T11:05:01Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/glossaire/thermocollant/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/la-couturiere/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Duplicate, Google chose different canonical than user",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-07-30T14:49:20Z",
+    "googleCanonical": "https://couture-tarn.fr/la-couturiere/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/mes-creations/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-07-28T15:45:46Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/mes-creations/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/reserver/retour/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/seances-sans-engagement/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-16T12:48:01Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/seances-sans-engagement/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/seances-sans-engagement/reserver/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/stages-thematiques/",
+    "verdict": "PASS",
+    "coverageState": "Submitted and indexed",
+    "robotsTxtState": "ALLOWED",
+    "lastCrawlTime": "2026-08-03T15:08:59Z",
+    "googleCanonical": "https://atelier-des-cousettes.fr/stages-thematiques/"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/stages-thematiques/initiation-machine-a-coudre/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/stages-thematiques/reserver/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/stages-thematiques/stage-banane/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/stages-thematiques/stage-gilet-de-berger-reversible/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/stages-thematiques/stage-patronage-de-jupe/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/stages-thematiques/stage-sac-et-tote-bag/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/stages-thematiques/stage-surjeteuse/",
+    "verdict": "NEUTRAL",
+    "coverageState": "Discovered - currently not indexed",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  },
+  {
+    "url": "https://atelier-des-cousettes.fr/stages-thematiques/stage-trousse/",
+    "verdict": "NEUTRAL",
+    "coverageState": "URL is unknown to Google",
+    "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED"
+  }
+]
