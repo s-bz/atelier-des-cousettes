@@ -83,6 +83,49 @@ const { data: lignes } = await supabase
   .order('archived_at', { nullsFirst: true })
   .order('cree_le', { ascending: false });
 
+/*
+ * CE QUE LE CHÈQUE A PAYÉ, ET POUR QUI.
+ *
+ * La référence `HORSLIGNE-…` est un identifiant technique : elle prouve que le
+ * reçu mène quelque part, mais ne dit ni qui s'est inscrit ni ce qu'il a pris.
+ * Or c'est la seule question qu'on se pose devant un chèque encaissé trois mois
+ * plus tôt. L'abonnement porte les deux, à un aller-retour près — on le fait
+ * ici, en un seul appel pour toute la page.
+ *
+ * Les jointures restent facultatives : un règlement dont l'inscription a été
+ * supprimée depuis doit continuer de s'afficher, avec sa référence pour seul
+ * repère, plutôt que de faire disparaître la ligne du livre de caisse.
+ */
+const references = (lignes ?? []).map((r) => r.reference).filter((r): r is string => !!r);
+
+const { data: achats } = references.length
+  ? await supabase
+      .from('subscriptions')
+      .select('helloasso_order_id, participants(id, first_name, last_name), formules(libelle)')
+      .in('helloasso_order_id', references)
+  : { data: [] };
+
+type Achat = {
+  participantId: string | null;
+  nom: string | null;
+  formule: string | null;
+};
+
+const parReference = new Map<string, Achat>();
+for (const a of (achats ?? []) as unknown as Array<{
+  helloasso_order_id: string;
+  participants: { id: string; first_name: string; last_name: string | null } | null;
+  formules: { libelle: string } | null;
+}>) {
+  parReference.set(a.helloasso_order_id, {
+    participantId: a.participants?.id ?? null,
+    nom: a.participants
+      ? [a.participants.first_name, a.participants.last_name].filter(Boolean).join(' ')
+      : null,
+    formule: a.formules?.libelle ?? null,
+  });
+}
+
 const aujourdhui = new Date();
 const enrichis = (lignes ?? []).map((r) => ({
   ...r,
@@ -120,7 +163,7 @@ const MOTIF: Record<string, string> = {
 };
 ---
 
-<AdminLayout title="Règlements hors ligne" soustitre="Chèques et espèces — un code par règlement encaissé">
+<AdminLayout title="Paiements hors ligne" soustitre="Chèques et espèces — un code par règlement encaissé">
   {message && <p class="mb-6 rounded-xl bg-[var(--color-bg-accent)] px-4 py-3">{message}</p>}
   {erreur && <p class="mb-6 rounded-xl bg-[var(--color-bg-pink)] px-4 py-3 text-white">{erreur}</p>}
 
@@ -230,9 +273,25 @@ const MOTIF: Record<string, string> = {
                 {r.expire_le ? ` · jusqu’au ${dateFr.format(new Date(r.expire_le))}` : ''}
                 {r.utilise_le ? ` · employé le ${dateFr.format(new Date(r.utilise_le))}` : ''}
               </p>
-              {r.reference && (
-                <p class="mt-1 font-mono text-sm text-[var(--color-text-light)]">{r.reference}</p>
-              )}
+              {r.reference && (() => {
+                const achat = parReference.get(r.reference);
+                // Sans inscription rattachée, la référence reste le seul repère :
+                // on la montre plutôt que de laisser la ligne muette.
+                if (!achat?.participantId) {
+                  return <p class="mt-1 font-mono text-sm text-[var(--color-text-light)]">{r.reference}</p>;
+                }
+                return (
+                  <p class="mt-1 text-sm">
+                    <a href={`/espace-membre/admin/participants/${achat.participantId}/`}
+                       class="font-medium text-[var(--color-button)] underline">
+                      {achat.nom}
+                    </a>
+                    {achat.formule && (
+                      <span class="text-[var(--color-text-light)]"> · {achat.formule}</span>
+                    )}
+                  </p>
+                );
+              })()}
               {r.etat !== 'utilise' && (
                 <form method="post" class="mt-2">
                   <input type="hidden" name="action" value="archiver" />
