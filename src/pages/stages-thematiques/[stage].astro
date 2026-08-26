@@ -42,10 +42,40 @@ const { stages, error } = await chargerStages(page.stages ?? []);
 
 const attendu = `/stages-thematiques/${Astro.params.stage}/`;
 const stage = stages.find((s) => s.href === attendu);
-// Un slug inconnu renvoie au moyeu plutôt qu'à une erreur : c'est ce que fait
-// déjà le blog, et un stage retiré du catalogue laisse derrière lui des liens
-// qu'il vaut mieux faire atterrir sur la liste que dans le vide.
-if (!stage) return Astro.redirect('/stages-thematiques/');
+/*
+ * UN SLUG INCONNU RÉPOND 404, ET NON PLUS 302 VERS LE MOYEU.
+ *
+ * Le commentaire précédent disait s'aligner sur le blog. Il ne l'a jamais fait :
+ * le blog est prérendu, donc un slug inconnu y est un fichier absent, et
+ * Vercel répond 404. Cette route-ci est en `prerender = false`, la redirection
+ * s'exécutait donc vraiment — seule route dynamique du site à le faire.
+ *
+ * Une 302 dit à Google « temporaire, repasse voir » : l'adresse reste en file
+ * indéfiniment. C'est précisément l'état où dormaient
+ * `/stages-thematiques/stage-patronage/` et
+ * `/stages-thematiques/stage-decouverte-de-la-couture/` — deux adresses qui
+ * n'ont JAMAIS existé, nées de fautes de frappe dans le champ « stage » de dix
+ * fiches du glossaire. Google les avait découvertes par ces liens, et la 302
+ * l'empêchait de les oublier. C'est un soft 404, que la Search Console range
+ * comme tel.
+ *
+ * On garde la destination — le moyeu est le parent naturel d'une fiche de
+ * stage, et y atterrir reste utile pour un visiteur — mais on la donne en
+ * PERMANENTE. C'est le seul mot qui change, et c'est celui que lisent les
+ * robots : Google cesse de revenir, et l'adresse sort de la file.
+ *
+ * Pas une 404 : `Astro.rewrite('/404/')` est refusé (`ForbiddenRewrite`, une
+ * route à la demande ne peut pas réécrire vers une route prérendue), et une
+ * 404 nue perdrait la navigation sans rien gagner ici — la cible est
+ * pertinente, ce qui est justement ce qui distingue une 301 utile d'un soft
+ * 404.
+ *
+ * SI UN STAGE EST UN JOUR RETIRÉ pour de bon, sa redirection se déclare
+ * explicitement dans `vercel.json`, en 301 vers son REMPLAÇANT plutôt que vers
+ * la liste. Une 301 nommée vaut mieux qu'un repli qui traite de la même façon
+ * le stage disparu et le lien mal recopié.
+ */
+if (!stage) return Astro.redirect('/stages-thematiques/', 301);
 
 const { settings, siteUrl } = await getPageContext(Astro.site);
 
