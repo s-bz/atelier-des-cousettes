@@ -3,6 +3,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Analytics from '@vercel/analytics/astro';
 import { lienContact } from '../utils/origine';
+import { estNonIndexable } from '../utils/hors-index';
 import '../styles/global.css';
 
 // Mesure d'audience PostHog. Le préfixe PUBLIC_ est nécessaire ici — contrairement
@@ -16,6 +17,14 @@ interface Props {
   title: string;
   description?: string;
   ogImage?: string;
+  /**
+   * Demande explicite de `noindex`.
+   *
+   * Elle S'AJOUTE à `src/utils/hors-index.ts`, qui reste la liste qui fait foi :
+   * une adresse qui y figure est en `noindex` même sans cette propriété, et
+   * c'est cette même liste qui l'écarte du plan du site. Une page ne peut donc
+   * plus se dire « ne me retiens pas » tout en restant au plan.
+   */
   noIndex?: boolean;
   ogType?: 'website' | 'article';
   articlePublishedTime?: string;
@@ -39,6 +48,7 @@ interface Props {
 const { title, description = "Cours de couture, ateliers et stages dans le Tarn — L'Atelier des Cousettes à Revel et Verdalle", ogImage, noIndex = false, ogType = 'website', articlePublishedTime, articleAuthor, appendSiteName = true } = Astro.props;
 const pathname = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`;
 const canonicalURL = new URL(pathname, Astro.site);
+const horsIndex = noIndex || estNonIndexable(pathname);
 const fullTitle = !appendSiteName || title === "L'Atelier des Cousettes" ? title : `${title} | L'Atelier des Cousettes`;
 const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toString();
 ---
@@ -53,7 +63,7 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="canonical" href={canonicalURL} />
     <meta name="description" content={description} />
-    <meta name="robots" content={noIndex ? 'noindex, follow' : 'index, follow'} />
+    <meta name="robots" content={horsIndex ? 'noindex, follow' : 'index, follow'} />
 
     <!-- Preconnect hints -->
     <link rel="preconnect" href="https://img.youtube.com" />
