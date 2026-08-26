@@ -8,6 +8,7 @@ import CrossLinksSection from '../components/CrossLinksSection.astro';
 import CalendrierCreneau from '../components/CalendrierCreneau.astro';
 import FaqSection from '../components/FaqSection.astro';
 import Temoignages from '../components/Temoignages.astro';
+import BlogCard from '../components/BlogCard.astro';
 import { getPageContext, reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { splitParagraphs, toSlug } from '../utils/strings';
@@ -271,6 +272,26 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
   // là où un ordre écrit en dur resterait faux.
   .sort((a, b) => b.total - a.total || a.lieu.localeCompare(b.lieu));
 
+/**
+ * Les articles que le CMS rattache à cette formule.
+ *
+ * Lus un par un et non filtrés depuis la collection entière : le champ porte
+ * des slugs, et un article renommé ou dépublié doit disparaître d'ici sans
+ * emporter la page avec lui — d'où le `filter(Boolean)`. Un article sans date
+ * de publication n'est pas encore paru : le montrer ici le sortirait avant
+ * l'heure, alors que le blog l'écarte encore.
+ */
+const slugsArticles = (page.articles ?? []).filter((s): s is string => Boolean(s));
+const articles = (
+  await Promise.all(
+    slugsArticles.map(async (slug) => {
+      const entry = await reader.collections.blog.read(slug);
+      return entry?.publishDate ? { slug, entry, publishDate: entry.publishDate } : null;
+    }),
+  )
+).filter((a): a is NonNullable<typeof a> => a !== null);
+
+const blogIndex = await reader.singletons.blogIndex.read();
 ---
 
 <BaseLayout title={page.title} description={page.seoDescription}
@@ -565,7 +586,35 @@ const lieux = [...new Set((creneauxAtelier ?? []).map((c) => c.default_location)
 
   <FaqSection title={page.faqSectionTitle} items={faqItems} ctaLabel={page.ctaLabel} fond />
 
+  {/*
+    LES ARTICLES QUI PRÉPARENT LA VENUE — et, dans l'autre sens, les liens
+    entrants qui manquaient au blog. La FAQ qui précède porte l'accent : cette
+    section reste sur fond clair, et rend l'accent aux liens croisés qui la
+    suivent.
+  */}
+  {articles.length > 0 && page.articlesSectionTitle && (
+    <section class="py-16 md:py-20">
+      <div class="mx-auto max-w-4xl px-4">
+        <h2 class="mb-8 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+          {page.articlesSectionTitle}
+        </h2>
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {articles.map((a) => (
+            <BlogCard
+              title={a.entry.title}
+              slug={a.slug}
+              publishDate={a.publishDate}
+              description={a.entry.seoDescription ?? ''}
+              readMoreLabel={blogIndex?.readMoreLabel ?? ''}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
   {page.crossLinksText && (
-    <CrossLinksSection text={page.crossLinksText} excludeHref="/seances-sans-engagement/" />
+    <CrossLinksSection text={page.crossLinksText} excludeHref="/seances-sans-engagement/"
+                       class={articles.length > 0 ? 'bg-[var(--color-bg-accent)]' : ''} />
   )}
 </BaseLayout>

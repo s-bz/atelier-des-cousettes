@@ -9,6 +9,7 @@ import CrossLinksSection from '../components/CrossLinksSection.astro';
 import CalendrierCreneau from '../components/CalendrierCreneau.astro';
 import FaqSection from '../components/FaqSection.astro';
 import Temoignages from '../components/Temoignages.astro';
+import BlogCard from '../components/BlogCard.astro';
 import { getPageContext, reader } from '../utils/reader';
 import { resolveImage, resolveImageUrl } from '../utils/images';
 import { toSlug } from '../utils/strings';
@@ -399,6 +400,27 @@ const courseSchema = buildCourseSchema({
   charge: page.tarifs?.[0]?.dureeSeance,
   lieuParDefaut: 'Revel',
 });
+
+/**
+ * Les articles que le CMS rattache à cette formule.
+ *
+ * Lus un par un et non filtrés depuis la collection entière : le champ porte
+ * des slugs, et un article renommé ou dépublié doit disparaître d'ici sans
+ * emporter la page avec lui — d'où le `filter(Boolean)`. Un article sans date
+ * de publication n'est pas encore paru : le montrer ici le sortirait avant
+ * l'heure, alors que le blog l'écarte encore.
+ */
+const slugsArticles = (page.articles ?? []).filter((s): s is string => Boolean(s));
+const articles = (
+  await Promise.all(
+    slugsArticles.map(async (slug) => {
+      const entry = await reader.collections.blog.read(slug);
+      return entry?.publishDate ? { slug, entry, publishDate: entry.publishDate } : null;
+    }),
+  )
+).filter((a): a is NonNullable<typeof a> => a !== null);
+
+const blogIndex = await reader.singletons.blogIndex.read();
 ---
 
 <BaseLayout title={page.title} description={descriptionSeo}
@@ -675,6 +697,33 @@ const courseSchema = buildCourseSchema({
   <FaqSection title={page.faqSectionTitle} items={faqItems} fond={false} cta={false} />
 
   {/*
+    LES ARTICLES QUI PRÉPARENT LA VENUE — et, dans l'autre sens, les liens
+    entrants qui manquaient au blog. Le fond suit la règle d'alternance : cette
+    section prend l'accent, et les liens croisés qui la suivent le lui laissent
+    quand elle est là.
+  */}
+  {articles.length > 0 && page.articlesSectionTitle && (
+    <section class="bg-[var(--color-bg-accent)] py-16 md:py-20">
+      <div class="mx-auto max-w-4xl px-4">
+        <h2 class="mb-8 text-center text-2xl md:text-3xl font-bold text-[var(--color-heading)]">
+          {page.articlesSectionTitle}
+        </h2>
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {articles.map((a) => (
+            <BlogCard
+              title={a.entry.title}
+              slug={a.slug}
+              publishDate={a.publishDate}
+              description={a.entry.seoDescription ?? ''}
+              readMoreLabel={blogIndex?.readMoreLabel ?? ''}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {/*
     PLUS DE BOUTON GLOBAL SUR CETTE PAGE. Il y en a eu un sous la grille, puis
     un après la FAQ — l'un et l'autre menaient au formulaire sans savoir quel
     créneau on avait retenu, et le formulaire redemandait donc tout. Chaque
@@ -684,6 +733,6 @@ const courseSchema = buildCourseSchema({
 
   {page.crossLinksText && (
     <CrossLinksSection text={page.crossLinksText} excludeHref="/ateliers-reguliers/"
-                       class="bg-[var(--color-bg-accent)]" />
+                       class={articles.length > 0 ? '' : 'bg-[var(--color-bg-accent)]'} />
   )}
 </BaseLayout>
