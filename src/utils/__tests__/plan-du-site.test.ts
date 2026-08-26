@@ -134,20 +134,46 @@ describe('le plan du site n’annonce que des pages indexables', () => {
 });
 
 describe('les adresses connues du plan du site', () => {
-  // Les six adresses relevées en production le 26/08/2026 : au plan du site ET
-  // en noindex. Elles ne prouvent rien que le balayage ne prouve déjà, mais
-  // elles nomment le défaut pour qui lira ce fichier dans un an.
+  /*
+   * Les six adresses relevées en production le 26/08/2026 : au plan du site ET
+   * en noindex. Elles ne prouvent rien que le balayage ne prouve déjà, mais
+   * elles nomment le défaut pour qui lira ce fichier dans un an.
+   *
+   * CINQ ont été réglées en les sortant du plan du site. La sixième — les
+   * conditions de vente — l'a été dans l'autre sens, et se vérifie plus bas.
+   */
   const relevees = [
     '/ateliers-reguliers/inscription/',
     '/ateliers-reguliers/inscription/retour/',
     '/reserver/retour/',
     '/seances-sans-engagement/reserver/',
     '/stages-thematiques/reserver/',
-    '/conditions/',
   ];
 
   it.each(relevees)('%s est en noindex, et donc hors du plan', (route) => {
     expect(estNonIndexable(route)).toBe(true);
     expect(estHorsPlanDuSite(route)).toBe(true);
+  });
+
+  /*
+   * LES CONDITIONS DE VENTE S'INDEXENT, ET C'EST UNE DÉCISION.
+   *
+   * Elles étaient en noindex depuis l'époque où l'atelier ne vendait rien en
+   * son nom. Depuis que l'association est le vendeur, elles décrivent un
+   * engagement réel — rétractation, annulation, remboursement — et c'est la
+   * page qu'on va lire avant de payer. La dérober à la recherche est un signal
+   * de défiance.
+   *
+   * Le test est écrit dans les DEUX sens, parce que la remettre en noindex ne
+   * demanderait qu'une ligne, et qu'aucun symptôme visible ne le signalerait.
+   */
+  it('laisse les conditions de vente s’indexer, et au plan du site', () => {
+    expect(estNonIndexable('/conditions/')).toBe(false);
+    expect(estHorsPlanDuSite('/conditions/')).toBe(false);
+  });
+
+  it('ne laisse pas la page des conditions redemander noindex', () => {
+    const page = readFileSync('src/pages/conditions.astro', 'utf8');
+    expect(page).not.toMatch(/noIndex=\{true\}/);
   });
 });

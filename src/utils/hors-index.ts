@@ -7,6 +7,11 @@
  * elles ont divergé : six adresses étaient AU PLAN DU SITE ET EN NOINDEX à la
  * fois — les cinq écrans du tunnel de paiement et les conditions de vente.
  *
+ * Cinq ont été réglées dans un sens, en les sortant du plan du site. La
+ * sixième l'a été dans l'AUTRE : les conditions de vente redeviennent
+ * indexables, parce que la contradiction disait vrai sur le plan du site et
+ * faux sur la page. Voir la liste ci-dessous.
+ *
  * Le signal envoyé à Google est contradictoire : le plan du site dit « viens
  * voir », la page dit « ne retiens pas ». La Search Console le range sous
  * « URL envoyée marquée noindex », et chaque passage du robot sur ces pages est
@@ -46,11 +51,17 @@ export const PAGES_NON_INDEXABLES = [
   // plan du site.
   '/espace-membre/',
 
-  // Les pages légales et contractuelles. Elles n'ont rien à dire à une
-  // recherche, et leur texte est le même que sur mille autres sites.
+  // Les mentions légales et la politique de confidentialité. Elles n'ont rien
+  // à dire à une recherche, et leur texte est le même que sur mille autres
+  // sites.
+  //
+  // LES CONDITIONS DE VENTE, ELLES, N'Y SONT PLUS. Depuis que l'association
+  // est le vendeur, elles décrivent un engagement réel — délai de rétractation,
+  // annulation, remboursement — et c'est la page qu'on cherche avant de payer.
+  // Une page de conditions qui se dérobe à la recherche est un signal de
+  // défiance, là où les autres pages légales ne sont qu'une formalité.
   '/mentions-legales/',
   '/confidentialite/',
-  '/conditions/',
 
   // Une page d'erreur n'a rien à faire dans un index de recherche.
   '/404/',
