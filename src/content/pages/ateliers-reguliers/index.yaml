@@ -3,10 +3,10 @@ subtitle: |-
   Petits groupes de couture de septembre à juin, une à deux fois par mois.
   Isabelle vous accompagne sur le projet de votre choix, à votre rythme.
 seoDescription: >-
-  Ateliers de couture réguliers à Revel (Haute-Garonne) et Verdalle (Tarn). Tous niveaux, petits groupes. De 25€ à 59€ par mois, de septembre à juin.
+  Ateliers de couture réguliers à Revel (Haute-Garonne) et Verdalle (Tarn). Tous
+  niveaux, petits groupes. De 25€ à 59€ par mois, de septembre à juin.
 coverImage: /src/assets/images/covers/ateliers-reguliers/coverImage.webp
 coverImageAlt: Atelier de couture régulier en petits groupes à Revel
-introduction: ''
 creneauxSectionTitle: Nos créneaux
 calendarLabel: 'Calendrier :'
 faqSectionTitle: Questions fréquentes
@@ -14,8 +14,8 @@ tarifsTitle: S’inscrire
 tarifsIntro: >-
   Un forfait s'achète pour la saison, de septembre à juin, et se pose sur les
   dates de votre choix, dans le créneau qui vous convient. S'y ajoute l'adhésion
-  à l'association Les P'tits Piafs, 15 € par an et par famille, réglée une seule fois pour la
-  saison.
+  à l'association Les P'tits Piafs, 15 € par an et par famille, réglée une seule
+  fois pour la saison.
 tarifsUniteQuestion: Vous préférez venir une seule fois, sans vous engager ?
 tarifsNote: Le tissu et les fournitures restent à votre charge.
 tarifs:
@@ -24,25 +24,35 @@ tarifs:
     formules:
       - seances: 9 séances
         mensuel: 36 € par mois
-        detail: environ une fois par mois sur la saison ; 324 €, en 9 mensualités ou en une fois
+        detail: >-
+          environ une fois par mois sur la saison ; 324 €, en 9 mensualités ou
+          en une fois
       - seances: 18 séances
         mensuel: 59 € par mois
-        detail: environ deux fois par mois sur la saison ; 531 €, en 9 mensualités ou en une fois
+        detail: >-
+          environ deux fois par mois sur la saison ; 531 €, en 9 mensualités ou
+          en une fois
   - audience: ados
     dureeSeance: Séances de 2 h
     formules:
       - seances: 9 séances
         mensuel: 25 € par mois
-        detail: environ une fois par mois sur la saison ; 225 €, en 9 mensualités ou en une fois
+        detail: >-
+          environ une fois par mois sur la saison ; 225 €, en 9 mensualités ou
+          en une fois
       - seances: 18 séances
         mensuel: 44 € par mois
-        detail: environ deux fois par mois sur la saison ; 396 €, en 9 mensualités ou en une fois
+        detail: >-
+          environ deux fois par mois sur la saison ; 396 €, en 9 mensualités ou
+          en une fois
   - audience: enfants
     dureeSeance: Séances de 2 h
     formules:
       - seances: 16 séances
         mensuel: 34 € par mois
-        detail: toutes les dates de la saison ; 340 €, en 10 mensualités ou en une fois
+        detail: >-
+          toutes les dates de la saison ; 340 €, en 10 mensualités ou en une
+          fois
 creneaux:
   - name: Atelier du mardi après-midi
     location: Revel
@@ -69,11 +79,6 @@ creneaux:
     day: 2 fois par mois, le samedi
     time: 14h à 17h
     group: revel-adultes
-  - name: Atelier ados du samedi matin
-    location: Revel
-    day: 1 fois par mois, le samedi
-    time: 10h30 à 12h30
-    group: revel-ados
   - name: Atelier ados du samedi après-midi
     location: Revel
     day: 2 fois par mois, le samedi
@@ -87,22 +92,21 @@ creneaux:
   - name: Atelier de Verdalle
     location: Verdalle
     day: Sur demande
-    time: ''
     group: verdalle
     note: Créneau ouvert selon la demande — contactez Isabelle.
 faqItems:
   - question: Quels sont les tarifs des ateliers réguliers ?
     answer: >-
       La grille ci-dessus donne le détail : un forfait par public, de 9, 16 ou
-      18 séances selon la formule, réglé en une fois ou en mensualités.
-      S'ajoute l'adhésion à l'association Les P'tits Piafs, 15 € par an et par famille. Le
-      tissu et les fournitures restent à votre charge.
+      18 séances selon la formule, réglé en une fois ou en mensualités. S'ajoute
+      l'adhésion à l'association Les P'tits Piafs, 15 € par an et par famille.
+      Le tissu et les fournitures restent à votre charge.
   - question: L'adhésion à l'association est-elle comprise dans le forfait ?
     answer: >-
-      Non. L'adhésion à l'association Les P'tits Piafs coûte 15 € par an et par famille, et
-      s'ajoute au forfait ; elle se règle une seule fois pour la saison. Les
-      stages et les séances sans engagement, eux, comprennent déjà leur adhésion
-      ponctuelle : il n'y a rien à régler en plus.
+      Non. L'adhésion à l'association Les P'tits Piafs coûte 15 € par an et par
+      famille, et s'ajoute au forfait ; elle se règle une seule fois pour la
+      saison. Les stages et les séances sans engagement, eux, comprennent déjà
+      leur adhésion ponctuelle : il n'y a rien à régler en plus.
   - question: Que se passe-t-il si je viens plus souvent que mon forfait ?
     answer: >-
       Les séances en plus se facturent au tarif de votre forfait — son prix
@@ -147,8 +151,8 @@ crossLinksText: >-
   à utiliser la surjeteuse, réaliser un sac, une trousse ? Vous souhaitez
   apprendre une technique précise — coudre un ourlet, savoir lire un patron ?
   Rejoignez une séance sans engagement !
-creneauChoisirLabel: Sélectionner
 voirCreneauxLabel: Voir les créneaux
 inscriptionLabel: Réserver ma place
 inscriptionUrl: /ateliers-reguliers/inscription/
+creneauChoisirLabel: Sélectionner
 ctaLabel: Demander une place dans un créneau
