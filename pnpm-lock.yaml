@@ -195,7 +195,7 @@ importers:
         version: 0.6.9(@keystar/ui@0.10.0(react-aria@3.50.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react-stately@3.48.0(react@19.3.0))(react@19.3.0))(react-aria@3.50.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react-stately@3.48.0(react@19.3.0))(react@19.3.0)(supports-color@7.2.0)
       '@markdoc/markdoc':
         specifier: ^0.5.7
-        version: 0.5.9(@types/react@19.3.0)(react@19.3.0)
+        version: 0.5.10(@types/react@19.3.0)(react@19.3.0)
       '@supabase/ssr':
         specifier: ^0.12.3
         version: 0.12.7(@supabase/supabase-js@2.116.0)
@@ -1015,8 +1015,8 @@ packages:
       react:
         optional: true
 
-  '@markdoc/markdoc@0.5.9':
-    resolution: {integrity: sha512-req3Wpi1xXIs7C+n2nsKv7oGeC0xREkpd+D+JRGZ/pIMXEuQSlT+s/I760fqdmiysvkx10EC3MGlScokRRcaSQ==}
+  '@markdoc/markdoc@0.5.10':
+    resolution: {integrity: sha512-5HwkG2cLG/ivffeJlxGmraJ9erYfsaYz9rjG1KCf46PLy+yhrBQWw26h69GewNUHbyKNW6FrXuDYgbl2kvIYdA==}
     engines: {node: '>=14.7.0'}
     peerDependencies:
       '@types/react': '*'
@@ -3679,7 +3679,7 @@ snapshots:
     dependencies:
       '@astrojs/internal-helpers': 0.11.0
       '@astrojs/prism': 4.0.2
-      '@markdoc/markdoc': 0.5.9(@types/react@19.3.0)(react@19.3.0)
+      '@markdoc/markdoc': 0.5.10(@types/react@19.3.0)(react@19.3.0)
       astro: 7.3.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.12.4)(@vercel/functions@3.9.5)(idb-keyval@6.3.0)(jiti@2.7.0)(yaml@2.9.0)
       esbuild: 0.28.2
       github-slugger: 2.0.0
@@ -4374,7 +4374,7 @@ snapshots:
       '@types/react': 19.3.0
       react: 19.3.0
 
-  '@markdoc/markdoc@0.5.9(@types/react@19.3.0)(react@19.3.0)':
+  '@markdoc/markdoc@0.5.10(@types/react@19.3.0)(react@19.3.0)':
     optionalDependencies:
       '@types/linkify-it': 3.0.5
       '@types/markdown-it': 12.2.3
