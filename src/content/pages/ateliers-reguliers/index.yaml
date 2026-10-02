@@ -79,6 +79,11 @@ creneaux:
     day: 2 fois par mois, le samedi
     time: 14h à 17h
     group: revel-adultes
+  - name: Atelier ados du samedi matin
+    location: Revel
+    day: 1 fois par mois, le samedi
+    time: 10h30 à 12h30
+    group: revel-ados
   - name: Atelier ados du samedi après-midi
     location: Revel
     day: 2 fois par mois, le samedi
