@@ -43,9 +43,20 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // affichait « Déjà venu ? Connectez-vous » à quelqu'un qui l'était.
     '/ateliers-reguliers/inscription',
   ];
+  /*
+   * Pages publiques qui montrent à l'administratrice, et à elle seule, un
+   * contrôle de cohérence entre la base et le contenu. Le contrôle s'affichait
+   * à tous les visiteurs : un avertissement interne n'a rien à faire sous les
+   * yeux d'un client.
+   */
+  const CONTROLE_ADMIN = ['/ateliers-reguliers'];
   const chemin = context.url.pathname.replace(/\/+$/, '');
 
-  if (!chemin.startsWith('/espace-membre') && !ACHAT.includes(chemin)) {
+  if (
+    !chemin.startsWith('/espace-membre') &&
+    !ACHAT.includes(chemin) &&
+    !CONTROLE_ADMIN.includes(chemin)
+  ) {
     return next();
   }
 

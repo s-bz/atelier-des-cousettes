@@ -183,6 +183,13 @@ const idDe = (nom: string) => parNom.get(cle(nom))?.id as string | undefined;
 const nomsDuContenu = new Set(creneaux.map((c) => cle(c.name)));
 const absentsDuContenu = (enBase ?? []).filter((c) => !nomsDuContenu.has(cle(c.label)));
 
+/**
+ * Ces contrôles s'adressent à qui tient le site, pas à ses visiteurs : en
+ * développement, ou à l'administratrice connectée. Un client n'a que faire
+ * d'un « à décrire dans le CMS ».
+ */
+const voitLesControles = import.meta.env.DEV || Astro.locals.isAdmin;
+
 /** « 3 h », « 2 h 30 » — la durée d'une séance, lue sur les horaires du créneau. */
 const enHeures = (debut: string, fin: string) => {
   const min = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
@@ -537,7 +544,7 @@ const blogIndex = await reader.singletons.blogIndex.read();
           ))}
         </nav>
 
-        {absentsDuContenu.length > 0 && (
+        {voitLesControles && absentsDuContenu.length > 0 && (
           <div class="mb-10 rounded-xl border border-[var(--color-button)] p-4 text-sm">
             <p class="font-semibold text-[var(--color-button)]">
               En base mais absents de cette page
@@ -642,7 +649,7 @@ const blogIndex = await reader.singletons.blogIndex.read();
                       limite={3}
                       heuresEnTete={true}
                       contact={!inconnuEnBase(c.name)}
-                      vide={inconnuEnBase(c.name)
+                      vide={voitLesControles && inconnuEnBase(c.name)
                         ? 'Ce créneau n’existe pas encore en base — à créer avant la bascule.'
                         : undefined}
                     />
