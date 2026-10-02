@@ -1,0 +1,27 @@
+{
+  "inspectionResult": {
+    "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:atelier-des-cousettes.fr&id=I8KcvCmZeDiLvf-uSSPJiA&utm_medium=link&utm_source=api",
+    "indexStatusResult": {
+      "verdict": "NEUTRAL",
+      "coverageState": "Duplicate, Google chose different canonical than user",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED",
+      "lastCrawlTime": "2026-08-18T04:26:58Z",
+      "pageFetchState": "SUCCESSFUL",
+      "googleCanonical": "https://atelier-des-cousettes.fr/blog/coudre-ourlet-invisible/",
+      "userCanonical": "https://atelier-des-cousettes.fr/blog/coudre-ourlet-invisible/",
+      "sitemap": [
+        "https://atelier-des-cousettes.fr/sitemap-0.xml",
+        "https://atelier-des-cousettes.fr/sitemap-index.xml"
+      ],
+      "referringUrls": [
+        "https://couture-tarn.fr/blog/coudre-ourlet-invisible/",
+        "https://atelier-des-cousettes.fr/blog/coudre-jupe-elastiquee-premier-vetement/"
+      ],
+      "crawledAs": "MOBILE"
+    },
+    "mobileUsabilityResult": {
+      "verdict": "VERDICT_UNSPECIFIED"
+    }
+  }
+}

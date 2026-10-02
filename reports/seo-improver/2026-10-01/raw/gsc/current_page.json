@@ -1,0 +1,185 @@
+{
+  "rows": [
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/"
+      ],
+      "clicks": 28,
+      "impressions": 385,
+      "ctr": 0.07272727272727272,
+      "position": 6.161038961038961
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/blog/coudre-trousse-fermeture-eclair/"
+      ],
+      "clicks": 12,
+      "impressions": 191,
+      "ctr": 0.06282722513089005,
+      "position": 10.031413612565444
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/blog/couture-enfants-projets-faciles/"
+      ],
+      "clicks": 2,
+      "impressions": 81,
+      "ctr": 0.024691358024691357,
+      "position": 11.716049382716049
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/ateliers-reguliers/"
+      ],
+      "clicks": 1,
+      "impressions": 33,
+      "ctr": 0.030303030303030304,
+      "position": 8.515151515151516
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/blog/coudre-tote-bag/"
+      ],
+      "clicks": 1,
+      "impressions": 59,
+      "ctr": 0.01694915254237288,
+      "position": 18.76271186440678
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/blog/coutures-de-base/"
+      ],
+      "clicks": 1,
+      "impressions": 80,
+      "ctr": 0.0125,
+      "position": 7.325
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/blog/"
+      ],
+      "clicks": 0,
+      "impressions": 8,
+      "ctr": 0,
+      "position": 34.75
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/blog/atelier-stage-ou-seance-quelle-formule/"
+      ],
+      "clicks": 0,
+      "impressions": 1,
+      "ctr": 0,
+      "position": 10
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/blog/comprendre-patrons-couture/"
+      ],
+      "clicks": 0,
+      "impressions": 37,
+      "ctr": 0,
+      "position": 15.972972972972974
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/blog/coudre-ourlet-invisible/"
+      ],
+      "clicks": 0,
+      "impressions": 3,
+      "ctr": 0,
+      "position": 30.666666666666668
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/blog/couture-zero-dechet-projets-pratiques/"
+      ],
+      "clicks": 0,
+      "impressions": 13,
+      "ctr": 0,
+      "position": 32.15384615384615
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/blog/entretenir-machine-a-coudre/"
+      ],
+      "clicks": 0,
+      "impressions": 1,
+      "ctr": 0,
+      "position": 43
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/blog/rentree-couture-revel-verdalle/"
+      ],
+      "clicks": 0,
+      "impressions": 1,
+      "ctr": 0,
+      "position": 8
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/blog/surjeteuse-a-quoi-ca-sert/"
+      ],
+      "clicks": 0,
+      "impressions": 45,
+      "ctr": 0,
+      "position": 44.75555555555555
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/conditions/"
+      ],
+      "clicks": 0,
+      "impressions": 2,
+      "ctr": 0,
+      "position": 39
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/glossaire/"
+      ],
+      "clicks": 0,
+      "impressions": 9,
+      "ctr": 0,
+      "position": 14
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/glossaire/cranter/"
+      ],
+      "clicks": 0,
+      "impressions": 50,
+      "ctr": 0,
+      "position": 8.84
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/glossaire/encolure/"
+      ],
+      "clicks": 0,
+      "impressions": 38,
+      "ctr": 0,
+      "position": 13.631578947368421
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/seances-sans-engagement/"
+      ],
+      "clicks": 0,
+      "impressions": 11,
+      "ctr": 0,
+      "position": 12.272727272727273
+    },
+    {
+      "keys": [
+        "https://atelier-des-cousettes.fr/stages-thematiques/"
+      ],
+      "clicks": 0,
+      "impressions": 18,
+      "ctr": 0,
+      "position": 37
+    }
+  ],
+  "responseAggregationType": "byPage"
+}

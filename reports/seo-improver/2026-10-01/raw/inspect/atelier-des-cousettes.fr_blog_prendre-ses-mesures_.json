@@ -1,0 +1,23 @@
+{
+  "inspectionResult": {
+    "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:atelier-des-cousettes.fr&id=HaHbulyGOO3HWp-wRz1qCw&utm_medium=link&utm_source=api",
+    "indexStatusResult": {
+      "verdict": "NEUTRAL",
+      "coverageState": "Discovered - currently not indexed",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED",
+      "pageFetchState": "PAGE_FETCH_STATE_UNSPECIFIED",
+      "sitemap": [
+        "https://atelier-des-cousettes.fr/sitemap-0.xml",
+        "https://atelier-des-cousettes.fr/sitemap-index.xml"
+      ],
+      "referringUrls": [
+        "https://atelier-des-cousettes.fr/sitemap-0.xml"
+      ],
+      "crawledAs": "CRAWLING_USER_AGENT_UNSPECIFIED"
+    },
+    "mobileUsabilityResult": {
+      "verdict": "VERDICT_UNSPECIFIED"
+    }
+  }
+}
