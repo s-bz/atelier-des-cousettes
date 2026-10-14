@@ -136,6 +136,9 @@ All redesigned pages follow a consistent section-based pattern using `BaseLayout
 ## Build & Deploy
 
 - `pnpm dev` / `pnpm build` / `pnpm check` for development. Both `dev` and `build` auto-run the trailing slash lint fix before starting.
+- `pnpm build` ends with `scripts/smoke-ssr-function.mjs`, which imports the emitted Vercel function and every server module the way Vercel loads them. If one can't load, the build fails and the previous deployment stays live. Never remove it to get a build through: on 2026-10-13, `@astrojs/vercel` 11.0.13 built fine but every on-demand route (reservations, member area, HelloAsso notifications, devis) answered 500 `FUNCTION_INVOCATION_FAILED` for ~30 h.
+- `.github/workflows/healthcheck.yml` probes production every hour with side-effect-free GETs and keeps one `[healthcheck]` issue open while any check fails. Add a probe when adding a critical on-demand route.
+- Error tracking: PostHog `capture_exceptions` is on in `BaseLayout.astro`, and `src/utils/surveillance-api.ts` reports same-origin `/api/*` 5xx as `ErreurServeurApi` (route collapsed, never the real path or query string). The privacy policy's « Le signalement des erreurs » section describes this — update it if what's sent changes.
 - Always run `pnpm check` after code changes to validate types.
 - Deployed on Vercel with `@astrojs/vercel` adapter.
 - Node >= 22.12.0 required.

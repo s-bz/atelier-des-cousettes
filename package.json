@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "node scripts/lint-trailing-slash.mjs --fix && astro dev",
-    "build": "node scripts/lint-trailing-slash.mjs --fix && astro build",
+    "build": "node scripts/lint-trailing-slash.mjs --fix && astro build && node scripts/smoke-ssr-function.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",

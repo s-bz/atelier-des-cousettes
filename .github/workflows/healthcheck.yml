@@ -1,0 +1,132 @@
+name: Health check
+
+# Interroge les routes à la demande de la production chaque heure, et tient
+# UNE issue GitHub ouverte tant qu'elles échouent : commentée à chaque passage
+# en échec, refermée d'elle-même au rétablissement.
+#
+# POURQUOI. Du 13 au 14 octobre 2026, la fonction serveur ne se chargeait plus
+# (@astrojs/vercel 11.0.13, FUNCTION_INVOCATION_FAILED) : réservations, espace
+# membre, devis et notifications HelloAsso répondaient 500 pendant une
+# trentaine d'heures, et rien ne l'a signalé. Les pages statiques s'affichaient.
+#
+# Le contrôle au build (scripts/smoke-ssr-function.mjs) bloque désormais ce
+# défaut avant le déploiement, et le navigateur remonte à PostHog les 5xx des
+# appels /api/* (src/utils/surveillance-api.ts). Mais une page à la demande qui
+# plante ne charge jamais PostHog, et les notifications HelloAsso n'ont pas de
+# navigateur du tout. Ce contrôle couvre ce que les deux autres ne voient pas.
+#
+# Chaque heure : le dépôt est public, les minutes Actions ne sont pas
+# facturées. GitHub retarde parfois les exécutions planifiées ; compter une
+# détection en une à deux heures, pas en minutes.
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: healthcheck
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Interroger la production
+        id: probe
+        shell: bash
+        run: |
+          set -u
+          SITE=https://atelier-des-cousettes.fr
+          # chemin | statut attendu | ce que ça prouve
+          # Uniquement des GET sans effet de bord : chaque statut attendu prouve
+          # que la fonction s'est chargée et que notre code a répondu. Pas de -L :
+          # une redirection inattendue est un échec.
+          CHECKS=(
+            "/|200|le site statique est servi (témoin)"
+            "/stages-thematiques/|200|une page à la demande s'affiche"
+            "/seances-sans-engagement/|200|la page de réservation des séances s'affiche"
+            "/tarifs.md|200|une route texte à la demande répond"
+            "/api/devis.json|400|l'API de devis tourne et refuse une requête sans formule"
+            "/api/helloasso/notifications/|200|la route des notifications HelloAsso se charge"
+          )
+
+          failures=""
+          for check in "${CHECKS[@]}"; do
+            IFS='|' read -r path expected why <<<"$check"
+            # Trois essais à 20 s d'intervalle : un démarrage à froid lent ou un
+            # aléa réseau ne doit pas ouvrir d'issue.
+            got=""
+            for attempt in 1 2 3; do
+              rm -f /tmp/body /tmp/headers
+              # En cas d'échec de connexion, curl écrit quand même 000 via -w.
+              got=$(curl -sS -o /tmp/body -D /tmp/headers -w '%{http_code}' --max-time 20 \
+                "$SITE$path" || true)
+              [ "$got" = "$expected" ] && break
+              [ "$attempt" -lt 3 ] && sleep 20
+            done
+            if [ "$got" = "$expected" ]; then
+              echo "✓ GET $path → $got ($why)"
+            else
+              vercel_error=$(grep -i '^x-vercel-error:' /tmp/headers 2>/dev/null | cut -d' ' -f2- | tr -d '\r')
+              vercel_id=$(grep -i '^x-vercel-id:' /tmp/headers 2>/dev/null | cut -d' ' -f2- | tr -d '\r')
+              # Les 80 premiers caractères de la réponse, rendus sûrs pour un tableau.
+              body=$(head -c 80 /tmp/body 2>/dev/null | tr '\r\n|`' '    ' || true)
+              echo "✗ GET $path → $got, attendu $expected ($why) : $body"
+              failures+="| \`GET $path\` | $expected | **$got** ${body:+(\`$body\`)} | ${vercel_error:-–} | ${vercel_id:-–} | $why |"$'\n'
+            fi
+          done
+
+          {
+            echo 'failures<<EOF'
+            printf '%s' "$failures"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Ouvrir, compléter ou fermer l'issue de panne
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FAILURES: ${{ steps.probe.outputs.failures }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TITLE='[healthcheck] Routes serveur de production en échec'
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+            --search "in:title \"$TITLE\"" --json number,title \
+            --jq "map(select(.title == \"$TITLE\")) | .[0].number // empty")
+
+          if [ -z "$FAILURES" ]; then
+            if [ -n "$open" ]; then
+              gh issue comment "$open" --repo "$GITHUB_REPOSITORY" \
+                --body "✅ Tous les contrôles passent de nouveau ([exécution]($RUN_URL)). Fermeture."
+              gh issue close "$open" --repo "$GITHUB_REPOSITORY" --reason completed
+            fi
+            exit 0
+          fi
+
+          table=$'| Contrôle | Attendu | Obtenu | x-vercel-error | x-vercel-id | Ce que ça prouve |\n|---|---|---|---|---|---|\n'"$FAILURES"
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --repo "$GITHUB_REPOSITORY" \
+              --body "Toujours en échec ([exécution]($RUN_URL)) :"$'\n\n'"$table"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --assignee s-bz --title "$TITLE" --body "$(cat <<EOF
+          Le contrôle planifié a échoué trois fois de suite ([exécution]($RUN_URL)).
+
+          $table
+
+          **Où regarder**
+          - \`x-vercel-error\` renseigné (p. ex. \`FUNCTION_INVOCATION_FAILED\`) : la fonction a planté ou ne se charge plus. Vercel → Deployments → le déploiement de production courant → journaux d'exécution (chercher le \`x-vercel-id\`), et les dernières mises à jour de dépendances sur \`main\`.
+          - Seul le témoin \`/\` en échec, ou \`000\` partout : le site ne répond plus du tout (DNS, panne Vercel).
+          - Les notifications HelloAsso en échec : les paiements arrivés pendant la panne n'ont pas été provisionnés. HelloAsso réémet pendant 48 h ; au-delà, les reprendre depuis le back-office HelloAsso.
+
+          Cette issue est commentée à chaque passage en échec et se ferme d'elle-même quand tout repasse.
+          EOF
+          )"
+          fi
+          exit 1

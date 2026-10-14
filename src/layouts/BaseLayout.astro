@@ -131,6 +131,14 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
       réglages du projet PostHog (Project settings → Web analytics). Sans lui,
       rien n'est compté.
 
+      LE SUIVI DES ERREURS est allumé (`capture_exceptions`) : une erreur
+      JavaScript non rattrapée devient un événement `$exception`, avec son
+      message et sa pile d'appels. Il a manqué le 13 octobre 2026, quand la
+      fonction serveur ne se chargeait plus et que rien ne l'a signalé. Les
+      réponses 5xx de nos propres routes /api/* sont remontées de la même façon
+      par `src/utils/surveillance-api.ts`, juste en dessous. La politique de
+      confidentialité le mentionne.
+
       Le bloc ne s'affiche que si la clé est définie, pour que rien ne casse
       tant que le projet PostHog n'existe pas.
     */}
@@ -143,9 +151,29 @@ const resolvedOgImage = ogImage || new URL('/og-default.jpg', Astro.site).toStri
           defaults: '2026-01-30',
           disable_session_recording: true,
           autocapture: false,
+          capture_exceptions: true,
         });
       </script>
     )}
+    <script>
+      import { ErreurServeurApi, empreinte, installerSurveillanceApi } from '../utils/surveillance-api';
+
+      // Sans clé PostHog, le bloc ci-dessus n'existe pas : rien à surveiller.
+      // Avec, `window.posthog` est d'abord un bouchon qui met les appels en
+      // file, puis la bibliothèque le REMPLACE à son chargement. D'où une
+      // relecture à chaque signalement : un appel sur l'ancien bouchon, une
+      // fois la bibliothèque chargée, se perdrait sans bruit.
+      type PostHog = { captureException: (e: Error, p?: object) => void };
+      const posthog = () => (window as { posthog?: PostHog }).posthog;
+      if (posthog()) {
+        installerSurveillanceApi(window, (panne) =>
+          posthog()?.captureException(new ErreurServeurApi(panne), {
+            ...panne,
+            $exception_fingerprint: empreinte(panne),
+          }),
+        );
+      }
+    </script>
 
     <Analytics />
   </head>
