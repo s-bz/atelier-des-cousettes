@@ -1,0 +1,24 @@
+{
+  "inspectionResult": {
+    "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:atelier-des-cousettes.fr&id=3VLaTHF9pP17gtcZUZVI7Q&utm_medium=link&utm_source=api",
+    "indexStatusResult": {
+      "verdict": "PASS",
+      "coverageState": "Submitted and indexed",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED",
+      "lastCrawlTime": "2026-10-15T04:28:31Z",
+      "pageFetchState": "SUCCESSFUL",
+      "googleCanonical": "https://atelier-des-cousettes.fr/",
+      "userCanonical": "https://atelier-des-cousettes.fr/",
+      "referringUrls": [
+        "https://couture-tarn.fr/",
+        "https://atelier-des-cousettes.fr/blog/coudre-jupe-elastiquee-premier-vetement/",
+        "https://atelier-des-cousettes.fr/blog/entretenir-machine-a-coudre/"
+      ],
+      "crawledAs": "MOBILE"
+    },
+    "mobileUsabilityResult": {
+      "verdict": "VERDICT_UNSPECIFIED"
+    }
+  }
+}
