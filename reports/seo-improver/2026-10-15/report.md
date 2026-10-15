@@ -17,7 +17,7 @@ This is the first run in six weeks (last run 2026-08-26) — no `2026-09-XX` run
 
 **New decay worth flagging, not fixing:** `couturiere castres` (390 vol) fell from GSC position 2.9 to 8.1 (impressions 15→8), and a fresh live SERP for the exact phrase shows `atelier-des-cousettes.fr` absent entirely from both organic and the local pack through depth 22. What now occupies that pack reads as alteration/repair services (Ev'lyn Couture & Retouches, Déco Couture, L'Atelier de Josie) rather than sewing-class providers — "couturière" read literally skews toward "seamstress for repairs," which isn't this business's offering. This looks like an intent-matching correction, not a fixable ranking loss — same category as the `cousette` non-opportunity from the last run. No action recommended.
 
-**Two Keystatic content fixes applied this run** (`SEO-CTR-008`, `SEO-CTR-009`, §4).
+**Two Keystatic content fixes applied this run** (`SEO-CTR-008`, `SEO-CTR-009`, §4). PR: https://github.com/s-bz/atelier-des-cousettes/pull/259
 
 ## 2. Movement since last run
 
