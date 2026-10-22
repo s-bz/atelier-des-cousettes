@@ -86,6 +86,14 @@ function fichesDeStage() {
 // https://astro.build/config
 export default defineConfig({
   site: SITE,
+  // Les pages rendues à la requête (stages, ateliers, séances) servent leur
+  // image de couverture par `/_image`. Avec `trailingSlash: true` dans
+  // vercel.json, `/_image?…` répondait d'abord 308 vers `/_image/?…` : un aller-
+  // retour de plus sur l'image la plus visible de la page. La route porte donc
+  // déjà sa barre finale ; l'ancienne adresse continue de répondre.
+  // `entrypoint: undefined` garde le point d'entrée par défaut d'Astro ; le type
+  // exige la clé dès que `route` est donnée.
+  image: { endpoint: { route: '/_image/', entrypoint: undefined } },
   adapter: vercel({ includeFiles: contenuKeystatic() }),
   integrations: [react(), markdoc(), keystatic(), sitemap({
     customPages: fichesDeStage(),
