@@ -141,7 +141,7 @@ All redesigned pages follow a consistent section-based pattern using `BaseLayout
 - Error tracking: PostHog `capture_exceptions` is on in `BaseLayout.astro`, and `src/utils/surveillance-api.ts` reports same-origin `/api/*` 5xx as `ErreurServeurApi` (route collapsed, never the real path or query string). The privacy policy's « Le signalement des erreurs » section describes this — update it if what's sent changes.
 - Always run `pnpm check` after code changes to validate types.
 - Deployed on Vercel with `@astrojs/vercel` adapter.
-- Node >= 22.12.0 required.
+- Node 24.x (`engines` in `package.json`, Vercel runtime and CI). Astro 7.4 itself requires Node >= 22.22.0.
 - Vercel Analytics injected in BaseLayout.
 - Vite chunk size warning limit set to 5000kB (Keystatic bundle is large).
 - CI uses GitHub Actions with Renovate for automated dependency updates.
