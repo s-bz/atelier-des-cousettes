@@ -1,0 +1,41 @@
+{
+  "inspectionResult": {
+    "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:atelier-des-cousettes.fr&id=Xqxx1E3f5zDEe834QlZ7lA&utm_medium=link&utm_source=api",
+    "indexStatusResult": {
+      "verdict": "PASS",
+      "coverageState": "Submitted and indexed",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED",
+      "lastCrawlTime": "2026-09-29T23:36:33Z",
+      "pageFetchState": "SUCCESSFUL",
+      "googleCanonical": "https://atelier-des-cousettes.fr/la-couturiere/",
+      "userCanonical": "https://atelier-des-cousettes.fr/la-couturiere/",
+      "sitemap": [
+        "https://atelier-des-cousettes.fr/sitemap-0.xml",
+        "https://atelier-des-cousettes.fr/sitemap-index.xml"
+      ],
+      "referringUrls": [
+        "https://atelier-des-cousettes.fr/blog/idees-cadeaux-couture-faits-main/",
+        "https://atelier-des-cousettes.fr/blog/coudre-jupe-elastiquee-premier-vetement/",
+        "https://atelier-des-cousettes.fr/blog/trousse-couture-indispensables/"
+      ],
+      "crawledAs": "MOBILE"
+    },
+    "mobileUsabilityResult": {
+      "verdict": "VERDICT_UNSPECIFIED"
+    },
+    "richResultsResult": {
+      "verdict": "PASS",
+      "detectedItems": [
+        {
+          "richResultType": "Breadcrumbs",
+          "items": [
+            {
+              "name": "Unnamed item"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

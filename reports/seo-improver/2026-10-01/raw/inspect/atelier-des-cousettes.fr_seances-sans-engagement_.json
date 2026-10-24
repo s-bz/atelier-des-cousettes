@@ -1,0 +1,39 @@
+{
+  "inspectionResult": {
+    "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:atelier-des-cousettes.fr&id=vENuOz8aSHVNGU3RLlkMTw&utm_medium=link&utm_source=api",
+    "indexStatusResult": {
+      "verdict": "PASS",
+      "coverageState": "Submitted and indexed",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED",
+      "lastCrawlTime": "2026-09-28T21:11:22Z",
+      "pageFetchState": "SUCCESSFUL",
+      "googleCanonical": "https://atelier-des-cousettes.fr/seances-sans-engagement/",
+      "userCanonical": "https://atelier-des-cousettes.fr/seances-sans-engagement/",
+      "sitemap": [
+        "https://atelier-des-cousettes.fr/sitemap-0.xml",
+        "https://atelier-des-cousettes.fr/sitemap-index.xml"
+      ],
+      "referringUrls": [
+        "https://atelier-des-cousettes.fr/blog/"
+      ],
+      "crawledAs": "MOBILE"
+    },
+    "mobileUsabilityResult": {
+      "verdict": "VERDICT_UNSPECIFIED"
+    },
+    "richResultsResult": {
+      "verdict": "PASS",
+      "detectedItems": [
+        {
+          "richResultType": "Breadcrumbs",
+          "items": [
+            {
+              "name": "Unnamed item"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

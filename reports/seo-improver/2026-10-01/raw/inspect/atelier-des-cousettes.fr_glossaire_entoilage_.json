@@ -1,0 +1,36 @@
+{
+  "inspectionResult": {
+    "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:atelier-des-cousettes.fr&id=p6vFtj-He2vDDJ8lZWkL1Q&utm_medium=link&utm_source=api",
+    "indexStatusResult": {
+      "verdict": "PASS",
+      "coverageState": "Submitted and indexed",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED",
+      "lastCrawlTime": "2026-08-13T05:47:51Z",
+      "pageFetchState": "SUCCESSFUL",
+      "googleCanonical": "https://atelier-des-cousettes.fr/glossaire/entoilage/",
+      "userCanonical": "https://atelier-des-cousettes.fr/glossaire/entoilage/",
+      "sitemap": [
+        "https://atelier-des-cousettes.fr/sitemap-0.xml",
+        "https://atelier-des-cousettes.fr/sitemap-index.xml"
+      ],
+      "crawledAs": "MOBILE"
+    },
+    "mobileUsabilityResult": {
+      "verdict": "VERDICT_UNSPECIFIED"
+    },
+    "richResultsResult": {
+      "verdict": "PASS",
+      "detectedItems": [
+        {
+          "richResultType": "Breadcrumbs",
+          "items": [
+            {
+              "name": "Unnamed item"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
