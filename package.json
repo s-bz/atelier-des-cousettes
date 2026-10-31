@@ -3,7 +3,7 @@
   "type": "module",
   "version": "1.0.0",
   "engines": {
-    "node": "24.x"
+    "node": "26.x"
   },
   "scripts": {
     "dev": "node scripts/lint-trailing-slash.mjs --fix && astro dev",
