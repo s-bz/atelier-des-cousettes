@@ -46,7 +46,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version: '26'
 
       # Un contrôle qui cesse silencieusement de tourner est pire qu'un contrôle
       # qui échoue : on croit être couvert. Cette ligne laisse une trace de
