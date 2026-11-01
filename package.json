@@ -3,7 +3,7 @@
   "type": "module",
   "version": "1.0.0",
   "engines": {
-    "node": "24.x"
+    "node": "26.x"
   },
   "scripts": {
     "dev": "node scripts/lint-trailing-slash.mjs --fix && astro dev",
@@ -17,7 +17,7 @@
     "test:watch": "vitest",
     "prepare": "husky"
   },
-  "packageManager": "pnpm@12.16.0",
+  "packageManager": "pnpm@12.16.1",
   "dependencies": {
     "@astrojs/check": "^0.9.8",
     "@astrojs/markdoc": "^2.0.0",
