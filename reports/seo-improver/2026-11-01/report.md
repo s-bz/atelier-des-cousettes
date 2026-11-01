@@ -2,6 +2,8 @@
 
 Property `sc-domain:atelier-des-cousettes.fr` · GSC query snapshot pulled 2026-11-01 (rolling 28-day window, `startDate=2026-10-02`/`endDate=2026-10-30`) · comparison window: `startDate=2026-09-04`/`endDate=2026-10-01` (the 28 days immediately before, for a clean trend) · diff baseline for recommendation tracking: `reports/seo-improver/2026-08-26/report.md` (the last real run, 67 days ago — no run landed in between) · SERP checks: two independent geolocated pulls each for Castres and Revel via DataForSEO, run back-to-back to separate genuine signal from local-pack pull noise (see §2).
 
+**Pull request:** https://github.com/s-bz/atelier-des-cousettes/pull/276
+
 ## 1. Executive summary
 
 **Net movement is positive on content, negative on local presence.** The sitemap's index coverage essentially doubled since the last run (21 → 42 of 84 URLs `Submitted and indexed`), all three prior blockers from 2026-08-26 resolved on their own, and a large new keyword cluster ("couture enfant", age-specific) surfaced with genuine volume on an existing page. But **L'Atelier des Cousettes dropped out of the Revel Google local pack and organic top 24 entirely** for "cours de couture revel" — confirmed by two independent live SERP pulls and by GSC itself (zero impressions this window, versus a real, clicked #3.2 ranking two months ago) — and the organic ranking for "couturiere castres" has declined for three consecutive measurement windows (1.7 → 5.3 → 9.3). Both read as symptoms of the same stalled lever flagged every run since July: **GBP review count in Castres only just moved for the first time (6 → 7 reviews)**, and Revel's listing may have fallen out of the pack because of it.
