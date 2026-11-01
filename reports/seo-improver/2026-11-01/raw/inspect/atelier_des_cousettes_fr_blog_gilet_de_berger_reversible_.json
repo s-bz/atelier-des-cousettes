@@ -1,0 +1,35 @@
+{
+  "inspectionResult": {
+    "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:atelier-des-cousettes.fr&id=ZxPq5O5B0gvAb98dXkM42g&utm_medium=link&utm_source=api",
+    "indexStatusResult": {
+      "verdict": "PASS",
+      "coverageState": "Submitted and indexed",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED",
+      "lastCrawlTime": "2026-10-21T22:02:16Z",
+      "pageFetchState": "SUCCESSFUL",
+      "googleCanonical": "https://atelier-des-cousettes.fr/blog/gilet-de-berger-reversible/",
+      "userCanonical": "https://atelier-des-cousettes.fr/blog/gilet-de-berger-reversible/",
+      "referringUrls": [
+        "https://atelier-des-cousettes.fr/"
+      ],
+      "crawledAs": "MOBILE"
+    },
+    "mobileUsabilityResult": {
+      "verdict": "VERDICT_UNSPECIFIED"
+    },
+    "richResultsResult": {
+      "verdict": "PASS",
+      "detectedItems": [
+        {
+          "richResultType": "Breadcrumbs",
+          "items": [
+            {
+              "name": "Unnamed item"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
