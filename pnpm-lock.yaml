@@ -195,7 +195,7 @@ importers:
         version: 0.6.9(@keystar/ui@0.10.0(react-aria@3.50.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react-stately@3.48.0(react@19.3.1))(react@19.3.1))(react-aria@3.50.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react-stately@3.48.0(react@19.3.1))(react@19.3.1)(supports-color@7.2.0)
       '@markdoc/markdoc':
         specifier: ^0.5.7
-        version: 0.5.11(@types/react@19.3.0)(react@19.3.1)
+        version: 0.5.12(@types/react@19.3.0)(react@19.3.1)
       '@supabase/ssr':
         specifier: ^0.12.3
         version: 0.12.7(@supabase/supabase-js@2.118.0)
@@ -966,15 +966,13 @@ packages:
       react:
         optional: true
 
-  '@markdoc/markdoc@0.5.11':
-    resolution: {integrity: sha512-Jyoyv7Ieq2/L9fzz9lTN+ojoufpqiiWOZT3xPgssReZwGze84XFEU/xDNbM4iIua5sJ6JjhDDlBuwZoQLrqAgw==}
+  '@markdoc/markdoc@0.5.12':
+    resolution: {integrity: sha512-J0Cs/U/0JwVBr67v3KLhtdXW+NbMoOIlz4b+//lEU9+3TUY7b4myEdZtXGVK8JFSSjp/7q3OPZ9+GETTBQTwgA==}
     engines: {node: '>=14.7.0'}
     peerDependencies:
       '@types/react': '*'
       react: '*'
     peerDependenciesMeta:
-      '@types/react':
-        optional: true
       react:
         optional: true
 
@@ -3472,7 +3470,7 @@ snapshots:
     dependencies:
       '@astrojs/internal-helpers': 0.13.0
       '@astrojs/prism': 4.1.2
-      '@markdoc/markdoc': 0.5.11(@types/react@19.3.0)(react@19.3.1)
+      '@markdoc/markdoc': 0.5.12(@types/react@19.3.0)(react@19.3.1)
       astro: 7.4.5(@types/node@24.12.4)(@vercel/functions@3.10.0)(esbuild@0.28.2)(idb-keyval@6.3.0)(jiti@2.7.0)(yaml@2.9.1)
       github-slugger: 2.0.0
       htmlparser2: 12.0.0
@@ -4077,9 +4075,10 @@ snapshots:
       '@types/react': 19.3.0
       react: 19.3.1
 
-  '@markdoc/markdoc@0.5.11(@types/react@19.3.0)(react@19.3.1)':
-    optionalDependencies:
+  '@markdoc/markdoc@0.5.12(@types/react@19.3.0)(react@19.3.1)':
+    dependencies:
       '@types/react': 19.3.0
+    optionalDependencies:
       react: 19.3.1
 
   '@napi-rs/wasm-runtime@1.2.4(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)':
