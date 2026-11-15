@@ -2,7 +2,7 @@
 
 Property `sc-domain:atelier-des-cousettes.fr` · GSC query snapshot pulled 2026-11-15 (rolling 28-day window, `startDate=2026-10-18`/`endDate=2026-11-14`) · comparison window: `startDate=2026-09-20`/`endDate=2026-10-17` (the 28 days immediately before) · diff baseline for recommendation tracking: `reports/seo-improver/2026-11-01/report.md` (14 days ago, no gap) · SERP checks: live DataForSEO pulls for "cours de couture revel" (Revel), "couturiere revel" (Revel), "couturiere castres" (Castres) and "cours de couture castres" (Castres).
 
-**Pull request:** opened by this run (see bottom of this file once pushed — the PR URL is added after `gh pr create` succeeds).
+**Pull request:** https://github.com/s-bz/atelier-des-cousettes/pull/287
 
 ## 1. Executive summary
 
