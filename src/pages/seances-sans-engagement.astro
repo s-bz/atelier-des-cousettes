@@ -223,9 +223,8 @@ const schemas = buildServicePageSchemas({
     price: p.prix,
   })),
   faqItems: faqItems,
-  // Revel seulement : cette formule ne se prend plus à Verdalle. Les ateliers
-  // réguliers, eux, gardent les deux communes.
-  communes: ['Revel'],
+  // Vendredi matin et jeudi après-midi se prennent aussi à Verdalle.
+  communes: ['Revel', 'Verdalle'],
 });
 
 /**
