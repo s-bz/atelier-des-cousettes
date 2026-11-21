@@ -94,11 +94,21 @@ creneaux:
     day: 1 à 2 fois par mois, le samedi
     time: 10h à 12h
     group: revel-enfants
-  - name: Atelier de Verdalle
+  - name: Atelier de Verdalle du mercredi après-midi
     location: Verdalle
-    day: Sur demande
+    day: 1 fois par mois, le mercredi
+    time: 14h à 17h
     group: verdalle
-    note: Créneau ouvert selon la demande — contactez Isabelle.
+  - name: Atelier de Verdalle du jeudi après-midi
+    location: Verdalle
+    day: 1 fois par mois, le jeudi, à partir de janvier
+    time: 14h30 à 17h30
+    group: verdalle
+  - name: Atelier de Verdalle du vendredi matin
+    location: Verdalle
+    day: 2 fois par mois, le vendredi
+    time: 9h30 à 11h30
+    group: verdalle
 faqItems:
   - question: Quels sont les tarifs des ateliers réguliers ?
     answer: >-
